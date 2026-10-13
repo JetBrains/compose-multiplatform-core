@@ -81,6 +81,12 @@ class HapticFeedbackSelectionTest {
         }
     }
 
+    private fun TestHapticFeedback.waitForLongPressPerformed() {
+        UIKitInstrumentedTest.waitUntil("Long press should trigger haptic feedback") {
+            HapticFeedbackType.LongPress in performedHaptics
+        }
+    }
+
     @Composable
     private fun WithTestHapticFeedback(
         hapticFeedback: TestHapticFeedback,
@@ -115,9 +121,7 @@ class HapticFeedbackSelectionTest {
         val textFieldNode = findNodeWithTag("TextField")
         val touch = textFieldNode.touchDown()
         touch.hold()
-        waitUntil("Long press should trigger haptic feedback") {
-            HapticFeedbackType.LongPress in hapticFeedback.performedHaptics
-        }
+        hapticFeedback.waitForLongPressPerformed()
         touch.up()
 
         waitForIdle()
@@ -184,9 +188,7 @@ class HapticFeedbackSelectionTest {
         val textFieldNode = findNodeWithTag("TextField")
         val touch = textFieldNode.touchDown()
         touch.hold()
-        waitUntil("Long press should trigger haptic feedback") {
-            HapticFeedbackType.LongPress in hapticFeedback.performedHaptics
-        }
+        hapticFeedback.waitForLongPressPerformed()
         touch.up()
 
         waitForIdle()
@@ -253,9 +255,7 @@ class HapticFeedbackSelectionTest {
         val textNode = findNodeWithTag("SelectionContainer")
         val touch = textNode.touchDown()
         touch.hold()
-        waitUntil("Long press should trigger haptic feedback") {
-            HapticFeedbackType.LongPress in hapticFeedback.performedHaptics
-        }
+        hapticFeedback.waitForLongPressPerformed()
         touch.up()
 
         waitForIdle()

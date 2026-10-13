@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.unit.dp
@@ -86,14 +87,14 @@ internal class InteropUIMenuTest {
         findNodeWithTag("MenuButton")
             .tap()
 
-        waitUntil("UIKit menu should open") { isMenuOpen() }
+        waitForMenuToOpen(isMenuOpen)
 
         assertTrue(isMenuOpen())
 
         findNodeWithTag("Box")
             .tap()
 
-        waitUntil("UIKit menu should close") { !isMenuOpen() }
+        waitForMenuToClose(isMenuOpen)
 
         assertFalse(isMenuOpen())
     }
@@ -139,14 +140,14 @@ internal class InteropUIMenuTest {
         findNodeWithTag("MenuButton")
             .tap()
 
-        waitUntil("UIKit menu should open") { isMenuOpen() }
+        waitForMenuToOpen(isMenuOpen)
 
         assertTrue(isMenuOpen())
 
         findNodeWithTag("Box")
             .tap()
 
-        waitUntil("UIKit menu should close") { !isMenuOpen() }
+        waitForMenuToClose(isMenuOpen)
 
         assertFalse(isMenuOpen())
     }
@@ -190,14 +191,14 @@ internal class InteropUIMenuTest {
         findNodeWithTag("MenuButton")
             .tap()
 
-        waitUntil("UIKit menu should open") { isMenuOpen() }
+        waitForMenuToOpen(isMenuOpen)
 
         assertTrue(isMenuOpen())
 
         findNodeWithTag("UIButton")
             .tap()
 
-        waitUntil("UIKit menu should close") { !isMenuOpen() }
+        waitForMenuToClose(isMenuOpen)
 
         assertFalse(isMenuOpen())
     }
@@ -224,16 +225,24 @@ internal class InteropUIMenuTest {
         findNodeWithTag("MenuButton")
             .tap()
 
-        waitUntil("UIKit menu should open") { isMenuOpen() }
+        waitForMenuToOpen(isMenuOpen)
 
         assertTrue(isMenuOpen())
 
         findNodeWithLabel("MenuItem2")
             .tap()
 
-        waitUntil("UIKit menu should close") { !isMenuOpen() }
+        waitForMenuToClose(isMenuOpen)
 
         assertFalse(isMenuOpen())
+    }
+
+    private fun UIKitInstrumentedTest.waitForMenuToOpen(isMenuOpen: () -> Boolean) {
+        waitUntil("UIKit menu should open", condition = isMenuOpen)
+    }
+
+    private fun UIKitInstrumentedTest.waitForMenuToClose(isMenuOpen: () -> Boolean) {
+        waitUntil("UIKit menu should close") { !isMenuOpen() }
     }
 }
 
