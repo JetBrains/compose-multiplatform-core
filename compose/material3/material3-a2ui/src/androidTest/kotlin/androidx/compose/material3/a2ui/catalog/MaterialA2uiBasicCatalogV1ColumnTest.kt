@@ -18,6 +18,7 @@ package androidx.compose.material3.a2ui.catalog
 
 import androidx.a2ui.compose.runtime.A2uiProperty
 import androidx.a2ui.compose.ui.A2uiCatalog
+import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
 import androidx.a2ui.compose.ui.testing.A2uiComponentPayload
 import androidx.a2ui.compose.ui.testing.A2uiComponentStub
 import androidx.a2ui.compose.ui.testing.A2uiTestController
@@ -40,6 +41,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -1148,6 +1150,51 @@ class MaterialA2uiBasicCatalogV1ColumnTest {
     }
 
     @Test
+    fun align_default_alignsChildrenAtStart() = runComposeUiTest {
+        val childWidth = 50.dp
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties = mapOf("children" to listOf("child1")),
+                        ),
+                        A2uiComponentPayload(id = "child1"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("child1") { _, modifier ->
+                            Box(
+                                modifier =
+                                    modifier
+                                        .testTag("child1")
+                                        .sizeIn(minWidth = childWidth, minHeight = 40.dp)
+                            )
+                        }
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent {
+            MaterialTheme {
+                A2uiTestSurface(
+                    surface = surface,
+                    modifier = Modifier.testTag("column_tag").width(200.dp).height(100.dp),
+                )
+            }
+        }
+
+        val columnBounds = onNodeWithTag("column_tag").getUnclippedBoundsInRoot()
+        val child1Bounds = onNodeWithTag("child1").getUnclippedBoundsInRoot()
+
+        assertThat(child1Bounds.left.value).isWithin(0.5f).of(columnBounds.left.value)
+        assertThat(child1Bounds.width.value).isWithin(0.5f).of(childWidth.value)
+    }
+
+    @Test
     fun align_start_alignsChildrenAtStart() = runComposeUiTest {
         val childWidth = 50.dp
         val controller =
@@ -1559,5 +1606,89 @@ class MaterialA2uiBasicCatalogV1ColumnTest {
         assertThat(child2UpdatedBounds.height.value)
             .isWithin(0.5f)
             .of(expectedChild2UpdatedHeight.value)
+    }
+
+    @Test
+    fun accessibility_withLabelAndDescription_setsContentDescription() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("c1"),
+                                    "accessibility" to
+                                        mapOf(
+                                            "label" to "Column Label",
+                                            "description" to "Column Description",
+                                        ),
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "c1"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("c1") { _, modifier ->
+                            Text("Child 1", modifier = modifier)
+                        }
+                    ),
+            )
+
+        val surface = controller.start()
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNodeWithContentDescription("Column Label - Column Description").assertIsDisplayed()
+    }
+
+    @Test
+    fun accessibility_childrenMaintainIndependentAccessibilityProperties() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Column",
+                            properties =
+                                mapOf(
+                                    "children" to listOf("c1"),
+                                    "accessibility" to
+                                        mapOf(
+                                            "label" to "Column Label",
+                                            "description" to "Column Description",
+                                        ),
+                                ),
+                        ),
+                        A2uiComponentPayload(id = "c1"),
+                    ),
+                componentStubs =
+                    listOf(
+                        A2uiComponentStub.withId("c1") { _, modifier ->
+                            Text(
+                                "Child 1",
+                                modifier =
+                                    modifier.a2uiAccessibility(
+                                        attributes =
+                                            A2uiBasicCatalogV1.AccessibilityAttributes(
+                                                label = "Child Label",
+                                                description = "Child Description",
+                                            ),
+                                        isClickable = false,
+                                    ),
+                            )
+                        }
+                    ),
+            )
+
+        val surface = controller.start()
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNodeWithContentDescription("Column Label - Column Description").assertIsDisplayed()
+        onNodeWithContentDescription("Child Label - Child Description").assertIsDisplayed()
     }
 }

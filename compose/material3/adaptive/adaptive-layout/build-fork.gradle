@@ -71,6 +71,7 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
+                implementation("androidx.annotation:annotation:1.9.1")
                 implementation(project(":kruth:kruth"))
             }
         }

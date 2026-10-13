@@ -76,15 +76,7 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.LocalTextInputContainer
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.uikit.density
-import androidx.compose.ui.uikit.toNanoSeconds
-import androidx.compose.ui.input.key.internal
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.isAltPressed
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isMetaPressed
-import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.createPlatformClipboard
@@ -464,8 +456,8 @@ internal class ComposeSceneMediator(
     private val textInputService =
         TextInputService(
             updateView = {
-                frameChoreographer.performFrameIfNeeded()
-                scene.measureAndLayout()
+                frameChoreographer.performRecomposerFrameIfNeeded()
+                requestMeasureAndLayout()
                 CATransaction.flush()
             },
             view = _overlayView,
@@ -763,8 +755,11 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun measureAndLayout() {
-        scene.measureAndLayout()
+    fun requestMeasureAndLayout(completion: () -> Unit = {}) {
+        frameChoreographer.performOutsideRecomposerFrame {
+            scene.measureAndLayout()
+            completion()
+        }
     }
 
     fun updateKeyboardOverlap() {

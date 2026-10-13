@@ -41,16 +41,18 @@ import kotlin.math.ceil
 internal class SkikoParagraphIntrinsics(
     val text: String,
     private val style: TextStyle,
-    private val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    private val annotations: List<Range<out AnnotatedString.Annotation>>,
     private val placeholders: List<Range<Placeholder>>,
     private val density: Density,
-    private val fontFamilyResolver: FontFamily.Resolver
+    private val fontFamilyResolver: FontFamily.Resolver,
+    private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
     private var resolvedTypefaces: TypefaceDirtyTrackerLinkedList? = null
 
-    val textDirection = resolveTextDirection(text, style.textDirection, style.localeList)
+    val textDirection =
+        resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
 
-    //we need to track it reactively to invalidate the UI
+    // we need to track it reactively to invalidate the UI
     // Async typeface updates are tracked separately via [resolvedTypefaces].
     private var hasUnresolvedFontStale by mutableStateOf(false)
 
@@ -65,15 +67,16 @@ internal class SkikoParagraphIntrinsics(
         return layouter
     }
 
-    private fun newLayouter() = ParagraphLayouter(
-        text = text,
-        textDirection = textDirection,
-        style = style,
-        annotations = annotations,
-        placeholders = placeholders,
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-        onFontStale = { hasUnresolvedFontStale = true },
+    private fun newLayouter() =
+        ParagraphLayouter(
+            text = text,
+            textDirection = textDirection,
+            style = style,
+            annotations = annotations,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            onFontStale = { hasUnresolvedFontStale = true },
         onFontResolved = { state ->
             resolvedTypefaces = TypefaceDirtyTrackerLinkedList(state, resolvedTypefaces)
         },
@@ -81,13 +84,19 @@ internal class SkikoParagraphIntrinsics(
 
     override var minIntrinsicWidth = 0f
         private set
+
     override var maxIntrinsicWidth = 0f
         private set
 
     init {
-        val para = layouter!!.layoutParagraph(Float.POSITIVE_INFINITY)
-        minIntrinsicWidth = ceil(para.minIntrinsicWidth)
-        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth)
+        val layouter = layouter!!
+        val para = layouter.layoutParagraph(Float.POSITIVE_INFINITY)
+
+        // Skia excludes the indentation from the intrinsic widths, so text laid out at that width
+        // breaks a line early.
+        val indent = layouter.firstLineIndentPx
+        minIntrinsicWidth = ceil(para.minIntrinsicWidth + indent)
+        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth + indent)
     }
 }
 
@@ -104,12 +113,13 @@ private class TypefaceDirtyTrackerLinkedList(
 internal fun resolveTextDirection(
     text: String,
     textDirection: TextDirection? = null,
-    localeList: LocaleList? = null
+    localeList: LocaleList? = null,
 ): ResolvedTextDirection {
     return when (textDirection ?: TextDirection.Content) {
         TextDirection.Ltr -> ResolvedTextDirection.Ltr
         TextDirection.Rtl -> ResolvedTextDirection.Rtl
-        TextDirection.Content, TextDirection.Unspecified -> {
+        TextDirection.Content,
+        TextDirection.Unspecified -> {
             contentBasedTextDirection(text) { localeBasedTextDirection(localeList?.firstOrNull()) }
         }
         TextDirection.ContentOrLtr -> contentBasedTextDirection(text) { ResolvedTextDirection.Ltr }
@@ -122,8 +132,8 @@ internal fun resolveTextDirection(
  * Determine the paragraph direction by the first strong directional character. If no strong
  * character is found, fallback() will be called.
  *
- * This is the standard Unicode Bidirectional Algorithm (steps P2 and P3).
- * See https://www.unicode.org/reports/tr9/
+ * This is the standard Unicode Bidirectional Algorithm (steps P2 and P3). See
+ * https://www.unicode.org/reports/tr9/
  */
 private fun contentBasedTextDirection(text: String, fallback: () -> ResolvedTextDirection) =
     when (text.firstStrongDirectionType()) {
