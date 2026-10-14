@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import org.gradle.api.GradleException
 import org.gradle.api.initialization.Settings
 
 class SkikoSetup {
@@ -32,27 +31,6 @@ class SkikoSetup {
                         org.gradle.api.logging.Logging.getLogger(SkikoSetup.class).warn("Using custom version ${skikoOverride} of SKIKO due to " +
                                 "SKIKO_VERSION being set.")
                         version('skiko', skikoOverride)
-                    }
-                    String os = System.getProperty("os.name").toLowerCase(Locale.US)
-                    String currentOsArtifact
-                    if (os.contains("mac os x") || os.contains("darwin") || os.contains("osx")) {
-                        def arch = System.getProperty("os.arch")
-                        if (arch == "aarch64") {
-                            currentOsArtifact = "skiko-awt-runtime-macos-arm64"
-                        } else {
-                            currentOsArtifact = "skiko-awt-runtime-macos-x64"
-                        }
-                    } else if (os.startsWith("win")) {
-                        currentOsArtifact = "skiko-awt-runtime-windows-x64"
-                    } else if (os.startsWith("linux")) {
-                        def arch = System.getProperty("os.arch")
-                        if (arch == "aarch64") {
-                            currentOsArtifact = "skiko-awt-runtime-linux-arm64"
-                        } else {
-                            currentOsArtifact = "skiko-awt-runtime-linux-x64"
-                        }
-                    } else {
-                        throw new GradleException("Unsupported operating system $os")
                     }
                 }
             }
