@@ -27,5 +27,6 @@ val TextDemos = Screen.Selection(
     Screen.Example("TextDirection") { TextDirection() },
     Screen.Example("TextOverflow") { TextOverflow() },
     Screen.Example("LinkAnnotation") { AttributedStringDemo() },
+    Screen.Example("TextAutoSize") { TextAutoSizeDemo() },
     Screen.Example("Annotations (Bullets)") { BulletListDemo() },
 )
