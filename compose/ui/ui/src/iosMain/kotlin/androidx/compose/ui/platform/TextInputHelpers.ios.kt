@@ -438,8 +438,9 @@ internal fun UITextRange.toTextRange(): TextRange? {
     return TextRange(start, end)
 }
 
+// A UITextRange must not start after it ends, but a TextRange is reversed when text is selected backwards.
 internal fun TextRange.toUITextRange(): UITextRange =
-    TextInputRange(start = start, end = end)
+    TextInputRange(start = min, end = max)
 
 internal class TextInputSelectionRect(
     private var _rect: CValue<CGRect>,
