@@ -74,7 +74,7 @@ class IosVelocityTrackerTest {
 
         checkVelocity(
             actual = tracker.calculateVelocity(MaximumVelocity),
-            expectedDx = 10000f,
+            expectedDx = 25000f,
             expectedDy = 0f,
         )
     }
@@ -89,7 +89,7 @@ class IosVelocityTrackerTest {
 
         checkVelocity(
             actual = tracker.calculateVelocity(MaximumVelocity),
-            expectedDx = 1000f,
+            expectedDx = 2500f,
             expectedDy = 0f,
         )
     }
