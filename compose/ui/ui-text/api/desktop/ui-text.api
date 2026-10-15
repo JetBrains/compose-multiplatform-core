@@ -1582,6 +1582,11 @@ public final class androidx/compose/ui/text/platform/SynchronizationKt {
 	public static final fun synchronized (Landroidx/compose/ui/text/platform/SynchronizedObject;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 }
 
+public final class androidx/compose/ui/text/platform/SynchronizedObject {
+	public static final field $stable I
+	public fun <init> ()V
+}
+
 public final class androidx/compose/ui/text/style/BaselineShift {
 	public static final field Companion Landroidx/compose/ui/text/style/BaselineShift$Companion;
 	public static final synthetic fun box-impl (F)Landroidx/compose/ui/text/style/BaselineShift;
