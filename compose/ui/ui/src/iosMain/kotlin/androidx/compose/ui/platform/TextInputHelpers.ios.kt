@@ -438,10 +438,9 @@ internal fun UITextRange.toTextRange(): TextRange? {
     return TextRange(start, end)
 }
 
-// UIKit and the system's text services measure a range's length from its start to its end, so a
-// reversed range has a negative length, which crashes them (for example, the Writing Tools button
-// on a Mac). A TextRange for a backward selection is reversed, so order it before handing it to
-// UIKit.
+// A TextRange for a backward selection is reversed. UIKit callers measure a range from its start to
+// its end: the Writing Tools button on a Mac reads a negative length and crashes, and isEmpty()
+// reports a reversed range as empty. Order it before handing it to UIKit.
 internal fun TextRange.toUITextRange(): UITextRange =
     TextInputRange(start = min, end = max)
 
