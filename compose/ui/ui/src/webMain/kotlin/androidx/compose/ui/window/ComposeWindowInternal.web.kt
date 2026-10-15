@@ -285,6 +285,8 @@ internal class ComposeWindow(
     //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
     private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
 
+    private val webTextToolbar = WebTextToolbar()
+
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
 
@@ -326,9 +328,7 @@ internal class ComposeWindow(
                 return super.convertWindowToLocalPosition(positionInWindow)
             }
 
-            override val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
-                WebTextToolbar()
-            }
+            override val textToolbar: TextToolbar get() = webTextToolbar
 
             override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
                 if (isVibrationSupported()) WebHapticFeedback() else super.hapticFeedback
@@ -678,6 +678,8 @@ internal class ComposeWindow(
                             content()
                         }
                     }
+
+                    webTextToolbar.Render()
 
                     DisposableEffect(state) {
                         // Observe the resize/scale events and retrieve the new values.
