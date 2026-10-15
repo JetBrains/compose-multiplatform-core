@@ -779,7 +779,17 @@ final fun androidx.compose.ui.test/isToggleable(): androidx.compose.ui.test/Sema
 final inline fun <#A: kotlin/Any?> androidx.compose.ui.test/wrapAssertionErrorsWithNodeInfo(androidx.compose.ui.test/SemanticsSelector, androidx.compose.ui.semantics/SemanticsNode, kotlin/Function0<#A>): #A // androidx.compose.ui.test/wrapAssertionErrorsWithNodeInfo|wrapAssertionErrorsWithNodeInfo(androidx.compose.ui.test.SemanticsSelector;androidx.compose.ui.semantics.SemanticsNode;kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
 
 // Targets: [apple]
+final class androidx.compose.ui.test.platform/SynchronizedObject : kotlinx.atomicfu.locks/SynchronizedObject { // androidx.compose.ui.test.platform/SynchronizedObject|null[0]
+    constructor <init>() // androidx.compose.ui.test.platform/SynchronizedObject.<init>|<init>(){}[0]
+}
+
+// Targets: [apple]
 final fun androidx.compose.ui.test.v2/runComposeUiTest(kotlin.coroutines/SuspendFunction1<androidx.compose.ui.test/ComposeUiTest, kotlin/Unit>) // androidx.compose.ui.test.v2/runComposeUiTest|runComposeUiTest(kotlin.coroutines.SuspendFunction1<androidx.compose.ui.test.ComposeUiTest,kotlin.Unit>){}[0]
+
+// Targets: [js, wasmJs]
+final class androidx.compose.ui.test.platform/SynchronizedObject { // androidx.compose.ui.test.platform/SynchronizedObject|null[0]
+    constructor <init>() // androidx.compose.ui.test.platform/SynchronizedObject.<init>|<init>(){}[0]
+}
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.test.v2/runComposeUiTest(kotlin.coroutines/SuspendFunction1<androidx.compose.ui.test/ComposeUiTest, kotlin/Unit>): kotlinx.coroutines.test.internal/JsPromiseInterfaceForTesting // androidx.compose.ui.test.v2/runComposeUiTest|runComposeUiTest(kotlin.coroutines.SuspendFunction1<androidx.compose.ui.test.ComposeUiTest,kotlin.Unit>){}[0]
