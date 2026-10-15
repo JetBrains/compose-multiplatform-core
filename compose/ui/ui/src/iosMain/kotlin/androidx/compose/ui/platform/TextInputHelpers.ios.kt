@@ -438,7 +438,7 @@ internal fun UITextRange.toTextRange(): TextRange? {
     return TextRange(start, end)
 }
 
-// A UITextRange must not start after it ends, but a TextRange is reversed when text is selected backwards.
+// UIKit ranges are always ordered, while a TextRange's start comes after its end for a backward selection.
 internal fun TextRange.toUITextRange(): UITextRange =
     TextInputRange(start = min, end = max)
 
