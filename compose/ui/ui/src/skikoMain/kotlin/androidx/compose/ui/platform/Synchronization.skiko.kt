@@ -22,7 +22,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmName
 
-internal actual class SynchronizedObject : kotlinx.atomicfu.locks.SynchronizedObject()
+@PublishedApi internal actual class SynchronizedObject : kotlinx.atomicfu.locks.SynchronizedObject()
 
 @Suppress("NOTHING_TO_INLINE")
 internal actual inline fun makeSynchronizedObject(ref: Any?) = SynchronizedObject()
