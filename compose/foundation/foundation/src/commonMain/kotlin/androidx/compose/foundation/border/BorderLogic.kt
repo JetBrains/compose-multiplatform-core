@@ -19,15 +19,27 @@ package androidx.compose.foundation.border
 import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSimple
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.ImageBitmapConfig
+import androidx.compose.ui.graphics.LinearGradient
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.ui.graphics.RadialGradient
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.SweepGradient
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -39,6 +51,7 @@ import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.toSize
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -59,6 +72,13 @@ internal class BorderLogic @RememberInComposition constructor() {
     // This object is only used for generic shapes and rounded rectangles with different corner
     // radius sizes.
     private var borderPath: Path? = null
+    // This path is only used for rounded rectangles with different corner radius sizes.
+    private var roundRectInsetPath: Path? = null
+
+    // Lazily allocated when offscreen ImageBitmap rendering is used for generic shapes.
+    private var imageBitmap: ImageBitmap? = null
+    private var canvas: Canvas? = null
+    private var canvasDrawScope: CanvasDrawScope? = null
 
     private var lastBrush: Brush? = null
     private var lastOutline: Outline? = null
@@ -184,6 +204,46 @@ internal class BorderLogic @RememberInComposition constructor() {
         val pathBoundsSize =
             IntSize(ceil(pathBounds.width).toInt(), ceil(pathBounds.height).toInt())
 
+        // RuntimeShaders can't be drawn in a software bitmap. Special case known types that don't
+        // need a runtime shader so we can render in software, and avoid minor visual regressions
+        // for Modifier.border b/570069301.
+        // Note that it's possible to use a ShaderBrush with a non-runtime shader, such as manually
+        // passing LinearGradientShader to a ShaderBrush, but these cases are rare and difficult to
+        // check for. In any case the only change will be minor antialiasing differences.
+        val brushCanDrawInSoftware =
+            brush !is ShaderBrush ||
+                brush is LinearGradient ||
+                brush is RadialGradient ||
+                brush is SweepGradient
+
+        return if (shouldUseGraphicsLayerForGenericBorder() || !brushCanDrawInSoftware) {
+            createDrawGenericBorderWithGraphicsLayer(
+                brush = brush,
+                graphicsLayerProvider = graphicsLayerProvider,
+                outline = outline,
+                pathBounds = pathBounds,
+                maskPath = maskPath,
+                pathBoundsSize = pathBoundsSize,
+            )
+        } else {
+            createDrawGenericBorderWithImageBitmap(
+                brush = brush,
+                outline = outline,
+                pathBounds = pathBounds,
+                maskPath = maskPath,
+                pathBoundsSize = pathBoundsSize,
+            )
+        }
+    }
+
+    private fun createDrawGenericBorderWithGraphicsLayer(
+        brush: Brush,
+        graphicsLayerProvider: () -> GraphicsLayer,
+        outline: Outline.Generic,
+        pathBounds: Rect,
+        maskPath: Path,
+        pathBoundsSize: IntSize,
+    ): DrawScope.(widthPx: Float) -> Unit {
         return { widthPx ->
             val strokeWidth = strokeWidthPx(widthPx)
             val fillArea = fillArea(strokeWidth)
@@ -225,7 +285,108 @@ internal class BorderLogic @RememberInComposition constructor() {
         }
     }
 
+    /**
+     * Fallback generic border implementation for API < 28, where [GraphicsLayer] uses the legacy
+     * OpenGL ES pipeline and rasterizes paths and [BlendMode.Clear] differently from Skia. Uses an
+     * offscreen [ImageBitmap] + [Canvas] for consistent rendering.
+     */
+    private fun createDrawGenericBorderWithImageBitmap(
+        brush: Brush,
+        outline: Outline.Generic,
+        pathBounds: Rect,
+        maskPath: Path,
+        pathBoundsSize: IntSize,
+    ): DrawScope.(widthPx: Float) -> Unit {
+        val config: ImageBitmapConfig
+        val colorFilter: ColorFilter?
+        if (brush is SolidColor) {
+            config = ImageBitmapConfig.Alpha8
+            colorFilter = ColorFilter.tint(brush.value.copy(alpha = 1f))
+        } else {
+            config = ImageBitmapConfig.Argb8888
+            colorFilter = null
+        }
+        var lastStrokeWidth = Float.NaN
+        var cacheImageBitmap: ImageBitmap? = null
+
+        return { widthPx ->
+            val strokeWidth = strokeWidthPx(widthPx)
+            val fillArea = fillArea(strokeWidth)
+            if (fillArea) {
+                drawPath(outline.path, brush = brush)
+            } else {
+                if (lastStrokeWidth != strokeWidth || cacheImageBitmap == null) {
+                    cacheImageBitmap =
+                        cacheBorderToImageBitmap(pathBoundsSize, config) {
+                            translate(-pathBounds.left, -pathBounds.top) {
+                                drawPath(
+                                    path = outline.path,
+                                    brush = brush,
+                                    style = Stroke(strokeWidth * 2),
+                                )
+                                scale(
+                                    (size.width + 1) / size.width,
+                                    (size.height + 1) / size.height,
+                                ) {
+                                    drawPath(
+                                        path = maskPath,
+                                        brush = brush,
+                                        blendMode = BlendMode.Clear,
+                                    )
+                                }
+                            }
+                        }
+                    lastStrokeWidth = strokeWidth
+                }
+                translate(pathBounds.left, pathBounds.top) {
+                    drawImage(
+                        cacheImageBitmap,
+                        srcSize = pathBoundsSize,
+                        colorFilter = colorFilter,
+                    )
+                }
+            }
+        }
+    }
+
+    private inline fun DrawScope.cacheBorderToImageBitmap(
+        borderSize: IntSize,
+        config: ImageBitmapConfig,
+        block: DrawScope.() -> Unit,
+    ): ImageBitmap {
+        var targetImageBitmap = imageBitmap
+        var targetCanvas = canvas
+        val compatibleConfig =
+            targetImageBitmap?.config == ImageBitmapConfig.Argb8888 ||
+                config == targetImageBitmap?.config
+        if (
+            targetImageBitmap == null ||
+                targetCanvas == null ||
+                size.width > targetImageBitmap.width ||
+                size.height > targetImageBitmap.height ||
+                !compatibleConfig
+        ) {
+            targetImageBitmap =
+                ImageBitmap(borderSize.width, borderSize.height, config = config).also {
+                    imageBitmap = it
+                }
+            targetCanvas = Canvas(targetImageBitmap).also { canvas = it }
+        }
+
+        val targetDrawScope = canvasDrawScope ?: CanvasDrawScope().also { canvasDrawScope = it }
+        val drawSize = borderSize.toSize()
+        targetDrawScope.draw(this, layoutDirection, targetCanvas, drawSize) {
+            drawRect(color = Color.Black, size = drawSize, blendMode = BlendMode.Clear)
+            block()
+        }
+        targetImageBitmap.prepareToDraw()
+        return targetImageBitmap
+    }
+
     private fun obtainPath(): Path = borderPath ?: Path().also { borderPath = it }
+
+    private fun obtainRoundRectInsetPath(): Path =
+        roundRectInsetPath ?: Path().also { roundRectInsetPath = it }
 
     /** Border implementation for simple rounded rects and those with different corner radii */
     private fun createDrawRoundRectBorder(
@@ -280,6 +441,7 @@ internal class BorderLogic @RememberInComposition constructor() {
             }
         } else {
             val path = obtainPath()
+            val insetPath = obtainRoundRectInsetPath()
             var lastStrokeWidth = Float.NaN
             var roundedRectPath: Path? = null
 
@@ -287,7 +449,8 @@ internal class BorderLogic @RememberInComposition constructor() {
                 val strokeWidthPx = strokeWidthPx(widthPx)
                 val fillArea = fillArea(strokeWidthPx)
                 if (lastStrokeWidth != strokeWidthPx) {
-                    roundedRectPath = createRoundRectPath(path, roundRect, strokeWidthPx, fillArea)
+                    roundedRectPath =
+                        createRoundRectPath(path, insetPath, roundRect, strokeWidthPx, fillArea)
                     lastStrokeWidth = strokeWidthPx
                 }
                 drawPath(roundedRectPath!!, brush = brush)
@@ -319,6 +482,7 @@ internal class BorderLogic @RememberInComposition constructor() {
  */
 private fun createRoundRectPath(
     targetPath: Path,
+    insetPath: Path,
     roundedRect: RoundRect,
     strokeWidth: Float,
     fillArea: Boolean,
@@ -326,23 +490,25 @@ private fun createRoundRectPath(
     reset()
     addRoundRect(roundedRect)
     if (!fillArea) {
-        val insetPath =
-            Path().apply { addRoundRect(createInsetRoundedRect(strokeWidth, roundedRect)) }
+        val insetPath = insetPath.apply {
+            reset()
+            addRoundRect(
+                RoundRect(
+                    left = roundedRect.left + strokeWidth,
+                    top = roundedRect.top + strokeWidth,
+                    right = roundedRect.right - strokeWidth,
+                    bottom = roundedRect.bottom - strokeWidth,
+                    topLeftCornerRadius = roundedRect.topLeftCornerRadius.shrink(strokeWidth),
+                    topRightCornerRadius = roundedRect.topRightCornerRadius.shrink(strokeWidth),
+                    bottomLeftCornerRadius = roundedRect.bottomLeftCornerRadius.shrink(strokeWidth),
+                    bottomRightCornerRadius =
+                        roundedRect.bottomRightCornerRadius.shrink(strokeWidth),
+                )
+            )
+        }
         op(this, insetPath, PathOperation.Difference)
     }
 }
-
-private fun createInsetRoundedRect(widthPx: Float, roundedRect: RoundRect) =
-    RoundRect(
-        left = widthPx,
-        top = widthPx,
-        right = roundedRect.width - widthPx,
-        bottom = roundedRect.height - widthPx,
-        topLeftCornerRadius = roundedRect.topLeftCornerRadius.shrink(widthPx),
-        topRightCornerRadius = roundedRect.topRightCornerRadius.shrink(widthPx),
-        bottomLeftCornerRadius = roundedRect.bottomLeftCornerRadius.shrink(widthPx),
-        bottomRightCornerRadius = roundedRect.bottomRightCornerRadius.shrink(widthPx),
-    )
 
 /**
  * Helper method to shrink the corner radius by the given value, clamping to 0 if the resultant
@@ -350,3 +516,9 @@ private fun createInsetRoundedRect(widthPx: Float, roundedRect: RoundRect) =
  */
 private fun CornerRadius.shrink(value: Float): CornerRadius =
     CornerRadius(max(0f, this.x - value), max(0f, this.y - value))
+
+/**
+ * Whether generic border rendering should use a [GraphicsLayer] with [Offscreen] compositing, or
+ * fall back to an offscreen [ImageBitmap].
+ */
+internal expect fun shouldUseGraphicsLayerForGenericBorder(): Boolean
