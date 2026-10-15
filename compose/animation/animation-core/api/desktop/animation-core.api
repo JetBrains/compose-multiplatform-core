@@ -298,7 +298,9 @@ public final class androidx/compose/animation/core/DeferredTransitionState : and
 }
 
 public abstract interface class androidx/compose/animation/core/DurationBasedAnimationSpec : androidx/compose/animation/core/FiniteAnimationSpec {
+	public synthetic fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedAnimationSpec;
 	public abstract fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedDurationBasedAnimationSpec;
+	public synthetic fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedFiniteAnimationSpec;
 }
 
 public abstract interface class androidx/compose/animation/core/Easing {
@@ -356,6 +358,7 @@ public abstract interface annotation class androidx/compose/animation/core/Exper
 }
 
 public abstract interface class androidx/compose/animation/core/FiniteAnimationSpec : androidx/compose/animation/core/AnimationSpec {
+	public synthetic fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedAnimationSpec;
 	public abstract fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedFiniteAnimationSpec;
 }
 
