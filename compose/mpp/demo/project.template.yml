@@ -8,12 +8,12 @@ settings:
   CODE_SIGN_STYLE: Automatic
   MARKETING_VERSION: "1.0"
   CURRENT_PROJECT_VERSION: "4"
+  IPHONEOS_DEPLOYMENT_TARGET: "15.0"
   SDKROOT: iphoneos
 targets:
   ComposeDemo:
     type: application
     platform: iOS
-    deploymentTarget: "15.0"
     prebuildScripts:
       - script: |
           cd "$SRCROOT"
