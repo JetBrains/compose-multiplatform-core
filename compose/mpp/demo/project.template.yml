@@ -13,7 +13,7 @@ targets:
   ComposeDemo:
     type: application
     platform: iOS
-    deploymentTarget: "13.0"
+    deploymentTarget: "15.0"
     prebuildScripts:
       - script: |
           cd "$SRCROOT"
