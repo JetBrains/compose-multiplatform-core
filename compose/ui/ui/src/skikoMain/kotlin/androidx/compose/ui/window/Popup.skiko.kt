@@ -417,6 +417,31 @@ fun Popup(
     onKeyEvent: ((KeyEvent) -> Boolean)? = null,
     content: @Composable () -> Unit
 ) {
+    val layer = rememberComposeSceneLayer(
+        focusable = properties.focusable,
+        consumePointerInputOutside = properties.consumePointerInputOutside,
+    )
+    PopupWithLayer(
+        layer = layer,
+        popupPositionProvider = popupPositionProvider,
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+        onPreviewKeyEvent = onPreviewKeyEvent,
+        onKeyEvent = onKeyEvent,
+        content = content,
+    )
+}
+
+@Composable
+internal fun PopupWithLayer(
+    layer: ComposeSceneLayer,
+    popupPositionProvider: PopupPositionProvider,
+    onDismissRequest: (() -> Unit)?,
+    properties: PopupProperties,
+    onPreviewKeyEvent: ((KeyEvent) -> Boolean)?,
+    onKeyEvent: ((KeyEvent) -> Boolean)?,
+    content: @Composable () -> Unit,
+) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
     val currentOnKeyEvent by rememberUpdatedState(onKeyEvent)
 
@@ -452,6 +477,7 @@ fun Popup(
         null
     }
     PopupLayout(
+        layer = layer,
         popupPositionProvider = popupPositionProvider,
         properties = properties,
         modifier = Modifier.semantics { popup() },
@@ -464,6 +490,7 @@ fun Popup(
 
 @Composable
 private fun PopupLayout(
+    layer: ComposeSceneLayer,
     popupPositionProvider: PopupPositionProvider,
     properties: PopupProperties,
     modifier: Modifier,
@@ -489,10 +516,6 @@ private fun PopupLayout(
     })
 
     val currentContent by rememberUpdatedState(content)
-    val layer = rememberComposeSceneLayer(
-        focusable = properties.focusable,
-        consumePointerInputOutside = properties.consumePointerInputOutside,
-    )
     layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     layer.Content {
@@ -523,7 +546,7 @@ private fun PopupLayout(
         }
     }
 
-    DisposableEffect(Unit) {
+    DisposableEffect(layer) {
         onDispose {
             layer.close()
         }
