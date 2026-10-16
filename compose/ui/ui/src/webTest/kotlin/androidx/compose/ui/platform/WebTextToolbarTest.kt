@@ -78,6 +78,33 @@ class WebTextToolbarTest : OnCanvasTests {
     }
 
     @Test
+    fun unfocusedLegacyTextFieldDoesNotHideToolbar() = runApplicationTest {
+        lateinit var toolbar: WebTextToolbar
+        var density = 1f
+        createComposeWindow {
+            toolbar = LocalTextToolbar.current as WebTextToolbar
+            density = LocalDensity.current.density
+            BasicTextField(value = "Text", onValueChange = {})
+        }
+
+        awaitIdle()
+        toolbar.showCopyMenu(menuRect(density)) {}
+        awaitA11YCondition {
+            assertEquals(
+                TextToolbarStatus.Shown,
+                toolbar.status,
+                "An unfocused field must not hide the menu",
+            )
+            toolbarActionCount() == 1
+        }
+        repeat(10) {
+            awaitAnimationFrame()
+            assertEquals(TextToolbarStatus.Shown, toolbar.status)
+            assertEquals(1, toolbarActionCount())
+        }
+    }
+
+    @Test
     fun showMenuUpdatesRectAndCallbacks() = runApplicationTest {
         lateinit var toolbar: WebTextToolbar
         var density = 1f

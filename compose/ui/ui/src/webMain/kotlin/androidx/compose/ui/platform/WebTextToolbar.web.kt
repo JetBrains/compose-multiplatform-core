@@ -22,6 +22,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 
@@ -36,11 +37,6 @@ class WebTextToolbar : TextToolbar {
         val onSelectAllRequested: (() -> Unit)?
     )
 
-    /** Installed by foundation and invoked from the window composition. */
-    var renderer by mutableStateOf<(@Composable (TextToolbarMenu?) -> Unit)?>(null)
-
-    private var menu by mutableStateOf<TextToolbarMenu?>(null)
-
     @Composable
     internal fun Render() {
         DisposableEffect(this) {
@@ -49,11 +45,17 @@ class WebTextToolbar : TextToolbar {
         renderer?.invoke(menu)
     }
 
-    override val status: TextToolbarStatus
-        get() = if (menu == null) TextToolbarStatus.Hidden else TextToolbarStatus.Shown
+    /** Installed by foundation and invoked from the window composition. */
+    var renderer by mutableStateOf<(@Composable (TextToolbarMenu?) -> Unit)?>(null)
+
+    private var menu by mutableStateOf<TextToolbarMenu?>(null)
+
+    override var status: TextToolbarStatus = TextToolbarStatus.Hidden
+        private set
 
     override fun hide() {
         menu = null
+        status = TextToolbarStatus.Hidden
     }
 
     override fun showMenu(
@@ -70,5 +72,6 @@ class WebTextToolbar : TextToolbar {
             onCutRequested = onCutRequested,
             onSelectAllRequested = onSelectAllRequested,
         )
+        status = TextToolbarStatus.Shown
     }
 }
