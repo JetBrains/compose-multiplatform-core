@@ -102,6 +102,36 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
+    fun changingSafeAreaInsetsPolicyDoesNotRecreateTheInteropView() = runUIKitInstrumentedTest {
+        val policy = mutableStateOf<UIKitInteropSafeAreaInsetsPolicy>(
+            UIKitInteropSafeAreaInsetsPolicy.Automatic,
+        )
+        var factoryCalls = 0
+
+        setContent {
+            UIKitView(
+                factory = {
+                    factoryCalls++
+                    UIView()
+                },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(safeAreaInsetsPolicy = policy.value),
+            )
+        }
+
+        waitForIdle()
+        assertEquals(1, factoryCalls)
+
+        policy.value = UIKitInteropSafeAreaInsetsPolicy.Inherit
+        waitForIdle()
+        assertEquals(1, factoryCalls)
+
+        policy.value = UIKitInteropSafeAreaInsetsPolicy.Ignore
+        waitForIdle()
+        assertEquals(1, factoryCalls)
+    }
+
+    @Test
     fun inheritPolicyExposesSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
         var view: SafeAreaTrackingView? = null
 
