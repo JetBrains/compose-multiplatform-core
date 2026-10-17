@@ -58,6 +58,19 @@ actual interface PlatformTextInputMethodRequest {
     val textLayoutResult: () -> TextLayoutResult?
 
     /**
+     * Returns the snapshot geometry of the text in the text field, which the input method uses to
+     * place its own controls and to resolve positions to characters.
+     *
+     * By default it is the geometry of [textLayoutResult]. A text field whose layout is not fully
+     * described by a [TextLayoutResult] overrides it.
+     *
+     * `null` return values mean that the text has not been laid out yet. They may be ignored.
+     */
+    @ExperimentalComposeUiApi
+    val textLayout: () -> PlatformTextLayout?
+        get() = { textLayoutResult()?.let(::PlatformTextLayout) }
+
+    /**
      * Returns the snapshot rectangle (relative to root) of the area where the actual editing
      * occurs.
      *
