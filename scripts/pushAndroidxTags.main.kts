@@ -13,7 +13,7 @@
  * 5. OK
  */
 
-@file:Repository("https://repo1.maven.org/maven2/")
+@file:Repository("https://cache-redirector.jetbrains.com/maven-central")
 @file:DependsOn("org.jsoup:jsoup:1.17.2")
 
 import java.util.concurrent.TimeUnit
