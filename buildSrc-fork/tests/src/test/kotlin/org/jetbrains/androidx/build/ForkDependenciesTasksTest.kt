@@ -544,6 +544,102 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `updates dependencies for test source sets`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("com.example:tool:1.5.0")
+                        }
+
+                        commonTest.dependencies {
+                            implementation(libs.kotlinTest)
+                            implementation("com.example:test-tool:1.0.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("com.example:tool:1.5.0")
+                        }
+
+                        commonTest.dependencies {
+                            implementation(libs.kotlinTest)
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(
+            root,
+            expected = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("com.example:tool:1.5.0")
+                        }
+
+                        commonTest.dependencies {
+                            implementation(libs.kotlinTest)
+                            implementation("com.example:test-tool:1.0.0")
+                        }
+                    }
+                }
+            """,
+        )
+    }
+
+    @Test
+    fun `updates arbitrary dependencies`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonTest.dependencies {
+                            implementation(kotlin("test"))
+                            implementation(libs.kotlinCoroutinesTest)
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonTest.dependencies {
+                            implementation(kotlin("test"))
+                            implementation(kotlin("reflect"))
+                            // jbVerifyForkDependencies: suppress
+                            implementation(kotlin("test-junit"))
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(
+            root,
+            expected = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonTest.dependencies {
+                            implementation(kotlin("test"))
+                            implementation(libs.kotlinCoroutinesTest)
+
+                            // jbVerifyForkDependencies: suppress
+                            implementation(kotlin("test-junit"))
+                        }
+                    }
+                }
+            """,
+        )
+    }
+
+    @Test
     fun `does not update dependencies for non-matching source sets`() {
         val root = createProject(
             original = """

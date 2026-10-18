@@ -99,6 +99,30 @@ fun CanvasLayersComposeScene(
     invalidateDraw = invalidateDraw,
 )
 
+/**
+ * Creates an overlay above all regular layers. Overlays are stacked
+ * in creation order, with the newest on top. Intended for UI normally drawn by the platform above
+ * application content, such as text selection toolbars.
+ *
+ * The layer is initially non-focusable and passes pointer input outside
+ * [ComposeSceneLayer.boundsInWindow] to underlying layers. Set these bounds to the content's bounds.
+ */
+internal fun ComposeScene.createOverlayLayer(
+    density: Density,
+    layoutDirection: LayoutDirection,
+): ComposeSceneLayer {
+    check(this is CanvasLayersComposeSceneImpl) {
+        "Overlay layers are only supported by CanvasLayersComposeScene"
+    }
+    return createLayer(
+        density = density,
+        layoutDirection = layoutDirection,
+        focusable = false,
+        consumePointerInputOutside = false,
+        isOverlay = true,
+    )
+}
+
 private class CanvasLayersComposeSceneImpl(
     frameRecomposer: FrameRecomposer,
     density: Density,
@@ -485,12 +509,27 @@ private class CanvasLayersComposeSceneImpl(
         layoutDirection: LayoutDirection,
         focusable: Boolean,
         consumePointerInputOutside: Boolean,
+    ): ComposeSceneLayer = createLayer(
+        density = density,
+        layoutDirection = layoutDirection,
+        focusable = focusable,
+        consumePointerInputOutside = consumePointerInputOutside,
+        isOverlay = false
+    )
+
+    fun createLayer(
+        density: Density,
+        layoutDirection: LayoutDirection,
+        focusable: Boolean,
+        consumePointerInputOutside: Boolean,
+        isOverlay: Boolean,
     ): ComposeSceneLayer = AttachedComposeSceneLayer(
         coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         density = density,
         layoutDirection = layoutDirection,
         focusable = focusable,
         consumePointerInputOutside = consumePointerInputOutside,
+        isOverlay = isOverlay,
     )
 
     private fun onOwnerAppended(owner: RootNodeOwner) {
@@ -509,7 +548,12 @@ private class CanvasLayersComposeSceneImpl(
 
     private fun attachLayer(layer: AttachedComposeSceneLayer) {
         check(!isClosed) { "attachLayer called after ComposeScene is closed" }
-        layers.add(layer)
+        if (layer.isOverlay) {
+            layers.add(layer)
+        } else {
+            val index = layers.indexOfLast { !it.isOverlay } + 1
+            layers.add(index, layer)
+        }
 
         if (layer.focusable) {
             requestFocus(layer)
@@ -555,6 +599,7 @@ private class CanvasLayersComposeSceneImpl(
         layoutDirection: LayoutDirection,
         focusable: Boolean,
         override var consumePointerInputOutside: Boolean,
+        val isOverlay: Boolean = false,
     ) : ComposeSceneLayer {
         val owner = RootNodeOwner(
             density = density,

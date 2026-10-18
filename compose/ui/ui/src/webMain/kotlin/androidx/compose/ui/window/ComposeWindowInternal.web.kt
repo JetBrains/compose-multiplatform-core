@@ -285,6 +285,8 @@ internal class ComposeWindow(
     //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
     private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
 
+    private val webTextToolbar = WebTextToolbar()
+
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
 
@@ -326,9 +328,7 @@ internal class ComposeWindow(
                 return super.convertWindowToLocalPosition(positionInWindow)
             }
 
-            override val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
-                WebTextToolbar()
-            }
+            override val textToolbar: TextToolbar get() = webTextToolbar
 
             override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
                 if (isVibrationSupported()) WebHapticFeedback() else super.hapticFeedback
@@ -532,6 +532,13 @@ internal class ComposeWindow(
         addTypedEvent<TouchEvent>("touchstart", passive = false) { evt ->
             if (!_windowInfo.isWindowFocused) {
                 restoreWindowFocusFromBackingInput()
+                // The user is interacting with the canvas, so the window has to be treated as
+                // focused right away. Otherwise, the logic relying on WindowInfo.isWindowFocused
+                // (e.g. placing the cursor at the tapped position in a text field) would be
+                // skipped for the very first tap: the native `focus` event is delivered
+                // asynchronously, long after the tap gesture is processed.
+                // See https://youtrack.jetbrains.com/issue/CMP-10885
+                _windowInfo.isWindowFocused = true
             }
             // preventDefault the touchstart if the corresponding pointerdown hits the active text input.
             // Pros: a long press (touchstart + ~500ms delay after it) triggers focus changes in iOS Safari,
@@ -671,6 +678,8 @@ internal class ComposeWindow(
                             content()
                         }
                     }
+
+                    webTextToolbar.Render()
 
                     DisposableEffect(state) {
                         // Observe the resize/scale events and retrieve the new values.

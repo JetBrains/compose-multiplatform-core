@@ -76,12 +76,18 @@ class MaterialA2uiBasicCatalogV1Test {
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.list)
         assertThat(catalog.components["Tabs"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.tabs)
+        assertThat(catalog.components["Modal"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.modal)
         assertThat(catalog.components["Divider"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.divider)
         assertThat(catalog.components["Button"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.button)
+        assertThat(catalog.components["TextField"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.textField)
         assertThat(catalog.components["CheckBox"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.checkBox)
+        assertThat(catalog.components["ChoicePicker"])
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.choicePicker)
         assertThat(catalog.components["Slider"])
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.slider)
         assertThat(catalog.components["DateTimeInput"])
@@ -100,6 +106,7 @@ class MaterialA2uiBasicCatalogV1Test {
                 override fun A2uiComponentScope.TypedContent(
                     text: String,
                     variant: A2uiBasicCatalogV1.Text.Variant,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -160,6 +167,7 @@ class MaterialA2uiBasicCatalogV1Test {
                     description: String?,
                     fit: A2uiBasicCatalogV1.Image.Fit,
                     variant: A2uiBasicCatalogV1.Image.Variant,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -185,7 +193,11 @@ class MaterialA2uiBasicCatalogV1Test {
         val customVideo =
             object : A2uiBasicCatalogV1.Video {
                 @Composable
-                override fun A2uiComponentScope.TypedContent(url: String, modifier: Modifier) {}
+                override fun A2uiComponentScope.TypedContent(
+                    url: String,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    modifier: Modifier,
+                ) {}
             }
 
         val catalog =
@@ -212,6 +224,7 @@ class MaterialA2uiBasicCatalogV1Test {
                 override fun A2uiComponentScope.TypedContent(
                     url: String,
                     description: String?,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -238,7 +251,11 @@ class MaterialA2uiBasicCatalogV1Test {
         val customCard =
             object : A2uiBasicCatalogV1.Card {
                 @Composable
-                override fun A2uiComponentScope.TypedContent(childId: String, modifier: Modifier) {}
+                override fun A2uiComponentScope.TypedContent(
+                    childId: String,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    modifier: Modifier,
+                ) {}
             }
 
         val catalog =
@@ -267,6 +284,7 @@ class MaterialA2uiBasicCatalogV1Test {
                     children: List<A2uiComponentReference>,
                     justify: A2uiBasicCatalogV1.Row.Justify,
                     align: A2uiBasicCatalogV1.Row.Align,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -297,6 +315,7 @@ class MaterialA2uiBasicCatalogV1Test {
                     children: List<A2uiComponentReference>,
                     justify: A2uiBasicCatalogV1.Column.Justify,
                     align: A2uiBasicCatalogV1.Column.Align,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -327,6 +346,7 @@ class MaterialA2uiBasicCatalogV1Test {
                     children: List<A2uiComponentReference>,
                     direction: A2uiBasicCatalogV1.List.Direction,
                     align: A2uiBasicCatalogV1.List.Align,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -355,6 +375,7 @@ class MaterialA2uiBasicCatalogV1Test {
                 @Composable
                 override fun A2uiComponentScope.TypedContent(
                     tabs: List<A2uiBasicCatalogV1.Tabs.Tab>,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -377,12 +398,43 @@ class MaterialA2uiBasicCatalogV1Test {
     }
 
     @Test
+    fun factory_withCustomModalComponent_overridesDefaultMaterialModal() {
+        val customModal =
+            object : A2uiBasicCatalogV1.Modal {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    triggerId: String,
+                    contentId: String,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                video = MaterialA2uiBasicCatalogV1Defaults.video(fakeVideoRenderer),
+                audioPlayer =
+                    MaterialA2uiBasicCatalogV1Defaults.audioPlayer(fakeAudioPlayerRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                modal = customModal,
+            )
+
+        assertThat(catalog.components["Modal"]).isSameInstanceAs(customModal)
+        assertThat(catalog.components["Modal"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.modal)
+    }
+
+    @Test
     fun factory_withCustomDividerComponent_overridesDefaultMaterialDivider() {
         val customDivider =
             object : A2uiBasicCatalogV1.Divider {
                 @Composable
                 override fun A2uiComponentScope.TypedContent(
                     axis: A2uiBasicCatalogV1.Divider.Axis,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
                     modifier: Modifier,
                 ) {}
             }
@@ -413,6 +465,8 @@ class MaterialA2uiBasicCatalogV1Test {
                     childId: String,
                     variant: A2uiBasicCatalogV1.Button.Variant,
                     action: Map<String, Any?>,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    checks: List<A2uiBasicCatalogV1.CheckRule>,
                     modifier: Modifier,
                 ) {}
             }
@@ -435,6 +489,41 @@ class MaterialA2uiBasicCatalogV1Test {
     }
 
     @Test
+    fun factory_withCustomTextFieldComponent_overridesDefaultMaterialTextField() {
+        val customTextField =
+            object : A2uiBasicCatalogV1.TextField {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    label: String,
+                    value: String?,
+                    variant: A2uiBasicCatalogV1.TextField.Variant,
+                    validationRegexp: String?,
+                    onValueChange: (String) -> Unit,
+                    enabled: Boolean,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    checks: List<A2uiBasicCatalogV1.CheckRule>,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                video = MaterialA2uiBasicCatalogV1Defaults.video(fakeVideoRenderer),
+                audioPlayer =
+                    MaterialA2uiBasicCatalogV1Defaults.audioPlayer(fakeAudioPlayerRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                textField = customTextField,
+            )
+
+        assertThat(catalog.components["TextField"]).isSameInstanceAs(customTextField)
+        assertThat(catalog.components["TextField"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.textField)
+    }
+
+    @Test
     fun factory_withCustomCheckBoxComponent_overridesDefaultMaterialCheckBox() {
         val customCheckBox =
             object : A2uiBasicCatalogV1.CheckBox {
@@ -444,6 +533,8 @@ class MaterialA2uiBasicCatalogV1Test {
                     value: Boolean,
                     onValueChange: (Boolean) -> Unit,
                     enabled: Boolean,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    checks: List<A2uiBasicCatalogV1.CheckRule>,
                     modifier: Modifier,
                 ) {}
             }
@@ -466,6 +557,43 @@ class MaterialA2uiBasicCatalogV1Test {
     }
 
     @Test
+    fun factory_withCustomChoicePickerComponent_overridesDefaultMaterialChoicePicker() {
+        val customChoicePicker =
+            object : A2uiBasicCatalogV1.ChoicePicker {
+                @Composable
+                override fun A2uiComponentScope.TypedContent(
+                    label: String?,
+                    options: List<A2uiBasicCatalogV1.ChoicePicker.Option>,
+                    value: List<String>,
+                    variant: A2uiBasicCatalogV1.ChoicePicker.Variant,
+                    displayStyle: A2uiBasicCatalogV1.ChoicePicker.DisplayStyle,
+                    filterable: Boolean,
+                    onValueChange: (List<String>) -> Unit,
+                    enabled: Boolean,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    checks: List<A2uiBasicCatalogV1.CheckRule>,
+                    modifier: Modifier,
+                ) {}
+            }
+
+        val catalog =
+            materialA2uiBasicCatalogV1(
+                image = MaterialA2uiBasicCatalogV1Defaults.image(fakeImageRenderer),
+                video = MaterialA2uiBasicCatalogV1Defaults.video(fakeVideoRenderer),
+                audioPlayer =
+                    MaterialA2uiBasicCatalogV1Defaults.audioPlayer(fakeAudioPlayerRenderer),
+                urlOpener = fakeUrlOpener,
+                messageFormatter = fakeMessageFormatter,
+                localeProvider = fakeLocaleProvider,
+                choicePicker = customChoicePicker,
+            )
+
+        assertThat(catalog.components["ChoicePicker"]).isSameInstanceAs(customChoicePicker)
+        assertThat(catalog.components["ChoicePicker"])
+            .isNotSameInstanceAs(MaterialA2uiBasicCatalogV1Defaults.choicePicker)
+    }
+
+    @Test
     fun factory_withCustomSliderComponent_overridesDefaultMaterialSlider() {
         val customSlider =
             object : A2uiBasicCatalogV1.Slider {
@@ -477,6 +605,8 @@ class MaterialA2uiBasicCatalogV1Test {
                     value: Float,
                     onValueChange: (Float) -> Unit,
                     enabled: Boolean,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    checks: List<A2uiBasicCatalogV1.CheckRule>,
                     modifier: Modifier,
                 ) {}
             }
@@ -511,6 +641,8 @@ class MaterialA2uiBasicCatalogV1Test {
                     min: Long?,
                     max: Long?,
                     label: String?,
+                    accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+                    checks: List<A2uiBasicCatalogV1.CheckRule>,
                     modifier: Modifier,
                 ) {}
             }
@@ -554,12 +686,18 @@ class MaterialA2uiBasicCatalogV1Test {
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1List)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.tabs)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Tabs)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.modal)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1Modal)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.divider)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Divider)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.button)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Button)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.textField)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1TextField)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.checkBox)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1CheckBox)
+        assertThat(MaterialA2uiBasicCatalogV1Defaults.choicePicker)
+            .isSameInstanceAs(MaterialA2uiBasicCatalogV1ChoicePicker)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.slider)
             .isSameInstanceAs(MaterialA2uiBasicCatalogV1Slider)
         assertThat(MaterialA2uiBasicCatalogV1Defaults.dateTimeInput)
