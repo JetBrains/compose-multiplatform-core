@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.RadialGradientShader
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.SweepGradientShader
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.compositeOver
@@ -1873,4 +1874,41 @@ class DrawScopeTest : SkikoComposeTestBase() {
         }
     }
 
+    @Test
+    fun testDrawPathRoundStrokeJoinIsApplied() {
+        val img = ImageBitmap(160, 100)
+        val path = Path().apply {
+            moveTo(20f, 50f)
+            lineTo(100f, 50f)
+            lineTo(20f, 52f)
+        }
+
+        CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, Canvas(img), Size(160f, 100f)) {
+            drawPath(path, Color.Black, style = Stroke(width = 16f, join = StrokeJoin.Round))
+        }
+
+        // 6px past the turning point: covered by a round join of radius 8, cut off by a bevel.
+        assertEquals(1f, img.toPixelMap()[106, 51].alpha)
+    }
+
+    @Test
+    fun testDrawPathZeroMiterLimitBevelsJoins() {
+        val img = ImageBitmap(100, 100)
+        val path = Path().apply {
+            moveTo(20f, 80f)
+            lineTo(80f, 80f)
+            lineTo(80f, 20f)
+        }
+
+        CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, Canvas(img), Size(100f, 100f)) {
+            drawPath(
+                path,
+                Color.Black,
+                style = Stroke(width = 20f, miter = 0f, join = StrokeJoin.Miter)
+            )
+        }
+
+        // Inside the square miter corner, outside the bevel's diagonal from (80, 90) to (90, 80).
+        assertEquals(0f, img.toPixelMap()[88, 88].alpha)
+    }
 }
