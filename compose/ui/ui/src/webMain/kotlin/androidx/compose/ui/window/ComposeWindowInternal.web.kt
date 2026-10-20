@@ -451,6 +451,17 @@ internal class ComposeWindow(
         )
         archComponentsOwner.enableSavedStateHandles()
 
+        setSceneContent(content)
+
+        archComponentsOwner.lifecycle.handleLifecycleEvent(
+            if (document.hasFocus()) Lifecycle.Event.ON_RESUME
+            else Lifecycle.Event.ON_START
+        )
+        archComponentsOwner.navigationEventDispatcherOwner
+            .navigationEventDispatcher.addInput(navigationEventInput)
+    }
+
+    private fun setSceneContent(content: @Composable () -> Unit) {
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
         val clipEventsTargetProvider: () -> HTMLElement = clipboardEventBridge::getEventTarget
@@ -500,13 +511,6 @@ internal class ComposeWindow(
                 }
             )
         }
-
-        archComponentsOwner.lifecycle.handleLifecycleEvent(
-            if (document.hasFocus()) Lifecycle.Event.ON_RESUME
-            else Lifecycle.Event.ON_START
-        )
-        archComponentsOwner.navigationEventDispatcherOwner
-            .navigationEventDispatcher.addInput(navigationEventInput)
     }
 
     /**
