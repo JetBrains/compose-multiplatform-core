@@ -21,6 +21,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.AutoTestFrameClock
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.VelocityTrackerCalculationThreshold
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -128,6 +130,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -597,12 +600,11 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     @Test
     fun itemFillingParentSizeParentRecomposed_noRemeasureOnReuse() {
         var counter = 0
-        val modifier =
-            Modifier.layout { measurable, constraints ->
-                counter++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
-            }
+        val modifier = Modifier.layout { measurable, constraints ->
+            counter++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
+        }
 
         lateinit var state: LazyListState
         rule.setContentWithTestViewConfiguration {
@@ -1623,12 +1625,11 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     @Test
     fun recomposingWithNewComposedModifierObjectIsNotCausingRemeasure() {
         var remeasureCount = 0
-        val layoutModifier =
-            Modifier.layout { measurable, constraints ->
-                remeasureCount++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-            }
+        val layoutModifier = Modifier.layout { measurable, constraints ->
+            remeasureCount++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        }
         val counter = mutableStateOf(0)
 
         rule.setContentWithTestViewConfiguration {
@@ -2160,8 +2161,10 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         )
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testRetainedItemsInLookahead() {
+        assumeTrue(ComposeFoundationFlags.isCacheWindowLookaheadCheckEnabled)
         val composedItems = mutableListOf<Int>()
         val expectedComposedItems = mutableListOf<Int>()
         var expanded by mutableStateOf(false)
@@ -2390,7 +2393,8 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                                 Modifier.animateItem(
                                         fadeInSpec = null,
                                         fadeOutSpec = null,
-                                        placementSpec = tween<IntOffset>(160, easing = LinearEasing),
+                                        placementSpec =
+                                            tween<IntOffset>(160, easing = LinearEasing),
                                     )
                                     .trackPositions(
                                         lookaheadPosition,

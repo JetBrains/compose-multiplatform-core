@@ -1,0 +1,103 @@
+name: Compile
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - jb-main
+      - integration
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      sourceSetsIos: ${{ steps.filter.outputs.sourceSetsIos }}
+      sourceSetsNativeNonIos: ${{ steps.filter.outputs.sourceSetsNativeNonIos }}
+      sourceSetsWeb: ${{ steps.filter.outputs.sourceSetsWeb }}
+      sourceSetsDesktop: ${{ steps.filter.outputs.sourceSetsDesktop }}
+      sourceSetsUnknown: ${{ steps.filter.outputs.sourceSetsUnknown }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Detect affected platforms
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: .github/path-filter.yml
+          predicate-quantifier: some-with-excludes
+
+  compose-native-publish:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsIos == 'true' || needs.changes.outputs.sourceSetsNativeNonIos == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
+    runs-on: macos-26-xlarge
+    name: Darwin + Native Linux
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Prerequisites
+        uses: ./.github/actions/setup-prerequisites
+
+      - name: Setup Xcode
+        uses: ./.github/actions/setup-xcode
+
+      - name: Dry Publish
+        run: |
+          ./gradlew publishComposeJb -Pcompose.platforms=macos,ios,tvos,watchos,linux,mingw \
+            --no-daemon --stacktrace
+
+      - name: Demos
+        run: |
+          ./gradlew \
+            :compose:mpp:demo:linkDebugExecutableMacosArm64 \
+            :compose:mpp:demo:linkDebugExecutableIosArm64 \
+            :compose:mpp:demo:linkDebugExecutableIosSimArm64 \
+            --no-daemon --stacktrace
+
+  compose-web-publish:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsWeb == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
+    runs-on: ubuntu-24.04
+    name: Web
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Prerequisites
+        uses: ./.github/actions/setup-prerequisites
+
+      - name: Dry Publish
+        run: |
+          ./gradlew publishComposeJb -Pcompose.platforms=web \
+            --no-daemon --stacktrace
+
+      - name: Demos
+        run: |
+          ./gradlew \
+            :compose:mpp:demo:compileKotlinJs \
+            :compose:mpp:demo:compileKotlinWasmJs \
+            --no-daemon --stacktrace
+
+  compose-jvm-publish:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsDesktop == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
+    runs-on: ubuntu-24.04
+    name: JVM
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Prerequisites
+        uses: ./.github/actions/setup-prerequisites
+
+      - name: Dry Publish
+        run: |
+          ./gradlew publishComposeJb -Pcompose.platforms=jvm,android \
+            --no-daemon --stacktrace
+
+      - name: Demos
+        run: |
+          ./gradlew \
+            :compose:mpp:demo:desktopMainClasses \
+            :compose:desktop:desktop:desktop-samples:jvmMainClasses \
+            --no-daemon --stacktrace

@@ -110,7 +110,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
@@ -216,7 +215,7 @@ class TextFieldTest {
     fun testTextField_heightDoesNotChange_duringFocusAnimation_withLargeLabelText() {
         val numTicks = 5
         val tick = TextFieldAnimationDuration / numTicks
-        val tfHeight = Ref<Dp>()
+        val tfHeight = Ref<Float>()
         rule.mainClock.autoAdvance = false
 
         rule.setMaterialContent(lightColorScheme()) {
@@ -224,12 +223,11 @@ class TextFieldTest {
                 typography =
                     MaterialTheme.typography.copy(bodyLarge = MaterialTheme.typography.displayLarge)
             ) {
-                val density = LocalDensity.current
                 TextField(
                     modifier =
                         Modifier.testTag(TextFieldTag).onGloballyPositioned {
                             if (tfHeight.value == null) {
-                                tfHeight.value = with(density) { it.size.height.toDp() }
+                                tfHeight.value = it.size.height.toFloat()
                             }
                         },
                     state = rememberTextFieldState(),
@@ -243,11 +241,10 @@ class TextFieldTest {
 
         repeat(numTicks + 1) {
             if (tfHeight.value != null) {
-                rule
-                    .onNodeWithTag(TextFieldTag)
-                    .getBoundsInRoot()
-                    .height
-                    .assertIsEqualTo(tfHeight.value!!)
+                val height =
+                    rule.onNodeWithTag(TextFieldTag).fetchSemanticsNode().size.height.toFloat()
+                // Allow 1px difference due to sub-pixel font metric rounding.
+                assertThat(height).isWithin(1f).of(tfHeight.value!!)
             }
 
             rule.mainClock.advanceTimeBy(tick)
@@ -1726,7 +1723,10 @@ class TextFieldTest {
                     modifier = Modifier.testTag(TextFieldTag),
                     state = rememberTextFieldState(),
                     keyboardOptions =
-                        KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Email),
+                        KeyboardOptions(
+                            imeAction = ImeAction.Go,
+                            keyboardType = KeyboardType.Email,
+                        ),
                 )
             }
         }

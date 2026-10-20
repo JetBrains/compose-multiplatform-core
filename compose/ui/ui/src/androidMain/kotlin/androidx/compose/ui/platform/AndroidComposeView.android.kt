@@ -28,13 +28,18 @@ import android.content.res.Configuration
 import android.graphics.Point
 import android.graphics.Rect
 import android.hardware.input.InputManager
+import android.os.Build
 import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.BAKLAVA
+import android.os.Build.VERSION_CODES.CINNAMON_BUN
 import android.os.Build.VERSION_CODES.M
 import android.os.Build.VERSION_CODES.N
 import android.os.Build.VERSION_CODES.O
 import android.os.Build.VERSION_CODES.Q
 import android.os.Build.VERSION_CODES.S
 import android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM
+import android.os.Build.VERSION_CODES_FULL.BAKLAVA_1
+import android.os.Build.VERSION_CODES_FULL.CINNAMON_BUN_1
 import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
@@ -62,9 +67,11 @@ import android.view.MotionEvent.TOOL_TYPE_STYLUS
 import android.view.ScrollCaptureTarget
 import android.view.SoundEffectConstants
 import android.view.View
+import android.view.ViewConfiguration as AndroidViewConfiguration
 import android.view.ViewGroup
 import android.view.ViewStructure
 import android.view.ViewTreeObserver
+import android.view.Window
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.AnimationUtils
 import android.view.autofill.AutofillValue
@@ -170,7 +177,6 @@ import androidx.compose.ui.input.pointer.ProcessResult
 import androidx.compose.ui.input.rotary.RotaryInputModifierNode
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.internal.checkPreconditionNotNull
-import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.layout.InsetsListener
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.Measurable
@@ -187,6 +193,7 @@ import androidx.compose.ui.layout.WindowInsetsRulerProvider
 import androidx.compose.ui.layout.WindowInsetsRulersProvider
 import androidx.compose.ui.layout.WindowInsetsWatcher
 import androidx.compose.ui.layout.WindowWindowInsetsAnimationValues
+import androidx.compose.ui.layout.areWindowInsetsRulersEnabled
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.provideWindowInsetsRulers
@@ -263,6 +270,7 @@ import java.util.concurrent.Executor
 import java.util.function.Consumer
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
+import kotlin.math.sign
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -294,28 +302,28 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     FocusListener,
     ExecuteDelayed {
 
-    private var _composeViewContext by mutableStateOf(composeViewContext)
-    var composeViewContext: ComposeViewContext
-        get() = _composeViewContext
-        set(value) {
-            requirePrecondition(
-                coroutineContext === value.compositionContext.effectCoroutineContext ||
-                    root.children.isEmpty() // composition has likely been disposed
-            ) {
-                "Changing ComposeViewContext cannot change the coroutine context without disposing of the composition first."
-            }
-            val currentComposeViewContext = Snapshot.withoutReadObservation { _composeViewContext }
-            if (value == currentComposeViewContext) {
+    var composeViewContext: ComposeViewContext = composeViewContext
+        set(newContext) {
+            val current = field
+            if (newContext === current) {
                 return
             }
             if (isAttachedToWindow) {
-                currentComposeViewContext.decrementViewCount()
-                value.incrementViewCount()
+                current.decrementViewCount()
+                newContext.incrementViewCount()
+                if (newContext.lifecycleOwner !== current.lifecycleOwner) {
+                    removeLifecycleObservers(current.lifecycleOwner)
+                    addLifecycleObservers(newContext.lifecycleOwner)
+                }
             }
-            _composeViewContext = value
-            coroutineContext = value.compositionContext.effectCoroutineContext
+            field = newContext
+            coroutineContext = newContext.compositionContext.effectCoroutineContext
+            frameEndScheduler =
+                LifecycleRetainedValuesStoreOwner.FrameEndScheduler(
+                    newContext.compositionContext::scheduleFrameEndCallback
+                )
             @OptIn(ExperimentalMediaQueryApi::class)
-            _uiMediaScope?._windowInfo = value.windowInfo
+            _uiMediaScope?._windowInfo = newContext.windowInfo
         }
 
     /**
@@ -501,6 +509,10 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         get() = composeViewContext.windowInfo
 
     override val taskDispatchers: TaskDispatchers = AndroidTaskDispatchers
+
+    /** The [Window] hosting this view, if available. */
+    internal val window: Window?
+        get() = findDialogWindow(this) ?: findActivityWindow(this)
 
     // This is only needed because the existing XR implementation is lacking. It is currently
     // relying on the derivedStateOf() notification change. This can be removed when
@@ -722,6 +734,15 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     override val semanticsOwner: SemanticsOwner =
         SemanticsOwner(root, EmptySemanticsModifier(), layoutNodes)
     private val composeAccessibilityDelegate = AndroidComposeViewAccessibilityDelegateCompat(this)
+
+    /**
+     * Reflects the accessibility delegate's effective touch exploration state, including test
+     * overrides
+     * (`AndroidComposeViewAccessibilityDelegateCompat.accessibilityForceEnabledForTesting`).
+     */
+    internal val isTouchExplorationEnabled: Boolean
+        get() = composeAccessibilityDelegate.isTouchExplorationEnabled
+
     internal var contentCaptureManager =
         AndroidContentCaptureManager(
             view = this,
@@ -740,6 +761,9 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      * achieving certain visual effects like masks and blurs
      */
     override val graphicsContext = GraphicsContext(this)
+
+    override val graphicsResourceCache: GraphicsResourceCache
+        get() = composeViewContext.graphicsResourceCache
 
     // Used by components that want to provide autofill semantic information.
     // TODO: Replace with SemanticsTree: Temporary hack until we have a semantics tree implemented.
@@ -766,24 +790,8 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     var configuration: Configuration by
         mutableStateOf(Configuration(context.resources.configuration))
 
-    override val localeList: LocaleList by derivedStateOf {
-        val configurationLocaleListCompat = ConfigurationCompat.getLocales(configuration)
-        val guaranteedNonEmptyLocaleListCompat =
-            if (configurationLocaleListCompat.isEmpty) {
-                // The Configuration doesn't have a locale. This is weird, since we should have a
-                // fully defined Configuration in a fully defined environment, but some
-                // environments like previews may not have one. Instead of crashing, pull a
-                // guaranteed non-empty list.
-                LocaleListCompat.getDefault()
-            } else {
-                configurationLocaleListCompat
-            }
-        LocaleList(
-            List(guaranteedNonEmptyLocaleListCompat.size()) {
-                Locale(guaranteedNonEmptyLocaleListCompat[it]!!)
-            }
-        )
-    }
+    override var localeList: LocaleList by mutableStateOf(getLocaleList(configuration))
+        private set
 
     // Used as a CompositionLocal for performing autofill.
     override val autofill: AndroidAutofill? =
@@ -817,7 +825,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override val snapshotObserver = OwnerSnapshotObserver { command ->
         val exceptionHandler = uncaughtExceptionHandler
-        var command =
+        val command =
             if (exceptionHandler != null) {
                 {
                     try {
@@ -1041,6 +1049,20 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      */
     private var previousMotionEvent: MotionEvent? = null
 
+    /**
+     * Accumulated scroll amount for rotary focus navigation. Used to determine when the scroll has
+     * exceeded the threshold required to trigger a focus change.
+     */
+    private var rotaryFocusNavigationAccumulatedScroll: Float = 0f
+
+    /**
+     * The timestamp of the last rotary event used for focus navigation. Used to reset the
+     * accumulated scroll [rotaryFocusNavigationAccumulatedScroll] if the time between events
+     * exceeds a timeout.
+     */
+    // TODO(b/515536704): Add detail when the specific API lands.
+    private var lastRotaryFocusNavigationEventTime: Long = -1L
+
     /** The time of the last layout. This is used to send a synthetic MotionEvent. */
     private var relayoutTime = 0L
 
@@ -1138,7 +1160,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     // Determines scroll/swipe to next or previous focusable element for indirect pointer events.
     private val indirectPointerNavigationGestureDetector =
-        IndirectPointerNavigationGestureDetector(context) {
+        IndirectPointerNavigationGestureDetector(this) {
             focusOwner.moveFocus(focusDirection = it, wrapAroundForOneDimensionalFocus = false)
         }
 
@@ -2394,6 +2416,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     }
 
     override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {
+        measureAndLayoutDelegate.onNodeDeactivated(layoutNode)
         if (autofillSupported()) {
             autofillManager?.onLayoutNodeDeactivated(layoutNode)
         }
@@ -2601,9 +2624,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             onReadyForComposition = null
         }
 
-        val lifecycle = composeViewContext.lifecycleOwner.lifecycle
-        lifecycle.addObserver(this)
-        lifecycle.addObserver(contentCaptureManager)
+        addLifecycleObservers(composeViewContext.lifecycleOwner)
         inputModeManager.inputMode = if (isInTouchMode) Touch else Keyboard
         viewTreeObserver.addOnGlobalLayoutListener(this)
         viewTreeObserver.addOnScrollChangedListener(this)
@@ -2646,6 +2667,18 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         return retainedValuesStoreEntry.retainedValuesStore
     }
 
+    private fun addLifecycleObservers(owner: LifecycleOwner) {
+        val lifecycle = owner.lifecycle
+        lifecycle.addObserver(this)
+        lifecycle.addObserver(contentCaptureManager)
+    }
+
+    private fun removeLifecycleObservers(owner: LifecycleOwner) {
+        val lifecycle = owner.lifecycle
+        lifecycle.removeObserver(contentCaptureManager)
+        lifecycle.removeObserver(this)
+    }
+
     @OptIn(ExperimentalComposeUiApi::class, ExperimentalMediaQueryApi::class)
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
@@ -2665,9 +2698,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         removeNotificationForSysPropsChange(this)
         composeViewContext.decrementViewCount()
         snapshotObserver.stopObserving()
-        val lifecycle = composeViewContext.lifecycleOwner.lifecycle
-        lifecycle.removeObserver(contentCaptureManager)
-        lifecycle.removeObserver(this)
+        removeLifecycleObservers(composeViewContext.lifecycleOwner)
         viewTreeObserver.removeOnGlobalLayoutListener(this)
         viewTreeObserver.removeOnScrollChangedListener(this)
         viewTreeObserver.removeOnTouchModeChangeListener(this)
@@ -2781,6 +2812,12 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             ACTION_SCROLL ->
                 if (motionEvent.isFromSource(SOURCE_ROTARY_ENCODER)) {
                     handleRotaryEvent(motionEvent)
+                } else if (
+                    motionEvent.source == InputDevice.SOURCE_UNKNOWN &&
+                        ComposeUiFlags.isHardwareNavigationHandlingEnabled
+                ) {
+                    // TODO(b/520330616): Move this block to proper dispatching callback.
+                    handleRotaryFocusNavigationEvent(motionEvent)
                 } else {
                     handleMotionEvent(motionEvent).anyChangeConsumed
                 }
@@ -2896,7 +2933,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     }
 
     private fun handleRotaryEvent(event: MotionEvent): Boolean {
-        val config = android.view.ViewConfiguration.get(context)
+        val config = AndroidViewConfiguration.get(context)
         val axisValue = -event.getAxisValue(AXIS_SCROLL)
         val rotaryEvent =
             RotaryScrollEvent(
@@ -2908,6 +2945,90 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             )
         return focusOwner.dispatchRotaryEvent(rotaryEvent) {
             super.dispatchGenericMotionEvent(event)
+        }
+    }
+
+    private fun handleRotaryFocusNavigationEvent(event: MotionEvent): Boolean {
+        if (isInTouchMode) {
+            // Reject navigation events during touch mode to let ViewRootImpl handle
+            // accumulation to exit touch mode. Once touch mode is off, Compose will
+            // start processing the events.
+            return false
+        }
+
+        val axisValue = event.getAxisValue(AXIS_SCROLL)
+        if (axisValue == 0f) return false
+
+        val config = AndroidViewConfiguration.get(context)
+        val threshold =
+            if (SDK_INT >= CINNAMON_BUN && Build.VERSION.SDK_INT_FULL >= CINNAMON_BUN_1) {
+                Api37_1Impl.getFocusTraversalThreshold(
+                        config,
+                        event.deviceId,
+                        MotionEvent.AXIS_SCROLL,
+                        InputDevice.SOURCE_ROTARY_ENCODER,
+                    )
+                    .toFloat()
+            } else {
+                -1f
+            }
+        // Don't consume if there is no valid threshold.
+        if (threshold <= 0f) {
+            return false
+        }
+
+        // TODO(b/520096728): whether reversing direction should be determined by device.
+        val direction = if (axisValue > 0f) FocusDirection.Previous else FocusDirection.Next
+
+        val hasNext =
+            focusOwner.focusSearch(
+                focusDirection = direction,
+                focusedRect = null,
+                onFound = { true },
+            ) == true
+
+        if (!hasNext) {
+            // In this Compose hierarchy, there is no next item to focus in this direction.
+            // Therefore, instead of further processing the navigation events, Compose should
+            // directly return false here to notify ViewRootImpl to take over the navigation.
+            rotaryFocusNavigationAccumulatedScroll = 0f
+            return false
+        }
+
+        val time = event.eventTime
+        // TODO(b/515536704): Replace timeout with specific API in 26Q4.
+        if (
+            rotaryFocusNavigationAccumulatedScroll != 0f &&
+                (sign(axisValue) != sign(rotaryFocusNavigationAccumulatedScroll) ||
+                    time - lastRotaryFocusNavigationEventTime >
+                        AndroidViewConfiguration.getKeyRepeatTimeout())
+        ) {
+            rotaryFocusNavigationAccumulatedScroll = 0f
+        }
+
+        rotaryFocusNavigationAccumulatedScroll += axisValue
+        lastRotaryFocusNavigationEventTime = time
+
+        val isThresholdExceeded = abs(rotaryFocusNavigationAccumulatedScroll) >= threshold
+
+        if (!isThresholdExceeded) {
+            return true
+        }
+
+        if (
+            focusOwner.moveFocus(
+                focusDirection = direction,
+                wrapAroundForOneDimensionalFocus = false,
+            )
+        ) {
+            playNavigationSoundEffect(direction, false)
+            rotaryFocusNavigationAccumulatedScroll = 0f
+            return true
+        } else {
+            // This should theoretically not happen because we checked `hasTarget` ahead of time.
+            // But if it does, return false.
+            rotaryFocusNavigationAccumulatedScroll = 0f
+            return false
         }
     }
 
@@ -2959,8 +3080,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                     ) {
                         sendHoverEventsBeforeAndAfterScroll = true
                     }
-
-                    lastEvent?.recycle()
 
                     // If the previous MotionEvent was an ACTION_HOVER_EXIT, we need to check if it
                     // was a synthetic MotionEvent generated by the platform for an ACTION_DOWN
@@ -3025,6 +3144,9 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                         }
                     }
 
+                    // Recycle the previous MotionEvent only after all inspections of it are
+                    // finished to avoid use-after-free.
+                    lastEvent?.recycle()
                     previousMotionEvent = MotionEvent.obtainNoHistory(motionEvent)
 
                     if (sendHoverEventsBeforeAndAfterScroll) {
@@ -3139,6 +3261,15 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         if (pointerCount == 0) {
             return
         }
+        val isHover =
+            action == ACTION_HOVER_ENTER ||
+                action == ACTION_HOVER_MOVE ||
+                action == ACTION_HOVER_EXIT
+        val isTrackpadPanHover =
+            ComposeUiFlags.isTrackpadPanHoverFixEnabled &&
+                isHover &&
+                SDK_INT >= 34 &&
+                motionEvent.classification == MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE
         val pointerProperties = Array(pointerCount) { MotionEvent.PointerProperties() }
         val pointerCoords = Array(pointerCount) { MotionEvent.PointerCoords() }
         for (i in 0 until pointerCount) {
@@ -3150,6 +3281,10 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             val screenPosition = localToScreen(localPosition)
             coords.x = screenPosition.x
             coords.y = screenPosition.y
+            if (isTrackpadPanHover) {
+                coords.setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_X_DISTANCE, 0f)
+                coords.setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_Y_DISTANCE, 0f)
+            }
         }
         val buttonState = if (forceHover) 0 else motionEvent.buttonState
 
@@ -3163,11 +3298,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         // layout changes) should not inherit gesture classifications like trackpad pan. Doing so
         // would incorrectly trigger pan gestures or suppress normal hover state updates.
         val classification =
-            if (
-                action == ACTION_HOVER_ENTER ||
-                    action == ACTION_HOVER_MOVE ||
-                    action == ACTION_HOVER_EXIT
-            ) {
+            if (isHover) {
                 MotionEvent.CLASSIFICATION_NONE
             } else if (SDK_INT >= 29) {
                 motionEvent.classification
@@ -3396,6 +3527,31 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         ) {
             density = Density(context.createConfigurationContext(newConfig))
         }
+        val newLocales = ConfigurationCompat.getLocales(newConfig)
+        if (ConfigurationCompat.getLocales(oldConfig) != newLocales) {
+            localeList = getLocaleList(newLocales)
+        }
+    }
+
+    private fun getLocaleList(configuration: Configuration): LocaleList =
+        getLocaleList(ConfigurationCompat.getLocales(configuration))
+
+    private fun getLocaleList(configurationLocaleListCompat: LocaleListCompat): LocaleList {
+        val guaranteedNonEmptyLocaleListCompat =
+            if (configurationLocaleListCompat.isEmpty) {
+                // The Configuration doesn't have a locale. This is weird, since we should have a
+                // fully defined Configuration in a fully defined environment, but some
+                // environments like previews may not have one. Instead of crashing, pull a
+                // guaranteed non-empty list.
+                LocaleListCompat.getDefault()
+            } else {
+                configurationLocaleListCompat
+            }
+        return LocaleList(
+            List(guaranteedNonEmptyLocaleListCompat.size()) {
+                Locale(guaranteedNonEmptyLocaleListCompat[it]!!)
+            }
+        )
     }
 
     override fun onRtlPropertiesChanged(layoutDirection: Int) {
@@ -3623,10 +3779,12 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun dispatchOnScrollChanged(delta: Offset) {
-        // TODO(levima) b/402138549: Use viewTreeObserver.dispatchOnScrollChanged()
-        dispatchOnScrollChanged(viewTreeObserver)
+        if (SDK_INT >= BAKLAVA && Build.VERSION.SDK_INT_FULL >= BAKLAVA_1) {
+            Api36_1Impl.dispatchOnScrollChanged(viewTreeObserver)
+        } else {
+            Api21Impl.dispatchOnScrollChanged(viewTreeObserver)
+        }
     }
 
     // executed when the layout pass has been finished. as a result of it our view could be
@@ -3679,7 +3837,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         private var addChangeCallbackMethod: Method? = null
         private val composeViews = mutableObjectListOf<AndroidComposeView>()
         private var systemPropertiesChangedRunnable: Runnable? = null
-        private var dispatchOnScrollChangedMethod: Method? = null
         private var getAccessibilityViewIdMethod: Method? = null
         private var findViewByAccessibilityIdTraversalMethod: Method? = null
 
@@ -3691,12 +3848,10 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             if (SDK_INT < Q) {
                 val getAccessibilityViewIdMethod =
                     getAccessibilityViewIdMethod
-                        ?: Class.forName("android.view.View")
-                            .getDeclaredMethod("getAccessibilityViewId")
-                            .also {
-                                getAccessibilityViewIdMethod = it
-                                it.isAccessible = true
-                            }
+                        ?: View::class.java.getDeclaredMethod("getAccessibilityViewId").also {
+                            getAccessibilityViewIdMethod = it
+                            it.isAccessible = true
+                        }
                 if (getAccessibilityViewIdMethod.invoke(currentView) == accessibilityId) {
                     return currentView
                 }
@@ -3731,12 +3886,16 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                 return if (SDK_INT >= Q) {
                     val findViewByAccessibilityIdTraversalMethod =
                         findViewByAccessibilityIdTraversalMethod
-                            ?: Class.forName("android.view.View")
+                            ?: View::class
+                                .java
                                 .getDeclaredMethod(
                                     "findViewByAccessibilityIdTraversal",
                                     Int::class.java,
                                 )
-                    findViewByAccessibilityIdTraversalMethod.isAccessible = true
+                                .also {
+                                    findViewByAccessibilityIdTraversalMethod = it
+                                    it.isAccessible = true
+                                }
                     findViewByAccessibilityIdTraversalMethod.invoke(view, accessibilityId) as? View
                 } else {
                     findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, view)
@@ -3808,7 +3967,11 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                         StrictMode.setVmPolicy(origPolicy)
                     }
                 }
-                synchronized(composeViews) { composeViews += composeView }
+                synchronized(composeViews) {
+                    if (composeView !in composeViews) {
+                        composeViews += composeView
+                    }
+                }
             }
         }
 
@@ -3816,23 +3979,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             if (SDK_INT > 28) {
                 synchronized(composeViews) { composeViews -= composeView }
             }
-        }
-
-        // Back compat implementation
-        @SuppressLint(
-            "BanUncheckedReflection",
-            "PrivateApi",
-        ) // suppress for now, the API is available in MIN_SDK
-        fun dispatchOnScrollChanged(viewTreeObserver: ViewTreeObserver) {
-            try {
-                if (dispatchOnScrollChangedMethod == null) {
-                    dispatchOnScrollChangedMethod =
-                        viewTreeObserver.javaClass
-                            .getDeclaredMethod("dispatchOnScrollChanged")
-                            .also { it.isAccessible = true }
-                }
-                dispatchOnScrollChangedMethod?.invoke(viewTreeObserver)
-            } catch (_: Exception) {}
         }
     }
 
@@ -4132,8 +4278,10 @@ private fun dot(m1: Matrix, row: Int, m2: Matrix, column: Int): Float {
 }
 
 // --- Top-Level SDK Implementation Helper Objects ---
-
 private object Api21Impl {
+
+    private var dispatchOnScrollChangedMethod: Method? = null
+
     @JvmStatic
     @DoNotInline
     fun calculateMatrixToWindow(
@@ -4177,6 +4325,19 @@ private object Api21Impl {
     private fun Matrix.preConcat(other: android.graphics.Matrix, tmpMatrix: Matrix) {
         tmpMatrix.setFrom(other)
         preTransform(tmpMatrix)
+    }
+
+    @SuppressLint("PrivateApi", "BanUncheckedReflection")
+    fun dispatchOnScrollChanged(viewTreeObserver: ViewTreeObserver) {
+        try {
+            if (dispatchOnScrollChangedMethod == null) {
+                dispatchOnScrollChangedMethod =
+                    viewTreeObserver.javaClass.getDeclaredMethod("dispatchOnScrollChanged").also {
+                        it.isAccessible = true
+                    }
+            }
+            dispatchOnScrollChangedMethod?.invoke(viewTreeObserver)
+        } catch (_: Exception) {}
     }
 }
 
@@ -4397,8 +4558,30 @@ private object Api35Impl {
     }
 }
 
+@RequiresApi(BAKLAVA_1)
+private object Api36_1Impl {
+    @JvmStatic
+    @DoNotInline
+    fun dispatchOnScrollChanged(viewTreeObserver: ViewTreeObserver) {
+        viewTreeObserver.dispatchOnScrollChanged()
+    }
+}
+
+@RequiresApi(CINNAMON_BUN)
+private object Api37_1Impl {
+    @JvmStatic
+    @DoNotInline
+    @SuppressLint("NewApi")
+    fun getFocusTraversalThreshold(
+        config: AndroidViewConfiguration,
+        deviceId: Int,
+        axis: Int,
+        source: Int,
+    ): Int = config.getFocusTraversalThreshold(deviceId, axis, source)
+}
+
 internal class IndirectPointerNavigationGestureDetector(
-    context: Context,
+    private val view: View,
     private val onMoveFocus: (FocusDirection) -> Unit,
 ) {
     var primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None
@@ -4407,59 +4590,65 @@ internal class IndirectPointerNavigationGestureDetector(
     // This is set if a move event is consumed by another component.
     private var ignoreCurrentGestureStream = false
 
-    private val gestureDetector: GestureDetector =
-        GestureDetector(
-            context,
-            object : GestureDetector.OnGestureListener {
-                override fun onDown(e: MotionEvent) = true
+    private var _gestureDetector: GestureDetector? = null
 
-                override fun onShowPress(e: MotionEvent) {}
+    private fun getOrCreateGestureDetector(): GestureDetector {
+        return _gestureDetector
+            ?: GestureDetector(view.context, gestureListener, view.handler).also {
+                _gestureDetector = it
+            }
+    }
 
-                override fun onSingleTapUp(e: MotionEvent): Boolean = true
+    private val gestureListener =
+        object : GestureDetector.OnGestureListener {
+            override fun onDown(e: MotionEvent) = true
 
-                override fun onScroll(
-                    e1: MotionEvent?,
-                    e2: MotionEvent,
-                    distanceX: Float,
-                    distanceY: Float,
-                ) = true
+            override fun onShowPress(e: MotionEvent) {}
 
-                override fun onLongPress(e: MotionEvent) {}
+            override fun onSingleTapUp(e: MotionEvent): Boolean = true
 
-                override fun onFling(
-                    e1: MotionEvent?,
-                    e2: MotionEvent,
-                    velocityX: Float,
-                    velocityY: Float,
-                ): Boolean {
-                    if (ignoreCurrentGestureStream) return true
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float,
+            ) = true
 
-                    if (
-                        primaryDirectionalMotionAxis ==
-                            IndirectPointerEventPrimaryDirectionalMotionAxis.X
-                    ) {
-                        if (abs(velocityX) > abs(velocityY)) {
-                            val direction =
-                                if (velocityX > 0f) FocusDirection.Next else FocusDirection.Previous
-                            onMoveFocus(direction)
-                        }
-                    } else if (
-                        primaryDirectionalMotionAxis ==
-                            IndirectPointerEventPrimaryDirectionalMotionAxis.Y
-                    ) {
-                        if (abs(velocityY) > abs(velocityX)) {
-                            val direction =
-                                if (velocityY > 0f) FocusDirection.Next else FocusDirection.Previous
-                            onMoveFocus(direction)
-                        }
+            override fun onLongPress(e: MotionEvent) {}
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float,
+            ): Boolean {
+                if (ignoreCurrentGestureStream) return true
+
+                if (
+                    primaryDirectionalMotionAxis ==
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X
+                ) {
+                    if (abs(velocityX) > abs(velocityY)) {
+                        val direction =
+                            if (velocityX > 0f) FocusDirection.Next else FocusDirection.Previous
+                        onMoveFocus(direction)
                     }
-                    // If it gets here, it means there isn't a primary axis specified, which means
-                    // the event will be translated by system to key up, down, left, and right.
-
-                    return true
+                } else if (
+                    primaryDirectionalMotionAxis ==
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.Y
+                ) {
+                    if (abs(velocityY) > abs(velocityX)) {
+                        val direction =
+                            if (velocityY > 0f) FocusDirection.Next else FocusDirection.Previous
+                        onMoveFocus(direction)
+                    }
                 }
-            },
-        )
+                // If it gets here, it means there isn't a primary axis specified, which means
+                // the event will be translated by system to key up, down, left, and right.
+
+                return true
+            }
+        }
 
     fun onIndirectPointerEvent(
         indirectPointerEvent: IndirectPointerEvent,
@@ -4481,7 +4670,7 @@ internal class IndirectPointerNavigationGestureDetector(
                 }
             }
         }
-        return gestureDetector.onTouchEvent(motionEvent)
+        return getOrCreateGestureDetector().onTouchEvent(motionEvent)
     }
 
     /**
@@ -4507,17 +4696,19 @@ internal class IndirectPointerNavigationGestureDetector(
     fun dispose() {
         primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None
         ignoreCurrentGestureStream = true
-        val cancelEvent =
-            MotionEvent.obtain(
-                /* downTime = */ 0L,
-                /* eventTime = */ 0L,
-                MotionEvent.ACTION_CANCEL,
-                /* x = */ 0f,
-                /* y = */ 0f,
-                /* metaState = */ 0,
-            )
-        gestureDetector.onTouchEvent(cancelEvent)
-        cancelEvent.recycle()
+        _gestureDetector?.let { detector ->
+            val cancelEvent =
+                MotionEvent.obtain(
+                    /* downTime = */ 0L,
+                    /* eventTime = */ 0L,
+                    MotionEvent.ACTION_CANCEL,
+                    /* x = */ 0f,
+                    /* y = */ 0f,
+                    /* metaState = */ 0,
+                )
+            detector.onTouchEvent(cancelEvent)
+            cancelEvent.recycle()
+        }
     }
 }
 

@@ -36,6 +36,7 @@ class MultiParagraphFillBoundingBoxesTest {
     private val fontFamilyMeasureFont = BASIC_MEASURE_FONT.toFontFamily()
     val fontFamilyResolver =
         createFontFamilyResolver(InstrumentationRegistry.getInstrumentation().context)
+    private val defaultLocaleList = TEST_LOCALE_LIST
     private val defaultDensity = Density(density = 1f)
     private val fontSize = 10.sp
     private val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
@@ -127,7 +128,7 @@ class MultiParagraphFillBoundingBoxesTest {
     @Test
     fun ltrAndRtlParagraphs() {
         val paragraph1 = "a\nb"
-        var paragraph2 = "\u05D0\n\u05D1"
+        val paragraph2 = "\u05D0\n\u05D1"
         val text = createAnnotatedString(paragraph1, paragraph2)
         val width = fontSizeInPx * 3
         val paragraph = simpleMultiParagraph(text, width = width)
@@ -189,6 +190,7 @@ class MultiParagraphFillBoundingBoxesTest {
             constraints = Constraints(maxWidth = width.ceilToInt()),
             density = defaultDensity,
             fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = defaultLocaleList,
             overflow = TextOverflow.Clip,
         )
     }

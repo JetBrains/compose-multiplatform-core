@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
+import androidx.compose.ui.platform.FONT_FALLBACK_BASE_URL
 
 /**
  * Configuration of [ComposeViewport] behavior.
@@ -32,6 +33,16 @@ class ComposeViewportConfiguration internal constructor() {
      * By default, it is set to `true`.
      */
     var isA11YEnabled: Boolean = true
+
+    /**
+     * Base URL used to download Noto fallback fonts for unresolved glyphs.
+     *
+     * The URL is concatenated directly with each fallback font's relative URL.
+     * Set this to `null` to disable automatic fallback font downloads.
+     *
+     * By default, fonts are downloaded from `fonts.gstatic.com/s/`
+     */
+    var fontFallbackUrl: String? = FONT_FALLBACK_BASE_URL
 
     /**
      * Controls whether a mouse clicks on an unfocused element clears focus.

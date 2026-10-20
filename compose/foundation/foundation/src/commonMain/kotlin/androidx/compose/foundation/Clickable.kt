@@ -298,6 +298,9 @@ public fun Modifier.clickable(
  * other overload and explicitly passing `LocalIndication.current` for improved performance. For
  * more information see the documentation on the other overload.
  *
+ * Note, if the modifier instance gets re-used between a key down and key up events, the ongoing
+ * input will be aborted.
+ *
  * ***Note*** Any removal operations on Android Views from `clickable` should wrap `onClick` in a
  * `post { }` block to guarantee the event dispatch completes before executing the removal. (You do
  * not need to do this when removing a composable because Compose guarantees it completes via the
@@ -614,10 +617,7 @@ internal inline fun Modifier.clickableWithIndicationIfNeeded(
     return this.then(
         when {
             // Fast path - indication is managed internally
-            indication is IndicationNodeFactory -> createClickable(
-                interactionSource,
-                indication
-            )
+            indication is IndicationNodeFactory -> createClickable(interactionSource, indication)
             // Fast path - no need for indication
             indication == null -> createClickable(interactionSource, null)
             // Non-null Indication (not IndicationNodeFactory) with a non-null InteractionSource
@@ -658,14 +658,14 @@ internal expect fun DelegatableNode.isComposeRootInScrollableContainer(): Boolea
  * Whether the specified [KeyEvent] should trigger a press for a clickable component, i.e. whether
  * it is associated with a press of an enter key or dpad centre.
  */
-internal val KeyEvent.isPress: Boolean
+private val KeyEvent.isPress: Boolean
     get() = type == KeyDown && isEnter
 
 /**
  * Whether the specified [KeyEvent] should trigger a click for a clickable component, i.e. whether
  * it is associated with a release of an enter key or dpad centre.
  */
-internal val KeyEvent.isClick: Boolean
+private val KeyEvent.isClick: Boolean
     get() = type == KeyUp && isEnter
 
 private val KeyEvent.isEnter: Boolean
@@ -1225,19 +1225,18 @@ private class CombinedClickableNode(
             handlePressInteractionStart(down)
 
             if (onLongClick != null) {
-                longPressJob =
-                    coroutineScope.launch {
-                        delay(currentValueOf(LocalViewConfiguration).longPressTimeoutMillis)
-                        onLongClick?.invoke()
-                        if (hapticFeedbackEnabled) {
-                            currentValueOf(LocalHapticFeedback)
-                                .performHapticFeedback(HapticFeedbackType.LongPress)
-                        }
-                        longPressTriggered = true
-                        tapJob?.cancel()
-                        tapJob = null
-                        longPressJob = null
+                longPressJob = coroutineScope.launch {
+                    delay(currentValueOf(LocalViewConfiguration).longPressTimeoutMillis)
+                    onLongClick?.invoke()
+                    if (hapticFeedbackEnabled) {
+                        currentValueOf(LocalHapticFeedback)
+                            .performHapticFeedback(HapticFeedbackType.LongPress)
                     }
+                    longPressTriggered = true
+                    tapJob?.cancel()
+                    tapJob = null
+                    longPressJob = null
+                }
             }
         }
     }
@@ -1266,19 +1265,18 @@ private class CombinedClickableNode(
             handlePressInteractionStart(down)
 
             if (onLongClick != null) {
-                indirectLongPressJob =
-                    coroutineScope.launch {
-                        delay(currentValueOf(LocalViewConfiguration).longPressTimeoutMillis)
-                        onLongClick?.invoke()
-                        if (hapticFeedbackEnabled) {
-                            currentValueOf(LocalHapticFeedback)
-                                .performHapticFeedback(HapticFeedbackType.LongPress)
-                        }
-                        indirectLongPressTriggered = true
-                        indirectTapJob?.cancel()
-                        indirectTapJob = null
-                        indirectLongPressJob = null
+                indirectLongPressJob = coroutineScope.launch {
+                    delay(currentValueOf(LocalViewConfiguration).longPressTimeoutMillis)
+                    onLongClick?.invoke()
+                    if (hapticFeedbackEnabled) {
+                        currentValueOf(LocalHapticFeedback)
+                            .performHapticFeedback(HapticFeedbackType.LongPress)
                     }
+                    indirectLongPressTriggered = true
+                    indirectTapJob?.cancel()
+                    indirectTapJob = null
+                    indirectLongPressJob = null
+                }
             }
         }
     }
@@ -1294,13 +1292,12 @@ private class CombinedClickableNode(
                     if (onDoubleClick != null) {
                         // Play the click sound immediately, even if it later becomes a double click
                         playClickSound()
-                        tapJob =
-                            coroutineScope.launch {
-                                delay(currentValueOf(LocalViewConfiguration).doubleTapTimeoutMillis)
-                                // Only call onClick() since we already played the sound
-                                onClick()
-                                tapJob = null
-                            }
+                        tapJob = coroutineScope.launch {
+                            delay(currentValueOf(LocalViewConfiguration).doubleTapTimeoutMillis)
+                            // Only call onClick() since we already played the sound
+                            onClick()
+                            tapJob = null
+                        }
                     } else {
                         performClick()
                     }
@@ -1326,13 +1323,12 @@ private class CombinedClickableNode(
                     if (onDoubleClick != null) {
                         // Play the click sound immediately, even if it later becomes a double click
                         playClickSound()
-                        indirectTapJob =
-                            coroutineScope.launch {
-                                delay(currentValueOf(LocalViewConfiguration).doubleTapTimeoutMillis)
-                                // Only call onClick() since we already played the sound
-                                onClick()
-                                indirectTapJob = null
-                            }
+                        indirectTapJob = coroutineScope.launch {
+                            delay(currentValueOf(LocalViewConfiguration).doubleTapTimeoutMillis)
+                            // Only call onClick() since we already played the sound
+                            onClick()
+                            indirectTapJob = null
+                        }
                     } else {
                         performClick()
                     }
@@ -1525,11 +1521,10 @@ private class CombinedClickableNode(
         var handledByLongClick = false
         if (onLongClick != null) {
             if (longKeyPressJobs[keyCode] == null) {
-                longKeyPressJobs[keyCode] =
-                    coroutineScope.launch {
-                        delay(currentValueOf(LocalViewConfiguration).longPressTimeoutMillis)
-                        onLongClick?.invoke()
-                    }
+                longKeyPressJobs[keyCode] = coroutineScope.launch {
+                    delay(currentValueOf(LocalViewConfiguration).longPressTimeoutMillis)
+                    onLongClick?.invoke()
+                }
                 handledByLongClick = true
             }
         }
@@ -2030,12 +2025,11 @@ internal abstract class AbstractClickableNode(
         interactionSource?.let { interactionSource ->
             val press = PressInteraction.Press(event.position)
             if (delayPressInteraction()) {
-                delayJob =
-                    coroutineScope.launch {
-                        delay(TapIndicationDelay)
-                        interactionSource.emit(press)
-                        indirectPointerPressInteraction = press
-                    }
+                delayJob = coroutineScope.launch {
+                    delay(TapIndicationDelay)
+                    interactionSource.emit(press)
+                    indirectPointerPressInteraction = press
+                }
             } else {
                 indirectPointerPressInteraction = press
                 coroutineScope.launch { interactionSource.emit(press) }
@@ -2047,12 +2041,11 @@ internal abstract class AbstractClickableNode(
         interactionSource?.let { interactionSource ->
             val press = PressInteraction.Press(event.position)
             if (delayPressInteraction()) {
-                delayJob =
-                    coroutineScope.launch {
-                        delay(TapIndicationDelay)
-                        interactionSource.emit(press)
-                        pressInteraction = press
-                    }
+                delayJob = coroutineScope.launch {
+                    delay(TapIndicationDelay)
+                    interactionSource.emit(press)
+                    pressInteraction = press
+                }
             } else {
                 pressInteraction = press
                 coroutineScope.launch { interactionSource.emit(press) }
@@ -2204,10 +2197,6 @@ private fun unsupportedIndicationExceptionMessage(indication: Indication): Strin
 private fun IndirectPointerInputChange.changedToUp() = !isConsumed && previousPressed && !pressed
 
 private fun IndirectPointerInputChange.changedToUpIgnoreConsumed() = previousPressed && !pressed
-
-private fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
-
-private fun IndirectPointerInputChange.isMovingIgnoreConsumed() = previousPressed && pressed
 
 private fun FocusRequesterModifierNode.requestFocusWhenInMouseInputMode() {
     if (isRequestFocusOnClickEnabled()) {

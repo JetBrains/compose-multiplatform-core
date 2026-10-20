@@ -19,6 +19,7 @@
 package androidx.compose.ui.test
 
 import android.os.Build
+import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
@@ -36,6 +37,7 @@ import androidx.compose.ui.platform.WindowRecomposerPolicy
 import androidx.compose.ui.test.ComposeRootRegistry.OnRegistrationChangedListener
 import androidx.compose.ui.test.failure.FailurePipelineRunner
 import androidx.compose.ui.unit.Density
+import androidx.core.os.HandlerCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
@@ -53,6 +55,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -306,12 +309,14 @@ public fun <A : ComponentActivity> runAndroidComposeUiTest(
             try {
                 // Run the test
                 block()
+                // Surface any coroutine / recomposer errors before ActivityScenario closes
+                environment.checkPendingExceptions()
             } catch (t: Throwable) {
                 blockException = t
             }
 
-            // Throw the aggregate exception. May be from the test body or from the cleanup.
-            blockException?.let { throw it }
+            // Handle test failure before ActivityScenario closes
+            blockException?.let { environment.handleTestFailureAndRethrow(it) }
         }
     } finally {
         // Close the scenario outside runTest to avoid getting stuck.
@@ -560,7 +565,12 @@ internal constructor(
      */
     protected abstract val activity: A?
 
-    private val idlingResourceRegistry = IdlingResourceRegistry()
+    @OptIn(InternalTestApi::class)
+    private val idlingResourceRegistry =
+        IdlingResourceRegistry(
+            pollDispatcher =
+                HandlerCompat.createAsync(Looper.getMainLooper()).asCoroutineDispatcher().immediate
+        )
 
     internal val composeRootRegistry = ComposeRootRegistry()
 
@@ -691,7 +701,7 @@ internal constructor(
 
     internal val testReceiverScope = AndroidComposeUiTestImpl()
     private val testOwner = AndroidTestOwner()
-    private val testContext = TestContext(testOwner)
+    private val testContext = TestContext(testOwner, config.boundsAssertionTolerance)
 
     /**
      * The receiver scope of the test passed to [runTest]. Note that some of the properties and
@@ -709,6 +719,26 @@ internal constructor(
         var result: R? = null
         runTest { result = block() }
         return result
+    }
+
+    /** Checks if there are any pending uncaught coroutine or recomposition exceptions. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun checkPendingExceptions() {
+        throwPendingException()
+        coroutineExceptionHandler.throwUncaught()
+    }
+
+    /**
+     * Runs the test failure pipeline and rethrows the given [throwable].
+     *
+     * @param throwable error that caused the test failure
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun handleTestFailureAndRethrow(throwable: Throwable): Nothing {
+        failurePipelineRunner.runPipeline(
+            throwable = throwable,
+            composeRoots = composeRootRegistry.getCurrentOrPreTearDownRoots(),
+        )
     }
 
     /**
@@ -750,10 +780,7 @@ internal constructor(
                 }
             }
         } catch (throwable: Throwable) {
-            failurePipelineRunner.runPipeline(
-                throwable = throwable,
-                composeRoots = composeRootRegistry.registeredComposeRootsBeforeTearDown,
-            )
+            handleTestFailureAndRethrow(throwable)
         } finally {
             composeRootRegistry.clearRegisteredComposeRootsBeforeTearDown()
         }

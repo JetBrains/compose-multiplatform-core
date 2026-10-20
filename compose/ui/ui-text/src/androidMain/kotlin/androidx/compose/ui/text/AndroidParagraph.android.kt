@@ -77,6 +77,7 @@ import androidx.compose.ui.text.android.style.IndentationFixSpan
 import androidx.compose.ui.text.android.style.PlaceholderSpan
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.internal.requirePrecondition
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.AndroidTextPaint
 import androidx.compose.ui.text.platform.extensions.resolveLineHeightInPx
 import androidx.compose.ui.text.platform.extensions.setSpan
@@ -122,6 +123,7 @@ internal class AndroidParagraph(
         overflow: TextOverflow,
         constraints: Constraints,
         fontFamilyResolver: FontFamily.Resolver,
+        defaultLocaleList: LocaleList,
         density: Density,
     ) : this(
         paragraphIntrinsics =
@@ -131,6 +133,7 @@ internal class AndroidParagraph(
                 annotations = annotations,
                 placeholders = placeholders,
                 fontFamilyResolver = fontFamilyResolver,
+                defaultLocaleList = defaultLocaleList,
                 density = density,
                 softWrap = true,
             ),
@@ -763,8 +766,8 @@ internal class AndroidParagraph(
             val mode = style.lineHeightStyle?.mode ?: LineHeightStyle.Default.mode
 
             val trim = style.lineHeightStyle?.trim ?: LineHeightStyle.Default.trim
-            val trimTop = trim.isTrimFirstLineTop()
-            val trimBottom = !layout.didExceedMaxLines && trim.isTrimLastLineBottom()
+            val trimTop = trim.trimsFirstLineTop
+            val trimBottom = !layout.didExceedMaxLines && trim.trimsLastLineBottom
 
             val topRatio =
                 style.lineHeightStyle?.alignment?.topRatio
@@ -802,8 +805,7 @@ internal class AndroidParagraph(
                 // 2. Mirroring LineHeightStyleSpan Mode.Tight when shrinking
                 val appliedTopSpace = if (trimTop) ceiledDiff - descentDiff else 0f
                 val appliedBottomSpace =
-                    if (!layout.didExceedMaxLines && !trim.isTrimLastLineBottom()) 0f
-                    else descentDiff
+                    if (!layout.didExceedMaxLines && !trim.trimsLastLineBottom) 0f else descentDiff
 
                 topOffset = appliedTopSpace
                 resolvedLineHeight = layout.height + appliedTopSpace + appliedBottomSpace

@@ -22,10 +22,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -43,10 +45,12 @@ import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -873,10 +877,7 @@ class GridTest : LayoutTest() {
 
             show {
                 // Force RTL layout direction
-                androidx.compose.runtime.CompositionLocalProvider(
-                    androidx.compose.ui.platform.LocalLayoutDirection provides
-                        androidx.compose.ui.unit.LayoutDirection.Rtl
-                ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     Grid(
                         config = {
                             column(GridTrackSize.Fixed(cellSizeDp))
@@ -902,7 +903,7 @@ class GridTest : LayoutTest() {
                             Modifier.gridItem(
                                     1,
                                     1,
-                                    alignment = androidx.compose.ui.AbsoluteAlignment.TopLeft,
+                                    alignment = AbsoluteAlignment.TopLeft,
                                 )
                                 .size(itemSizeDp)
                                 .saveLayoutInfo(Ref(), absLeftAlignedPos, positionedLatch)
@@ -926,6 +927,40 @@ class GridTest : LayoutTest() {
                 Offset(0f, 0f),
                 absLeftAlignedPos.value,
             )
+        }
+
+    @Test
+    fun testGrid_rtl() =
+        with(density) {
+            val colSize = 100
+            val rowSize = 100
+            val colSizeDp = colSize.toDp()
+            val rowSizeDp = rowSize.toDp()
+
+            val latch = CountDownLatch(2)
+            val item0Pos = Ref<Offset>()
+            val item1Pos = Ref<Offset>()
+
+            show {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Grid(
+                        config = {
+                            repeat(2) { column(GridTrackSize.Fixed(colSizeDp)) }
+                            row(GridTrackSize.Fixed(rowSizeDp))
+                        }
+                    ) {
+                        // Sequential auto-placed items flow right-to-left in RTL:
+                        // Item 0 -> Column 0 (visual Right: 100px)
+                        Box(Modifier.size(colSizeDp).saveLayoutInfo(Ref(), item0Pos, latch))
+                        // Item 1 -> Column 1 (visual Left: 0px)
+                        Box(Modifier.size(colSizeDp).saveLayoutInfo(Ref(), item1Pos, latch))
+                    }
+                }
+            }
+
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+            assertEquals(Offset(colSize.toFloat(), 0f), item0Pos.value)
+            assertEquals(Offset(0f, 0f), item1Pos.value)
         }
 
     @Test
@@ -958,7 +993,9 @@ class GridTest : LayoutTest() {
                     minIntrinsicWidth = itemMin,
                     maxIntrinsicWidth = itemMax,
                     modifier =
-                        Modifier.gridItem(1, 1).fillMaxSize().saveLayoutInfo(sizes[0], Ref(), latch),
+                        Modifier.gridItem(1, 1)
+                            .fillMaxSize()
+                            .saveLayoutInfo(sizes[0], Ref(), latch),
                 )
                 // Item 2 (MaxContent)
                 IntrinsicItem(
@@ -966,7 +1003,9 @@ class GridTest : LayoutTest() {
                     minIntrinsicWidth = itemMin,
                     maxIntrinsicWidth = itemMax,
                     modifier =
-                        Modifier.gridItem(1, 2).fillMaxSize().saveLayoutInfo(sizes[1], Ref(), latch),
+                        Modifier.gridItem(1, 2)
+                            .fillMaxSize()
+                            .saveLayoutInfo(sizes[1], Ref(), latch),
                 )
                 // Item 3 (Auto)
                 IntrinsicItem(
@@ -974,7 +1013,9 @@ class GridTest : LayoutTest() {
                     minIntrinsicWidth = itemMin,
                     maxIntrinsicWidth = itemMax,
                     modifier =
-                        Modifier.gridItem(1, 3).fillMaxSize().saveLayoutInfo(sizes[2], Ref(), latch),
+                        Modifier.gridItem(1, 3)
+                            .fillMaxSize()
+                            .saveLayoutInfo(sizes[2], Ref(), latch),
                 )
             }
         }
@@ -2084,7 +2125,8 @@ class GridTest : LayoutTest() {
                             gridSize.value = coordinates.size
                             positionedLatch.countDown()
                         },
-                ) { /* empty */
+                ) {
+                    /* empty */
                 }
             }
 
@@ -2120,7 +2162,8 @@ class GridTest : LayoutTest() {
                                 gridSize.value = coordinates.size
                                 positionedLatch.countDown()
                             },
-                    ) { /* empty */
+                    ) {
+                        /* empty */
                     }
                 }
             }
@@ -3276,7 +3319,6 @@ class GridTest : LayoutTest() {
     fun testGrid_namedArea_overlapsWithExplicitPlacement() =
         with(density) {
             val size = 50.dp
-            val sizePx = size.roundToPx().toFloat()
 
             val latch = CountDownLatch(2)
             val pos1 = Ref<Offset>()

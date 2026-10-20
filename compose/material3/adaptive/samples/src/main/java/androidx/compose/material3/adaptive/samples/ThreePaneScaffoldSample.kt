@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -248,7 +249,7 @@ fun ListDetailPaneScaffoldSampleWithExtraPaneLevitatedAsDialog() {
             }
         },
         extraPane = {
-            AnimatedPane {
+            AnimatedPane(shape = RoundedCornerShape(16.dp)) {
                 ExtraPaneContent(
                     extraItems = extraItems,
                     selectedItem = selectedItem,
@@ -495,8 +496,7 @@ fun <T> levitateAsDialogSample(): ThreePaneScaffoldNavigator<T> {
 fun <T> levitateAsBottomSheetSample(): ThreePaneScaffoldNavigator<T> {
     val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
     val dragToResizeState = rememberDragToResizeState(dockedEdge = DockedEdge.Bottom)
-    var navigator: ThreePaneScaffoldNavigator<T>? = null
-    navigator =
+    val navigator: ThreePaneScaffoldNavigator<T> =
         rememberSupportingPaneScaffoldNavigator<T>(
             scaffoldDirective = scaffoldDirective,
             adaptStrategies =
@@ -880,7 +880,9 @@ private fun DetailPaneContent(
         backButton = {
             BackButton(
                 visible = !scaffoldNavigator.isExpanded(ListDetailPaneScaffoldRole.List),
-                onClick = { coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) } },
+                onClick = {
+                    coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) }
+                },
             )
         },
     ) {
@@ -1008,7 +1010,9 @@ private fun ExtraPaneContent(
         backButton = {
             BackButton(
                 visible = scaffoldNavigator.canNavigateBack(backBehavior),
-                onClick = { coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) } },
+                onClick = {
+                    coroutineScope.launch { scaffoldNavigator.navigateBack(backBehavior) }
+                },
             )
         },
     ) {

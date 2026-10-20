@@ -57,6 +57,18 @@ fun Events.assertReceived(type: PointerEventType, vararg pointers: ComposeSceneP
 fun Events.assertReceivedLast(type: PointerEventType, offset: Offset) =
     receivedLast().assertHas(type, offset)
 
+/**
+ * Asserts that a Move event without position change (for example, a synthetic Move sent after
+ * relayout) is received, if such events are delivered, see
+ * [ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled]
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+fun Events.assertReceivedMoveWithoutPositionChange(offset: Offset) {
+    if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) {
+        assertReceived(PointerEventType.Move, offset)
+    }
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 fun Events.assertReceivedLast(type: PointerEventType, vararg pointers: ComposeScenePointer) =
     receivedLast().assertHas(type, *pointers)

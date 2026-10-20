@@ -254,8 +254,9 @@ internal class SecureTextFieldController(
         }
     }
 
-    val focusChangeModifier =
-        Modifier.onFocusChanged { if (!it.isFocused) passwordInputTransformation.hide() }
+    val focusChangeModifier = Modifier.onFocusChanged {
+        if (!it.isFocused) passwordInputTransformation.hide()
+    }
 
     private val resetTimerSignal = Channel<Unit>(Channel.UNLIMITED)
 
@@ -410,7 +411,7 @@ public fun BasicSecureTextField(
     decorator: TextFieldDecorator? = null,
     // Last parameter must not be a function unless it's intended to be commonly used as a trailing
     // lambda.
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
 ) {
     BasicSecureTextField(
@@ -452,7 +453,7 @@ public fun BasicSecureTextField(
     decorator: TextFieldDecorator? = null,
     // Last parameter must not be a function unless it's intended to be commonly used as a trailing
     // lambda.
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
 ) {
     BasicSecureTextField(

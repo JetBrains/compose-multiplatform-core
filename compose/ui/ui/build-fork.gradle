@@ -73,7 +73,7 @@ androidXMultiplatform {
         commonMain.dependencies {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.6.0")
             // when updating the runtime version please also update the runtime-saveable version
             implementation(project(":compose:runtime:runtime"))
             api("androidx.compose.runtime:runtime-retain:$composeVersion")
@@ -90,11 +90,8 @@ androidXMultiplatform {
         }
 
         commonTest.dependencies {
-            implementation(libs.kotlinTest)
-            implementation(libs.kotlinCoroutinesTest)
             implementation(libs.kotlinReflect)
             implementation(project(":compose:ui:ui-util"))
-            implementation(project(":compose:ui:ui-test"))
         }
 
         // jbVerifyForkDependencies: suppress
@@ -119,6 +116,8 @@ androidXMultiplatform {
             dependsOn(commonTest)
             dependencies {
                 // TODO: Move to commonTest?
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:ui:ui-test"))

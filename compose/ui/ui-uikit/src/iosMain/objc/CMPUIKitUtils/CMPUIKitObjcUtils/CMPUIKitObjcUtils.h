@@ -37,6 +37,7 @@ FOUNDATION_EXPORT const unsigned char CMPUIKitObjcUtilsVersionString[];
 #import "CMPMetalLayer.h"
 #import "CMPOSLogger.h"
 #import "CMPPanGestureRecognizer.h"
+#import "CMPPinchGestureRecognizer.h"
 #import "CMPScreenEdgePanGestureRecognizer.h"
 #import "CMPScrollView.h"
 #import "CMPTextInputStringTokenizer.h"

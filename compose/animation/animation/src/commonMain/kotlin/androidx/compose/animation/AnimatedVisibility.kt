@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalDeferredTransitionApi::class)
-
 package androidx.compose.animation
 
 import androidx.compose.animation.EnterExitState.PostExit
@@ -23,11 +21,11 @@ import androidx.compose.animation.EnterExitState.PreEnter
 import androidx.compose.animation.EnterExitState.Visible
 import androidx.compose.animation.core.DeferredTransition
 import androidx.compose.animation.core.DeferredTransitionState
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.InternalAnimationApi
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.createChildTransition
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.internal.JvmDefaultWithCompatibility
@@ -36,13 +34,11 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.layout.IntrinsicMeasurable
@@ -623,8 +619,8 @@ public fun <T> Transition<T>.AnimatedVisibility(
  *
  * [mutableTransform] A block to control the visual transformations during the deferred phase (e.g.,
  * for predictive back gestures) before the main transition begins. This is only active if the
- * [Transition] was created using [rememberTransition] with [DeferredTransitionState]. By default,
- * this is `null`, meaning no manual transformations are applied. This phase starts when
+ * [Transition] was created using [rememberDeferredTransition] with [DeferredTransitionState]. By
+ * default, this is `null`, meaning no manual transformations are applied. This phase starts when
  * [DeferredTransitionState.defer] is called and ends when [DeferredTransitionState.animateTo] is
  * called to start the automatic transition. During this phase, you can manually manipulate the
  * content's transformations (like [TransformScope.alpha], [TransformScope.scale],
@@ -652,7 +648,6 @@ public fun <T> Transition<T>.AnimatedVisibility(
  * @see shrinkOut
  * @see AnimatedVisibilityScope
  */
-@ExperimentalDeferredTransitionApi
 @Composable
 public fun <T> DeferredTransition<T>.DeferredAnimatedVisibility(
     visible: (T) -> Boolean,
@@ -732,7 +727,12 @@ public interface AnimatedVisibilityScope {
                     properties["label"] = label
                 }
         ) {
-            this.then(transition.createModifier(enter, exit, label = label))
+            this.then(
+                transition.createEnterExitModifier(
+                    updateEnterExitModifierState(transition, enter, exit),
+                    label = label,
+                )
+            )
         }
 }
 
@@ -815,53 +815,46 @@ internal fun <T> AnimatedEnterExitImpl(
                 transition.targetEnterExit(visible, it)
             }
 
-        val sharedState = remember(transition) { SharedMutableTransformState() }
-        sharedState.mutableData = mutableTransformData
-        val activeMutableState = childTransition.trackActiveMutableState(sharedState)
-
         // Hoist the active enter/exit tracking to this scope to survive the temporary disposal
         // of the Layout and its modifiers when an exit transition finishes. If an interruption
         // occurs (e.g. A -> B -> A) after the layout for A has been removed, the hoisted
         // tracking preserves the original exit boundaries. Without this, the tracking would
         // re-initialize with the new parameters (which could be ExitTransition.None in
         // AnimatedContent), causing the animation to lose its start/end values and snap.
-        val activeEnter = childTransition.trackActiveEnter(enter, activeMutableState)
-        val activeExit = childTransition.trackActiveExit(exit, activeMutableState)
-
-        val shouldDisposeBlockUpdated by rememberUpdatedState(shouldDisposeBlock)
+        val modifierState =
+            updateEnterExitModifierState(
+                childTransition,
+                enter,
+                exit,
+                mutableTransformData,
+            )
 
         val shouldDisposeAfterExit by
-            produceState(
-                initialValue =
-                    shouldDisposeBlock(childTransition.currentState, childTransition.targetState)
-            ) {
-                snapshotFlow { childTransition.exitFinished }
-                    .collect {
-                        value =
-                            if (it) {
-                                shouldDisposeBlockUpdated(
-                                    childTransition.currentState,
-                                    childTransition.targetState,
-                                )
-                            } else {
-                                false
-                            }
+            remember(childTransition, shouldDisposeBlock) {
+                derivedStateOf {
+                    if (childTransition.exitFinished) {
+                        shouldDisposeBlock(
+                            childTransition.currentState,
+                            childTransition.targetState,
+                        )
+                    } else {
+                        false
                     }
+                }
             }
 
         if (!childTransition.exitFinished || !shouldDisposeAfterExit) {
             val scope =
-                remember(transition) { AnimatedVisibilityScopeImpl(childTransition, sharedState) }
+                remember(childTransition) {
+                    AnimatedVisibilityScopeImpl(childTransition, modifierState.transformState)
+                }
             Layout(
                 content = { scope.content() },
                 modifier =
                     modifier.then(
                         childTransition
-                            .createModifier(
-                                activeEnter,
-                                activeExit,
-                                trackActiveEnterExit = false,
-                                sharedMutableTransformState = activeMutableState,
+                            .createEnterExitModifier(
+                                modifierState,
                                 label = "Built-in",
                             )
                             .then(
@@ -896,13 +889,12 @@ private class AnimatedEnterExitMeasurePolicy(val scope: AnimatedVisibilityScopeI
     ): MeasureResult {
         var maxWidth = 0
         var maxHeight = 0
-        val placeables =
-            measurables.fastMap {
-                it.measure(constraints).apply {
-                    maxWidth = max(maxWidth, width)
-                    maxHeight = max(maxHeight, height)
-                }
+        val placeables = measurables.fastMap {
+            it.measure(constraints).apply {
+                maxWidth = max(maxWidth, width)
+                maxHeight = max(maxHeight, height)
             }
+        }
         // Position the children.
         if (isLookingAhead) {
             hasLookaheadOccurred = true

@@ -19,27 +19,24 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
+import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
+import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.PreferredSizeReportingStrategy
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.PlistSanityCheck
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
-import androidx.compose.ui.uikit.utils.CMPKeyValueObserver
-import androidx.compose.ui.uikit.utils.CMPUIWindowSceneUtils
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -59,8 +56,6 @@ import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.CPointed
-import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.IntVar
 import kotlinx.cinterop.alloc
@@ -71,11 +66,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import org.jetbrains.skia.Canvas
-import org.jetbrains.skiko.SystemTheme
-import platform.Foundation.NSKeyValueObservingOptionNew
-import platform.Foundation.addObserver
-import platform.Foundation.removeObserver
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIResponder
@@ -109,9 +99,6 @@ internal class ComposeContainer(
         useOpaqueConfiguration = configuration.opaque,
     )
 
-    private val frameChoreographer: FrameChoreographer?
-        get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
-
     private var mediator: ComposeSceneMediator? = null
 
     @OptIn(InternalComposeUiApi::class)
@@ -136,7 +123,7 @@ internal class ComposeContainer(
         set(value) {
             field = value
             mediator?.layoutDirection = value
-            navigationEventInput.layoutDirection = value
+            navigationEventInput?.layoutDirection = value
         }
     private val motionDurationScale = MotionDurationScaleImpl()
     private var activeStateListener: SceneActiveStateListener? = null
@@ -152,15 +139,8 @@ internal class ComposeContainer(
         get() = mediatorComponentsOwner
             ?: error("ArchitectureComponentsOwner is not initialized yet.")
 
-    private val interfaceOrientationObserver = SceneGeometryObserver {
-        updateInterfaceOrientationState()
-    }
-    private val navigationEventInput = IosBackNavigationEventInput(
-        density = view.density,
-        initialLayoutDirection = layoutDirection,
-        getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
-        endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
-    )
+    private val mediaScope = IosUiMediaScope(windowContext.windowInfo)
+    private var navigationEventInput: IosBackNavigationEventInput? = null
     private var layoutInvalidationHandler: LayoutInvalidationHandler? = null
     private val fontScaleProvider = FontScaleProvider(
         view = view,
@@ -168,16 +148,10 @@ internal class ComposeContainer(
     )
     val hasInteropViews: Boolean get() = mediator?.hasInteropViews ?: false
 
-    /*
-     * Initial value is arbitrarily chosen to avoid propagating invalid value logic
-     * It's never the case in the real usage scenario to reflect that in type system
-     */
-    private val interfaceOrientationState: MutableState<InterfaceOrientation> = mutableStateOf(
-        InterfaceOrientation.Portrait
-    )
-    private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.UNKNOWN)
 
     private val focusedViewsList = FocusedViewsList()
+
+    private val canvasHolder = SkiaCanvasHolder()
 
     val currentLifecycleState: Lifecycle.State get() =
         architectureComponentsOwner.lifecycle.currentState
@@ -190,6 +164,7 @@ internal class ComposeContainer(
             PlistSanityCheck.performIfNeeded()
         }
         lifecycleDelegate.runOnDeinit {
+            disposeComposeScene()
             windowContext.dispose()
         }
     }
@@ -206,21 +181,17 @@ internal class ComposeContainer(
     }
 
     fun hasInvalidations(): Boolean {
-        return mediator?.hasInvalidations == true || layersHolder?.layersViewController?.hasInvalidations == true
+        return view.hasInvalidations || mediator?.hasInvalidations == true ||
+            layersHolder?.layersViewController?.hasInvalidations == true
     }
-
-    private val currentInterfaceOrientation: InterfaceOrientation?
-        get() {
-            return InterfaceOrientation.getByRawValue(
-                CMPUIWindowSceneUtils.interfaceOrientationForWindowScene(windowScene)
-            )
-        }
 
     private fun onLayoutSubviews() {
         windowContext.updateWindowContainerSize()
 
-        mediator?.measureAndLayout()
-        sceneSizing.onLayout()
+        mediator?.updateKeyboardOverlap()
+        mediator?.requestMeasureAndLayout {
+            sceneSizing.onLayout()
+        }
     }
 
     private fun onTraitCollectionDidChange() {
@@ -229,12 +200,11 @@ internal class ComposeContainer(
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        navigationEventInput.onDidMoveToWindow(window, view)
-        interfaceOrientationObserver.windowScene = window?.windowScene
+        navigationEventInput?.onDidMoveToWindow(window, view)
+        mediaScope.onDidMoveToWindow(window)
 
         window ?: return
 
-        updateInterfaceOrientationState()
 
         layersHolder?.layersViewController?.containerWindow = view.window
         windowContext.window = window
@@ -242,18 +212,14 @@ internal class ComposeContainer(
         lifecycleDelegate.windowScene = window.windowScene
     }
 
-    fun updateInterfaceOrientationState() {
-        currentInterfaceOrientation?.let {
-            interfaceOrientationState.value = it
-        }
-    }
+    fun updateInterfaceOrientationState() = mediaScope.updateInterfaceOrientationState()
 
     fun sceneDidAppear() {
         mediator?.sceneDidAppear()
 
         // Because the container view can change during the modal transition animation,
         // the gesture handlers and layers view are added back when the animation ends.
-        navigationEventInput.onDidMoveToWindow(view.window, view)
+        navigationEventInput?.onDidMoveToWindow(view.window, view)
 
         layoutInvalidationHandler?.invalidateLayoutIfNeeded()
         view.setNeedsDisplay()
@@ -262,17 +228,19 @@ internal class ComposeContainer(
     fun sceneWillDisappear() {
         mediator?.sceneWillDisappear()
 
-        navigationEventInput.onDidMoveToWindow(null, view)
+        navigationEventInput?.onDidMoveToWindow(null, view)
     }
 
-    fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) {
-        systemThemeState.value = style.asComposeSystemTheme()
-    }
+    fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) = mediaScope.updateUserInterfaceStyle(style)
 
-    fun initializeComposeScene() {
+ fun initializeComposeScene() {
         sceneJob = Job()
-        val frameChoreographer = frameChoreographer ?: error("No window scene found")
-        val containerCoroutineContext = frameChoreographer.coroutineContext + motionDurationScale + sceneJob
+        val frameChoreographer = view.window
+            ?.let(FrameChoreographer::choreographerForWindow)
+            ?: error("No window found")
+
+        val containerCoroutineContext =
+            frameChoreographer.coroutineContext + motionDurationScale + sceneJob
 
         val layoutInvalidationHandler = LayoutInvalidationHandler(containerCoroutineContext) {
             view.setNeedsLayout()
@@ -281,12 +249,16 @@ internal class ComposeContainer(
         this.layoutInvalidationHandler = layoutInvalidationHandler
 
         val metalView = MetalView(
-            retrieveInteropTransaction = { mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty },
+            retrieveInteropTransaction = {
+                mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty
+            },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             draw = { canvas ->
+             canvasHolder.drawInto(canvas) {
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-                    mediator?.draw(canvas.asComposeCanvas())
+                    mediator?.draw(this@drawInto)
                 }
+              }
             }
         )
         metalView.canBeOpaque = configuration.opaque
@@ -304,6 +276,16 @@ internal class ComposeContainer(
         )
         architectureComponentsOwner.enableSavedStateHandles()
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
+
+        val backNavigationEventInput = IosBackNavigationEventInput(
+            frameChoreographer = frameChoreographer,
+            density = view.density,
+            initialLayoutDirection = layoutDirection,
+            getTopLeftOffsetInWindow = { IntOffset.Zero }, // full screen
+            endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
+        ).also {
+            navigationEventInput = it
+        }
 
         mediator = ComposeSceneMediator(
             frameChoreographer = frameChoreographer,
@@ -332,8 +314,8 @@ internal class ComposeContainer(
                     },
                 )
             },
-            navigationEventInput = navigationEventInput,
-            interfaceOrientationState = interfaceOrientationState,
+            navigationEventInput = backNavigationEventInput,
+            mediaScope = mediaScope,
             schedulePendingInteropViewUpdates = view::setNeedsDisplay,
         ).also { mediator ->
             mediator.rootForTestListener = rootForTestListener
@@ -346,7 +328,7 @@ internal class ComposeContainer(
                 onDraw = { needsSynchronousDraw ->
                     metalView.redrawer.onDraw(
                         needsSynchronousDraw = needsSynchronousDraw,
-                        needsComposeSceneDraw = mediator.needsComposeSceneDraw,
+                        needsDraw = mediator.needsComposeSceneDraw,
                         retrievePendingViewUpdatesInteropTransaction =
                             mediator::retrievePendingViewUpdatesInteropTransaction,
                     )
@@ -367,15 +349,17 @@ internal class ComposeContainer(
             }
         }
 
-        interfaceOrientationObserver.isObservingEnabled = true
+        mediaScope.startObserving()
 
-        architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
+        architectureComponentsOwner.navigationEventDispatcher.addInput(backNavigationEventInput)
         lifecycleDelegate.windowScene = windowScene
-        navigationEventInput.onDidMoveToWindow(view.window, view)
+        backNavigationEventInput.onDidMoveToWindow(view.window, view)
         onFocusConditionsChanged()
     }
 
     fun disposeComposeScene() {
+        if (mediator == null) return
+
         // Store the current state in the local savedState property. It is used to
         // provide the saved state to the next Compose scene when the container re-enters
         // the window hierarchy.
@@ -384,8 +368,11 @@ internal class ComposeContainer(
         sceneJob.cancel()
 
         view.updateMetalView(metalView = null)
-        navigationEventInput.onDidMoveToWindow(null, view)
-        architectureComponentsOwner.navigationEventDispatcher.removeInput(navigationEventInput)
+        navigationEventInput?.let {
+            it.onDidMoveToWindow(null, view)
+            architectureComponentsOwner.navigationEventDispatcher.removeInput(it)
+        }
+        navigationEventInput = null
 
         mediator = null
 
@@ -394,7 +381,7 @@ internal class ComposeContainer(
 
         layersHolder = null
 
-        interfaceOrientationObserver.isObservingEnabled = false
+        mediaScope.stopObserving()
     }
 
     private fun createComposeSceneContext(
@@ -438,13 +425,14 @@ internal class ComposeContainer(
                     consumePointerInputOutside = consumePointerInputOutside,
                     parentCoroutineContext = containerCoroutineContext,
                     ownerProvider = architectureComponentsOwner,
-                    interfaceOrientationState = interfaceOrientationState,
+                    mediaScope = mediaScope,
                     invalidateLayout = { layersHolder.getLayersViewController().invalidateLayout() },
                     invalidateDraw = { layersHolder.getLayersViewController().invalidateDraw() },
                 )
 
                 layer.rootForTestListener = rootForTestListener
                 layersHolder.getLayersViewController().attach(layer)
+                onFontScaleChanged(fontScaleProvider.fontScale)
                 onFocusConditionsChanged()
 
                 return layer
@@ -491,7 +479,8 @@ internal class ComposeContainer(
     private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
             LocalUIViewController provides containingViewController,
-            LocalSystemTheme provides systemThemeState.value,
+            @Suppress("DEPRECATION")
+            LocalSystemTheme provides mediaScope.systemTheme.asComposeSystemTheme(),
             content = content
         )
 
@@ -507,14 +496,6 @@ internal class ComposeContainer(
 
     private val windowScene: UIWindowScene?
         get() = view.window?.windowScene
-}
-
-private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
-    return when (this) {
-        UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.LIGHT
-        UIUserInterfaceStyle.UIUserInterfaceStyleDark -> SystemTheme.DARK
-        else -> SystemTheme.UNKNOWN
-    }
 }
 
 private fun getApplicationLayoutDirection() =
@@ -542,54 +523,6 @@ private class ComposeLayersHolder(
             layersViewController = layers
             layers
         }
-    }
-}
-
-private class SceneGeometryObserver(
-    val onGeometryChanged: () -> Unit
-) : CMPKeyValueObserver() {
-    private val observingKey = "effectiveGeometry"
-
-    var windowScene: UIWindowScene? = null
-        set(value) {
-            if (field == value) return
-            removeObserverIfNeeded()
-            field = value
-            addObserverIfNeeded()
-        }
-
-    var isObservingEnabled = false
-        set(value) {
-            if (field == value) return
-            field = value
-            if (value) {
-                addObserverIfNeeded()
-            } else {
-                removeObserverIfNeeded()
-            }
-        }
-
-    private var isObservingAdded = false
-
-    private fun addObserverIfNeeded() {
-        if (isObservingEnabled && !isObservingAdded) {
-            isObservingAdded = true
-            windowScene?.addObserver(this, observingKey, NSKeyValueObservingOptionNew, null)
-        }
-    }
-
-    private fun removeObserverIfNeeded() {
-        windowScene?.removeObserver(this, observingKey)
-        isObservingAdded = false
-    }
-
-    override fun observeValueForKeyPath(
-        keyPath: String?,
-        ofObject: Any?,
-        change: Map<Any?, *>?,
-        context: CPointer<out CPointed>?
-    ) {
-        onGeometryChanged()
     }
 }
 
@@ -657,9 +590,8 @@ internal var UIResponder.attachedCompositionContext: CompositionContext?
 
 internal fun UIResponder.findParentCompositionContext(): CompositionContext {
     if (this is UIWindow) {
-        return FrameChoreographer.choreographerForScene(
-            scene = windowScene ?: error("Window scene is null")
-        ).frameRecomposer.compositionContext
+        return FrameChoreographer.choreographerForWindow(this)
+            .frameRecomposer.compositionContext
     }
     this.attachedCompositionContext?.let {
         return it

@@ -112,6 +112,7 @@ import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -1818,34 +1819,6 @@ class AndroidPointerInputTest {
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
             androidComposeView.dispatchTouchEvent(downEvent)
-
-            // When re-interpreting pinches, the first MotionEvent (ACTION_DOWN with 1 pointer) will
-            // not result in a PointerEvent being sent through Compose. Therefore, we send a
-            // second MotionEvent (ACTION_POINTER_DOWN with 2 pointers) to trigger the PointerEvent.
-            if (ComposeUiFlags.isTrackpadPinchReinterpretationEnabled) {
-                val pointerProperties2 =
-                    arrayOf(
-                        pointerProperties[0],
-                        PointerProperties(1).also { it.toolType = MotionEvent.TOOL_TYPE_FINGER },
-                    )
-                val pointerCoords2 =
-                    arrayOf(
-                        pointerCoords!![0],
-                        PointerCoords(pointerCoords!![0].x + 10f, pointerCoords!![0].y + 10f),
-                    )
-                val pointerDownEvent =
-                    MotionEvent(
-                        eventTime = eventTime,
-                        action = ACTION_POINTER_DOWN,
-                        numPointers = 2,
-                        actionIndex = 1,
-                        pointerProperties = pointerProperties2,
-                        pointerCoords = pointerCoords2,
-                        buttonState = buttonState,
-                        classification = motionEventClassification,
-                    )
-                androidComposeView.dispatchTouchEvent(pointerDownEvent)
-            }
         }
 
         // --> Assert
@@ -1853,6 +1826,236 @@ class AndroidPointerInputTest {
             assertThat(pointerEvent).isNotNull()
             assertThat(pointerEvent!!.classification).isEqualTo(motionEventClassification)
         }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun trackpadPinch_initialDown_returnsTrue() {
+        // --> Arrange
+        var boxLayoutCoordinates: LayoutCoordinates? = null
+        val setUpFinishedLatch = CountDownLatch(1)
+
+        rule.runOnUiThread {
+            container.setContent {
+                Box(
+                    Modifier.fillMaxSize()
+                        .onGloballyPositioned {
+                            setUpFinishedLatch.countDown()
+                            boxLayoutCoordinates = it
+                        }
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent()
+                                }
+                            }
+                        }
+                ) {}
+            }
+        }
+
+        // Ensure Arrange (setup) step is finished
+        assertTrue(setUpFinishedLatch.await(2, TimeUnit.SECONDS))
+
+        var position: Offset?
+        val numPointers = 1
+        val actionIndex = 0
+        val pointerProperties =
+            arrayOf(PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_FINGER })
+        var pointerCoords: Array<PointerCoords>?
+
+        // --> Act
+        var dispatchResult = false
+        rule.runOnUiThread {
+            val root = boxLayoutCoordinates!!.findRootCoordinates()
+            position = root.localPositionOf(boxLayoutCoordinates!!, Offset.Zero)
+            pointerCoords =
+                arrayOf(PointerCoords(position!!.x, position!!.y, Offset.Zero.x, Offset.Zero.y))
+
+            val downEvent =
+                MotionEvent(
+                    eventTime = 0,
+                    action = ACTION_DOWN,
+                    numPointers = numPointers,
+                    actionIndex = actionIndex,
+                    pointerProperties = pointerProperties,
+                    pointerCoords = pointerCoords!!,
+                    classification = MotionEvent.CLASSIFICATION_PINCH,
+                )
+
+            val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
+            dispatchResult = androidComposeView.dispatchTouchEvent(downEvent)
+        }
+
+        // --> Assert
+        assertThat(dispatchResult).isTrue()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun trackpadPinch_initialDown_usesHoverPosition() {
+        var boxLayoutCoordinates: LayoutCoordinates? = null
+        val setUpFinishedLatch = CountDownLatch(1)
+        var receivedPosition: Offset? = null
+        var receivedType: PointerType? = null
+        var receivedEventType: PointerEventType? = null
+
+        rule.runOnUiThread {
+            container.setContent {
+                Box(
+                    Modifier.fillMaxSize()
+                        .onGloballyPositioned {
+                            setUpFinishedLatch.countDown()
+                            boxLayoutCoordinates = it
+                        }
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                var event = awaitPointerEvent()
+                                while (
+                                    event.type == PointerEventType.Enter ||
+                                        event.type == PointerEventType.Move ||
+                                        event.type == PointerEventType.Exit
+                                ) {
+                                    event = awaitPointerEvent()
+                                }
+                                receivedPosition = event.changes[0].position
+                                receivedType = event.changes[0].type
+                                receivedEventType = event.type
+                            }
+                        }
+                ) {}
+            }
+        }
+
+        assertTrue(setUpFinishedLatch.await(2, TimeUnit.SECONDS))
+
+        var position: Offset?
+        val pointerProperties =
+            arrayOf(PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_FINGER })
+
+        var dispatchResult = false
+        rule.runOnUiThread {
+            val root = boxLayoutCoordinates!!.findRootCoordinates()
+            position = root.localPositionOf(boxLayoutCoordinates!!, Offset.Zero)
+
+            val hoverPosition = position!!.plus(Offset(15f, 25f))
+            val hoverCoords = arrayOf(PointerCoords(hoverPosition.x, hoverPosition.y))
+            val hoverEvent =
+                MotionEvent(
+                    eventTime = 0,
+                    action = ACTION_HOVER_MOVE,
+                    numPointers = 1,
+                    actionIndex = 0,
+                    pointerProperties =
+                        arrayOf(
+                            PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_MOUSE }
+                        ),
+                    pointerCoords = hoverCoords,
+                )
+            val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
+            androidComposeView.dispatchGenericMotionEvent(hoverEvent)
+
+            val pinchPosition = position!!.plus(Offset(100f, 100f))
+            val pinchCoords = arrayOf(PointerCoords(pinchPosition.x, pinchPosition.y))
+            val downEvent =
+                MotionEvent.obtain(
+                    0,
+                    1L,
+                    ACTION_DOWN,
+                    1,
+                    pointerProperties,
+                    pinchCoords,
+                    0,
+                    0,
+                    0f,
+                    0f,
+                    0,
+                    0,
+                    InputDevice.SOURCE_MOUSE,
+                    0,
+                    0,
+                    MotionEvent.CLASSIFICATION_PINCH,
+                )!!
+
+            dispatchResult = androidComposeView.dispatchTouchEvent(downEvent)
+        }
+
+        assertThat(dispatchResult).isTrue()
+        assertThat(receivedPosition).isEqualTo(Offset(15f, 25f))
+        assertThat(receivedType).isEqualTo(PointerType.Mouse)
+        assertThat(receivedEventType).isEqualTo(PointerEventType.ScaleStart)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun trackpadPinch_noHover_doesNotReinterpret() {
+        var boxLayoutCoordinates: LayoutCoordinates? = null
+        val setUpFinishedLatch = CountDownLatch(1)
+        var receivedPosition: Offset? = null
+        var receivedType: PointerType? = null
+        var receivedEventType: PointerEventType? = null
+
+        rule.runOnUiThread {
+            container.setContent {
+                Box(
+                    Modifier.fillMaxSize()
+                        .onGloballyPositioned {
+                            setUpFinishedLatch.countDown()
+                            boxLayoutCoordinates = it
+                        }
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                val event = awaitPointerEvent()
+                                receivedPosition = event.changes[0].position
+                                receivedType = event.changes[0].type
+                                receivedEventType = event.type
+                            }
+                        }
+                ) {}
+            }
+        }
+
+        assertTrue(setUpFinishedLatch.await(2, TimeUnit.SECONDS))
+
+        var position: Offset?
+        val pointerProperties =
+            arrayOf(PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_FINGER })
+
+        var dispatchResult = false
+        rule.runOnUiThread {
+            val root = boxLayoutCoordinates!!.findRootCoordinates()
+            position = root.localPositionOf(boxLayoutCoordinates!!, Offset.Zero)
+
+            val pinchPosition = position!!.plus(Offset(100f, 100f))
+            val pinchCoords = arrayOf(PointerCoords(pinchPosition.x, pinchPosition.y))
+            val downEvent =
+                MotionEvent.obtain(
+                    0,
+                    1L,
+                    ACTION_DOWN,
+                    1,
+                    pointerProperties,
+                    pinchCoords,
+                    0,
+                    0,
+                    0f,
+                    0f,
+                    0,
+                    0,
+                    InputDevice.SOURCE_MOUSE,
+                    0,
+                    0,
+                    MotionEvent.CLASSIFICATION_PINCH,
+                )!!
+
+            val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
+            dispatchResult = androidComposeView.dispatchTouchEvent(downEvent)
+        }
+
+        assertThat(dispatchResult).isTrue()
+        assertThat(receivedPosition).isEqualTo(Offset(100f, 100f))
+        assertThat(receivedType).isEqualTo(PointerType.Touch)
+        assertThat(receivedEventType).isEqualTo(PointerEventType.ScaleStart)
     }
 
     /*
@@ -7148,6 +7351,143 @@ class AndroidPointerInputTest {
             assertThat(event1).isNotNull()
             assertThat(event2).isNotNull()
             assertThat(pointerInputCancellations).isFalse()
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @OptIn(ExperimentalComposeUiApi::class)
+    fun trackpadPan_relayoutDuringPan_doesNotDispatchDuplicatePanMove() {
+        assumeTrue(ComposeUiFlags.isTrackpadPanHoverFixEnabled)
+        var showChild by mutableStateOf(true)
+        val parentEvents = mutableListOf<Pair<PointerEventType, Offset>>()
+        val latch = CountDownLatch(1)
+
+        rule.runOnUiThread {
+            container.setContent {
+                Box(
+                    Modifier.fillMaxSize()
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(PointerEventPass.Final)
+                                    val unconsumedPan =
+                                        if (
+                                            event.type == PointerEventType.PanMove &&
+                                                event.changes.none { it.isConsumed }
+                                        ) {
+                                            event.changes.firstOrNull()?.panOffset ?: Offset.Zero
+                                        } else {
+                                            Offset.Zero
+                                        }
+                                    parentEvents += event.type to unconsumedPan
+                                }
+                            }
+                        }
+                        .onGloballyPositioned { latch.countDown() }
+                ) {
+                    if (showChild) {
+                        Box(
+                            Modifier.fillMaxSize().pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent(PointerEventPass.Main)
+                                        if (event.type == PointerEventType.PanMove) {
+                                            event.changes.fastForEach { it.consume() }
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+        val locationInWindow = IntArray(2)
+        rule.runOnUiThread {
+            container.getLocationInWindow(locationInWindow)
+            val x = locationInWindow[0] + 10f
+            val y = locationInWindow[1] + 10f
+            val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
+
+            // 1. Start trackpad pan and send initial pan move (consumed by child)
+            val panDown =
+                MotionEvent(
+                    eventTime = 10,
+                    action = ACTION_DOWN,
+                    numPointers = 1,
+                    actionIndex = 0,
+                    pointerProperties =
+                        arrayOf(PointerProperties(0).apply { toolType = TOOL_TYPE_FINGER }),
+                    pointerCoords =
+                        arrayOf(
+                            PointerCoords(x, y).apply {
+                                setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_X_DISTANCE, 0f)
+                                setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_Y_DISTANCE, 0f)
+                            }
+                        ),
+                    classification = MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE,
+                )
+            val panMove1 =
+                MotionEvent(
+                    eventTime = 20,
+                    action = ACTION_MOVE,
+                    numPointers = 1,
+                    actionIndex = 0,
+                    pointerProperties =
+                        arrayOf(PointerProperties(0).apply { toolType = TOOL_TYPE_FINGER }),
+                    pointerCoords =
+                        arrayOf(
+                            PointerCoords(x, y - 10f).apply {
+                                setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_X_DISTANCE, 0f)
+                                setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_Y_DISTANCE, 10f)
+                            }
+                        ),
+                    classification = MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE,
+                )
+            androidComposeView.dispatchTouchEvent(panDown)
+            androidComposeView.dispatchTouchEvent(panMove1)
+
+            // 2. Remove child mid-pan to trigger relayout and resendMotionEventOnLayout
+            showChild = false
+        }
+
+        // Wait for relayout and the posted resendMotionEventRunnable to execute
+        rule.waitForFutureFrame()
+
+        rule.runOnUiThread {
+            val x = locationInWindow[0] + 10f
+            val y = locationInWindow[1] + 10f
+            val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
+
+            // 3. Send a second pan move after child removal (unconsumed, picked up by parent)
+            val panMove2 =
+                MotionEvent(
+                    eventTime = 40,
+                    action = ACTION_MOVE,
+                    numPointers = 1,
+                    actionIndex = 0,
+                    pointerProperties =
+                        arrayOf(PointerProperties(0).apply { toolType = TOOL_TYPE_FINGER }),
+                    pointerCoords =
+                        arrayOf(
+                            PointerCoords(x, y - 20f).apply {
+                                setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_X_DISTANCE, 0f)
+                                setAxisValue(MotionEvent.AXIS_GESTURE_SCROLL_Y_DISTANCE, 10f)
+                            }
+                        ),
+                    classification = MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE,
+                )
+            androidComposeView.dispatchTouchEvent(panMove2)
+
+            // Verify the simulated hover event on relayout did not produce an extra PanMove
+            val unconsumedPanMoves = parentEvents.filter { (type, pan) ->
+                type == PointerEventType.PanMove && pan != Offset.Zero
+            }
+            assertThat(unconsumedPanMoves)
+                .containsExactly(PointerEventType.PanMove to Offset(0f, 10f))
         }
     }
 

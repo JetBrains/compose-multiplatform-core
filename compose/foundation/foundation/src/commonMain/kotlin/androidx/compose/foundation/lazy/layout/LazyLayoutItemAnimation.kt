@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation.lazy.layout
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
@@ -35,11 +37,11 @@ import kotlinx.coroutines.launch
 
 internal class LazyLayoutItemAnimation(
     private val coroutineScope: CoroutineScope,
-    private val graphicsContext: GraphicsContext? = null,
+    private val graphicsContext: GraphicsContext,
     private val onLayerPropertyChanged: () -> Unit = {},
 ) {
-    var fadeInSpec: FiniteAnimationSpec<Float>? = null
-    var fadeOutSpec: FiniteAnimationSpec<Float>? = null
+    var enterTransition: EnterTransition? = null
+    var exitTransition: ExitTransition? = null
     var placementSpec: FiniteAnimationSpec<IntOffset>? = null
 
     var isRunningMovingAwayAnimation = false
@@ -104,7 +106,7 @@ internal class LazyLayoutItemAnimation(
     var lookaheadOffset: IntOffset = NotInitialized
 
     /** Current [GraphicsLayer]. It will be set to null in [release]. */
-    var layer: GraphicsLayer? = graphicsContext?.createGraphicsLayer()
+    var layer: GraphicsLayer? = graphicsContext.createGraphicsLayer()
         private set
 
     private val placementDeltaAnimation = Animatable(IntOffset.Zero, IntOffset.VectorConverter)
@@ -173,15 +175,15 @@ internal class LazyLayoutItemAnimation(
         }
     }
 
-    fun animateAppearance() {
+    fun animateEnterTransition() {
         layer?.let { layer -> animateFadeIn(layer) }
     }
 
     private fun animateFadeIn(layer: GraphicsLayer) {
         if (isFadeInAnimationInProgress) return
 
-        val fadeInSpec = fadeInSpec
-        if (fadeInSpec == null) {
+        val fadeInConfig = enterTransition?.config?.fade
+        if (fadeInConfig == null) {
             if (isFadeOutAnimationInProgress) {
                 layer.alpha = 1f
                 coroutineScope.launch { fadeAnimation.snapTo(1f) }
@@ -193,15 +195,15 @@ internal class LazyLayoutItemAnimation(
         val isFadeOutAnimationInProgress = isFadeOutAnimationInProgress
 
         if (!isFadeOutAnimationInProgress) {
-            layer.alpha = 0f
+            layer.alpha = fadeInConfig.alpha
         }
 
         coroutineScope.launch {
             try {
                 if (!isFadeOutAnimationInProgress) {
-                    fadeAnimation.snapTo(0f)
+                    fadeAnimation.snapTo(fadeInConfig.alpha)
                 }
-                fadeAnimation.animateTo(1f, fadeInSpec) {
+                fadeAnimation.animateTo(1f, fadeInConfig.animationSpec) {
                     layer.alpha = value
                     onLayerPropertyChanged()
                 }
@@ -211,18 +213,18 @@ internal class LazyLayoutItemAnimation(
         }
     }
 
-    fun animateDisappearance() {
+    fun animateExitTransition() {
         layer?.let { layer -> animateFadeOut(layer) }
     }
 
     private fun animateFadeOut(layer: GraphicsLayer) {
-        val fadeOutSpec = fadeOutSpec ?: return
+        val fadeOutConfig = exitTransition?.config?.fade ?: return
         if (isFadeOutAnimationInProgress) return
 
         isFadeOutAnimationInProgress = true
         coroutineScope.launch {
             try {
-                fadeAnimation.animateTo(0f, fadeOutSpec) {
+                fadeAnimation.animateTo(fadeOutConfig.alpha, fadeOutConfig.animationSpec) {
                     layer.alpha = value
                     onLayerPropertyChanged()
                 }
@@ -249,10 +251,10 @@ internal class LazyLayoutItemAnimation(
         isRunningMovingAwayAnimation = false
         placementDelta = IntOffset.Zero
         targetOffset = NotInitialized
-        layer?.let { graphicsContext?.releaseGraphicsLayer(it) }
+        layer?.let { graphicsContext.releaseGraphicsLayer(it) }
         layer = null
-        fadeInSpec = null
-        fadeOutSpec = null
+        enterTransition = null
+        exitTransition = null
         placementSpec = null
     }
 

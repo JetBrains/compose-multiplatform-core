@@ -46,9 +46,12 @@ import androidx.compose.runtime.internal.IntRef
 import androidx.compose.runtime.internal.invokeComposable
 import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 import androidx.compose.runtime.internal.trace
+import androidx.compose.runtime.snapshots.IndirectState
+import androidx.compose.runtime.snapshots.IndirectStateObserver
 import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastToSet
+import androidx.compose.runtime.snapshots.observeIndirectStateRecalculations
 import androidx.compose.runtime.tooling.ComposeStackTrace
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 import androidx.compose.runtime.tooling.ComposeToolingApi
@@ -250,14 +253,18 @@ internal class GapComposer(
     override var sourceMarkersEnabled =
         parentContext.collectingSourceInformation || parentContext.collectingCallByInformation
 
-    private val derivedStateObserver =
-        object : DerivedStateObserver {
-            override fun start(derivedState: DerivedState<*>) {
-                childrenComposing++
+    private val indirectStateObserver =
+        object : IndirectStateObserver {
+            override fun start(state: IndirectState<*>) {
+                if (state is DerivedState<*>) {
+                    childrenComposing++
+                }
             }
 
-            override fun done(derivedState: DerivedState<*>) {
-                childrenComposing--
+            override fun done(state: IndirectState<*>, calculatedValue: Any?) {
+                if (state is DerivedState<*>) {
+                    childrenComposing--
+                }
             }
         }
 
@@ -489,7 +496,10 @@ internal class GapComposer(
         // parent reference management
         parentContext.startComposing()
         parentComposing = true
+
         val parentProvider = parentContext.getCompositionLocalScope()
+        compositeKeyHashCode = parentContext.compositeKeyHashCode
+
         providersInvalidStack.push(providersInvalid.asInt())
         providersInvalid = changed(parentProvider)
         providerCache = null
@@ -519,8 +529,6 @@ internal class GapComposer(
             it.add(compositionData)
             parentContext.recordInspectionTable(it)
         }
-
-        startGroup(parentContext.compositeKeyHashCode.hashCode())
     }
 
     /**
@@ -529,9 +537,10 @@ internal class GapComposer(
      */
     @OptIn(InternalComposeApi::class)
     private fun endRoot() {
-        endGroup()
         parentComposing = false
         parentContext.doneComposing()
+        compositeKeyHashCode = EmptyCompositeKeyHashCode
+
         endGroup()
         changeListWriter.endRoot()
         finalizeCompose()
@@ -915,7 +924,8 @@ internal class GapComposer(
         val next = nextSlot()
         if (next is Float) {
             val nextPrimitive: Float = next
-            if (value == nextPrimitive) return false
+            // NaN != NaN for [Float]s, but this method should treat NaN as being equal to NaN.
+            if (value == nextPrimitive || (value.isNaN() && nextPrimitive.isNaN())) return false
         }
         updateValue(value)
         return true
@@ -937,7 +947,8 @@ internal class GapComposer(
         val next = nextSlot()
         if (next is Double) {
             val nextPrimitive: Double = next
-            if (value == nextPrimitive) return false
+            // NaN != NaN for [Double]s, but this method should treat NaN as being equal to NaN.
+            if (value == nextPrimitive || (value.isNaN() && nextPrimitive.isNaN())) return false
         }
         updateValue(value)
         return true
@@ -1266,17 +1277,19 @@ internal class GapComposer(
             updateValue(observerHolder)
         }
         val holder = observerHolder.wrapped as CompositionContextHolder
-        holder.ref.updateCompositionLocalScope(currentCompositionLocalScope())
+        holder.ref.updateCompositionLocalScope(
+            currentCompositionLocalScope(),
+            this@GapComposer.compositeKeyHashCode,
+        )
         endGroup()
 
         return holder.ref
     }
 
     override val currentRecomposeScope: RecomposeScopeImpl?
-        get() =
-            invalidateStack.let {
-                if (childrenComposing == 0 && it.isNotEmpty()) it.peek() else null
-            }
+        get() = invalidateStack.let {
+            if (childrenComposing == 0 && it.isNotEmpty()) it.peek() else null
+        }
 
     private fun ensureWriter() {
         if (writer.closed) {
@@ -2291,10 +2304,16 @@ internal class GapComposer(
     ) {
         trace("Compose:insertMovableContent") {
             var completed = false
+            val observer = observerHolder.pin()
+            observer?.onBeginComposition(composition)
             try {
-                insertMovableContentGuarded(references)
+                observeIndirectStateRecalculations(indirectStateObserver) {
+                    insertMovableContentGuarded(references)
+                }
                 completed = true
             } finally {
+                observer?.onEndComposition(composition)
+                observerHolder.unpin()
                 if (completed) {
                     cleanUpCompose()
                 } else {
@@ -2520,7 +2539,9 @@ internal class GapComposer(
         }
 
     private fun stackTraceForGroup(group: Int, dataOffset: Int?): List<ComposeStackTraceFrame> =
-        slotTable.read { it.traceForGroup(group, dataOffset) }
+        slotTable.read {
+            it.traceForGroup(group, dataOffset)
+        }
 
     override fun parentStackTrace(): List<ComposeStackTraceFrame> {
         val parentComposition = parentContext.composition as? CompositionImpl ?: return emptyList()
@@ -2625,7 +2646,6 @@ internal class GapComposer(
         content: (@Composable () -> Unit)?,
     ) {
         runtimeCheck(!isComposing) { "Reentrant composition is not supported" }
-        val observer = observerHolder.current()
         trace("Compose:recompose") {
             compositionToken = currentSnapshot().snapshotId.hashCode()
             providerUpdates = null
@@ -2633,6 +2653,7 @@ internal class GapComposer(
             nodeIndex = 0
             var complete = false
             isComposing = true
+            val observer = observerHolder.pin()
             observer?.onBeginComposition(composition)
             try {
                 startRoot()
@@ -2645,7 +2666,7 @@ internal class GapComposer(
                 // ^^ Experimental for forced
 
                 // Ignore reads of derivedStateOf recalculations
-                observeDerivedStateRecalculations(derivedStateObserver) {
+                observeIndirectStateRecalculations(indirectStateObserver) {
                     if (content != null) {
                         startGroup(invocationKey, invocation)
                         invokeComposable(this, content)
@@ -2669,6 +2690,7 @@ internal class GapComposer(
                 throw e.attachComposeStackTrace { currentStackTrace() }
             } finally {
                 observer?.onEndComposition(composition)
+                observerHolder.unpin()
                 isComposing = false
                 invalidations.clear()
                 if (!complete) abortRoot()
@@ -2936,7 +2958,7 @@ internal class GapComposer(
 
     @OptIn(ExperimentalComposeRuntimeApi::class)
     internal inner class CompositionContextImpl(
-        override val compositeKeyHashCode: CompositeKeyHashCode,
+        override var compositeKeyHashCode: CompositeKeyHashCode,
         override val collectingParameterInformation: Boolean,
         override val collectingSourceInformation: Boolean,
         override val observerHolder: CompositionObserverHolder?,
@@ -3040,8 +3062,12 @@ internal class GapComposer(
         override fun getCompositionLocalScope(): PersistentCompositionLocalMap =
             compositionLocalScope
 
-        fun updateCompositionLocalScope(scope: PersistentCompositionLocalMap) {
+        fun updateCompositionLocalScope(
+            scope: PersistentCompositionLocalMap,
+            newCompositeKeyHashCode: CompositeKeyHashCode,
+        ) {
             compositionLocalScope = scope
+            compositeKeyHashCode = newCompositeKeyHashCode
         }
 
         override fun recordInspectionTable(table: MutableSet<CompositionData>) {
@@ -3283,14 +3309,14 @@ private fun MutableList<Invalidation>.insertIfMissing(
             Invalidation(
                 scope,
                 location,
-                // Only derived state instance is important for composition
-                instance.takeIf { it is DerivedState<*> },
+                // Only indirect state instance is important for composition
+                instance.takeIf { it is IndirectState<*> },
             ),
         )
     } else {
         val invalidation = get(index)
-        // Only derived state instance is important for composition
-        if (instance is DerivedState<*>) {
+        // Only indirect state instance is important for composition
+        if (instance is IndirectState<*>) {
             when (val oldInstance = invalidation.instances) {
                 null -> {
                     invalidation.instances = instance

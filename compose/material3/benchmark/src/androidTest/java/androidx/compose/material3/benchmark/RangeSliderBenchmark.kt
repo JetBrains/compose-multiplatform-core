@@ -65,6 +65,10 @@ internal class RangeSliderTestCase : LayeredComposeTestCase(), ToggleableTestCas
 
         RangeSlider(
             state = state,
+            onValueChange = {
+                state.startValue = it.start
+                state.endValue = it.endInclusive
+            },
             startThumb = {
                 Spacer(
                     Modifier.size(48.dp)
@@ -82,10 +86,10 @@ internal class RangeSliderTestCase : LayeredComposeTestCase(), ToggleableTestCas
     }
 
     override fun toggleState() {
-        if (state.activeRangeStart == 0f) {
-            state.activeRangeStart = .7f
+        if (state.startValue == 0f) {
+            state.startValue = .7f
         } else {
-            state.activeRangeStart = 0f
+            state.startValue = 0f
         }
     }
 }

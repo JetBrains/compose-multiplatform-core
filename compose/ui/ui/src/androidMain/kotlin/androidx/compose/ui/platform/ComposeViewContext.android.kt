@@ -178,6 +178,19 @@ private constructor(
     internal val resourceIdCache: ResourceIdCache =
         composeViewContext?.resourceIdCache ?: ResourceIdCache()
 
+    private var _graphicsResourceCache: GraphicsResourceCache? =
+        composeViewContext?.graphicsResourceCache
+
+    /**
+     * [GraphicsResourceCache] exposed to compositions through
+     * [androidx.compose.ui.node.Owner.graphicsResourceCache] and shared with any parent
+     * [ComposeViewContext]. Allocated lazily on first use so compositions that never share graphics
+     * resources don't pay for it.
+     */
+    internal val graphicsResourceCache: GraphicsResourceCache
+        get() =
+            _graphicsResourceCache ?: GraphicsResourceCache().also { _graphicsResourceCache = it }
+
     /**
      * [Configuration] that was last received. Used to determine if there has been an update to the
      * configuration or if we don't have to update the [configuration] instance.
@@ -308,7 +321,7 @@ private constructor(
         composeViewContext?.sharedDrawScope ?: LayoutNodeDrawScope()
 
     /** [WindowInfo] provide by [LocalWindowInfo]. */
-    internal val windowInfo: LazyWindowInfo = LazyWindowInfo()
+    internal val windowInfo: LazyWindowInfo = LazyWindowInfo(view.context)
 
     /**
      * A [CanvasHolder] that can be used for all AndroidComposeViews using this
@@ -409,6 +422,7 @@ private constructor(
         windowInfo.isWindowFocused = view.hasWindowFocus()
         windowInfo.setOnInitializeContainerSize(calculateWindowSizeLambda)
         windowInfo.updateContainerSizeIfObserved(calculateWindowSizeLambda)
+        windowInfo.observeCrossWindowBlurState()
         view.viewTreeObserver.addOnWindowFocusChangeListener(callback)
         view.viewTreeObserver.addOnGlobalLayoutListener(callback)
         pendingWindowInfoUpdate = false
@@ -425,6 +439,7 @@ private constructor(
     private fun stopObserving() {
         view.context.unregisterComponentCallbacks(callback)
         windowInfo.setOnInitializeContainerSize(null)
+        windowInfo.stopObservingCrossWindowBlurState()
         view.viewTreeObserver.removeOnWindowFocusChangeListener(callback)
         view.viewTreeObserver.removeOnGlobalLayoutListener(callback)
         pendingWindowInfoUpdate = false
@@ -559,17 +574,24 @@ private constructor(
                 LocalLifecycleOwner provides lifecycleOwner,
                 LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
                 LocalInspectionTables provides inspectionTable,
+                LocalContext provides owner.context,
+                LocalConfiguration provides owner.configuration,
                 LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
                 LocalProvidableScrollCaptureInProgress providesComputed
                     {
                         owner.scrollCaptureInProgress
                     },
-                LocalHostDefaultProvider providesComputed { owner.hostDefaultProvider },
+                LocalHostDefaultProvider provides owner.hostDefaultProvider,
+                LocalView provides owner.view,
+                LocalViewConfiguration provides owner.viewConfiguration,
+                LocalImageVectorCache provides imageVectorCache,
+                LocalResourceIdCache provides resourceIdCache,
             ) {
                 ProvideCommonCompositionLocals(owner = owner, content = content)
             }
         } else {
             CompositionLocalProvider(
+                LocalAndroidComposeView provides owner,
                 LocalLifecycleOwner provides lifecycleOwner,
                 LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
                 LocalImageVectorCache provides imageVectorCache,
@@ -580,12 +602,14 @@ private constructor(
                 LocalConfiguration provides owner.configuration,
                 LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
                 LocalView provides owner.view,
+                LocalWindow providesComputed { owner.window },
                 LocalProvidableScrollCaptureInProgress providesComputed
                     {
                         owner.scrollCaptureInProgress
                     },
                 LocalViewConfiguration provides owner.viewConfiguration,
                 LocalHostDefaultProvider provides owner.hostDefaultProvider,
+                LocalGraphicsResourceCache providesComputed { graphicsResourceCache },
             ) {
                 if (isMediaQueryIntegrationEnabled) {
                     CompositionLocalProvider(
@@ -619,11 +643,13 @@ private constructor(
         override fun onLowMemory() {
             imageVectorCache.clear()
             resourceIdCache.clear()
+            _graphicsResourceCache?.clear()
         }
 
         override fun onTrimMemory(level: Int) {
             imageVectorCache.clear()
             resourceIdCache.clear()
+            _graphicsResourceCache?.clear()
         }
 
         override fun onWindowFocusChanged(hasFocus: Boolean) {

@@ -30,7 +30,10 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -47,10 +50,12 @@ import androidx.compose.ui.test.assertAll
 import androidx.compose.ui.test.assertContentDescriptionContains
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelectable
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasAnyAncestor
@@ -72,9 +77,11 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onSiblings
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
@@ -82,6 +89,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -439,6 +448,28 @@ class TimePickerTest {
 
         rule.onNodeWithText("20").assertContentDescriptionContains("for hour")
 
+        rule.onAllNodesWithText("12").assertCountEquals(2)
+    }
+
+    @Test
+    fun timeInput_revertedInput_userOverride_stillUpdates() {
+        val state = TimePickerState(initialHour = 14, initialMinute = 0, is24Hour = true)
+
+        rule.setMaterialContent(lightColorScheme()) { TimeInput(state) }
+
+        // Attempt invalid input which gets reverted
+        rule.onNodeWithText("14").performKeyInput { pressKey(Key.A) }
+        rule.waitForIdle()
+
+        // Programmatic update should still update the text field
+        rule.runOnIdle {
+            state.hour = 20
+            state.minute = 12
+        }
+
+        rule.waitForIdle()
+
+        rule.onNodeWithText("20").assertContentDescriptionContains("for hour")
         rule.onAllNodesWithText("12").assertCountEquals(2)
     }
 
@@ -1227,6 +1258,86 @@ class TimePickerTest {
     }
 
     @Test
+    fun timeInput_12Hour_singleDigit2To9_autoAdvancesFocus() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 0, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) { TimeInput(state = state) }
+
+        // Typing a single digit 2..9 into a 12-hour two-digit field auto-advances to the field
+        rule.onNodeWithText("10").performKeyInput { pressKey(Key.Four) }
+
+        rule.waitForIdle()
+
+        rule.runOnIdle {
+            assertThat(state.hour).isEqualTo(4)
+            assertThat(state.isHourInputValid).isTrue()
+            assertThat(state.selection).isEqualTo(TimePickerSelectionMode.Minute)
+        }
+    }
+
+    @Test
+    fun timeInput_12Hour_singleDigitOne_doesNotAutoAdvanceFocus() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 0, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) { TimeInput(state = state) }
+
+        // Typing '1' could be the prefix of 10, 11, or 12, so it should not auto-advance
+        rule.onNodeWithText("10").performKeyInput { pressKey(Key.One) }
+
+        rule.waitForIdle()
+
+        rule.runOnIdle {
+            assertThat(state.hour).isEqualTo(1)
+            assertThat(state.isHourInputValid).isTrue()
+            assertThat(state.selection).isEqualTo(TimePickerSelectionMode.Hour)
+        }
+    }
+
+    @Test
+    fun timeInput_24Hour_singleDigit_doesNotAutoAdvanceFocus() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 0, is24Hour = true)
+
+        rule.setMaterialContent(lightColorScheme()) { TimeInput(state = state) }
+
+        // In 24-hour mode, single digits should not auto-advance
+        rule.onNodeWithText("10").performKeyInput { pressKey(Key.Four) }
+
+        rule.waitForIdle()
+
+        rule.runOnIdle {
+            assertThat(state.hour).isEqualTo(4)
+            assertThat(state.isHourInputValid).isTrue()
+            assertThat(state.selection).isEqualTo(TimePickerSelectionMode.Hour)
+        }
+    }
+
+    @Test
+    fun timeInput_minute_imeDone_invokesDefaultAction() {
+        var keyboardDismissed = false
+        val keyboardController =
+            object : SoftwareKeyboardController {
+                override fun show() {}
+
+                override fun hide() {
+                    keyboardDismissed = true
+                }
+            }
+
+        val state = TimePickerState(initialHour = 10, initialMinute = 23, is24Hour = false)
+        state.selection = TimePickerSelectionMode.Minute
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalSoftwareKeyboardController provides keyboardController) {
+                TimeInput(state = state)
+            }
+        }
+
+        rule.onNodeWithText("23").performImeAction()
+
+        rule.runOnIdle { assertThat(keyboardDismissed).isTrue() }
+    }
+
+    @Test
     fun clockFace_12HourMinutes_everyValue() {
         val state =
             AnalogTimePickerState(
@@ -1337,16 +1448,14 @@ class TimePickerTest {
             TimeScroll(state, shapes = TimePickerDefaults.shapes())
         }
 
-        val expectedHourDescription =
-            rule.runOnIdle {
-                val res = InstrumentationRegistry.getInstrumentation().context.resources
-                res.getString(R.string.m3c_time_picker_hour_suffix, 12)
-            }
-        val expectedMinuteDescription =
-            rule.runOnIdle {
-                val res = InstrumentationRegistry.getInstrumentation().context.resources
-                res.getString(R.string.m3c_time_picker_minute_suffix, 30)
-            }
+        val expectedHourDescription = rule.runOnIdle {
+            val res = InstrumentationRegistry.getInstrumentation().context.resources
+            res.getString(R.string.m3c_time_picker_hour_suffix, 12)
+        }
+        val expectedMinuteDescription = rule.runOnIdle {
+            val res = InstrumentationRegistry.getInstrumentation().context.resources
+            res.getString(R.string.m3c_time_picker_minute_suffix, 30)
+        }
 
         rule
             .onNode(hasStateDescription(expectedHourDescription), useUnmergedTree = true)
@@ -1364,16 +1473,14 @@ class TimePickerTest {
             TimeScroll(state, shapes = TimePickerDefaults.shapes())
         }
 
-        val expectedHourDescription =
-            rule.runOnIdle {
-                val res = InstrumentationRegistry.getInstrumentation().context.resources
-                res.getString(R.string.m3c_time_picker_hour_24h_suffix, 0)
-            }
-        val expectedMinuteDescription =
-            rule.runOnIdle {
-                val res = InstrumentationRegistry.getInstrumentation().context.resources
-                res.getString(R.string.m3c_time_picker_minute_suffix, 5)
-            }
+        val expectedHourDescription = rule.runOnIdle {
+            val res = InstrumentationRegistry.getInstrumentation().context.resources
+            res.getString(R.string.m3c_time_picker_hour_24h_suffix, 0)
+        }
+        val expectedMinuteDescription = rule.runOnIdle {
+            val res = InstrumentationRegistry.getInstrumentation().context.resources
+            res.getString(R.string.m3c_time_picker_minute_suffix, 5)
+        }
 
         rule
             .onNode(hasStateDescription(expectedHourDescription), useUnmergedTree = true)
@@ -1423,6 +1530,58 @@ class TimePickerTest {
 
         displayMode = TimePickerDisplayMode.Input
         rule.onNodeWithContentDescription(scrollToggleDescription).assertExists()
+    }
+
+    @Test
+    fun timeScroll_withToggle_largeFont() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 30, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(
+                LocalDensity provides
+                    Density(density = LocalDensity.current.density, fontScale = 2f)
+            ) {
+                TimeScroll(
+                    state = state,
+                    shapes = TimePickerDefaults.shapes(),
+                    toggle = { Text("Toggle") },
+                )
+            }
+        }
+
+        rule.onNodeWithText("AM").assertIsDisplayed().assertIsSelected()
+        rule.onNodeWithText("AM").onParent().assertWidthIsAtLeast(48.dp)
+        rule.onNodeWithText("PM").assertIsDisplayed().assertIsNotSelected()
+        rule.onNodeWithText("PM").onParent().assertWidthIsAtLeast(48.dp)
+        rule.onNodeWithText("PM").performClick()
+        rule.onNodeWithText("PM").assertIsSelected()
+        rule.onNodeWithText("AM").assertIsNotSelected()
+    }
+
+    @Test
+    fun timeInput_withToggle_largeFont() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 30, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(
+                LocalDensity provides
+                    Density(density = LocalDensity.current.density, fontScale = 2f)
+            ) {
+                TimeInput(
+                    state = state,
+                    shapes = TimePickerDefaults.shapes(),
+                    toggle = { Text("Toggle") },
+                )
+            }
+        }
+
+        rule.onNodeWithText("AM").assertIsDisplayed().assertIsSelected()
+        rule.onNodeWithText("AM").onParent().assertWidthIsAtLeast(48.dp)
+        rule.onNodeWithText("PM").assertIsDisplayed().assertIsNotSelected()
+        rule.onNodeWithText("PM").onParent().assertWidthIsAtLeast(48.dp)
+        rule.onNodeWithText("PM").performClick()
+        rule.onNodeWithText("PM").assertIsSelected()
+        rule.onNodeWithText("AM").assertIsNotSelected()
     }
 }
 

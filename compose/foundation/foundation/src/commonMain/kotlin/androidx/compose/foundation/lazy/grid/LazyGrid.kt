@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.lazy.layout.CacheWindowLogic
+import androidx.compose.foundation.lazy.layout.DefaultLazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayout
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
@@ -86,7 +87,8 @@ internal fun LazyGrid(
     horizontalArrangement: Arrangement.Horizontal,
     /**
      * cacheWindow specifies the size of the ahead and behind window to be used as per
-     * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
+     * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]. The default cache window
+     * does not cache items while the user is not scrolling.
      */
     cacheWindow: LazyLayoutCacheWindow,
     /** The content of the grid */
@@ -105,8 +107,11 @@ internal fun LazyGrid(
         remember(state, cacheWindow) {
             state.legacyPrefetchStrategy
                 ?: when (cacheWindow) {
-                    is DefaultLazyGridCacheWindow ->
-                        if (ComposeFoundationFlags.isPreferDefaultCacheWindowOverPrefetchStrategy) {
+                    is DefaultLazyLayoutCacheWindow ->
+                        if (
+                            ComposeFoundationFlags
+                                .isPreferDefaultCacheWindowOverPrefetchStrategyLazyGrid
+                        ) {
                             LazyGridCacheWindowPrefetchStrategy(cacheWindow)
                         } else {
                             LazyGridPrefetchStrategy()
@@ -183,7 +188,6 @@ internal fun LazyGrid(
                     reverseScrolling = reverseLayout,
                 )
                 .then(beyondBoundsModifier)
-                .lazyLayoutItemAnimator(state.itemAnimator)
                 .scrollableArea(
                     state = state,
                     orientation = orientation,
@@ -193,7 +197,8 @@ internal fun LazyGrid(
                     interactionSource = state.internalInteractionSource,
                     overscrollEffect = overscrollEffect,
                     bringIntoViewSpec = bringIntoViewSpec,
-                ),
+                )
+                .lazyLayoutItemAnimator(state.itemAnimator),
         prefetchState = prefetchState,
         measurePolicy = measurePolicy,
         itemProvider = itemProviderLambda,

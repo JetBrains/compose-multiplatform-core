@@ -72,9 +72,12 @@ import androidx.compose.runtime.internal.IntRef
 import androidx.compose.runtime.internal.invokeComposable
 import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 import androidx.compose.runtime.internal.trace
+import androidx.compose.runtime.snapshots.IndirectState
+import androidx.compose.runtime.snapshots.IndirectStateObserver
 import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastToSet
+import androidx.compose.runtime.snapshots.observeIndirectStateRecalculations
 import androidx.compose.runtime.tooling.ComposeStackTrace
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 import androidx.compose.runtime.tooling.CompositionData
@@ -334,14 +337,18 @@ internal class LinkComposer(
     override var sourceMarkersEnabled =
         parentContext.collectingSourceInformation || parentContext.collectingCallByInformation
 
-    private val derivedStateObserver =
-        object : DerivedStateObserver {
-            override fun start(derivedState: DerivedState<*>) {
-                childrenComposing++
+    private val indirectStateObserver =
+        object : IndirectStateObserver {
+            override fun start(state: IndirectState<*>) {
+                if (state is DerivedState<*>) {
+                    childrenComposing++
+                }
             }
 
-            override fun done(derivedState: DerivedState<*>) {
-                childrenComposing--
+            override fun done(state: IndirectState<*>, calculatedValue: Any?) {
+                if (state is DerivedState<*>) {
+                    childrenComposing--
+                }
             }
         }
 
@@ -357,10 +364,9 @@ internal class LinkComposer(
         get() = childrenComposing > 0
 
     override val currentRecomposeScope: RecomposeScopeImpl?
-        get() =
-            invalidateStack.let {
-                if (childrenComposing == 0 && it.isNotEmpty()) it.peek() else null
-            }
+        get() = invalidateStack.let {
+            if (childrenComposing == 0 && it.isNotEmpty()) it.peek() else null
+        }
 
     /**
      * Returns the hash of the composite key calculated as a combination of the keys of all the
@@ -473,7 +479,10 @@ internal class LinkComposer(
             updateValue(observerHolder)
         }
         val holder = observerHolder.wrapped as CompositionContextHolder
-        holder.ref.updateCompositionLocalScope(currentCompositionLocalScope())
+        holder.ref.updateCompositionLocalScope(
+            currentCompositionLocalScope(),
+            compositeKeyHashCode,
+        )
         endGroup()
 
         return holder.ref
@@ -546,7 +555,8 @@ internal class LinkComposer(
     /** See [Composer.changed] */
     override fun changed(value: Float): Boolean {
         val next = nextSlot()
-        if (next is Float && value == next) {
+        // NaN != NaN for [Float]s, but this method should treat NaN as being equal to NaN.
+        if (next is Float && (value == next || (value.isNaN() && next.isNaN()))) {
             return false
         } else {
             updateValue(value)
@@ -568,7 +578,8 @@ internal class LinkComposer(
     /** See [Composer.changed] */
     override fun changed(value: Double): Boolean {
         val next = nextSlot()
-        if (next is Double && value == next) {
+        // NaN != NaN for [Double]s, but this method should treat NaN as being equal to NaN.
+        if (next is Double && (value == next || (value.isNaN() && next.isNaN()))) {
             return false
         } else {
             updateValue(value)
@@ -841,10 +852,16 @@ internal class LinkComposer(
     ) {
         trace("Compose:insertMovableContent") {
             var completed = false
+            val observer = observerHolder.pin()
+            observer?.onBeginComposition(composition)
             try {
-                insertMovableContentGuarded(references)
+                observeIndirectStateRecalculations(indirectStateObserver) {
+                    insertMovableContentGuarded(references)
+                }
                 completed = true
             } finally {
+                observer?.onEndComposition(composition)
+                observerHolder.unpin()
                 if (completed) {
                     cleanUpCompose()
                 } else {
@@ -1456,7 +1473,6 @@ internal class LinkComposer(
         content: (@Composable () -> Unit)?,
     ) {
         runtimeCheck(!isComposing) { "Reentrant composition is not supported" }
-        val observer = observerHolder.current()
         trace("Compose:recompose") {
             compositionToken = currentSnapshot().snapshotId.hashCode()
             providerUpdates = null
@@ -1464,6 +1480,7 @@ internal class LinkComposer(
             nodeIndex = 0
             var complete = false
             isComposing = true
+            val observer = observerHolder.pin()
             observer?.onBeginComposition(composition)
             try {
                 startRoot()
@@ -1476,7 +1493,7 @@ internal class LinkComposer(
                 // ^^ Experimental for forced
 
                 // Ignore reads of derivedStateOf recalculations
-                observeDerivedStateRecalculations(derivedStateObserver) {
+                observeIndirectStateRecalculations(indirectStateObserver) {
                     if (content != null) {
                         startGroup(invocationKey, invocation)
                         invokeComposable(this, content)
@@ -1500,6 +1517,7 @@ internal class LinkComposer(
                 throw e.attachComposeStackTrace { currentStackTrace() }
             } finally {
                 observer?.onEndComposition(composition)
+                observerHolder.unpin()
                 isComposing = false
                 if (!complete) abortRoot()
                 resetInsertBuilder(dispose = !complete)
@@ -1688,9 +1706,9 @@ internal class LinkComposer(
      */
     @OptIn(InternalComposeApi::class)
     private fun endRoot() {
-        endGroup()
         parentComposing = false
         parentContext.doneComposing()
+        compositeKeyHashCode = EmptyCompositeKeyHashCode
         endGroup()
         finalizeCompose()
         reader.close()
@@ -2606,6 +2624,8 @@ internal class LinkComposer(
         parentContext.startComposing()
         parentComposing = true
         val parentProvider = parentContext.getCompositionLocalScope()
+        compositeKeyHashCode = parentContext.compositeKeyHashCode
+
         providersInvalidStack.push(providersInvalid.asInt())
         providersInvalid = changed(parentProvider)
         providerCache = null
@@ -2635,8 +2655,6 @@ internal class LinkComposer(
             it.add(compositionData)
             parentContext.recordInspectionTable(it)
         }
-
-        startGroup(parentContext.compositeKeyHashCode.hashCode())
     }
 
     private fun stackTraceForGroup(group: Int, dataOffset: Int?): List<ComposeStackTraceFrame> {
@@ -2845,7 +2863,7 @@ internal class LinkComposer(
 
     @OptIn(ExperimentalComposeRuntimeApi::class, InternalComposeApi::class)
     internal inner class CompositionContextImpl(
-        override val compositeKeyHashCode: CompositeKeyHashCode,
+        override var compositeKeyHashCode: CompositeKeyHashCode,
         override val collectingParameterInformation: Boolean,
         override val collectingSourceInformation: Boolean,
         override val observerHolder: CompositionObserverHolder?,
@@ -2947,8 +2965,12 @@ internal class LinkComposer(
         override fun getCompositionLocalScope(): PersistentCompositionLocalMap =
             compositionLocalScope
 
-        fun updateCompositionLocalScope(scope: PersistentCompositionLocalMap) {
+        fun updateCompositionLocalScope(
+            scope: PersistentCompositionLocalMap,
+            newCompositeKeyHashCode: CompositeKeyHashCode,
+        ) {
             compositionLocalScope = scope
+            compositeKeyHashCode = newCompositeKeyHashCode
         }
 
         override fun recordInspectionTable(table: MutableSet<CompositionData>) {

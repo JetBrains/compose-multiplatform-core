@@ -82,17 +82,6 @@ public object ComposeFoundationFlags {
     public var isInheritedTextStyleEnabled: Boolean = false
 
     /**
-     * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
-     * change allows us to distribute work we need to do during the prefetch better, for example we
-     * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
-     * and then continue composing the rest of it in the next frames.
-     */
-    // TODO: b/455589928
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isPausableCompositionInPrefetchEnabled: Boolean = true
-
-    /**
      * With this flag on, Pager will use
      * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] as the default prefetching
      * strategy, instead of 1 item in the direction of the scroll. The window used will be 1 view
@@ -177,6 +166,17 @@ public object ComposeFoundationFlags {
     public var isReverseLayoutNestedScrollConnectionInPagerFixEnabled: Boolean = true
 
     /**
+     * This flag controls whether [androidx.compose.foundation.pager.Pager]'s default nested scroll
+     * connection absorbs unconsumed main-axis deltas during non-gesture scrolls (such as
+     * accessibility actions) to prevent synthetic scrolls from accidentally dragging the parent
+     * Pager.
+     */
+    // TODO: Remove this flag once it has soaked (b/543033546)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isAbsorbNonGestureNestedScrollInPagerFixEnabled: Boolean = true
+
+    /**
      * This flag controls whether [androidx.compose.foundation.text.BasicTextField]'s formatted text
      * features are enabled.
      */
@@ -225,7 +225,7 @@ public object ComposeFoundationFlags {
     // TODO: Remove this flag once it has soaked (b/501080937)
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isDraggableVelocityTrackerFixEnabled: Boolean = false
+    public var isDraggableVelocityTrackerFixEnabled: Boolean = true
 
     /**
      * This flag controls whether it's possible to start selecting (via the mouse) text in a
@@ -265,7 +265,7 @@ public object ComposeFoundationFlags {
     // TODO: b/535884139
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isCacheWindowLookaheadCheckEnabled: Boolean = true
+    public var isCacheWindowLookaheadCheckEnabled: Boolean = false
 
     /**
      * This flag controls whether [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
@@ -280,14 +280,24 @@ public object ComposeFoundationFlags {
     public var isKeepAroundDuringLookaheadDisabled: Boolean = true
 
     /**
-     * This flag controls whether [androidx.compose.foundation.lazy.grid.LazyGrid] prefers using the
+     * This flag controls whether [androidx.compose.foundation.lazy.LazyList] prefers using the
      * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
-     * [androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy].
+     * [androidx.compose.foundation.lazy.LazyListPrefetchStrategy].
      */
     // TODO: b/536884365
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isPreferDefaultCacheWindowOverPrefetchStrategy: Boolean = true
+    public var isPreferDefaultCacheWindowOverPrefetchStrategyLazyList: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.grid.LazyGrid] prefers using the
+     * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
+     * [androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy].
+     */
+    // TODO: b/543758449
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPreferDefaultCacheWindowOverPrefetchStrategyLazyGrid: Boolean = true
 
     /**
      * This flag controls whether lazy list measure passes calculate `firstVisibleIndex` and
@@ -300,6 +310,58 @@ public object ComposeFoundationFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isLazyListItemAnimatorVisibleBoundsFixEnabled: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.lazy.LazyColumn] and
+     * [androidx.compose.foundation.lazy.LazyRow] use a dynamic default cache window.
+     *
+     * When enabled, the ahead [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] size
+     * dynamically adapts to the average size of visible items, bounded between 10% and 50% of the
+     * viewport, rather than using a static viewport fraction.
+     */
+    // TODO: b/553939434
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isUsingDynamicDefaultCacheWindowInLists: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.lazy.grid.LazyVerticalGrid] and
+     * [androidx.compose.foundation.lazy.grid.LazyHorizontalGrid] use a dynamic default cache
+     * window.
+     *
+     * When enabled, the ahead [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] size
+     * dynamically adapts to the average main axis size of visible lines, bounded between 10% and
+     * 50% of the viewport, rather than using a static viewport fraction.
+     */
+    // TODO: b/553939434
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isUsingDynamicDefaultCacheWindowInGrids: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid]
+     * and [androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid] use a
+     * dynamic default cache window.
+     *
+     * When enabled, the ahead [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] size
+     * dynamically adapts to the average size of visible items, bounded between 10% and 50% of the
+     * viewport, rather than using a static viewport fraction.
+     */
+    // TODO: b/553939434
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isUsingDynamicDefaultCacheWindowInStaggeredGrids: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.text.BasicTextField] starts the input session
+     * only when the window is focused rather than immediately upon element focus. When enabled, if
+     * the element gains focus while the window is not yet focused, starting the input session is
+     * deferred until the window gains focus.
+     */
+    // TODO: Remove this flag once it has soaked (b/560119132)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isTextFieldWaitWindowFocusForInputSessionEnabled: Boolean = true
 }
 
 /** The initial value of [ComposeFoundationFlags.isNewContextMenuEnabled] */

@@ -16,17 +16,16 @@
 
 package androidx.compose.ui.integrations
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
+import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -39,14 +38,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import platform.UIKit.UIWindowScene
+import platform.UIKit.UIWindow
 
 class ComposeSceneMediatorUnitTest {
     @Test
     fun testDisposedMediatorShouldNotCrash() {
         runBlocking {
             val context = Dispatchers.Main + Job()
-            val frameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene())
+            val frameChoreographer = makeFrameChoreographer()
             val mediator = makeMediator(
                 coroutineContext = context,
                 frameChoreographer = frameChoreographer,
@@ -92,22 +91,24 @@ class ComposeSceneMediatorUnitTest {
 
     private fun makeMediator(
         coroutineContext: CoroutineContext,
-        frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene()),
+        frameChoreographer: FrameChoreographer = makeFrameChoreographer(),
+        windowContext: WindowContext = WindowContext(),
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = OnFocusBehavior.DoNothing,
         isClearFocusOnMouseDownEnabled = false,
         focusedViewsList = null,
-        windowContext = WindowContext(),
+        windowContext = windowContext,
         architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
         coroutineContext = coroutineContext,
         navigationEventInput = IosBackNavigationEventInput(
+            frameChoreographer = frameChoreographer,
             density = Density(1f),
             initialLayoutDirection = LayoutDirection.Ltr,
             getTopLeftOffsetInWindow = { IntOffset.Zero },
             endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
         ),
-        interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
+        mediaScope = IosUiMediaScope(windowContext.windowInfo),
         composeSceneFactory = { platformContext ->
             registerSkikoComposeImplementation()
             PlatformLayersComposeScene(
@@ -121,4 +122,19 @@ class ComposeSceneMediatorUnitTest {
             )
         },
     )
+
+    private companion object {
+        /**
+         * Windows the tests created, kept alive for the whole test process.
+         */
+        private val retainedWindows = mutableListOf<UIWindow>()
+
+        /** Returns a fresh choreographer, bound to a window that is never released. */
+        fun makeFrameChoreographer(): FrameChoreographer {
+            val window = UIWindow()
+            retainedWindows.add(window)
+
+            return FrameChoreographer.choreographerForWindow(window)
+        }
+    }
 }

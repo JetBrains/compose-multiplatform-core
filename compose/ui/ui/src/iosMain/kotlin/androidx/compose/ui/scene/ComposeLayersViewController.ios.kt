@@ -17,7 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
@@ -80,7 +80,7 @@ internal class ComposeLayersViewController(
             onDraw = { needsSynchronousDraw ->
                 metalView.redrawer.onDraw(
                     needsSynchronousDraw = needsSynchronousDraw,
-                    needsComposeSceneDraw = needsComposeSceneDraw(),
+                    needsDraw = needsLayerStackDraw || needsComposeSceneDraw(),
                     retrievePendingViewUpdatesInteropTransaction =
                         ::retrieveAndMergePendingViewUpdatesInteropTransactions,
                 )
@@ -88,6 +88,7 @@ internal class ComposeLayersViewController(
         )
     }
 
+    private val canvasHolder = SkiaCanvasHolder()
     private val layoutInvalidationHandler = LayoutInvalidationHandler(coroutineContext) {
         composeContainerView.setNeedsLayout()
         composeContainerView.invalidateIntrinsicContentSize()
@@ -176,13 +177,16 @@ internal class ComposeLayersViewController(
         this.view.addSubview(composeContainerView)
     }
 
-    val hasInvalidations: Boolean get() = this.layers.any { it.hasInvalidations }
+    val hasInvalidations: Boolean
+        get() =
+            composeContainerView.hasInvalidations || needsLayerStackDraw ||
+                this.layers.any { it.hasInvalidations }
 
     private val layers = mutableListOf<IosComposeSceneLayer>()
 
-    private val layersCache = CopiedList {
-        it.addAll(this.layers)
-    }
+    private var needsLayerStackDraw = false
+
+    private val layersCache = CopiedList(this.layers)
 
     /**
      * Transactions of the layers that were imperatively removed before their changes were applied.
@@ -215,6 +219,7 @@ internal class ComposeLayersViewController(
     }
 
     private fun hide() {
+        needsLayerStackDraw = false
         view.removeFromSuperview()
     }
 
@@ -240,7 +245,6 @@ internal class ComposeLayersViewController(
 
     fun attach(layer: IosComposeSceneLayer) {
         val isFirstLayer = layers.isEmpty()
-        layers.add(layer)
         composeContainerView.insertSubview(layer.interactionView, belowSubview = metalView.view)
         layer.interactionView.addLayoutConstraintsToMatch(composeContainerView)
         composeContainerView.embedSubview(layer.overlayView)
@@ -248,10 +252,16 @@ internal class ComposeLayersViewController(
         if (isFirstLayer) {
             show()
         }
+
+        // For the first layer, wait for `show()` to attach and lay out its UIKit views before
+        // registering it for Compose measurement. Otherwise it can be measured with unbounded
+        // constraints during that initial layout pass.
+        layers.add(layer)
+
         if (hasViewAppeared) {
             layer.sceneDidAppear()
         }
-        invalidateDraw()
+        invalidateLayerStackDraw()
     }
 
     fun detach(layer: IosComposeSceneLayer) {
@@ -273,8 +283,7 @@ internal class ComposeLayersViewController(
             // It wasn't the last layer, pending transactions should be added to the list
             removedLayersTransactions.add(transaction)
 
-            // Redraw content with layer removed
-            invalidateDraw()
+            invalidateLayerStackDraw()
         }
     }
 
@@ -340,6 +349,11 @@ internal class ComposeLayersViewController(
         )
     }
 
+    private fun invalidateLayerStackDraw() {
+        needsLayerStackDraw = true
+        invalidateDraw()
+    }
+
     private fun needsComposeSceneDraw(): Boolean {
         layersCache.withCopy { layers ->
             return layers.any { it.needsComposeSceneDraw }
@@ -348,16 +362,17 @@ internal class ComposeLayersViewController(
     }
 
     private fun draw(canvas: Canvas) {
+        needsLayerStackDraw = false
         layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-            val composeCanvas = canvas.asComposeCanvas()
-
+        canvasHolder.drawInto(canvas) { 
             // Some layers may be removed during rendering, because recomposition will happen in the
             // process, so we need to make a temporary copy of the list
             layersCache.withCopy { layers ->
                 layers.fastForEach {
-                    it.draw(composeCanvas)
+                    it.draw(this@drawInto)
                 }
             }
+          }
         }
     }
 }

@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.FocusableNode
 import androidx.compose.foundation.content.MediaType
@@ -225,7 +226,10 @@ internal class TextFieldDecoratorModifierNode(
                 val editable = enabled && !readOnly
                 if (isFocused) {
                     applyCurrentInputMode()
-                    if (editable) {
+                    if (
+                        editable &&
+                            !ComposeFoundationFlags.isTextFieldWaitWindowFocusForInputSessionEnabled
+                    ) {
                         startInputSession(fromTap = false)
                     }
                 } else {
@@ -513,10 +517,9 @@ internal class TextFieldDecoratorModifierNode(
 
                 if (isFocused && toolbarAndHandlesVisibilityObserverJob != null) {
                     toolbarAndHandlesVisibilityObserverJob?.cancel()
-                    toolbarAndHandlesVisibilityObserverJob =
-                        coroutineScope.launch {
-                            textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
-                        }
+                    toolbarAndHandlesVisibilityObserverJob = coroutineScope.launch {
+                        textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
+                    }
                 }
             }
             textFieldSelectionState.requestAutofillAction = { requestAutofill() }
@@ -706,13 +709,21 @@ internal class TextFieldDecoratorModifierNode(
      */
     private fun onIsFocusedUpdated() {
         textFieldSelectionState.isWindowAndTextFieldFocused = this.isFocused
-        if (isFocused && toolbarAndHandlesVisibilityObserverJob == null) {
-            // only start a new job is there's not an ongoing one.
-            toolbarAndHandlesVisibilityObserverJob =
-                coroutineScope.launch {
+        if (isFocused) {
+            if (ComposeFoundationFlags.isTextFieldWaitWindowFocusForInputSessionEnabled) {
+                val editable = enabled && !readOnly
+                val hasOngoingSession = inputSessionJob?.isActive == true
+                if (editable && !hasOngoingSession) {
+                    startInputSession(fromTap = false)
+                }
+            }
+            if (toolbarAndHandlesVisibilityObserverJob == null) {
+                // only start a new job is there's not an ongoing one.
+                toolbarAndHandlesVisibilityObserverJob = coroutineScope.launch {
                     textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
                 }
-        } else if (!isFocused) {
+            }
+        } else {
             toolbarAndHandlesVisibilityObserverJob?.cancel()
             toolbarAndHandlesVisibilityObserverJob = null
         }

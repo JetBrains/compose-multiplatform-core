@@ -66,6 +66,9 @@ internal class SkikoParagraph(
     internal val defaultFont
         get() = layouter.defaultFont
 
+    private val bulletPainter =
+        if (layouter.bullets.isEmpty()) null else SkikoBulletPainter(layouter)
+
     /**
      * Paragraph isn't always immutable, it could be changed via [paint] method without
      * rerunning layout
@@ -286,7 +289,9 @@ internal class SkikoParagraph(
         }
     }
 
-    override fun isLineEllipsized(lineIndex: Int) = false
+    // TODO: Won't be correct after CMP-6716
+    override fun isLineEllipsized(lineIndex: Int): Boolean =
+        ellipsis.isNotEmpty() && lineIndex == lineCount - 1 && didExceedMaxLines
 
     override fun getLineForOffset(offset: Int) =
         when {
@@ -578,6 +583,14 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        bulletPainter?.paint(
+            canvas = canvas,
+            textDirection = paragraphIntrinsics.textDirection,
+            lineMetricsForOffset = ::lineMetricsForOffset,
+            color = color,
+            brush = null,
+            alpha = 1f
+        )
     }
 
     @ExperimentalTextApi
@@ -602,6 +615,14 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        bulletPainter?.paint(
+            canvas = canvas,
+            textDirection = paragraphIntrinsics.textDirection,
+            lineMetricsForOffset = ::lineMetricsForOffset,
+            color = color,
+            brush = null,
+            alpha = 1f
+        )
     }
 
     @ExperimentalTextApi
@@ -631,6 +652,14 @@ internal class SkikoParagraph(
             )
         }
         paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        bulletPainter?.paint(
+            canvas = canvas,
+            textDirection = paragraphIntrinsics.textDirection,
+            lineMetricsForOffset = ::lineMetricsForOffset,
+            color = Color.Unspecified,
+            brush = brush,
+            alpha = alpha
+        )
     }
 
     /**
@@ -650,8 +679,7 @@ private fun LineMetrics.trimFirstAscent(
 ): LineMetrics {
     if (textStyle.lineHeight.isUnspecified) return this
     val style = textStyle.lineHeightStyle ?: LineHeightStyle.Default
-    @Suppress("INVISIBLE_REFERENCE") // FIXME: Make [isTrimFirstLineTop] public
-    val ascent = if (style.trim.isTrimFirstLineTop()) {
+    val ascent = if (style.trim.trimsFirstLineTop) {
         -fontMetrics.ascent.toDouble()
     } else {
         ascent
@@ -665,8 +693,7 @@ private fun LineMetrics.trimLastDescent(
 ): LineMetrics {
     if (textStyle.lineHeight.isUnspecified) return this
     val style = textStyle.lineHeightStyle ?: LineHeightStyle.Default
-    @Suppress("INVISIBLE_REFERENCE") // FIXME: Make [isTrimLastLineBottom] public
-    val descent = if (style.trim.isTrimLastLineBottom()) {
+    val descent = if (style.trim.trimsLastLineBottom) {
         fontMetrics.descent.toDouble()
     } else {
         descent

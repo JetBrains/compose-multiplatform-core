@@ -20,20 +20,25 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.hardware.input.InputManager
 import android.view.InputDevice
 import android.view.MotionEvent
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalMediaQueryApi
+import androidx.compose.ui.UiMediaScope.FoldOrientation
+import androidx.compose.ui.UiMediaScope.FoldState
 import androidx.compose.ui.UiMediaScope.KeyboardKind
 import androidx.compose.ui.UiMediaScope.PointerPrecision
 import androidx.compose.ui.UiMediaScope.ViewingDistance
+import androidx.compose.ui.layout.WindowInsetsRulers
+import androidx.compose.ui.layout.WindowInsetsRulersProvider
+import androidx.compose.ui.layout.areWindowInsetsRulersEnabled
 import androidx.compose.ui.mediaQuery
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.areWindowInsetsRulersEnabled
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.WindowSize
@@ -43,6 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowInsetsCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.window.layout.FoldingFeature
+import androidx.window.layout.WindowLayoutInfo
+import androidx.window.testing.layout.FoldingFeature as TestingFoldingFeature
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -374,6 +382,97 @@ class MediaQueryIntegrationTest {
         val hasDockReceiver = shadowApp.hasReceiverForAction(Intent.ACTION_DOCK_EVENT)
         assertTrue("Dock receiver should be registered lazily after read", hasDockReceiver)
         assertTrue(result)
+    }
+
+    @Test
+    fun windowInsetsRulers_isRulerProvided_uninitialized() {
+        lateinit var composeView: AndroidComposeView
+        rule.setContent { composeView = LocalView.current as AndroidComposeView }
+        rule.waitForIdle()
+
+        val watcher = composeView.insetsWatcher
+        if (watcher != null) {
+            val provider = WindowInsetsRulersProvider(watcher)
+            assertFalse(
+                "Ruler should not be provided when insets are uninitialized",
+                provider.isRulerProvided(WindowInsetsRulers.StatusBars.current.left),
+            )
+        }
+    }
+
+    @Test
+    fun isTabletop_returnsTrue_onlyWhenHalfOpenedAndHorizontal() {
+        val halfOpenedHorizontal =
+            TestingFoldingFeature(
+                windowBounds = Rect(0, 0, 100, 100),
+                state = FoldingFeature.State.HALF_OPENED,
+                orientation = FoldingFeature.Orientation.HORIZONTAL,
+            )
+
+        val halfOpenedVertical =
+            TestingFoldingFeature(
+                windowBounds = Rect(0, 0, 100, 100),
+                state = FoldingFeature.State.HALF_OPENED,
+                orientation = FoldingFeature.Orientation.VERTICAL,
+            )
+
+        val flatHorizontal =
+            TestingFoldingFeature(
+                windowBounds = Rect(0, 0, 100, 100),
+                state = FoldingFeature.State.FLAT,
+                orientation = FoldingFeature.Orientation.HORIZONTAL,
+            )
+
+        val tabletop = resolvePosture(WindowLayoutInfo(listOf(halfOpenedHorizontal)))
+        assertTrue(tabletop.isTabletop)
+
+        val bookMode = resolvePosture(WindowLayoutInfo(listOf(halfOpenedVertical)))
+        assertFalse(bookMode.isTabletop)
+
+        val justFlat = resolvePosture(WindowLayoutInfo(listOf(flatHorizontal)))
+        assertFalse(justFlat.isTabletop)
+    }
+
+    @Test
+    fun resolvePosture_emptyLayoutInfo_returnsEmptyFolds() {
+        val posture1 = resolvePosture(null)
+        assertTrue(posture1.isFlat)
+        assertFalse(posture1.isTabletop)
+        assertTrue(posture1.folds.isEmpty())
+
+        val posture2 = resolvePosture(WindowLayoutInfo(emptyList()))
+        assertTrue(posture2.isFlat)
+        assertFalse(posture2.isTabletop)
+        assertTrue(posture2.folds.isEmpty())
+    }
+
+    @Test
+    fun resolvePosture_multiFold_preservesAllFolds() {
+        val flatHinge =
+            TestingFoldingFeature(
+                windowBounds = Rect(0, 0, 100, 100),
+                state = FoldingFeature.State.FLAT,
+                orientation = FoldingFeature.Orientation.VERTICAL,
+            )
+
+        val halfOpenedHinge =
+            TestingFoldingFeature(
+                windowBounds = Rect(0, 0, 100, 100),
+                state = FoldingFeature.State.HALF_OPENED,
+                orientation = FoldingFeature.Orientation.HORIZONTAL,
+            )
+
+        val layoutInfo = WindowLayoutInfo(listOf(flatHinge, halfOpenedHinge))
+        val posture = resolvePosture(layoutInfo)
+
+        assertEquals(2, posture.folds.size)
+        assertEquals(FoldState.Flat, posture.folds[0].state)
+        assertEquals(FoldOrientation.Vertical, posture.folds[0].orientation)
+        assertEquals(FoldState.HalfOpened, posture.folds[1].state)
+        assertEquals(FoldOrientation.Horizontal, posture.folds[1].orientation)
+
+        assertTrue(posture.isTabletop) // Matches the horizontal half-opened fold
+        assertFalse(posture.isFlat) // Disrupted by half-opened fold
     }
 
     private fun ShadowApplication.hasReceiverForAction(action: String): Boolean {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(InternalAnimationApi::class, ExperimentalDeferredTransitionApi::class)
+@file:OptIn(InternalAnimationApi::class)
 
 package androidx.compose.animation
 
@@ -27,7 +27,6 @@ import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.DeferredTransition
 import androidx.compose.animation.core.DeferredTransitionState
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.InternalAnimationApi
 import androidx.compose.animation.core.Spring
@@ -35,7 +34,7 @@ import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.createDeferredAnimation
-import androidx.compose.animation.core.rememberTransition
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
@@ -144,9 +143,7 @@ public fun <S> AnimatedContent(
     targetState: S,
     modifier: Modifier = Modifier,
     transitionSpec: AnimatedContentTransitionScope<S>.() -> ContentTransform = {
-        (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
-                scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
-            .togetherWith(fadeOut(animationSpec = tween(90)))
+        AnimatedContentDefaults.ContentTransform
     },
     contentAlignment: Alignment = Alignment.TopStart,
     label: String = "AnimatedContent",
@@ -201,7 +198,7 @@ public class ContentTransform(
     public val targetContentEnter: EnterTransition,
     public val initialContentExit: ExitTransition,
     targetContentZIndex: Float = 0f,
-    sizeTransform: SizeTransform? = SizeTransform(),
+    sizeTransform: SizeTransform? = AnimatedContentDefaults.SizeTransform,
 ) {
     /**
      * This describes the zIndex of the new target content as it enters the container. It defaults
@@ -239,10 +236,7 @@ public fun SizeTransform(
     clip: Boolean = true,
     sizeAnimationSpec: (initialSize: IntSize, targetSize: IntSize) -> FiniteAnimationSpec<IntSize> =
         { _, _ ->
-            spring(
-                stiffness = Spring.StiffnessMediumLow,
-                visibilityThreshold = IntSize.VisibilityThreshold,
-            )
+            AnimatedContentDefaults.SizeAnimationSpec
         },
 ): SizeTransform = SizeTransformImpl(clip, sizeAnimationSpec)
 
@@ -292,6 +286,25 @@ private class SizeTransformImpl(
  */
 public infix fun EnterTransition.togetherWith(exit: ExitTransition): ContentTransform =
     ContentTransform(this, exit)
+
+/** Contains default values used throughout [AnimatedContent]. */
+internal object AnimatedContentDefaults {
+    /** Default animation spec used for size animation in [SizeTransform]. */
+    internal val SizeAnimationSpec: FiniteAnimationSpec<IntSize> =
+        spring(
+            stiffness = Spring.StiffnessMediumLow,
+            visibilityThreshold = IntSize.VisibilityThreshold,
+        )
+
+    /** Default [SizeTransform] used in [ContentTransform]. */
+    internal val SizeTransform: SizeTransform = SizeTransform()
+
+    /** Default [ContentTransform] used in [AnimatedContent] if none is specified. */
+    internal val ContentTransform: ContentTransform =
+        (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
+            .togetherWith(fadeOut(animationSpec = tween(90)))
+}
 
 @Deprecated(
     "Infix fun EnterTransition.with(ExitTransition) has been renamed to togetherWith",
@@ -757,7 +770,7 @@ internal constructor(
                                 }
                             val target = scope.targetSizeMap[targetState]?.value ?: IntSize.Zero
                             sizeTransform.value?.createAnimationSpec(initial, target)
-                                ?: spring(stiffness = Spring.StiffnessMediumLow)
+                                ?: AnimatedContentDefaults.SizeAnimationSpec
                         }
                     ) {
                         // Animate from the approach size to the lookahead size.
@@ -814,7 +827,6 @@ private const val MaxInterruptionRetention = 3
  *
  * @see MutableTransform
  */
-@ExperimentalDeferredTransitionApi
 public class MutableContentTransform
 @PublishedApi
 internal constructor(
@@ -861,7 +873,6 @@ internal constructor(
  *   [TransformScope.offset] changes during the deferred phase.
  * @param block A configuration block to set up the transformations for initial and target content.
  */
-@ExperimentalDeferredTransitionApi
 public inline fun MutableContentTransform(
     initialVeilMatchParentSize: Boolean = false,
     targetVeilMatchParentSize: Boolean = false,
@@ -948,9 +959,7 @@ internal constructor(animatedVisibilityScope: AnimatedVisibilityScope) :
 public fun <S> Transition<S>.AnimatedContent(
     modifier: Modifier = Modifier,
     transitionSpec: AnimatedContentTransitionScope<S>.() -> ContentTransform = {
-        (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
-                scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
-            .togetherWith(fadeOut(animationSpec = tween(90)))
+        AnimatedContentDefaults.ContentTransform
     },
     contentAlignment: Alignment = Alignment.TopStart,
     contentKey: (targetState: S) -> Any? = { it },
@@ -999,7 +1008,7 @@ public fun <S> Transition<S>.AnimatedContent(
  * @param contentKey A key to identify the content.
  * @param mutableTransformSpec A specification to control an optional manual transformation during
  *   the deferred phase (e.g., for predictive back gestures) before the main transition begins. This
- *   is only active if the [Transition] was created using [rememberTransition] with
+ *   is only active if the [Transition] was created using [rememberDeferredTransition] with
  *   [DeferredTransitionState]. By default, this returns `null`, meaning no manual transformations
  *   are applied.
  *
@@ -1026,14 +1035,11 @@ public fun <S> Transition<S>.AnimatedContent(
  * @see ContentTransform
  * @see AnimatedContentScope
  */
-@ExperimentalDeferredTransitionApi
 @Composable
 public fun <S> DeferredTransition<S>.DeferredAnimatedContent(
     modifier: Modifier = Modifier,
     transitionSpec: AnimatedContentTransitionScope<S>.() -> ContentTransform = {
-        (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
-                scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
-            .togetherWith(fadeOut(animationSpec = tween(90)))
+        AnimatedContentDefaults.ContentTransform
     },
     contentAlignment: Alignment = Alignment.TopStart,
     contentKey: (targetState: S) -> Any? = { it },
@@ -1056,9 +1062,7 @@ public fun <S> DeferredTransition<S>.DeferredAnimatedContent(
 internal fun <S> Transition<S>.AnimatedContentImpl(
     modifier: Modifier = Modifier,
     transitionSpec: AnimatedContentTransitionScope<S>.() -> ContentTransform = {
-        (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
-                scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
-            .togetherWith(fadeOut(animationSpec = tween(90)))
+        AnimatedContentDefaults.ContentTransform
     },
     contentAlignment: Alignment = Alignment.TopStart,
     contentKey: (targetState: S) -> Any? = { it },

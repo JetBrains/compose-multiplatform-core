@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.material
 
 import androidx.compose.foundation.BorderStroke
@@ -320,6 +322,18 @@ public fun TextField(
  *   (including label, placeholder, leading and trailing icons, indicator line) and background for
  *   this text field in different states. See [TextFieldDefaults.textFieldColors]
  */
+@Deprecated(
+    "Use the TextField(state: TextFieldState, ...) overload instead. To migrate: " +
+        "create a TextFieldState via rememberTextFieldState(initialText) in composition or " +
+        "TextFieldState(initialText) in a state holder; read text from state.text and update " +
+        "it programmatically via state.edit { ... } or state.setTextAndPlaceCursorAtEnd(text); " +
+        "observe text changes for side effects via snapshotFlow { state.text }.collect { ... }; " +
+        "and replace onValueChange input filtering with InputTransformation, visualTransformation " +
+        "with OutputTransformation (or SecureTextField for passwords), singleLine/maxLines/" +
+        "minLines with TextFieldLineLimits, and keyboardActions with KeyboardActionHandler. See " +
+        "https://developer.android.com/develop/ui/compose/text/migrate-state-based for full " +
+        "migration guidance."
+)
 @Composable
 public fun TextField(
     value: String,
@@ -510,6 +524,19 @@ public fun TextField(
  *   (including label, placeholder, leading and trailing icons, indicator line) and background for
  *   this text field in different states. See [TextFieldDefaults.textFieldColors]
  */
+@Deprecated(
+    "Use the TextField(state: TextFieldState, ...) overload instead. To migrate: " +
+        "create a TextFieldState via rememberTextFieldState(initialText, initialSelection) in " +
+        "composition or TextFieldState(initialText, initialSelection) in a state holder; read " +
+        "text and selection from state.text and state.selection, and update them programmatically " +
+        "via state.edit { ... } or state.setTextAndPlaceCursorAtEnd(text); observe changes for " +
+        "side effects via snapshotFlow { state.text }.collect { ... }; and replace onValueChange " +
+        "input filtering with InputTransformation, visualTransformation with OutputTransformation " +
+        "(or SecureTextField for passwords), singleLine/maxLines/minLines with " +
+        "TextFieldLineLimits, and keyboardActions with KeyboardActionHandler. See " +
+        "https://developer.android.com/develop/ui/compose/text/migrate-state-based for full " +
+        "migration guidance."
+)
 @Composable
 public fun TextField(
     value: TextFieldValue,

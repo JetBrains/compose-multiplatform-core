@@ -20,6 +20,7 @@ import android.os.Looper
 import android.os.MessageQueue
 import android.util.Log
 import android.view.View
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -42,10 +43,12 @@ import androidx.compose.testutils.ComposeTestCase
 import androidx.compose.testutils.createAndroidComposeBenchmarkRunner
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.AndroidUiDispatcher
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.text.NumberFormat
 import java.util.Locale
@@ -270,6 +273,29 @@ class MemoryLeakTest {
         }
     }
 
+    // Regression test for b/547675867
+    @SdkSuppress(minSdkVersion = 29)
+    @Test
+    fun reorderComposeViewWithinOneFrame_assertNoLeak() =
+        runBlocking(AndroidUiDispatcher.Main) {
+            val root = FrameLayout(activityTestRule.activity)
+            root.addView(View(activityTestRule.activity))
+            activityTestRule.activity.setContentView(root)
+            waitForIdle()
+            loopAndVerifyMemory(iterations = 400, gcFrequency = 40, ignoreFirstRun = true) {
+                val composeView =
+                    ComposeView(activityTestRule.activity).apply {
+                        setContent { Box { BasicText("Hello") } }
+                    }
+                root.addView(composeView)
+                root.removeView(composeView)
+                root.addView(composeView, 0)
+                yield()
+                waitForIdle()
+                root.removeView(composeView)
+            }
+        }
+
     companion object {
         /**
          * Runs the given code in a loop for exactly [iterations] times and every [gcFrequency] it
@@ -341,11 +367,10 @@ class MemoryLeakTest {
 
         private suspend fun waitForIdle() {
             suspendCancellableCoroutine { c ->
-                val idleHandler =
-                    MessageQueue.IdleHandler {
-                        c.resumeWith(Result.success(Unit))
-                        false
-                    }
+                val idleHandler = MessageQueue.IdleHandler {
+                    c.resumeWith(Result.success(Unit))
+                    false
+                }
                 if (Looper.getMainLooper().queue.isIdle) {
                     c.resumeWith(Result.success(Unit))
                 } else {

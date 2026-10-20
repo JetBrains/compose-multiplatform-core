@@ -445,8 +445,9 @@ internal class SlotTable : SlotStorage(), CompositionData, Iterable<CompositionG
         return groupsSize > 0 && groups.containsMark(0)
     }
 
-    fun sourceInformationOf(group: Int) =
-        sourceInformationMap?.let { map -> tryAnchor(group)?.let { anchor -> map[anchor] } }
+    fun sourceInformationOf(group: Int) = sourceInformationMap?.let { map ->
+        tryAnchor(group)?.let { anchor -> map[anchor] }
+    }
 
     /**
      * Find the nearest recompose scope for [group] that, when invalidated, will cause [group] group
@@ -2217,7 +2218,12 @@ internal class SlotWriter(
         }
     }
 
-    fun forAllDataInRememberOrder(group: Int, block: (index: Int, data: Any?) -> Unit) {
+    /**
+     * Traverses all data in remember order for [group] and its children.
+     *
+     * Note: Be very careful when using this function as it inlines quite a bit of generated code.
+     */
+    inline fun forAllDataInRememberOrder(group: Int, block: (index: Int, data: Any?) -> Unit) {
         // The list and set implement a multi-map of groups to slots that need to be emitted
         // after group. The a multi-map itself is not used as a generic multi map would box the
         // integers and otherwise allocate more memory.
@@ -2753,10 +2759,9 @@ internal class SlotWriter(
         advanceBy(offset)
         startGroup()
         beginInsert()
-        val anchors =
-            table.write { tableWriter ->
-                moveGroup(tableWriter, index, this, updateFromCursor = false, updateToCursor = true)
-            }
+        val anchors = table.write { tableWriter ->
+            moveGroup(tableWriter, index, this, updateFromCursor = false, updateToCursor = true)
+        }
         endInsert()
         endGroup()
         currentGroup = previousCurrentGroup
@@ -3142,7 +3147,9 @@ internal class SlotWriter(
     }
 
     internal fun sourceInformationOf(group: Int): GapGroupSourceInformation? =
-        sourceInformationMap?.let { map -> tryAnchor(group)?.let { anchor -> map[anchor] } }
+        sourceInformationMap?.let { map ->
+            tryAnchor(group)?.let { anchor -> map[anchor] }
+        }
 
     internal fun tryAnchor(group: Int) =
         if (group in 0 until size) anchors.find(group, size) else null

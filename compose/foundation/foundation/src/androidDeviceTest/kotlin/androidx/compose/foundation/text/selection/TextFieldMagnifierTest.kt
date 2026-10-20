@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalLocaleList
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -57,6 +58,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
         onTextLayout: (TextLayoutResult) -> Unit,
         maxLines: Int,
     ) {
+        @Suppress("DEPRECATION") // b/552879150
         BasicTextField(
             text,
             onValueChange = {},
@@ -121,6 +123,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
         val selectionManager = TextFieldSelectionManager()
         rule.setContent {
             val fontFamilyResolver = LocalFontFamilyResolver.current
+            val localeList = LocalLocaleList.current
             val density = LocalDensity.current
             selectionManager.value = TextFieldValue(Text)
             val scope = currentRecomposeScope
@@ -133,6 +136,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                             style = TextStyle.Default,
                             density = density,
                             fontFamilyResolver = fontFamilyResolver,
+                            defaultLocaleList = localeList,
                         ),
                     recomposeScope = scope,
                     keyboardController = null,

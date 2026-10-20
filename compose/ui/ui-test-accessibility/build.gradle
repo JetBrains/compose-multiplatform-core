@@ -32,7 +32,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.test.accessibility"
-        compileSdk { version = release(37) }
+        compileSdk { version = release(37) { minorApiLevel = 1 } }
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -56,6 +56,17 @@ androidXMultiplatform {
             implementation(libs.truth)
             implementation(project(":compose:test-utils"))
             implementation(project(":compose:foundation:foundation"))
+        }
+    }
+}
+
+dependencies {
+    constraints {
+        androidMainImplementation(libs.protobufLite) {
+            because("b/556683882 - upgrade to fix CVEs")
+        }
+        androidMainImplementation(libs.guavaAndroid) {
+            because("b/556683882 - upgrade to fix CVEs")
         }
     }
 }

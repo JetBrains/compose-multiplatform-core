@@ -39,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -47,7 +48,7 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Medium
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.OverlayPopup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 
@@ -96,6 +97,7 @@ internal fun WebContextMenuToolbarPopup(
     )
 }
 
+@OptIn(InternalComposeUiApi::class)
 @Composable
 internal fun WebContextMenuToolbarPopup(
     popupPositionProvider: PopupPositionProvider,
@@ -104,7 +106,7 @@ internal fun WebContextMenuToolbarPopup(
     colors: ContextMenuColors,
     contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
 ) {
-    Popup(
+    OverlayPopup(
         popupPositionProvider = popupPositionProvider,
         onDismissRequest = onDismiss,
         properties = DefaultPopupToolbarProperties,

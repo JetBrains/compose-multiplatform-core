@@ -124,6 +124,73 @@ class LazyListCacheWindowTest(orientation: Orientation) :
     }
 
     @Test
+    fun scrollForward_prefetchedItemBecomingVisible_doesNotResetCacheWindow() {
+        assumeTrue(ComposeFoundationFlags.isMultiLaneCacheWindowEnabled)
+        assumeTrue(!ComposeFoundationFlags.isCacheWindowLookaheadCheckEnabled)
+        val cacheWindow =
+            LazyLayoutCacheWindow(
+                aheadFraction = 1f,
+                behindFraction = 1f,
+                isNonScrollCachingEnabled = false,
+            )
+        val totalItems = 120
+        composeList(numItems = mutableStateOf(totalItems), cacheWindow = cacheWindow)
+
+        // Initial scroll: moves 5px forward, prefetching items 2 and 3 ahead
+        rule.runOnIdle { runBlocking { state.scrollBy(5f) } }
+        rule.onNodeWithTag("2").assertExists()
+        rule.onNodeWithTag("3").assertExists()
+        rule.onNodeWithTag("4").assertDoesNotExist()
+
+        // Scroll forward item by item, ensuring the prefetch window does not collapse to 0
+        for (item in 2..100) {
+            rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx.toFloat()) } }
+            rule.onNodeWithTag("$item").assertIsDisplayed()
+
+            // Prefetch window should not collapse back: next 2 items should be prefetched
+            rule.onNodeWithTag("${item + 1}").assertExists()
+            rule.onNodeWithTag("${item + 2}").assertExists()
+            rule.onNodeWithTag("${item + 3}").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun scrollBackward_prefetchedItemBecomingVisible_doesNotResetCacheWindow() {
+        assumeTrue(ComposeFoundationFlags.isMultiLaneCacheWindowEnabled)
+        assumeTrue(!ComposeFoundationFlags.isCacheWindowLookaheadCheckEnabled)
+        val cacheWindow =
+            LazyLayoutCacheWindow(
+                aheadFraction = 1f,
+                behindFraction = 1f,
+                isNonScrollCachingEnabled = false,
+            )
+        val totalItems = 120
+        composeList(
+            firstItem = 100,
+            itemOffset = itemsSizePx / 2,
+            numItems = mutableStateOf(totalItems),
+            cacheWindow = cacheWindow,
+        )
+
+        // Initial scroll: moves 5px backward, prefetching items 99 and 98 ahead
+        rule.runOnIdle { runBlocking { state.scrollBy(-5f) } }
+        rule.onNodeWithTag("99").assertExists()
+        rule.onNodeWithTag("98").assertExists()
+        rule.onNodeWithTag("97").assertDoesNotExist()
+
+        // Scroll backward item by item, ensuring the prefetch window does not collapse to 0
+        for (item in 99 downTo 3) {
+            rule.runOnIdle { runBlocking { state.scrollBy(-itemsSizePx.toFloat()) } }
+            rule.onNodeWithTag("$item").assertIsDisplayed()
+
+            // Prefetch window should not collapse back: next 2 items should be prefetched
+            rule.onNodeWithTag("${item - 1}").assertExists()
+            rule.onNodeWithTag("${item - 2}").assertExists()
+            rule.onNodeWithTag("${item - 3}").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun scrollForward_shouldNotDisposeItemsInWindow() {
         composeList(firstItem = 3, cacheWindow = viewportWindow)
         rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx * 2.5f) } }
@@ -204,8 +271,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
         val items = mutableStateOf(listOf("a", "b", "c", "d", "e"))
 
         rule.setContent {
-            @OptIn(ExperimentalFoundationApi::class)
-            state = rememberLazyListState(cacheWindow = viewportWindow)
+            state = rememberLazyListState()
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * 1.5f)
                     .then(
@@ -216,13 +282,15 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                         }
                     ),
                 state,
+                cacheWindow = viewportWindow,
             ) {
                 items(items.value, key = { it }) {
                     if (it == "e") {
-                        val state = rememberLazyListState(cacheWindow = viewportWindow)
+                        val state = rememberLazyListState()
                         LazyRow(
                             Modifier.mainAxisSize(itemsSizeDp).fillMaxCrossAxis().testTag(it),
                             state = state,
+                            cacheWindow = viewportWindow,
                         ) {
                             item {
                                 Spacer(
@@ -284,8 +352,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
         val items = mutableStateOf(listOf("a", "b", "c", "d"))
 
         rule.setContent {
-            @OptIn(ExperimentalFoundationApi::class)
-            state = rememberLazyListState(cacheWindow = viewportWindow)
+            state = rememberLazyListState()
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * 2f)
                     .then(
@@ -296,13 +363,15 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                         }
                     ),
                 state,
+                cacheWindow = viewportWindow,
             ) {
                 items(items.value, key = { it }) {
                     if (it == "e" || it == "f") {
-                        val state = rememberLazyListState(cacheWindow = viewportWindow)
+                        val state = rememberLazyListState()
                         LazyRow(
                             Modifier.mainAxisSize(itemsSizeDp).fillMaxCrossAxis().testTag(it),
                             state = state,
+                            cacheWindow = viewportWindow,
                         ) {
                             item {
                                 Spacer(
@@ -450,7 +519,8 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                                 else Constraints.fixed(400, approachHeight)
                             m.measure(c).run { layout(width, lookaheadHeight) { place(0, 0) } }
                         },
-                        state = LazyListState(cacheWindow = LazyLayoutCacheWindow(0f)),
+                        state = LazyListState(),
+                        cacheWindow = LazyLayoutCacheWindow(0f),
                     ) {
                         items(10) {
                             Box(Modifier.height(100.dp).fillMaxWidth())
@@ -492,12 +562,10 @@ class LazyListCacheWindowTest(orientation: Orientation) :
     ) {
         rule.setContent {
             scope = rememberCoroutineScope()
-            @OptIn(ExperimentalFoundationApi::class)
             state =
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = firstItem,
                     initialFirstVisibleItemScrollOffset = itemOffset,
-                    cacheWindow = cacheWindow,
                 )
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * numberOfItemsInTheList)
@@ -511,6 +579,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                 state,
                 reverseLayout = reverseLayout,
                 contentPadding = contentPadding,
+                cacheWindow = cacheWindow,
             ) {
                 items(numItems.value) {
                     DisposableEffect(it) {

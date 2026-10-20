@@ -129,14 +129,13 @@ public object ComposeUiFlags {
     // TODO: Remove this flag once it has soaked (b/501080937)
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isTriggerMoveEventsWhenLocationHasNotChangedEnabled: Boolean = false
+    public var isTriggerMoveEventsWhenLocationHasNotChangedEnabled: Boolean = true
 
     /** Fixes trackpad pan gestures (CLASSIFICATION_TWO_FINGER_SWIPE). */
     // TODO: b/535296682 - Cleanup feature flag
     @field:Suppress("MutableBareField")
     @JvmField
-    // TODO https://youtrack.jetbrains.com/issue/CMP-10707/Restore-ComposeUiFlags.isTrackpadPanHoverFixEnabled-to-the-AOSP-value
-    public var isTrackpadPanHoverFixEnabled: Boolean = false
+    public var isTrackpadPanHoverFixEnabled: Boolean = true
 
     /**
      * Enables re-interpreting trackpad pinch gestures (CLASSIFICATION_PINCH) as mouse events with
@@ -155,15 +154,13 @@ public object ComposeUiFlags {
     // TODO: b/523295932 - Cleanup feature flag
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isMinimalistLocalsEnabled: Boolean = false
+    public var isMinimalistLocalsEnabled: Boolean = true
 
     /**
      * Enables calculating velocity from two sample points instead of returning zero. This changes
      * how velocity is calculated for flings, which may affect scrolling, nested scrolling, and
      * similar gesture behaviors. Please file a bug report if disabling this flag resolves the
      * issue.
-     *
-     * Note: This flag currently no-ops; the feature will be added in a future change.
      */
     // TODO: b/530873034 - Cleanup feature flag
     @field:Suppress("MutableBareField")
@@ -177,11 +174,15 @@ public object ComposeUiFlags {
      *
      * This reduces redundant texture uploads and improves performance when the same vector is used
      * multiple times within a composition tree, such as in a LazyColumn.
-     *
-     * Note: This flag currently no-ops; the feature will be added in a future change.
      */
     // TODO: b/493138866 - Clean feature flag
     @field:Suppress("MutableBareField")
     @JvmField
     public var isVectorDrawCacheSharingEnabled: Boolean = true
+
+    /** Guard for Hardware Navigation system default behavior in Compose. */
+    // TODO(b/520209822): Cleanup once proven stable.
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isHardwareNavigationHandlingEnabled: Boolean = false
 }

@@ -16,27 +16,47 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastJoinToString
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 
 internal fun setSizeAndPosition(
     element: HTMLElement, left: Float, top: Float, width: Float, height: Float
 ) {
+    // Note: the position must be set via left/top (not via a CSS transform).
+    // Transforms don't participate in the DOM layout: they break the layout-based geometry
+    // (offsetTop/offsetLeft), the scrollable overflow of the a11y scroll containers and
+    // the browser scroll anchoring, which ATs and browsers rely on.
     // language=javascript
     js(
         """
-       element.style.left = "" + left + "px";
-       element.style.top = "" + top + "px";
-       element.style.width = "" + width + "px";
-       element.style.height = "" + height + "px";
+       const leftValue = "" + left + "px";
+       const topValue = "" + top + "px";
+       const widthValue = "" + width + "px";
+       const heightValue = "" + height + "px";
+
+       if (element.style.left !== leftValue) {
+           element.style.left = leftValue;
+       }
+       if (element.style.top !== topValue) {
+           element.style.top = topValue;
+       }
+       if (element.style.width !== widthValue) {
+           element.style.width = widthValue;
+       }
+       if (element.style.height !== heightValue) {
+           element.style.height = heightValue;
+       }
     """
     )
 }
@@ -63,6 +83,8 @@ internal object AriaRoleId {
     const val Grid = 10
     const val Dialog = 11
     const val Link = 12
+    const val ProgressBar = 13
+    const val Slider = 14
 }
 
 internal fun SemanticsConfiguration.getRoleId(): Int {
@@ -111,6 +133,15 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
             AriaRoleId.Grid
         } else {
             AriaRoleId.List
+        }
+    }
+
+    if (this.contains(SemanticsProperties.ProgressBarRangeInfo)) {
+        val info = this[SemanticsProperties.ProgressBarRangeInfo]
+        roleId = if (info.steps > 0 || SemanticsActions.SetProgress in this) {
+            AriaRoleId.Slider
+        } else {
+            AriaRoleId.ProgressBar
         }
     }
 
@@ -169,6 +200,12 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
             case 12: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/link_role
                 roleValue = "link";
                 break;
+            case 13: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/progressbar_role
+                roleValue = "progressbar";
+                break;
+            case 14: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/slider_role
+                roleValue = "slider";
+                break;
             default:
                 break;
         }
@@ -179,6 +216,14 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
         }
     """
     )
+}
+
+internal fun ToggleableState.toAriaChecked(): String {
+    return when (this) {
+        ToggleableState.On -> "true"
+        ToggleableState.Off -> "false"
+        ToggleableState.Indeterminate -> "mixed"
+    }
 }
 
 internal fun removeAllChildrenOf(element: HTMLElement) {
@@ -247,4 +292,48 @@ internal fun splitTextAndLinks(texts: List<AnnotatedString>): TextAndLinksSplit 
     parts.add(pendingText.toString())
 
     return TextAndLinksSplit(textParts = parts, linkTexts = linkTexts)
+}
+
+
+internal fun SemanticsConfiguration.getAriaLabel(): String? {
+    return when {
+        this.contains(SemanticsProperties.ContentDescription) ->
+            this[SemanticsProperties.ContentDescription].fastJoinToString(", ")
+        this.contains(SemanticsProperties.EditableText) &&
+            this.contains(SemanticsProperties.Text) ->
+            this[SemanticsProperties.Text].fastJoinToString("\n") { it.text }
+        else -> null
+    }
+}
+
+internal fun SemanticsConfiguration.getAriaLive(roleId: Int): String? {
+    val isCollection = roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
+
+    return when {
+        contains(SemanticsProperties.LiveRegion) -> {
+            when (this[SemanticsProperties.LiveRegion]) {
+                LiveRegionMode.Polite -> "polite"
+                LiveRegionMode.Assertive -> "assertive"
+                else -> "polite"
+            }
+        }
+        isCollection -> {
+            // Prevent VoiceOver from announcing every child added as a lazy collection scrolls.
+            "off"
+        }
+        else -> null
+    }
+}
+
+internal fun SemanticsConfiguration.hasNonEditableText(): Boolean {
+    return this.contains(SemanticsProperties.Text) && !this.contains(SemanticsProperties.EditableText)
+}
+
+internal fun SemanticsConfiguration.isObfuscatedPassword(): Boolean {
+    return this.contains(SemanticsProperties.Password) &&
+        this.getOrElse(SemanticsProperties.IsPasswordObfuscated) { true }
+}
+
+internal fun obfuscatedPassword(password: String): String {
+    return "\u2022".repeat(password.length)
 }

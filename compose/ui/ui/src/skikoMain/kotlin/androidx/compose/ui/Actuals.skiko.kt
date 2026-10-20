@@ -17,8 +17,8 @@
 package androidx.compose.ui
 
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -35,7 +35,11 @@ internal actual fun postDelayed(delayMillis: Long, block: () -> Unit): Any {
     }
 }
 
+// Reuse a pre-created exception to avoid capturing a new stack trace on every cancellation.
+private val PostDelayedCancellationException =
+    CancellationException("PostDelayedCancellationException")
+
 internal actual fun removePost(token: Any?) {
     val job = token as? Job?
-    job?.cancel()
+    job?.cancel(PostDelayedCancellationException)
 }

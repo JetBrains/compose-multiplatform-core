@@ -17,6 +17,7 @@
  */
 package androidx.compose.ui.text.platform
 
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -40,16 +41,23 @@ import kotlin.math.ceil
 internal class SkikoParagraphIntrinsics(
     val text: String,
     private val style: TextStyle,
-    private val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    private val annotations: List<Range<out AnnotatedString.Annotation>>,
     private val placeholders: List<Range<Placeholder>>,
     private val density: Density,
-    private val fontFamilyResolver: FontFamily.Resolver
+    private val fontFamilyResolver: FontFamily.Resolver,
+    private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
-    val textDirection = resolveTextDirection(text, style.textDirection, style.localeList)
+    private var resolvedTypefaces: TypefaceDirtyTrackerLinkedList? = null
 
-    //we need to track it reactively to invalidate the UI
-    override var hasStaleResolvedFonts: Boolean by mutableStateOf(false)
-        private set
+    val textDirection =
+        resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
+
+    // we need to track it reactively to invalidate the UI
+    // Async typeface updates are tracked separately via [resolvedTypefaces].
+    private var hasUnresolvedFontStale by mutableStateOf(false)
+
+    override val hasStaleResolvedFonts: Boolean
+        get() = hasUnresolvedFontStale || (resolvedTypefaces?.isStaleResolvedFont ?: false)
 
     private var layouter: ParagraphLayouter? = newLayouter()
 
@@ -59,38 +67,59 @@ internal class SkikoParagraphIntrinsics(
         return layouter
     }
 
-    private fun newLayouter() = ParagraphLayouter(
-        text = text,
-        textDirection = textDirection,
-        style = style,
-        annotations = annotations,
-        placeholders = placeholders,
-        density = density,
-        fontFamilyResolver = fontFamilyResolver,
-        onFontStale = { hasStaleResolvedFonts = true }
+    private fun newLayouter() =
+        ParagraphLayouter(
+            text = text,
+            textDirection = textDirection,
+            style = style,
+            annotations = annotations,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            onFontStale = { hasUnresolvedFontStale = true },
+        onFontResolved = { state ->
+            resolvedTypefaces = TypefaceDirtyTrackerLinkedList(state, resolvedTypefaces)
+        },
     )
 
     override var minIntrinsicWidth = 0f
         private set
+
     override var maxIntrinsicWidth = 0f
         private set
 
     init {
-        val para = layouter!!.layoutParagraph(Float.POSITIVE_INFINITY)
-        minIntrinsicWidth = ceil(para.minIntrinsicWidth)
-        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth)
+        val layouter = layouter!!
+        val para = layouter.layoutParagraph(Float.POSITIVE_INFINITY)
+
+        // Skia excludes the indentation from the intrinsic widths, so text laid out at that width
+        // breaks a line early.
+        val indent = layouter.firstLineIndentPx
+        minIntrinsicWidth = ceil(para.minIntrinsicWidth + indent)
+        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth + indent)
     }
+}
+
+private class TypefaceDirtyTrackerLinkedList(
+    private val resolveResult: State<Any>,
+    private val next: TypefaceDirtyTrackerLinkedList? = null,
+) {
+    private val initial = resolveResult.value
+
+    val isStaleResolvedFont: Boolean
+        get() = resolveResult.value !== initial || (next?.isStaleResolvedFont == true)
 }
 
 internal fun resolveTextDirection(
     text: String,
     textDirection: TextDirection? = null,
-    localeList: LocaleList? = null
+    localeList: LocaleList? = null,
 ): ResolvedTextDirection {
     return when (textDirection ?: TextDirection.Content) {
         TextDirection.Ltr -> ResolvedTextDirection.Ltr
         TextDirection.Rtl -> ResolvedTextDirection.Rtl
-        TextDirection.Content, TextDirection.Unspecified -> {
+        TextDirection.Content,
+        TextDirection.Unspecified -> {
             contentBasedTextDirection(text) { localeBasedTextDirection(localeList?.firstOrNull()) }
         }
         TextDirection.ContentOrLtr -> contentBasedTextDirection(text) { ResolvedTextDirection.Ltr }
@@ -103,8 +132,8 @@ internal fun resolveTextDirection(
  * Determine the paragraph direction by the first strong directional character. If no strong
  * character is found, fallback() will be called.
  *
- * This is the standard Unicode Bidirectional Algorithm (steps P2 and P3).
- * See https://www.unicode.org/reports/tr9/
+ * This is the standard Unicode Bidirectional Algorithm (steps P2 and P3). See
+ * https://www.unicode.org/reports/tr9/
  */
 private fun contentBasedTextDirection(text: String, fallback: () -> ResolvedTextDirection) =
     when (text.firstStrongDirectionType()) {

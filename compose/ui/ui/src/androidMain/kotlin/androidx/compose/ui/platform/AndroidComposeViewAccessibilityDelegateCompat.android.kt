@@ -250,6 +250,9 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     /** Virtual view id for the currently hovered logical item. */
     @VisibleForTesting internal var hoveredVirtualViewId = InvalidId
 
+    /** Whether hover enter/move was last forwarded to an interop view in `AndroidViewsHandler`. */
+    private var isHoveringInteropView: Boolean = false
+
     // We could use UiAutomation.OnAccessibilityEventListener, but the tests were
     // flaky, so we use this callback to test accessibility events.
     @VisibleForTesting
@@ -310,7 +313,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      * True if accessibility service with the touch exploration (e.g. Talkback) is enabled in the
      * system. Note that UIAutomator doesn't request touch exploration therefore returns false
      */
-    private val isTouchExplorationEnabled
+    internal val isTouchExplorationEnabled
         get() =
             accessibilityForceEnabledForTesting ||
                 (isAccessibilityEnabled && view.composeViewContext.isTouchExplorationEnabled)
@@ -441,6 +444,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         // TODO: b/498432814 - Handler shouldn't be null on detach; investigate re-entrant
         //  detachment to see if handler? can be removed.
         handler?.removeCallbacks(semanticsChangeChecker)
+        isHoveringInteropView = false
         if (!AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
             accessibilityManager.removeAccessibilityStateChangeListener(this)
             accessibilityManager.removeTouchExplorationStateChangeListener(this)
@@ -452,6 +456,9 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     }
 
     override fun onTouchExplorationStateChanged(enabled: Boolean) {
+        if (!enabled) {
+            isHoveringInteropView = false
+        }
         resetEnabledAccessibilityServiceList()
     }
 
@@ -1032,9 +1039,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 }
             }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Api24Impl.addSetProgressAction(info, semanticsNode)
-        }
+        addSetProgressAction(info, semanticsNode)
 
         setCollectionInfo(semanticsNode, info)
         setCollectionItemInfo(semanticsNode, info)
@@ -1815,15 +1820,14 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         if (scrollableAncestor == null) {
             // there's no scrollable ancestor in the Compose hierarchy, let
             // AndroidComposeView handle it
-            val rect =
-                boundsInRoot.run {
-                    android.graphics.Rect(
-                        floor(left).toInt(),
-                        floor(top).toInt(),
-                        ceil(right).roundToInt(),
-                        ceil(bottom).roundToInt(),
-                    )
-                }
+            val rect = boundsInRoot.run {
+                android.graphics.Rect(
+                    floor(left).toInt(),
+                    floor(top).toInt(),
+                    ceil(right).roundToInt(),
+                    ceil(bottom).roundToInt(),
+                )
+            }
             return view.requestRectangleOnScreen(rect)
         }
 
@@ -2229,34 +2233,56 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      * @param event The hover event to dispatch to the virtual view hierarchy.
      * @return Whether the hover event was handled.
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     internal fun dispatchHoverEvent(event: MotionEvent): Boolean {
         if (!isTouchExplorationEnabled) {
+            isHoveringInteropView = false
             return false
         }
 
         when (event.action) {
             MotionEvent.ACTION_HOVER_MOVE,
             MotionEvent.ACTION_HOVER_ENTER -> {
-                val virtualViewId = hitTestSemanticsAt(event.x, event.y)
+                val hitResult = hitTestSemanticsAndInteropAt(event.x, event.y)
+                val virtualViewId = hitResult.virtualViewId
+                val hitInteropView = hitResult.isInteropHit
                 // The android views could be view groups, so the event must be dispatched to the
                 // views. Android ViewGroup.java will take care of synthesizing hover enter/exit
                 // actions from hover moves.
+                //
+                // Only forward when an interop view is the front-most hit. Forwarding
+                // unconditionally reaches every interop view whose View bounds contain the point,
+                // regardless of the Compose content drawn above it, which lets a view that answers
+                // hover asynchronously (such as WebView) take accessibility focus away from the
+                // Compose node under the finger.
+                val handled =
+                    if (!AndroidComposeUiFlags.isInteropHoverZOrderEnabled || hitInteropView) {
+                        isHoveringInteropView = hitInteropView
+                        view.androidViewsHandler?.dispatchGenericMotionEvent(event) ?: false
+                    } else {
+                        // Compose content is in front, so the interop layer will stop receiving
+                        // the hover moves it would otherwise infer an exit from. Tell it directly.
+                        dispatchSynthesizedHoverExitToInterop(event)
+                        false
+                    }
                 // Note that this should be before calling "updateHoveredVirtualView" so that in
                 // the corner case of overlapped nodes, the final hover enter event is sent from
                 // the node/view that we want to focus.
-                val handled = view.androidViewsHandler?.dispatchGenericMotionEvent(event) ?: false
                 updateHoveredVirtualView(virtualViewId)
                 return if (virtualViewId == InvalidId) handled else true
             }
             MotionEvent.ACTION_HOVER_EXIT -> {
+                val wasHoveringInterop = isHoveringInteropView
+                isHoveringInteropView = false
                 return when {
                     hoveredVirtualViewId != InvalidId -> {
                         updateHoveredVirtualView(InvalidId)
                         true
                     }
-                    else -> {
+                    !AndroidComposeUiFlags.isInteropHoverZOrderEnabled || wasHoveringInterop -> {
                         view.androidViewsHandler?.dispatchGenericMotionEvent(event) ?: false
                     }
+                    else -> false
                 }
             }
             else -> {
@@ -2266,15 +2292,60 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     }
 
     /**
+     * Sends a single ACTION_HOVER_EXIT to the interop layer when the front-most hit moves from an
+     * interop view to Compose content drawn above it. Without this the previously hovered view
+     * never learns that the pointer left, because it stops receiving the hover moves that ViewGroup
+     * would otherwise synthesize an exit from.
+     */
+    private fun dispatchSynthesizedHoverExitToInterop(event: MotionEvent) {
+        if (!isHoveringInteropView) return
+        // Clear before dispatch to stay reentrancy-safe.
+        isHoveringInteropView = false
+        val handler = view.androidViewsHandler ?: return
+        val exitEvent = MotionEvent.obtainNoHistory(event)
+        try {
+            exitEvent.action = MotionEvent.ACTION_HOVER_EXIT
+            handler.dispatchGenericMotionEvent(exitEvent)
+        } finally {
+            exitEvent.recycle()
+        }
+    }
+
+    /**
+     * Packs `(virtualViewId: Int, isInteropHit: Boolean)` into a single 64-bit primitive to avoid
+     * heap allocations during 60-120Hz hover hit-testing. Uses arithmetic right shift (`shr 32`) so
+     * negative IDs such as `InvalidId` (`Integer.MIN_VALUE`) round-trip accurately.
+     */
+    @JvmInline
+    private value class SemanticsHitTestResult(val packedValue: Long) {
+        constructor(
+            virtualViewId: Int,
+            isInteropHit: Boolean,
+        ) : this((virtualViewId.toLong() shl 32) or (if (isInteropHit) 1L else 0L))
+
+        val virtualViewId: Int
+            get() = (packedValue shr 32).toInt()
+
+        val isInteropHit: Boolean
+            get() = (packedValue and 1L) != 0L
+    }
+
+    /**
      * Hit test the layout tree for semantics wrappers. The return value is a virtual view id, or
      * InvalidId if an embedded Android View was hit.
      */
     @VisibleForTesting
+    internal fun hitTestSemanticsAt(x: Float, y: Float): Int =
+        hitTestSemanticsAndInteropAt(x, y).virtualViewId
+
     @OptIn(ExperimentalComposeUiApi::class)
-    internal fun hitTestSemanticsAt(x: Float, y: Float): Int {
+    private fun hitTestSemanticsAndInteropAt(x: Float, y: Float): SemanticsHitTestResult {
         view.measureAndLayout()
 
         val hitSemanticsEntities = HitTestResult()
+        // Note: AndroidViewHolder unconditionally attaches `.semantics(true) {}` to its
+        // LayoutNode, so all embedded AndroidViews possess Nodes.Semantics and are included in
+        // hitSemanticsEntities even when no explicit semantics modifier is provided by the caller.
         view.root.hitTestSemantics(
             pointerPosition = Offset(x, y),
             hitSemanticsEntities = hitSemanticsEntities,
@@ -2283,12 +2354,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         // Iterate front-to-back until we find a node with semantics that are important-for-a11y
         for (i in hitSemanticsEntities.lastIndex downTo 0) {
             val layoutNode = hitSemanticsEntities[i].requireLayoutNode()
-
-            // If this node corresponds to an AndroidView, then we should return InvalidId
-            // to let the View System handle it.
             val androidView = view.androidViewsHandler?.layoutNodeToHolder[layoutNode]
-            if (androidView != null) {
-                return InvalidId
+
+            if (!AndroidComposeUiFlags.isInteropHoverZOrderEnabled && androidView != null) {
+                return SemanticsHitTestResult(InvalidId, isInteropHit = true)
             }
 
             if (!layoutNode.nodes.has(Nodes.Semantics)) {
@@ -2301,15 +2370,22 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             // use the methods available to the SemanticsNode
             val semanticsNode = SemanticsNode(layoutNode, false)
 
-            // Continue to the next items in the hit test if it's not considered important.
-            if (!semanticsNode.isImportantForAccessibility()) {
-                continue
-            }
-
             val isInMergingHiddenSubtree =
                 AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled &&
                     currentSemanticsNodes[virtualViewId]?.isInMergingHiddenSubtree == true
-            if (isInMergingHiddenSubtree) {
+            if (semanticsNode.isHidden || isInMergingHiddenSubtree) {
+                continue
+            }
+
+            // If this node corresponds to an AndroidView, return InvalidId before checking
+            // semanticsNode.isImportantForAccessibility(), since an AndroidView's accessibility
+            // importance is determined by its internal native View hierarchy.
+            if (androidView != null) {
+                return SemanticsHitTestResult(InvalidId, isInteropHit = true)
+            }
+
+            // Continue to the next items in the hit test if it's not considered important.
+            if (!semanticsNode.isImportantForAccessibility()) {
                 continue
             }
 
@@ -2320,10 +2396,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 continue
             }
 
-            return virtualViewId
+            return SemanticsHitTestResult(virtualViewId, isInteropHit = false)
         }
 
-        return InvalidId
+        return SemanticsHitTestResult(InvalidId, isInteropHit = false)
     }
 
     /**
@@ -2508,6 +2584,22 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             event.maxScrollY = it.maxValue().toInt()
         }
         sendEvent(event)
+
+        // When navigating with a hardware keyboard, scrolling moves the currently focused item
+        // on screen. Dispatching TYPE_VIEW_ACCESSIBILITY_FOCUSED post-scroll ensures TalkBack
+        // recalculates and synchronizes its accessibility focus bounds ("green box") with the
+        // newly scrolled position of the focused item.
+        if (
+            AndroidComposeUiFlags.isScrollAccessibilityFocusEventEnabled &&
+                !view.isInTouchMode &&
+                focusedVirtualViewId != InvalidId &&
+                currentSemanticsNodes.containsKey(focusedVirtualViewId)
+        ) {
+            sendEventForVirtualView(
+                focusedVirtualViewId,
+                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED,
+            )
+        }
     }
 
     private fun sendSubtreeChangeAccessibilityEvents(
@@ -2908,19 +3000,20 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         scheduleScrollEventIfNeeded(scope)
                     }
                     SemanticsProperties.Focused -> {
+                        val virtualId = semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id)
                         if (value as Boolean) {
-                            sendEvent(
-                                createEvent(
-                                    semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id),
-                                    AccessibilityEvent.TYPE_VIEW_FOCUSED,
-                                )
-                            )
+                            focusedVirtualViewId = virtualId
+                            sendEvent(createEvent(virtualId, AccessibilityEvent.TYPE_VIEW_FOCUSED))
+                        } else {
+                            if (focusedVirtualViewId == virtualId) {
+                                focusedVirtualViewId = InvalidId
+                            }
                         }
                         // In View.java this window event is sent for unfocused view. But we send
                         // it for focused too so that TalkBack invalidates its cache. Otherwise
                         // PasteText edit option is not displayed properly on some OS versions.
                         sendEventForVirtualView(
-                            semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id),
+                            virtualId,
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
                             AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
                         )
@@ -3415,19 +3508,15 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.N)
-    private object Api24Impl {
-        @JvmStatic
-        fun addSetProgressAction(info: AccessibilityNodeInfoCompat, semanticsNode: SemanticsNode) {
-            if (semanticsNode.enabled()) {
-                semanticsNode.unmergedConfig.getOrNull(SemanticsActions.SetProgress)?.let {
-                    info.addAction(
-                        AccessibilityActionCompat(
-                            android.R.id.accessibilityActionSetProgress,
-                            it.label,
-                        )
-                    )
-                }
+    private fun addSetProgressAction(
+        info: AccessibilityNodeInfoCompat,
+        semanticsNode: SemanticsNode,
+    ) {
+        if (semanticsNode.enabled()) {
+            semanticsNode.unmergedConfig.getOrNull(SemanticsActions.SetProgress)?.let {
+                info.addAction(
+                    AccessibilityActionCompat(android.R.id.accessibilityActionSetProgress, it.label)
+                )
             }
         }
     }
@@ -3491,7 +3580,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
         @JvmStatic
         fun setExtraRenderingInfo(node: SemanticsNode, info: AccessibilityNodeInfo) {
-            val view = node.layoutNode.owner as? AndroidComposeView ?: return
+            node.layoutNode.owner as? AndroidComposeView ?: return
 
             val builder = AccessibilityNodeInfo.ExtraRenderingInfo.Builder()
 
@@ -3791,13 +3880,12 @@ private fun SemanticsNode.excludeLineAndPageGranularities(): Boolean {
         return true
 
     // text nodes that are part of the 'merged' text field, for example hint or label.
-    val ancestor =
-        layoutNode.findClosestParentNode {
-            // looking for text field merging node
-            val ancestorSemanticsConfiguration = it.semanticsConfiguration
-            ancestorSemanticsConfiguration?.isMergingSemanticsOfDescendants == true &&
-                ancestorSemanticsConfiguration.contains(SemanticsProperties.EditableText)
-        }
+    val ancestor = layoutNode.findClosestParentNode {
+        // looking for text field merging node
+        val ancestorSemanticsConfiguration = it.semanticsConfiguration
+        ancestorSemanticsConfiguration?.isMergingSemanticsOfDescendants == true &&
+            ancestorSemanticsConfiguration.contains(SemanticsProperties.EditableText)
+    }
     return ancestor != null &&
         ancestor.semanticsConfiguration?.getOrNull(SemanticsProperties.Focused) != true
 }

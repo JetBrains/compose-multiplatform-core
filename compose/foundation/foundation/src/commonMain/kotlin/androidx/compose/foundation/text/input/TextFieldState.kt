@@ -217,17 +217,16 @@ internal constructor(
         }
     }
 
-    override fun toString(): String =
-        Snapshot.withoutReadObservation { "TextFieldState(selection=$selection, text=\"$text\")" }
+    override fun toString(): String = Snapshot.withoutReadObservation {
+        "TextFieldState(selection=$selection, text=\"$text\")"
+    }
 
     /**
      * Manages undo and redo history for this state.
      *
      * @sample androidx.compose.foundation.samples.BasicTextFieldUndoSample
      */
-    // TextField does not implement UndoState because Undo related APIs should be able to remain
-    // separately experimental than TextFieldState
-    @ExperimentalFoundationApi public val undoState: UndoState = UndoState(this)
+    public val undoState: UndoState = UndoState(this)
 
     @Suppress("ShowingMemberInHiddenClass")
     @PublishedApi
@@ -518,8 +517,7 @@ internal constructor(
                         !oldValue.contentEquals(newValue)
                         // No need to restart the IME if there wasn't a composing region. This is
                         // useful to not unnecessarily restart digit only, or password fields.
-                        &&
-                        oldValue.composition != null,
+                        && oldValue.composition != null,
             )
         }
 
@@ -694,11 +692,10 @@ internal constructor(
             val savedTextUndoManager = list[3]
             val savedStyles = list[4]
 
-            val textStyles =
-                savedStyles?.let {
-                    val styleBuffer = with(TextStyleBuffer.Saver) { restore(it)!! }
-                    TextFieldTextStylesImpl(styleBuffer, text.length)
-                }
+            val textStyles = savedStyles?.let {
+                val styleBuffer = with(TextStyleBuffer.Saver) { restore(it)!! }
+                TextFieldTextStylesImpl(styleBuffer, text.length)
+            }
 
             return TextFieldState(
                 initialText = text,
