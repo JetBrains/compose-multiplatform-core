@@ -319,7 +319,13 @@ private class CanvasLayersComposeSceneImpl(
         focusedLayer?.onRotaryEvent(event) ?: mainOwner.onRotaryEvent(event)
 
     override fun doMeasureAndLayout() {
-        forEachOwner { it.measureAndLayout() }
+        forEachOwner {
+            // measureAndLayout on one owner could cause a following one to be disposed,
+            // See https://youtrack.jetbrains.com/issue/CMP-10884 for example
+            if (!it.isDisposed) {
+                it.measureAndLayout()
+            }
+        }
     }
 
     override fun doDraw(canvas: Canvas) {
