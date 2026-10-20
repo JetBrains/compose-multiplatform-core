@@ -33,18 +33,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.BrowserCursor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerType
-import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.EmptyPlatformWindowInsets
@@ -96,7 +91,6 @@ import kotlinx.coroutines.coroutineScope
 import org.jetbrains.skia.DirectContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
-import org.jetbrains.skiko.hostOs
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
@@ -153,7 +147,13 @@ internal class ComposeWindow(
 
     private var insetsManager: WebWindowInsetsManager? = null
 
-    private val clipTarget = clipTargetElement(canvas)
+    private val clipboardEventBridge = WebClipboardEventBridge(
+        canvas = canvas,
+        layerRoot = layerRoot,
+        backingInputProvider = {
+            (platformContext.textInputService as WebTextInputService).getBackingInput()
+        }
+    )
 
     // TODO: It must be shared between Compose instances.
     //  It's supposed to be stored in platform's root view or window.
@@ -356,22 +356,7 @@ internal class ComposeWindow(
         if (processed) {
             keyboardEvent.preventDefault()
         } else if (keyEvent.type == KeyEventType.KeyDown) {
-            processClipKeyDown(keyEvent)
-        }
-    }
-
-    private val isMacOS = hostOs.isMacOS
-
-    private fun processClipKeyDown(keyEvent: KeyEvent) {
-        val mod = if (isMacOS) keyEvent.isMetaPressed else keyEvent.isCtrlPressed
-        if (!mod) return
-        if (keyEvent.key == Key.C || keyEvent.key == Key.V || keyEvent.key == Key.X) {
-            // A browser is about to dispatch a Clipboard Event.
-            // Some browsers do not dispatch Clipboard events to <canvas> despite it having focus,
-            // so let it dispatch the event to clipTarget (text area).
-            // By focusing on it, we let a browser dispatch the event to it.
-            layerRoot.appendChild(clipTarget)
-            focusExt(clipTarget, true)
+            clipboardEventBridge.processKeyDown(keyEvent)
         }
     }
 
@@ -468,10 +453,7 @@ internal class ComposeWindow(
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
-        val clipEventsTargetProvider: () -> HTMLElement = {
-            (platformContext.textInputService as WebTextInputService).getBackingInput()
-                ?: clipTarget
-        }
+        val clipEventsTargetProvider: () -> HTMLElement = clipboardEventBridge::getEventTarget
         scene.setContent {
             CompositionLocalProvider(
                 @Suppress("DEPRECATION")
