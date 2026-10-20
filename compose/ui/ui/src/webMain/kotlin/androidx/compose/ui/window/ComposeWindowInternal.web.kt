@@ -367,8 +367,6 @@ internal class ComposeWindow(
 
     private val isMacOS = hostOs.isMacOS
 
-    private var canvasFocused = false
-
     private fun processClipKeyDown(keyEvent: KeyEvent) {
         val mod = if (isMacOS) keyEvent.isMetaPressed else keyEvent.isCtrlPressed
         if (!mod) return
