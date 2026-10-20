@@ -90,22 +90,17 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.js.js
 import kotlinx.browser.document
-import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import org.jetbrains.skia.DirectContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
-import org.w3c.dom.DocumentReadyState
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.LOADING
 import org.w3c.dom.Node
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
@@ -631,92 +626,6 @@ internal class ComposeWindow(
 
     internal fun isFocusInComposeContainer(): Boolean {
         return document.activeElement != null && viewportContainer.contains(document.activeElement)
-            || (rootNode as ShadowRootExt).activeElement != null
+            || rootNode.hasActiveElement()
     }
-}
-
-//https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
-internal fun documentIsVisible(): Boolean = js("document.visibilityState === 'visible'")
-
-// In K/JS target, an application can't start right away. We should wait until skiko.wasm is ready.
-// We'll do it implicitly, rather than asking the app developers to call it.
-internal fun onSkikoReady(block: () -> Unit) {
-    @Suppress("INVISIBLE_REFERENCE")
-    org.jetbrains.skiko.wasm.onWasmReady { block() }
-}
-
-internal fun onDomReady(block: () -> Unit) {
-    // https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
-    if (document.readyState == DocumentReadyState.LOADING) {
-        document.addEventListener("DOMContentLoaded", {
-            block()
-        })
-    } else {
-        block()
-    }
-}
-
-/**
- * The purpose of the clipTarget element is to briefly steal the focus to let the browser dispatch
- * ClipboardEvent to it. Then it returns the focus to the canvas.
- */
-private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
-    val clipTarget = (document.createElement("textarea") as HTMLTextAreaElement).apply {
-        tabIndex = -1
-        setAttribute("aria-hidden", "true")
-        style.position = "fixed"
-        style.left = "-1000px"
-        style.top = "0"
-        style.opacity = "0"
-        style.width = "1px"
-        style.height = "1px"
-    }
-
-    val clipEventListener: (Event) -> Unit = { _ ->
-        window.requestAnimationFrame {
-            focusExt(canvas, true)
-            clipTarget.remove()
-        }
-    }
-
-    // Here just return the focus to canvas.
-    // For the actual event handling see rememberClipboardEventsHandler implementations.
-    clipTarget.addEventListener("copy", clipEventListener)
-    clipTarget.addEventListener("cut", clipEventListener)
-    clipTarget.addEventListener("paste", clipEventListener)
-
-    return clipTarget
-}
-
-// language=js
-private fun checkViewportFitCover(): Unit = js(
-    """(function() {
-        let meta = document.querySelector('meta[name=viewport]');
-        let content = meta ? (meta.getAttribute('content') || '') : '';
-        if (!content.includes('viewport-fit=cover')) {
-            console.warn(
-                "[ComposeWeb] enableBrowserWindowInsets is set to true, but " +
-                "'viewport-fit=cover' is not found in the viewport meta tag. " +
-                "Safe area insets will be zero. Add viewport-fit=cover to your viewport meta tag: " +
-                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">"
-            );
-        }
-    })()"""
-)
-
-private fun Element.isFocused(): Boolean {
-    val activeElement = when {
-        document.activeElement?.shadowRoot != null -> (document.activeElement?.shadowRoot as? ShadowRootExt)?.activeElement
-        else -> document.activeElement
-    }
-
-    if (activeElement == null) {
-        return false
-    }
-
-    return activeElement == this
-}
-
-private external interface ShadowRootExt {
-    val activeElement: Element?
 }
