@@ -17,7 +17,9 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SkikoComposeTestBase
 import androidx.compose.ui.geometry.Offset
@@ -27,7 +29,7 @@ import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlin.coroutines.CoroutineContext
+import androidx.compose.ui.window.Popup
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -115,6 +117,35 @@ class CanvasLayersComposeSceneTest : SkikoComposeTestBase() {
                 drawInvalidations > drawInvalidationsBeforeClose,
                 "Detaching a layer must request a draw pass to repaint the scene without it",
             )
+        }
+        frameRecomposer.close()
+    }
+
+    @Test
+    fun disposedLayersAreIgnoredInMeasureAndLayout() = runTest(StandardTestDispatcher()) {
+        val frameRecomposer = FrameRecomposer(coroutineContext)
+        val surface = Surface.makeRasterN32Premul(100, 100)
+        CanvasLayersComposeScene(
+            frameRecomposer = frameRecomposer,
+            size = IntSize(100, 100),
+        ).use { scene ->
+            scene.setContent {
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    if (constraints.maxWidth > 50) {
+                        Popup {
+                            Text("Hello, World!")
+                        }
+                    }
+                }
+            }
+
+            scene.measureAndLayout()
+            scene.draw(surface.canvas.asComposeCanvas())
+
+            scene.size = IntSize(49, 49)  // Cause `BoxWithConstraints` content to be recomposed
+
+            scene.measureAndLayout()
+            scene.draw(surface.canvas.asComposeCanvas())
         }
         frameRecomposer.close()
     }
