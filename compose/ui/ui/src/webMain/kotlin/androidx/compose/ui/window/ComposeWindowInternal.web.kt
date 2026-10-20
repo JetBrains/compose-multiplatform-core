@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalWasmJsInterop::class)
-
 package androidx.compose.ui.window
 
 import androidx.annotation.VisibleForTesting
@@ -92,8 +90,6 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsAny
 import kotlin.js.js
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -112,88 +108,7 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.LOADING
 import org.w3c.dom.Node
 import org.w3c.dom.events.Event
-import org.w3c.dom.events.EventTarget
 import org.w3c.dom.events.KeyboardEvent
-
-private val actualDensity
-    get() = window.devicePixelRatio
-
-internal interface ComposeWindowState {
-    fun init() {}
-    fun currentSize(): IntSize
-    fun observeSizeAndScaleChanges(listener: () -> Unit): () -> Unit
-
-    val globalEvents: EventTargetListener
-
-    fun dispose() {
-        globalEvents.dispose()
-    }
-}
-
-internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
-    private var sizeChangeListener: (() -> Unit)? = null
-
-    override val globalEvents = EventTargetListener(window)
-
-    private var mediaQueryListener: MediaQueryListener? = null
-
-    private var viewportTargetListener: EventTargetListener? = null
-    private var viewportContainerResizeObserver: ResizeObserver? = null
-
-    override fun init() {
-        val resizeListener: () -> Unit = {
-            sizeChangeListener?.invoke()
-        }
-
-        // Observe the actual container size:
-        // iOS Safari can change it after a viewport resize without firing another resize event,
-        // leaving the canvas buffer out of sync with its CSS size.
-        viewportContainerResizeObserver = ResizeObserver(resizeListener)
-            .apply { observe(viewportContainer) }
-
-        viewportTargetListener = getVisualViewport()?.let { EventTargetListener(it) }
-        // Unlike resize on window, this one is also trigerred when visualViewport.scale is changed,
-        // so on pinch-to-zoom too:
-        viewportTargetListener?.addDisposableEvent("resize") { resizeListener() }
-
-        recreateMediaQueryListener()
-    }
-
-    override fun currentSize(): IntSize {
-        return IntSize(viewportContainer.clientWidth, viewportContainer.clientHeight)
-    }
-
-    override fun observeSizeAndScaleChanges(listener: () -> Unit): () -> Unit {
-        check(sizeChangeListener == null) { "A size listener is already registered" }
-        sizeChangeListener = listener
-        return {
-            if (sizeChangeListener === listener) {
-                sizeChangeListener = null
-            }
-        }
-    }
-
-    private fun recreateMediaQueryListener() {
-        mediaQueryListener?.dispose()
-        val contentScale = actualDensity
-        mediaQueryListener = object : MediaQueryListener("(resolution: ${contentScale}dppx)") {
-            override fun onChange(matches: Boolean) {
-                if (!matches) {
-                    sizeChangeListener?.invoke()
-                }
-                recreateMediaQueryListener()
-            }
-        }
-    }
-
-    override fun dispose() {
-        sizeChangeListener = null
-        viewportContainerResizeObserver?.disconnect()
-        viewportTargetListener?.dispose()
-        mediaQueryListener?.dispose()
-        super.dispose()
-    }
-}
 
 @VisibleForTesting
 // This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
@@ -722,11 +637,6 @@ internal class ComposeWindow(
     }
 }
 
-private external class ResizeObserver(callback: () -> Unit) : JsAny {
-    fun observe(target: Element)
-    fun disconnect()
-}
-
 //https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
 internal fun documentIsVisible(): Boolean = js("document.visibilityState === 'visible'")
 
@@ -812,12 +722,3 @@ private fun Element.isFocused(): Boolean {
 private external interface ShadowRootExt {
     val activeElement: Element?
 }
-
-//language=js
-private fun getVisualViewportScale(): Float =
-    js("window.visualViewport.scale")
-
-// https://developer.mozilla.org/en-US/docs/Web/API/Window/visualViewport
-// Widely available
-private fun getVisualViewport(): EventTarget =
-    js("window.visualViewport")
