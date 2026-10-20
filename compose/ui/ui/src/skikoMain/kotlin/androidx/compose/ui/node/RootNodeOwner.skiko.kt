@@ -179,6 +179,7 @@ internal class RootNodeOwner(
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
     internal var isDisposed = false
+        private set
 
     private var positionInWindow: Offset? = null
     private var positionOnScreen: Offset? = null
