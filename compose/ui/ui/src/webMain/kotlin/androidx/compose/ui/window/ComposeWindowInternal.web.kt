@@ -1082,28 +1082,6 @@ internal class ComposeWindow(
         return document.activeElement != null && viewportContainer.contains(document.activeElement)
             || (rootNode as ShadowRootExt).activeElement != null
     }
-
-    companion object {
-        private val DomDisposableRegistry = WeakMap<JsAny>()
-
-        fun registerDisposableFor(element: HTMLElement, handler: () -> Unit) {
-            DomDisposableRegistry.set(element, {
-                handler()
-                DomDisposableRegistry.delete(element)
-            })
-        }
-
-        fun createComposeComponent(): HTMLElement {
-            if (customElements.get("compose-component") == null) {
-                customElements.define(
-                    "compose-component",
-                    composeComponentElementCtor(DomDisposableRegistry)
-                )
-            }
-
-            return document.createElement("compose-component") as HTMLElement
-        }
-    }
 }
 
 private external class ResizeObserver(callback: () -> Unit) : JsAny {
@@ -1279,44 +1257,6 @@ private fun Element.isFocused(): Boolean {
 private external interface ShadowRootExt {
     val activeElement: Element?
 }
-
-// A real ES6 `class extends HTMLElement` is required by `customElements.define`.
-// Kotlin/Wasm does not emit Kotlin classes as JS constructors, so we create the
-// constructor in JS and return it as a JS function so it can be passed directly
-// to `customElements.define`.
-@OptIn(ExperimentalWasmJsInterop::class)
-private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js(
-    """
-    (() => {
-        class ComposeComponentElement extends HTMLElement {
-            disconnectedCallback() {
-                const cb = weakMap.get(this);
-                if (cb) cb();
-            }
-        }
-        return ComposeComponentElement;
-    })()
-"""
-)
-
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap
-// Kotlin/Wasm JS interop  only allows type parameters with an upper bound of `JsAny` or its subtypes,
-// while the actual value stored here is a Kotlin function type `() -> Unit`.
-@OptIn(ExperimentalWasmJsInterop::class)
-private external class WeakMap<K : JsAny>() : JsAny {
-    fun get(key: K): (() -> Unit)?
-    fun set(key: K, value: () -> Unit): WeakMap<K>
-    fun has(key: K): Boolean
-    fun delete(key: K): Boolean
-}
-
-private external interface CustomElementRegistry : JsAny {
-    fun get(name: String): JsAny?
-    fun define(name: String, constructor: JsAny)
-}
-
-private external val customElements: CustomElementRegistry
 
 //language=js
 private fun getVisualViewportScale(): Float =

@@ -91,7 +91,7 @@ fun ComposeViewport(
     // Create a common positioning container (parent html element) for shadow and the interop containers
     // to position at the same place - the interop container is position at 0,0 relative to the shadow.
     // It simplifies the positioning of the interop views in the container.
-    val positioningContainer = ComposeWindow.createComposeComponent()
+    val positioningContainer = ComposeWindowCustomElement.createComposeComponent()
     positioningContainer.style.apply {
         position = "relative"
         display = "block" // inline by default for custom elements; 'block' - is the default for <div>
@@ -233,7 +233,7 @@ fun ComposeViewport(
         state = DefaultWindowState(viewportContainer)
     )
 
-    ComposeWindow.registerDisposableFor(positioningContainer) {
+    ComposeWindowCustomElement.onDispose(positioningContainer) {
         composeWindow.dispose()
     }
 }
