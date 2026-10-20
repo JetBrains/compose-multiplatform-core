@@ -53,6 +53,7 @@ import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastLastOrNull
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.window.getDialogScrimBlendMode
+import kotlin.collections.mutableListOf
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 
@@ -183,9 +184,7 @@ private class CanvasLayersComposeSceneImpl(
     override val rootDragAndDropNode = ComposeSceneDragAndDropNode { focusedOwner.dragAndDropOwner }
 
     private val layers = mutableListOf<AttachedComposeSceneLayer>()
-    private val _layersCopyCache = CopiedList {
-        it.addAll(layers)
-    }
+    private val _layersCopyCache = CopiedList(layers)
     private val _ownersCopyCache = CopiedList {
         it.add(mainOwner)
         layers.fastForEach { layer ->
@@ -748,12 +747,16 @@ private fun PointerInputEvent.isMouseOrSingleTouch() =
 
 internal class CopiedList<T>(
     private val populate: (MutableList<T>) -> Unit
-) : MutableList<T> by mutableListOf() {
+) {
+    constructor(origin: List<T>) : this(populate = { it.addAll(origin) })
+
+    private val reusableList = mutableListOf<T>()
+
     inline fun withCopy(
         block: (List<T>) -> Unit
     ) {
         // In case of recursive calls, allocate new list
-        val copy = if (isEmpty()) this else mutableListOf()
+        val copy = if (reusableList.isEmpty()) reusableList else mutableListOf()
         populate(copy)
         try {
             block(copy)
