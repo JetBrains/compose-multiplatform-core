@@ -61,7 +61,12 @@ open class ComposePublishingTask : DefaultTask() {
         val project = rootProject.findProject(component.path) ?:
             throw IllegalArgumentException("Cannot find project ${component.path}")
 
-        dependsOnComposeTask("${component.path}:publish${ComposePlatforms.KotlinMultiplatform.name}PublicationTo$repository")
+        // Root (`kotlinMultiplatform`) publication: .module, .pom, metadata jar, kotlin-tooling-metadata.json.
+        // It's shared by all platforms, so it's published only when `compose.platforms` contains `common`
+        // (parsed as ComposePlatforms.KotlinMultiplatform). Otherwise parallel CI jobs upload it concurrently and race.
+        if (ComposePlatforms.KotlinMultiplatform in targetPlatforms) {
+            dependsOnComposeTask("${component.path}:publish${ComposePlatforms.KotlinMultiplatform.name}PublicationTo$repository")
+        }
 
         for (platform in component.supportedPlatforms) {
             if (platform !in targetPlatforms) continue
