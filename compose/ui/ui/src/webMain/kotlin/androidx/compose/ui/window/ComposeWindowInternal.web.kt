@@ -87,7 +87,7 @@ internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> =
 
 @OptIn(InternalComposeApi::class)
 internal class ComposeWindow(
-    private val canvas: HTMLCanvasElement,
+    internal val canvas: HTMLCanvasElement,
     private val rootNode: Node,
     private val layerRoot: HTMLElement,
     private val viewportContainer: Element,
@@ -166,8 +166,6 @@ internal class ComposeWindow(
     }
 
     private val canvasHolder = SkiaCanvasHolder()
-
-    internal val htmlCanvas: HTMLCanvasElement get() = canvas
 
     /**
      * Skia's GPU context, captured from the surface canvas on the first rendered frame;

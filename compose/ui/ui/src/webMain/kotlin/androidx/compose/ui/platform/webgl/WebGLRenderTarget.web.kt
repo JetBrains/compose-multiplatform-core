@@ -382,7 +382,7 @@ fun rememberWebGLRenderTarget(
 ): WebGLRenderTarget? {
     val window = LocalComposeWindow.current ?: return null
     val renderTarget = remember(window) {
-        val canvas = window.htmlCanvas
+        val canvas = window.canvas
         val gl = webGl2ContextOrNull(canvas)
         if (gl == null) {
             null
