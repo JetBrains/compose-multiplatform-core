@@ -30,53 +30,31 @@ import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.pointer.BrowserCursor
-import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.EmptyPlatformWindowInsets
-import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.TextToolbar
-import androidx.compose.ui.platform.ViewConfiguration
-import androidx.compose.ui.platform.WebOutOfFrameExecutor
-import androidx.compose.ui.platform.WebHapticFeedback
-import androidx.compose.ui.platform.WebTextInputService
-import androidx.compose.ui.platform.WebTextToolbar
-import androidx.compose.ui.platform.WebWakeLockManager
+import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.platform.WebWindowInsetsManager
 import androidx.compose.ui.platform.WindowInfoImpl
-import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
-import androidx.compose.ui.platform.isPostingTasksSupported
 import androidx.compose.ui.platform.installFallbackFontDownloader
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.FrameRecomposer
-import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
-import androidx.compose.ui.platform.PlatformPrefetchScheduler
-import androidx.compose.ui.platform.PlatformScreenReader
-import androidx.compose.ui.platform.WebPrefetchScheduler
-import androidx.compose.ui.platform.isIdleCallbackSupported
-import androidx.compose.ui.platform.isVibrationSupported
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.size
-import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.InteropViewGroup
@@ -139,10 +117,6 @@ internal class ComposeWindow(
 
     private val navigationEventInput = BackNavigationEventInput()
 
-    private val webOutOfFrameExecutor by lazy(LazyThreadSafetyMode.NONE) {
-        if (isPostingTasksSupported) WebOutOfFrameExecutor() else null
-    }
-
     private val canvasEvents = EventTargetListener(canvas)
 
     private var insetsManager: WebWindowInsetsManager? = null
@@ -151,7 +125,7 @@ internal class ComposeWindow(
         canvas = canvas,
         layerRoot = layerRoot,
         backingInputProvider = {
-            (platformContext.textInputService as WebTextInputService).getBackingInput()
+            platformContext.textInputService.getBackingInput()
         }
     )
 
@@ -168,138 +142,28 @@ internal class ComposeWindow(
     //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
     private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
 
-    private val webTextToolbar = WebTextToolbar()
+    private val platformContext: WebWindowPlatformContext = object : WebWindowPlatformContext(
+        canvas = canvas,
+        layerRoot = layerRoot,
+        a11yContainerElement = a11yContainerElement,
+        configuration = configuration,
+        windowInfo = _windowInfo
+    ) {
+        override val density: Density get() = this@ComposeWindow.density
+        override val currentTouchOffset: Offset get() = pointerInputHandler.activeTouchOffset
 
-    private val platformContext: PlatformContext =
-        object : PlatformContext by PlatformContext.Empty() {
+        override fun sendKeyEvent(keyEvent: KeyEvent): Boolean = scene.sendKeyEvent(keyEvent)
 
-            override val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = webOutOfFrameExecutor
+        override val architectureComponentsOwner get() = archComponentsOwner
+        override val windowInsets
+            get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
 
-            override val windowInfo get() = _windowInfo
-
-            override val screenReader: PlatformScreenReader
-                get() = object : PlatformScreenReader {
-                    override var isActive = configuration.isA11YEnabled
-                }
-
-            override val architectureComponentsOwner get() = archComponentsOwner
-            override val windowInsets
-                get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
-
-            override val dragAndDropManager: PlatformDragAndDropManager = object :
-                WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, { density }) {
-                override val rootDragAndDropNode: ComposeSceneDragAndDropNode
-                    get() = scene.rootDragAndDropNode
-            }
-
-            @Suppress("RedundantOverride")
-            override fun convertLocalToWindowPosition(localPosition: Offset): Offset {
-                // TODO (o.karpovich): Currently, CfW uses AttachedComposeSceneLayer, so
-                // Window Rect == Canvas Rect, although a canvas might take only a portion of the browser's
-                // viewport: Window Rect > Canvas Rect.
-                // Update this implementation when implementing https://youtrack.jetbrains.com/issue/CMP-8359
-                // The implementation will have to rely on the <canvas> of a particular layer.
-                return super.convertLocalToWindowPosition(localPosition)
-            }
-
-            @Suppress("RedundantOverride")
-            override fun convertWindowToLocalPosition(positionInWindow: Offset): Offset {
-                // TODO (o.karpovich): Currently, CfW uses AttachedComposeSceneLayer, so
-                // Window Rect == Canvas Rect, although a canvas might take only a portion of the browser's
-                // viewport: Window Rect > Canvas Rect.
-                // Update this implementation when implementing https://youtrack.jetbrains.com/issue/CMP-8359
-                return super.convertWindowToLocalPosition(positionInWindow)
-            }
-
-            override val textToolbar: TextToolbar get() = webTextToolbar
-
-            override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
-                if (isVibrationSupported()) WebHapticFeedback() else super.hapticFeedback
-            }
-
-            override val prefetchScheduler: PlatformPrefetchScheduler =
-                if (isIdleCallbackSupported) WebPrefetchScheduler() else super.prefetchScheduler
-
-            override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
-                if (configuration.isA11YEnabled) {
-                    ComposeWebSemanticsListener(
-                        webSemanticsRoot = a11yContainerElement?.apply {
-                            setAttribute("aria-label", "")
-                            setAttribute("role", "presentation")
-                            setAttribute("aria-live", "polite")
-                            id = "cmp_a11y_root"
-                            style.opacity = "0"
-                            style.setProperty("pointer-events", "none")
-                        } ?: error("a11yContainerElement must be provided"),
-                    )
-                } else {
-                    null
-                }
-
-            override val textInputService: WebTextInputService by lazy(LazyThreadSafetyMode.NONE) {
-                object : WebTextInputService() {
-
-                    override val currentTouchOffset: Offset
-                        get() = pointerInputHandler.activeTouchOffset
-
-                    override val backingDomInputContainer: HTMLElement
-                        get() = layerRoot
-
-                    override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
-                        val dpRect = rect.toDpRect(density)
-                        val left = dpRect.left.value
-                        val top = dpRect.top.value
-
-                        return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
-                    }
-
-                    override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
-                        //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
-                        return scene.sendKeyEvent(keyEvent)
-                    }
-
-                    override fun stopInput() {
-                        // super.stopInput() will remove the focused backing html input.
-                        // Once a focused HTML element is removed, the browser moves focus to <body>.
-                        // Focus the canvas first so it retains focus after the backing input is removed:
-                        if (!canvas.isFocused()) {
-                            canvas.focus()
-                        }
-                        super.stopInput()
-                    }
-                }
-            }
-
-            override val viewConfiguration =
-                object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
-                    // Aligning the touchSlop value with the Android default:
-                    // https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/view/ViewConfiguration.java?pli=1#191
-                    override val touchSlop: Float get() = with(density) { 8.dp.toPx() }
-                    override val maximumFlingVelocity: Float
-                        //https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/core/java/android/view/ViewConfiguration.java;l=240;drc=733537294b158d22f2ae383f2ed77c93741798e9
-                        get() = with(density) { 8000.dp.toPx() }
-                }
-
-            override var isKeepScreenOnEnabled: Boolean
-                get() = WebWakeLockManager.isWakeLockActive()
-                set(value) = WebWakeLockManager.sendWakeLockRequest(this@ComposeWindow, value)
-
-            override fun setPointerIcon(pointerIcon: PointerIcon) {
-                if (pointerIcon is BrowserCursor) {
-                    canvas.style.cursor = pointerIcon.id
-                }
-            }
-
-            override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
-                coroutineScope {
-                    WebTextInputSession(this, textInputService)
-                        .startInputMethod(request)
-                }
-            }
-
-            override val isClearFocusOnMouseDownEnabled: Boolean
-                get() = configuration.isClearFocusOnMouseDownEnabled
+        override val dragAndDropManager: PlatformDragAndDropManager = object :
+            WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, { density }) {
+            override val rootDragAndDropNode: ComposeSceneDragAndDropNode
+                get() = scene.rootDragAndDropNode
         }
+    }
 
     private val canvasHolder = SkiaCanvasHolder()
 
@@ -399,7 +263,7 @@ internal class ComposeWindow(
         }
 
         override fun hasActiveTextInputAt(position: Offset): Boolean {
-            val webTextInputService = platformContext.textInputService as WebTextInputService
+            val webTextInputService = platformContext.textInputService
             val isTextFieldActive = webTextInputService.getBackingInput()?.isFocused() ?: false
             return isTextFieldActive && webTextInputService.hitTest(position)
         }
@@ -480,7 +344,7 @@ internal class ComposeWindow(
                         }
                     }
 
-                    webTextToolbar.Render()
+                    platformContext.textToolbar.Render()
 
                     DisposableEffect(state) {
                         // Observe the resize/scale events and retrieve the new values.
@@ -527,7 +391,7 @@ internal class ComposeWindow(
      * See: https://youtrack.jetbrains.com/issue/CMP-10883
      */
     private fun restoreWindowFocusFromBackingInput() {
-        val input = (platformContext.textInputService as WebTextInputService).getBackingInput()
+        val input = platformContext.textInputService.getBackingInput()
         if (input == null) return
         input.focus()
         input.focus()
@@ -591,7 +455,7 @@ internal class ComposeWindow(
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
         webSemanticsListener?.stop()
-        webOutOfFrameExecutor?.dispose()
+        platformContext.outOfFrameExecutor?.dispose()
         scene.close()
         frameRecomposer.close()
         skiaLayer.detach()
