@@ -67,7 +67,7 @@ internal class BackingDomInput(
         // and https://youtrack.jetbrains.com/issue/CMP-7836/
         // Safari will ignore a focus request if it's called not during user interaction.
 
-        if (!inputStrategy.isInputActive()) backingElement.focus()
+        backingElement.focus()
         window.requestAnimationFrame {
             // TODO: requesting focus in rAF is rather redundant; need to verify
             // A new focus request will replace the previous one in iOS Safari 27+.
