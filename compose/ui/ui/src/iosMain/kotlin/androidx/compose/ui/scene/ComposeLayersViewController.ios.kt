@@ -186,9 +186,7 @@ internal class ComposeLayersViewController(
 
     private var needsLayerStackDraw = false
 
-    private val layersCache = CopiedList {
-        it.addAll(this.layers)
-    }
+    private val layersCache = CopiedList(this.layers)
 
     /**
      * Transactions of the layers that were imperatively removed before their changes were applied.
