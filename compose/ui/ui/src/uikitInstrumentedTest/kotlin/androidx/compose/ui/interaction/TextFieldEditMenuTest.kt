@@ -76,11 +76,7 @@ import platform.UIKit.UIPasteboard
 
 class TextFieldEditMenuTest {
     @Test
-    fun testTextFieldToolbarAppearance() = runTextFieldTest(
-        newContextMenuEnabled = true,
-        usingNativeTextInput = true,
-        textFieldType = BasicTextFieldType.V2
-    ) { _, nativeTextInput, textFieldType ->
+    fun testTextFieldToolbarAppearance() = runTextFieldTest { _, nativeTextInput, textFieldType ->
         UIPasteboard.generalPasteboard().string = "Paste text"
         val state = TestTextFieldState(
             text = "Hello-LongLongLongLongLongLong-text",
