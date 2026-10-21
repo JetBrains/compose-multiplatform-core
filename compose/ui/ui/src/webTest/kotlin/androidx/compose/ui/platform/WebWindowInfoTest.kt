@@ -16,20 +16,42 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.State
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.derivedMediaQuery
+import androidx.compose.ui.mediaQuery
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 
 class WebWindowInfoTest : OnCanvasTests {
 
+    @OptIn(ExperimentalMediaQueryApi::class)
+    @Test
+    fun mediaQueriesUseContainerDpSize() = runTest {
+        lateinit var windowInfo: WindowInfo
+        lateinit var derivedSize: State<DpSize>
+        var queriedSize = DpSize.Unspecified
+        createComposeWindow {
+            windowInfo = LocalWindowInfo.current
+            queriedSize = mediaQuery { DpSize(windowWidth, windowHeight) }
+            derivedSize = derivedMediaQuery { DpSize(windowWidth, windowHeight) }
+        }
+
+        assertTrue(queriedSize.width > 0.dp)
+        assertTrue(queriedSize.height > 0.dp)
+        assertEquals(windowInfo.containerDpSize, queriedSize)
+        assertEquals(queriedSize, derivedSize.value)
+    }
+
     @Test
     fun windowInfoContainerSizeIsSet() = runTest {
         lateinit var windowInfo: WindowInfo
-        createComposeWindow {
-            windowInfo = LocalWindowInfo.current
-        }
+        createComposeWindow { windowInfo = LocalWindowInfo.current }
 
         val containerSize = windowInfo.containerSize
         assertTrue(containerSize.width > 0)

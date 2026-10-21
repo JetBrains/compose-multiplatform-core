@@ -29,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
@@ -65,6 +66,7 @@ import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebOutOfFrameExecutor
 import androidx.compose.ui.platform.WebHapticFeedback
+import androidx.compose.ui.platform.WebMediaScope
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
@@ -223,7 +225,7 @@ internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> =
         null
     }
 
-@OptIn(InternalComposeApi::class)
+@OptIn(InternalComposeApi::class, ExperimentalMediaQueryApi::class)
 internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
     private val rootNode: Node,
@@ -247,6 +249,8 @@ internal class ComposeWindow(
     private val _windowInfo = WindowInfoImpl().apply {
         isWindowFocused = document.hasFocus()
     }
+
+    private val webMediaScope = WebMediaScope(_windowInfo)
 
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
@@ -293,6 +297,8 @@ internal class ComposeWindow(
             override val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = webOutOfFrameExecutor
 
             override val windowInfo get() = _windowInfo
+
+            override val mediaScope get() = webMediaScope
 
             override val screenReader: PlatformScreenReader
                 get() = object : PlatformScreenReader {
@@ -803,6 +809,7 @@ internal class ComposeWindow(
         skiaLayer.detach()
 
         insetsManager?.dispose()
+        webMediaScope.dispose()
         systemThemeObserver.dispose()
         state.dispose()
         // modern browsers supposed to garbage collect all events on the element disposed
