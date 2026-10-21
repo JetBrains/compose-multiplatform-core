@@ -47,24 +47,12 @@ kotlin {
     }
     wasmJs {
         outputModuleName = "mpp-demo"
+        compilerOptions {
+            freeCompilerArgs.add("-Xwasm-use-new-exception-proposal")
+        }
         browser {
-            // https://youtrack.jetbrains.com/issue/KT-68614
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
             commonWebpackConfig {
                 outputFileName = "demo.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    open = mapOf(
-                        "app" to mapOf(
-                            "name" to "google-chrome",
-                        )
-                    )
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
             }
         }
         binaries.executable()
@@ -267,6 +255,14 @@ tasks.register("runDesktop", JavaExec::class.java) {
     classpath =
         compilation.output.allOutputs +
             compilation.runtimeDependencyFiles
+}
+
+tasks.register("wasmJsSdlRun", Exec::class.java) {
+    group = "application"
+    description = "Runs the Compose WASM Demo in a native SDL2 window using Node.js and native-skiko."
+    dependsOn("wasmJsDevelopmentExecutableCompileSync")
+    workingDir = projectDir
+    commandLine("node", "run-sdl.mjs")
 }
 
 
