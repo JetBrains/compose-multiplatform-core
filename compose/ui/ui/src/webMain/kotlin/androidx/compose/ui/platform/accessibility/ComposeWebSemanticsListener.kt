@@ -181,6 +181,9 @@ internal class ComposeWebSemanticsListener(
     // An intermediate tree representation which is applied to the actual DOM after every sync:
     private val targetParentToChildren = MutableScatterMap<HTMLElement, MutableList<HTMLElement>>()
     private val targetChildToParent = MutableScatterMap<HTMLElement, HTMLElement>()
+    private val a11YTraversalSorter = A11YTraversalSorter(
+        targetParentToChildren, targetChildToParent, a11yNodeToSemanticsNode
+    )
 
     // Responsible for scroll synchronization between Compose and Dom tree
     private val a11YScrollController = A11YScrollController(idToA11YNode, a11yNodeToSemanticsNode)
@@ -326,6 +329,10 @@ internal class ComposeWebSemanticsListener(
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
             targetParentToChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
             targetChildToParent[htmlNode] = htmlParent
+        }
+
+        a11YTraversalSorter.sort(idToA11YNode[root.id]!!) { htmlNode, htmlParent ->
+            syncNodePosition(a11yNodeToSemanticsNode[htmlNode]!!, htmlNode, htmlParent, rootPosition)
         }
     }
 
@@ -542,6 +549,15 @@ internal class ComposeWebSemanticsListener(
 
         a11YScrollController.syncNodeScrollability(semanticsNode, config, htmlNode)
 
+        syncNodePosition(semanticsNode, htmlNode, htmlParent, rootOffset)
+    }
+
+    private fun syncNodePosition(
+        semanticsNode: SemanticsNode,
+        htmlNode: HTMLElement,
+        htmlParent: HTMLElement,
+        rootOffset: Offset,
+    ) {
         val density = semanticsNode.layoutNode.density.density
         // Use unclipped geometry so descendants retain their content-space positions outside a
         // scroll viewport. The browser needs those positions to scroll them into view for AT.
