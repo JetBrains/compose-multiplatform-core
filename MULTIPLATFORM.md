@@ -96,7 +96,8 @@ Compose Multiplatform core libraries can be published to local Maven with the fo
    ./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=all
    ```
 
-   `-Pcompose.platforms=all` can be replaced with comma-separated list of platforms, such as `web,desktop,android,macosx64,ios`.
+   `-Pcompose.platforms=all` can be replaced with comma-separated list of platforms, such as `common,web,desktop,android,macosx64,ios`.
+   Include `common` to publish the shared root publication (`.module`, metadata), otherwise only platform artifacts are published.
 
    (Optional) Specify different versions
    ```
