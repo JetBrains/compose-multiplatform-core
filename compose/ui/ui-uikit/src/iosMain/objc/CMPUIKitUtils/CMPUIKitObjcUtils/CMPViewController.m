@@ -263,10 +263,6 @@
 - (void)dealloc {
     [self cancelScheduledHierarchyContainmentCheck];
 
-    if (_lifecycleState == CMPComposeContainerLifecycleStateStarted) {
-        [self viewControllerDidLeaveWindowHierarchy];
-    }
-
     [_lifecycleDelegate composeContainerWillDealloc];
 }
 
