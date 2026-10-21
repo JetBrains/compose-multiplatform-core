@@ -122,7 +122,7 @@ internal class ComposeWindow(
     private var insetsManager: WebWindowInsetsManager? = null
 
     private val clipboardEventBridge = WebClipboardEventBridge(
-        canvas = htmlCanvas,
+        htmlCanvas = htmlCanvas,
         layerRoot = layerRoot,
         backingInputProvider = {
             platformContext.textInputService.getBackingInput()

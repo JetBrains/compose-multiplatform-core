@@ -39,11 +39,13 @@ import org.w3c.dom.events.Event
  * Clipboard data is handled separately by rememberClipboardEventsHandler.
  */
 internal class WebClipboardEventBridge(
-    canvas: HTMLCanvasElement,
+    private val htmlCanvas: HTMLCanvasElement,
     private val layerRoot: HTMLElement,
     private val backingInputProvider: () -> HTMLElement?
 ) {
-    private val clipTarget = clipTargetElement(canvas)
+    private val clipTarget: HTMLTextAreaElement by lazy(LazyThreadSafetyMode.NONE) {
+        clipTargetElement(htmlCanvas)
+    }
 
     fun getEventTarget(): HTMLElement = backingInputProvider() ?: clipTarget
 
