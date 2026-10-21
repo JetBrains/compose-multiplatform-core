@@ -19,6 +19,7 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import org.jetbrains.skiko.SystemTheme
+import org.w3c.dom.MediaQueryList
 
 internal interface SystemThemeObserver {
     val currentSystemTheme: State<SystemTheme>
@@ -26,27 +27,31 @@ internal interface SystemThemeObserver {
     fun dispose()
 }
 
-private class SystemThemeObserverImpl : SystemThemeObserver {
+private class SystemThemeObserverImpl(media: MediaQueryList?) : SystemThemeObserver {
     override val currentSystemTheme: State<SystemTheme>
         get() = _currentSystemTheme
 
-    private val mediaQueryListener: MediaQueryListener = object : MediaQueryListener("(prefers-color-scheme: dark)") {
+    private val _currentSystemTheme = mutableStateOf(SystemTheme.UNKNOWN)
+
+    private val mediaQueryListener = object : MediaQueryListener("(prefers-color-scheme: dark)", media) {
         override fun onChange(matches: Boolean) {
             _currentSystemTheme.value = if (matches) SystemTheme.DARK else SystemTheme.LIGHT
         }
     }
 
-    private val _currentSystemTheme = mutableStateOf(
-        when(mediaQueryListener.matches()) {
+    init {
+        _currentSystemTheme.value = when (mediaQueryListener.matches()) {
             MediaQueryStatus.MATCH -> SystemTheme.DARK
             MediaQueryStatus.NO_MATCH -> SystemTheme.LIGHT
             MediaQueryStatus.UNSUPPORTED -> SystemTheme.UNKNOWN
         }
-    )
+    }
 
     override fun dispose() {
         mediaQueryListener.dispose()
     }
 }
 
-internal fun getSystemThemeObserver(): SystemThemeObserver = SystemThemeObserverImpl()
+internal fun getSystemThemeObserver(
+    media: MediaQueryList? = matchMediaOrNull("(prefers-color-scheme: dark)")
+): SystemThemeObserver = SystemThemeObserverImpl(media)

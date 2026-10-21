@@ -133,6 +133,17 @@ import org.w3c.dom.pointerevents.PointerEvent
 private val actualDensity
     get() = window.devicePixelRatio
 
+internal fun webDensity(
+    devicePixelRatio: Float,
+    viewportScale: Float,
+    fontScale: Float
+): Density {
+    // Keep the existing pinch-zoom buffer cap to avoid unlimited canvas growth. Browser page
+    // zoom is already included in DPR; visualViewport scale only improves raster resolution.
+    val coercedViewportScale = viewportScale.coerceIn(1f, 2f)
+    return Density(devicePixelRatio * coercedViewportScale, fontScale)
+}
+
 internal interface ComposeWindowState {
     fun init() {}
     fun currentSize(): IntSize
@@ -168,8 +179,12 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
         // Observe the actual container size:
         // iOS Safari can change it after a viewport resize without firing another resize event,
         // leaving the canvas buffer out of sync with its CSS size.
-        viewportContainerResizeObserver = ResizeObserver(resizeListener)
-            .apply { observe(viewportContainer) }
+        if (isResizeObserverSupported()) {
+            viewportContainerResizeObserver = ResizeObserver(resizeListener)
+                .apply { observe(viewportContainer) }
+        } else {
+            globalEvents.addDisposableEvent("resize") { resizeListener() }
+        }
 
         viewportTargetListener = getVisualViewport()?.let { EventTargetListener(it) }
         // Unlike resize on window, this one is also trigerred when visualViewport.scale is changed,
@@ -236,13 +251,11 @@ internal class ComposeWindow(
     private val state: ComposeWindowState
 ) {
     private var isDisposed = false
+    private val preferences = configuration.webPreferencesObserverFactory(rootNode)
 
     private var actualActivePointerButtons: PointerButtons = PointerButtons()
 
-    private var density: Density = Density(
-        density = actualDensity.toFloat(),
-        fontScale = 1f
-    )
+    private var density = webDensity(actualDensity.toFloat(), 1f, preferences.fontScale)
 
     private val _windowInfo = WindowInfoImpl().apply {
         isWindowFocused = document.hasFocus()
@@ -275,7 +288,10 @@ internal class ComposeWindow(
     // TODO: It must be shared between Compose instances.
     //  It's supposed to be stored in platform's root view or window.
     private val frameRecomposer =
-        FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
+        FrameRecomposer(
+            Dispatchers.Main + preferences.motionDurationScale,
+            invalidate = { skiaLayer.needRender() }
+        )
 
     // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
     //  - [frameRecomposer.performFrame] once per frame (across all instances) before platform views layout phase
@@ -656,6 +672,14 @@ internal class ComposeWindow(
             size = state.currentSize(),
             viewportScale = getVisualViewportScale()
         )
+        preferences.start { fontScale ->
+            // A font-only change must invalidate layout, but must not recreate the canvas buffer.
+            Snapshot.withMutableSnapshot {
+                if (!isDisposed && updateDensity(Density(density.density, fontScale))) {
+                    skiaLayer.needRender()
+                }
+            }
+        }
         archComponentsOwner.enableSavedStateHandles()
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
@@ -739,27 +763,20 @@ internal class ComposeWindow(
         input.focus()
     }
 
+    private fun updateDensity(newDensity: Density): Boolean {
+        if (newDensity == density) return false
+        density = newDensity
+        scene.density = newDensity
+        return true
+    }
+
     private fun applyResizeAndScale(
         size: IntSize,
         viewportScale: Float
     ) = Snapshot.withMutableSnapshot {
-        // Coerce the original value so it doesn't exceed 2.0 to avoid unlimited canvas growth and memory consumption.
-        // Otherwise, the browser might clip the canvas content (tested in Chrome) making some UI parts unreachable.
-        // We accept some blur might be still noticeable on higher than 2.0 scale.
-        val coercedViewportScale = viewportScale.coerceIn(1f, 2f)
-
-        val newDensity = Density(
-            // actualDensity accounts for browser zoom (via Cmd/Ctrl+-),
-            // but it doesn't account for viewport scale.
-            // So account for viewport scale to avoid blurred UI after pinch-to-zoom:
-            density = actualDensity.toFloat() * coercedViewportScale,
-            fontScale = density.fontScale
-        )
-
-        if (newDensity != density) {
-            density = newDensity
-            scene.density = newDensity
-        }
+        if (isDisposed) return@withMutableSnapshot
+        val newDensity = webDensity(actualDensity.toFloat(), viewportScale, preferences.fontScale)
+        updateDensity(newDensity)
 
         val dpSize = DpSize(size.width.dp, size.height.dp)
         val sizeInPx = dpSize.toSize(density).toIntSize()
@@ -790,6 +807,8 @@ internal class ComposeWindow(
         // when the container element is removed from the document. Make it idempotent so
         // the auto-dispose fallback doesn't fail after an explicit dispose.
         if (isDisposed) return
+        isDisposed = true
+        preferences.dispose()
         (platformContext.prefetchScheduler as? WebPrefetchScheduler)?.dispose()
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         archComponentsOwner.viewModelStore.clear()
@@ -808,8 +827,6 @@ internal class ComposeWindow(
         // modern browsers supposed to garbage collect all events on the element disposed
         // but actually we never can be sure dom element was collected in first place
         canvasEvents.dispose()
-
-        isDisposed = true
     }
 
     private inner class TouchEventWithContainerOffset(
@@ -1105,6 +1122,8 @@ internal class ComposeWindow(
         }
     }
 }
+
+private fun isResizeObserverSupported(): Boolean = js("typeof ResizeObserver === 'function'")
 
 private external class ResizeObserver(callback: () -> Unit) : JsAny {
     fun observe(target: Element)

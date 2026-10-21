@@ -19,45 +19,47 @@ package androidx.compose.ui.window
 import kotlin.js.js
 import kotlinx.browser.window
 import org.w3c.dom.MediaQueryList
-import org.w3c.dom.MediaQueryListEvent
 import org.w3c.dom.events.Event
 
-internal abstract class MediaQueryListener(private val query: String) {
-    private val media: MediaQueryList by lazy {
-        window.matchMedia(query)
-    }
+internal abstract class MediaQueryListener(
+    query: String,
+    private val media: MediaQueryList? = matchMediaOrNull(query)
+) {
+    private var isDisposed = false
+    private var stopListening: (() -> Unit)? = null
 
     abstract fun onChange(matches: Boolean)
 
-    private val listener: (Event) -> Unit = { event ->
-        event as MediaQueryListEvent
-        onChange(event.matches)
+    private val listener: (Event) -> Unit = {
+        if (!isDisposed && media != null) onChange(media.matches)
     }
 
     fun dispose() {
-        if (!isMatchMediaSupported()) return
-        try {
-            media.removeEventListener("change", listener)
-        } catch (t : Throwable) {
-            media.removeListener(listener)
-        }
+        if (isDisposed) return
+        isDisposed = true
+        stopListening?.invoke()
+        stopListening = null
     }
 
     init {
-        if (isMatchMediaSupported()) {
+        media?.let { media ->
             try {
                 media.addEventListener("change", listener)
+                stopListening = { media.removeEventListener("change", listener) }
             } catch (t: Throwable) {
-                media.addListener(listener)
+                // Older browsers only expose addListener/removeListener. If neither API is
+                // available, the initial match is still usable, without live observation.
+                if (runCatching { media.addListener(listener) }.isSuccess) {
+                    stopListening = { media.removeListener(listener) }
+                }
             }
         }
     }
 
-    fun matches(): MediaQueryStatus {
-        return when {
-            !isMatchMediaSupported() -> MediaQueryStatus.UNSUPPORTED
-            else -> if (media.matches) MediaQueryStatus.MATCH else MediaQueryStatus.NO_MATCH
-        }
+    fun matches(): MediaQueryStatus = when {
+        media == null -> MediaQueryStatus.UNSUPPORTED
+        media.matches -> MediaQueryStatus.MATCH
+        else -> MediaQueryStatus.NO_MATCH
     }
 }
 
@@ -71,4 +73,7 @@ internal sealed interface MediaQueryStatus {
 // https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia
 // Changed from `@JsFun` annotation because in 2.2.20 it's marked as not available on LV = 2.0
 // TODO: Cannot add opt-in with LV = 2.0 due to https://youtrack.jetbrains.com/issue/KT-79716
-private fun isMatchMediaSupported(): Boolean = js("window.matchMedia != undefined")
+private fun isMatchMediaSupported(): Boolean = js("typeof window.matchMedia === 'function'")
+
+internal fun matchMediaOrNull(query: String): MediaQueryList? =
+    if (isMatchMediaSupported()) runCatching { window.matchMedia(query) }.getOrNull() else null

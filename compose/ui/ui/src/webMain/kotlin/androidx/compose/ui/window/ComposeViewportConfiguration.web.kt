@@ -19,11 +19,16 @@ package androidx.compose.ui.window
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.platform.FONT_FALLBACK_BASE_URL
+import org.w3c.dom.Node
 
 /**
  * Configuration of [ComposeViewport] behavior.
  */
 class ComposeViewportConfiguration internal constructor() {
+    // Per-window dependency seam: tests can supply browser preferences without global patches.
+    internal var webPreferencesObserverFactory: (Node) -> WebPreferencesObserver = {
+        WebPreferencesObserver(it)
+    }
 
     /**
      * Indicates whether accessibility (a11y) is enabled for the associated Compose viewport.
