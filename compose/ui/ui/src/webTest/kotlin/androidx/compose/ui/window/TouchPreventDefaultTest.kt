@@ -45,8 +45,8 @@ import org.w3c.dom.pointerevents.PointerEvent as WebPointerEvent
 import org.w3c.dom.pointerevents.PointerEventInit
 
 /**
- * Verifies the preventDefault() decisions ComposeWindow makes on the touch event stream
- * (see the touchstart/touchmove/touchend handlers in ComposeWindowInternal.web.kt).
+ * Verifies the preventDefault() decisions WebPointerInputHandler makes on the touch event stream
+ * (see the touchstart/touchmove/touchend handlers in WebPointerInputHandler.web.kt).
  *
  * The browser's dispatch ordering contract is emulated manually: for each touch, the pointer
  * event is dispatched before its touch counterpart (pointerdown -> touchstart,
