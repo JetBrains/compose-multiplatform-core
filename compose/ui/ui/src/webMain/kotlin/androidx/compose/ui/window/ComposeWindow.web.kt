@@ -224,7 +224,7 @@ fun ComposeViewport(
     positioningContainer.appendChild(createHtmlFocusDecoy(canvas))
 
     val composeWindow = ComposeWindow(
-        canvas = canvas,
+        htmlCanvas = canvas,
         rootNode = shadowRoot,
         viewportContainer = viewportContainer,
         layerRoot = appContainer,

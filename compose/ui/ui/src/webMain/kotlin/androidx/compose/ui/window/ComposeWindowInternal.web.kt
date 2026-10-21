@@ -87,7 +87,7 @@ internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> =
 
 @OptIn(InternalComposeApi::class)
 internal class ComposeWindow(
-    internal val canvas: HTMLCanvasElement,
+    internal val htmlCanvas: HTMLCanvasElement,
     private val rootNode: Node,
     private val layerRoot: HTMLElement,
     private val viewportContainer: Element,
@@ -117,12 +117,12 @@ internal class ComposeWindow(
 
     private val navigationEventInput = BackNavigationEventInput()
 
-    private val canvasEvents = EventTargetListener(canvas)
+    private val canvasEvents = EventTargetListener(htmlCanvas)
 
     private var insetsManager: WebWindowInsetsManager? = null
 
     private val clipboardEventBridge = WebClipboardEventBridge(
-        canvas = canvas,
+        canvas = htmlCanvas,
         layerRoot = layerRoot,
         backingInputProvider = {
             platformContext.textInputService.getBackingInput()
@@ -143,7 +143,7 @@ internal class ComposeWindow(
     private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
 
     private val platformContext: WebWindowPlatformContext = object : WebWindowPlatformContext(
-        canvas = canvas,
+        canvas = htmlCanvas,
         layerRoot = layerRoot,
         a11yContainerElement = a11yContainerElement,
         configuration = configuration,
@@ -226,7 +226,7 @@ internal class ComposeWindow(
     // is nested in a scrollable html container
     private val rootScrollObserver = RootScrollObserver()
 
-    private val pointerInputHandler = object : WebPointerInputHandler(canvas, scene) {
+    private val pointerInputHandler = object : WebPointerInputHandler(htmlCanvas, scene) {
         override val density: Density
             get() = this@ComposeWindow.density
 
@@ -301,10 +301,10 @@ internal class ComposeWindow(
     init {
         if (configuration.enableBrowserWindowInsets) {
             checkViewportFitCover()
-            insetsManager = WebWindowInsetsManager({ density }, canvas)
+            insetsManager = WebWindowInsetsManager({ density }, htmlCanvas)
         }
 
-        initEvents(canvas)
+        initEvents(htmlCanvas)
         state.init()
 
         applyResizeAndScale(
@@ -422,8 +422,8 @@ internal class ComposeWindow(
 
         // we need to scale canvas both via CSS styling and HTML attributes
         // https://www.khronos.org/webgl/wiki/HandlingHighDPI
-        canvas.width = sizeInPx.width
-        canvas.height = sizeInPx.height
+        htmlCanvas.width = sizeInPx.width
+        htmlCanvas.height = sizeInPx.height
 
         // The a11y container is sized via CSS (`width: 100%; height: 100%`) at construction
         // time, so it tracks the canvas automatically without a per-resize bridge call across
@@ -433,11 +433,11 @@ internal class ComposeWindow(
         _windowInfo.containerDpSize = dpSize
 
         // TODO: Align with Container/Mediator architecture
-        skiaLayer.attachTo(canvas)
+        skiaLayer.attachTo(htmlCanvas)
         scene.size = sizeInPx
         skiaLayer.needRender()
 
-        insetsManager?.onCanvasResized(canvas)
+        insetsManager?.onCanvasResized(htmlCanvas)
     }
 
     // This is called automatically on destroying the corresponding DOM container
@@ -469,7 +469,7 @@ internal class ComposeWindow(
     }
 
     internal fun focusCanvas() {
-        canvas.focus()
+        htmlCanvas.focus()
     }
 
     internal fun isFocusInComposeContainer(): Boolean {
