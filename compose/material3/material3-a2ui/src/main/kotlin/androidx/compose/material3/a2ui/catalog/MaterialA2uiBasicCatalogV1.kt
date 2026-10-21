@@ -18,6 +18,7 @@ package androidx.compose.material3.a2ui.catalog
 
 import androidx.a2ui.compose.ui.A2uiCatalog
 import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
+import androidx.a2ui.compose.ui.catalog.toA2uiCatalog
 import androidx.a2ui.model.catalog.basiccatalog.createBasicCatalogFunctions
 import androidx.a2ui.model.catalog.functions.A2uiLocaleProvider
 import androidx.a2ui.model.catalog.functions.A2uiMessageFormatter
@@ -47,22 +48,28 @@ import androidx.a2ui.model.catalog.functions.A2uiUrlOpener
  *   [MaterialA2uiBasicCatalogV1Defaults.text]
  * @param icon [A2uiBasicCatalogV1.Icon] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.icon]
- * @param card [A2uiBasicCatalogV1.Card] component implementation, defaults to
- *   [MaterialA2uiBasicCatalogV1Defaults.card]
  * @param row [A2uiBasicCatalogV1.Row] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.row]
  * @param column [A2uiBasicCatalogV1.Column] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.column]
  * @param list [A2uiBasicCatalogV1.List] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.list]
+ * @param card [A2uiBasicCatalogV1.Card] component implementation, defaults to
+ *   [MaterialA2uiBasicCatalogV1Defaults.card]
  * @param tabs [A2uiBasicCatalogV1.Tabs] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.tabs]
+ * @param modal [A2uiBasicCatalogV1.Modal] component implementation, defaults to
+ *   [MaterialA2uiBasicCatalogV1Defaults.modal]
  * @param divider [A2uiBasicCatalogV1.Divider] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.divider]
  * @param button [A2uiBasicCatalogV1.Button] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.button]
+ * @param textField [A2uiBasicCatalogV1.TextField] component implementation, defaults to
+ *   [MaterialA2uiBasicCatalogV1Defaults.textField]
  * @param checkBox [A2uiBasicCatalogV1.CheckBox] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.checkBox]
+ * @param choicePicker [A2uiBasicCatalogV1.ChoicePicker] component implementation, defaults to
+ *   [MaterialA2uiBasicCatalogV1Defaults.choicePicker]
  * @param slider [A2uiBasicCatalogV1.Slider] component implementation, defaults to
  *   [MaterialA2uiBasicCatalogV1Defaults.slider]
  * @param dateTimeInput [A2uiBasicCatalogV1.DateTimeInput] component implementation, defaults to
@@ -78,40 +85,43 @@ public fun materialA2uiBasicCatalogV1(
     localeProvider: A2uiLocaleProvider,
     text: A2uiBasicCatalogV1.Text = MaterialA2uiBasicCatalogV1Defaults.text,
     icon: A2uiBasicCatalogV1.Icon = MaterialA2uiBasicCatalogV1Defaults.icon,
-    card: A2uiBasicCatalogV1.Card = MaterialA2uiBasicCatalogV1Defaults.card,
     row: A2uiBasicCatalogV1.Row = MaterialA2uiBasicCatalogV1Defaults.row,
     column: A2uiBasicCatalogV1.Column = MaterialA2uiBasicCatalogV1Defaults.column,
     list: A2uiBasicCatalogV1.List = MaterialA2uiBasicCatalogV1Defaults.list,
+    card: A2uiBasicCatalogV1.Card = MaterialA2uiBasicCatalogV1Defaults.card,
     tabs: A2uiBasicCatalogV1.Tabs = MaterialA2uiBasicCatalogV1Defaults.tabs,
+    modal: A2uiBasicCatalogV1.Modal = MaterialA2uiBasicCatalogV1Defaults.modal,
     divider: A2uiBasicCatalogV1.Divider = MaterialA2uiBasicCatalogV1Defaults.divider,
     button: A2uiBasicCatalogV1.Button = MaterialA2uiBasicCatalogV1Defaults.button,
+    textField: A2uiBasicCatalogV1.TextField = MaterialA2uiBasicCatalogV1Defaults.textField,
     checkBox: A2uiBasicCatalogV1.CheckBox = MaterialA2uiBasicCatalogV1Defaults.checkBox,
+    choicePicker: A2uiBasicCatalogV1.ChoicePicker = MaterialA2uiBasicCatalogV1Defaults.choicePicker,
     slider: A2uiBasicCatalogV1.Slider = MaterialA2uiBasicCatalogV1Defaults.slider,
     dateTimeInput: A2uiBasicCatalogV1.DateTimeInput =
         MaterialA2uiBasicCatalogV1Defaults.dateTimeInput,
-    // TODO(b/547851648): Add the rest of the basic catalog component types.
 ): A2uiCatalog =
-    A2uiCatalog(
-        A2uiBasicCatalogV1(
+    A2uiBasicCatalogV1(
             text = text,
             image = image,
             icon = icon,
             video = video,
             audioPlayer = audioPlayer,
-            card = card,
             row = row,
             column = column,
             list = list,
+            card = card,
             tabs = tabs,
+            modal = modal,
             divider = divider,
             button = button,
+            textField = textField,
             checkBox = checkBox,
+            choicePicker = choicePicker,
             slider = slider,
             dateTimeInput = dateTimeInput,
-            // TODO(b/547851648): Add the rest of the basic catalog component types.
             functions = createBasicCatalogFunctions(urlOpener, messageFormatter, localeProvider),
         )
-    )
+        .toA2uiCatalog()
 
 /** Default component implementations for [materialA2uiBasicCatalogV1]. */
 public object MaterialA2uiBasicCatalogV1Defaults {
@@ -150,9 +160,6 @@ public object MaterialA2uiBasicCatalogV1Defaults {
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Icon] component. */
     public val icon: A2uiBasicCatalogV1.Icon = MaterialA2uiBasicCatalogV1Icon
 
-    /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Card] component. */
-    public val card: A2uiBasicCatalogV1.Card = MaterialA2uiBasicCatalogV1Card
-
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Row] component. */
     public val row: A2uiBasicCatalogV1.Row = MaterialA2uiBasicCatalogV1Row
 
@@ -162,8 +169,14 @@ public object MaterialA2uiBasicCatalogV1Defaults {
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.List] component. */
     public val list: A2uiBasicCatalogV1.List = MaterialA2uiBasicCatalogV1List
 
+    /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Card] component. */
+    public val card: A2uiBasicCatalogV1.Card = MaterialA2uiBasicCatalogV1Card
+
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Tabs] component. */
     public val tabs: A2uiBasicCatalogV1.Tabs = MaterialA2uiBasicCatalogV1Tabs
+
+    /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Modal] component. */
+    public val modal: A2uiBasicCatalogV1.Modal = MaterialA2uiBasicCatalogV1Modal
 
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Divider] component. */
     public val divider: A2uiBasicCatalogV1.Divider = MaterialA2uiBasicCatalogV1Divider
@@ -171,8 +184,15 @@ public object MaterialA2uiBasicCatalogV1Defaults {
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Button] component. */
     public val button: A2uiBasicCatalogV1.Button = MaterialA2uiBasicCatalogV1Button
 
+    /** Default Material 3 implementation of the [A2uiBasicCatalogV1.TextField] component. */
+    public val textField: A2uiBasicCatalogV1.TextField = MaterialA2uiBasicCatalogV1TextField
+
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.CheckBox] component. */
     public val checkBox: A2uiBasicCatalogV1.CheckBox = MaterialA2uiBasicCatalogV1CheckBox
+
+    /** Default Material 3 implementation of the [A2uiBasicCatalogV1.ChoicePicker] component. */
+    public val choicePicker: A2uiBasicCatalogV1.ChoicePicker =
+        MaterialA2uiBasicCatalogV1ChoicePicker
 
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.Slider] component. */
     public val slider: A2uiBasicCatalogV1.Slider = MaterialA2uiBasicCatalogV1Slider
@@ -180,6 +200,4 @@ public object MaterialA2uiBasicCatalogV1Defaults {
     /** Default Material 3 implementation of the [A2uiBasicCatalogV1.DateTimeInput] component. */
     public val dateTimeInput: A2uiBasicCatalogV1.DateTimeInput =
         MaterialA2uiBasicCatalogV1DateTimeInput
-
-    // TODO(b/547851648): Add the rest of the basic catalog component types.
 }

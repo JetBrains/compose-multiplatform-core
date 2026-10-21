@@ -16,6 +16,12 @@
 
 package androidx.compose.material3.benchmark
 
+import android.os.Build
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +38,8 @@ import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.benchmark.benchmarkToFirstPixel
 import androidx.compose.testutils.benchmark.toggleStateBenchmarkComposeMeasureLayout
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
 import androidx.test.filters.LargeTest
 import org.junit.Rule
 import org.junit.Test
@@ -63,6 +72,40 @@ class SearchBarBenchmark(private val type: SearchBarType) {
         )
     }
 }
+
+private val FakeOnBackPressedDispatcherOwner =
+    object : OnBackPressedDispatcherOwner {
+        override val onBackPressedDispatcher =
+            OnBackPressedDispatcher().apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    setOnBackInvokedDispatcher(
+                        object : OnBackInvokedDispatcher {
+                            override fun registerOnBackInvokedCallback(
+                                priority: Int,
+                                callback: OnBackInvokedCallback,
+                            ) {
+                                // No-Op: Prevent IPC Binder calls to system_server
+                            }
+
+                            override fun unregisterOnBackInvokedCallback(
+                                callback: OnBackInvokedCallback
+                            ) {
+                                // No-Op: Prevent IPC Binder calls to system_server
+                            }
+                        }
+                    )
+                }
+            }
+
+        override val lifecycle =
+            object : Lifecycle() {
+                override fun addObserver(observer: LifecycleObserver) {}
+
+                override fun removeObserver(observer: LifecycleObserver) {}
+
+                override val currentState = Lifecycle.State.RESUMED
+            }
+    }
 
 @Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,7 +145,11 @@ internal class SearchBarTestCase(private val type: SearchBarType) :
 
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        MaterialTheme { content() }
+        CompositionLocalProvider(
+            LocalOnBackPressedDispatcherOwner provides FakeOnBackPressedDispatcherOwner
+        ) {
+            MaterialTheme { content() }
+        }
     }
 
     override fun toggleState() {

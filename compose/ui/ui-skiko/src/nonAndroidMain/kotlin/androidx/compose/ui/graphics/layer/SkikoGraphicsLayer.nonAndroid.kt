@@ -44,8 +44,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toSize
 import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.Path as SkPath
-import org.jetbrains.skia.Point
-import org.jetbrains.skia.Rect as SkRect
 import org.jetbrains.skiko.node.RenderNode
 
 @OptIn(InternalComposeUiApi::class)
@@ -304,32 +302,34 @@ internal class SkikoGraphicsLayer(
         }
     }
 
-    private fun updateRenderNodeBounds() {
-        renderNode?.bounds = SkRect.makeXYWH(
-            topLeft.x.toFloat() - outsetLeft,
-            topLeft.y.toFloat() - outsetTop,
-            size.width.toFloat() + outsetLeft + outsetRight,
-            size.height.toFloat() + outsetTop + outsetBottom
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun updateRenderNodeBounds() {
+        val left = topLeft.x.toFloat() - outsetLeft
+        val top = topLeft.y.toFloat() - outsetTop
+        val right = left + size.width.toFloat() + outsetLeft + outsetRight
+        val bottom = top + size.height.toFloat() + outsetTop + outsetBottom
+        renderNode?.setNodeBounds(left, top, right, bottom)
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun updateRenderNodePivot() {
+        val isUnspecified = pivotOffset.isUnspecified
+        renderNode?.setNodePivot(
+            if (isUnspecified) {
+                size.width / 2f + outsetLeft
+            } else {
+                pivotOffset.x + outsetLeft
+            },
+            if (isUnspecified) {
+                size.height / 2f + outsetTop
+            } else {
+                pivotOffset.y + outsetTop
+            }
         )
     }
 
-    private fun updateRenderNodePivot() {
-        val renderNode = renderNode ?: return
-        renderNode.pivot =
-            if (pivotOffset.isUnspecified) {
-                Point(
-                    size.width / 2f + outsetLeft,
-                    size.height / 2f + outsetTop
-                )
-            } else {
-                Point(
-                    pivotOffset.x + outsetLeft,
-                    pivotOffset.y + outsetTop
-                )
-            }
-    }
-
-    private fun outsetOffset(): Offset = Offset(outsetLeft.toFloat(), outsetTop.toFloat())
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun outsetOffset(): Offset = Offset(outsetLeft.toFloat(), outsetTop.toFloat())
 
     private fun updateLayerProperties() {
         val paint = if (requiresLayer()) {

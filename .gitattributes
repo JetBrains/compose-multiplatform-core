@@ -1,3 +1,6 @@
 gradlew merge=ours
 gradle.properties merge=ours
 gradle/wrapper/gradle-wrapper.properties merge=ours
+AGENTS.md merge=ours
+compose/AGENTS.md merge=ours
+compose/material3/material3/AGENTS.md merge=ours

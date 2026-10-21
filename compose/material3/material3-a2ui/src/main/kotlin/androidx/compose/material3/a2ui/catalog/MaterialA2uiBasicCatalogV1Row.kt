@@ -25,7 +25,6 @@ import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
 import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1.Companion.WeightProperty
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
@@ -46,6 +45,7 @@ internal object MaterialA2uiBasicCatalogV1Row : A2uiBasicCatalogV1.Row {
         children: List<A2uiComponentReference>,
         justify: A2uiBasicCatalogV1.Row.Justify,
         align: A2uiBasicCatalogV1.Row.Align,
+        accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
         modifier: Modifier,
     ) {
         val horizontalArrangement =
@@ -72,7 +72,10 @@ internal object MaterialA2uiBasicCatalogV1Row : A2uiBasicCatalogV1.Row {
 
         val isStretchAlignment = align == A2uiBasicCatalogV1.Row.Align.Stretch
         val isStretchJustify = justify == A2uiBasicCatalogV1.Row.Justify.Stretch
-        val rowModifier = if (isStretchAlignment) modifier.height(IntrinsicSize.Min) else modifier
+        val rowModifier =
+            (if (isStretchAlignment) modifier.fillMaxHeight() else modifier).a2uiAccessibility(
+                accessibility
+            )
         val baseChildModifier = if (isStretchAlignment) Modifier.fillMaxHeight() else Modifier
 
         Row(

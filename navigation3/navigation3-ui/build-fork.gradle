@@ -51,7 +51,6 @@ androidXMultiplatform {
 
     sourceSets {
         def navigation3Version = project.redirectVersions.get('androidx.navigation3')
-        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
 
         commonMain.dependencies {
             api("androidx.navigation3:navigation3-runtime:$navigation3Version")
@@ -71,7 +70,8 @@ androidXMultiplatform {
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(project(":kruth:kruth"))
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+            implementation(project(":compose:runtime:runtime-test-utils"))
+            implementation("androidx.navigationevent:navigationevent-testing:1.2.0-rc01")
         }
 
         create("nonAndroidMain").dependsOn(commonMain)

@@ -4890,7 +4890,7 @@ class CompositionTests {
         var count by mutableIntStateOf(1)
         compose {
             repeat(count) { Text("Some text") }
-            repeat(count) { unused(remember { it }) }
+            repeat(count) { Use(remember { it }) }
         }
 
         validate { repeat(count) { Text("Some text") } }
@@ -5115,6 +5115,40 @@ class CompositionTests {
         assertEquals(1, advanceCount(), "Content should settle in one composition")
 
         validate { Text("compositions = 2") }
+    }
+
+    // Regression test for b/556047369
+    @Test
+    fun recompositionClearsObservationsWhenDefaultParametersSkip() = compositionTest {
+        val events = mutableListOf<String>()
+        var readA = true
+        val a = mutableIntStateOf(0)
+
+        compose {
+            RecompositionClearsObservationsWhenDefaultParametersSkip_Content(
+                readA = { readA },
+                setReadA = { readA = it },
+                stateA = a,
+                events = events,
+            )
+        }
+
+        advance()
+
+        validate { Text("a=-1, b=1") }
+        assertEquals(
+            "*, S(0,0), L(0,0), *, S(-1,1), L(-1,1)",
+            events.joinToString(),
+        )
+
+        a.intValue = 10
+        advance()
+
+        validate { Text("a=-1, b=1") }
+        assertEquals(
+            "*, S(0,0), L(0,0), *, S(-1,1), L(-1,1)",
+            events.joinToString(),
+        )
     }
 }
 
@@ -5410,7 +5444,7 @@ fun ListContentItem(viewItem: ListViewItem, itemRenderer: @Composable (ListViewI
 
 data class ListViewItem(val id: Int)
 
-private fun <T> unused(@Suppress("UNUSED_PARAMETER") value: T) {}
+private fun <T> Use(@Suppress("UNUSED_PARAMETER") value: T) {}
 
 // Part of regression test for 339618126
 @Composable
@@ -5423,4 +5457,35 @@ inline fun ExplicitStartReplaceGroup(
     if (insertGroup) currentComposer.startReplaceGroup(key)
     content()
     if (insertGroup) currentComposer.endReplaceGroup()
+}
+
+/**
+ * Content composable for
+ * [CompositionTests.recompositionClearsObservationsWhenDefaultParametersSkip]. This test case
+ * depends on having a default parameter present.
+ */
+@Composable
+private fun RecompositionClearsObservationsWhenDefaultParametersSkip_Content(
+    readA: () -> Boolean,
+    setReadA: (Boolean) -> Unit,
+    stateA: MutableIntState,
+    events: MutableList<String>,
+    @Suppress("unused") defaultParameter: Any = Any(),
+) {
+    events += "*"
+    val stateB = remember { mutableIntStateOf(0) }
+    val b = stateB.intValue
+    val a = if (readA()) stateA.intValue else -1
+
+    LaunchedEffect(b) {
+        events += "L($a,$b)"
+        setReadA(b != 0)
+    }
+
+    SideEffect {
+        events += "S($a,$b)"
+        if (stateB.intValue == 0) stateB.intValue = 1
+    }
+
+    Text("a=$a, b=$b")
 }

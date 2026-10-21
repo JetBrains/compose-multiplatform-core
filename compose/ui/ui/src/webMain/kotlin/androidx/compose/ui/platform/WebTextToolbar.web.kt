@@ -16,14 +16,19 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 
 @InternalComposeUiApi
 class WebTextToolbar : TextToolbar {
+    @Immutable
     data class TextToolbarMenu(
         val rect: Rect,
         val onCopyRequested: (() -> Unit)?,
@@ -32,8 +37,18 @@ class WebTextToolbar : TextToolbar {
         val onSelectAllRequested: (() -> Unit)?
     )
 
-    var menu by mutableStateOf<TextToolbarMenu?>(null)
-        private set
+    @Composable
+    internal fun Render() {
+        DisposableEffect(this) {
+            onDispose { hide() }
+        }
+        renderer?.invoke(menu)
+    }
+
+    /** Installed by foundation and invoked from the window composition. */
+    var renderer by mutableStateOf<(@Composable (TextToolbarMenu?) -> Unit)?>(null)
+
+    private var menu by mutableStateOf<TextToolbarMenu?>(null)
 
     override var status: TextToolbarStatus = TextToolbarStatus.Hidden
         private set

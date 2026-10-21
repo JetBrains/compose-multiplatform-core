@@ -22,7 +22,7 @@ import androidx.compose.ui.node.WeakReference
 import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.DisplayLinkFrameRate
-import androidx.compose.ui.window.OutOfFrameExecutor
+import androidx.compose.ui.window.IosOutOfFrameExecutor
 import androidx.compose.ui.window.SceneForegroundStateListener
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
@@ -71,9 +71,14 @@ internal class FrameChoreographer private constructor(
             window.frameChoreographer = FrameChoreographer(window, coroutineContext)
         }
 
+        @TestOnly
+        fun disposeForWindow(window: UIWindow) {
+            window.frameChoreographer?.dispose()
+            window.frameChoreographer = null
+        }
+
         private const val FramesToAdvanceAfterInvalidation = 2
     }
-
 
     /**
      * Interface for receiving callbacks related to frame rendering and out-of-frame processing.
@@ -150,7 +155,7 @@ internal class FrameChoreographer private constructor(
             }
         }
 
-    val outOfFrameExecutor = OutOfFrameExecutor()
+    val outOfFrameExecutor = IosOutOfFrameExecutor()
 
     /**
      * The [listeners] list must not be changed when providing notifications. Also, [onDisplayLinkTick]
@@ -189,14 +194,29 @@ internal class FrameChoreographer private constructor(
         displayLinkFrameRate.voteFrameRate(frameRate, frameRateCategory)
     }
 
-    private var isPerformingFrame = false
-    fun performFrameIfNeeded() {
-        if (isPerformingFrame) return
-        isPerformingFrame = true
+    fun performOutsideRecomposerFrame(action: () -> Unit) {
+        if (isPerformingRecomposerFrame) {
+            pendingOutsideRecomposerFrameActions.add(action)
+        } else {
+            action()
+        }
+    }
+
+    private var pendingOutsideRecomposerFrameActions = mutableListOf<() -> Unit>()
+
+    private var isPerformingRecomposerFrame = false
+    fun performRecomposerFrameIfNeeded() {
+        if (isPerformingRecomposerFrame) return
+        isPerformingRecomposerFrame = true
         try {
             frameRecomposer.performFrame(displayLink.targetTimestamp.toNanoSeconds())
         } finally {
-            isPerformingFrame = false
+            isPerformingRecomposerFrame = false
+            if (pendingOutsideRecomposerFrameActions.isNotEmpty()) {
+                val actions = pendingOutsideRecomposerFrameActions.toList()
+                pendingOutsideRecomposerFrameActions.clear()
+                actions.forEach { it() }
+            }
         }
     }
 
@@ -270,7 +290,7 @@ internal class FrameChoreographer private constructor(
         advancedFramesCount--
 
         displayLinkFrameRate.updateFrameRateIfNeeded()
-        performFrameIfNeeded()
+        performRecomposerFrameIfNeeded()
         if (advancedFramesCount <= 0 && ongoingActivitiesCount == 0) {
             advancedFramesCount = 0
             displayLink.paused = true

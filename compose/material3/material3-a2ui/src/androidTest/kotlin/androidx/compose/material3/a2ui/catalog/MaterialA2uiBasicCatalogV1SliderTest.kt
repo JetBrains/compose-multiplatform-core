@@ -20,6 +20,7 @@ import androidx.a2ui.compose.ui.A2uiCatalog
 import androidx.a2ui.compose.ui.testing.A2uiTestController
 import androidx.a2ui.compose.ui.testing.A2uiTestSurface
 import androidx.a2ui.compose.ui.testing.getData
+import androidx.a2ui.model.catalog.functions.A2uiRequiredFunction
 import androidx.a2ui.model.protocol.A2uiComponentPayload
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,9 +34,11 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
@@ -55,6 +58,7 @@ class MaterialA2uiBasicCatalogV1SliderTest {
         A2uiCatalog(
             catalogId = "test_catalog",
             components = listOf(MaterialA2uiBasicCatalogV1Defaults.slider),
+            functions = listOf(A2uiRequiredFunction.INSTANCE),
         )
 
     @Test
@@ -530,6 +534,168 @@ class MaterialA2uiBasicCatalogV1SliderTest {
         onNodeWithTag("updated_tag").assertIsDisplayed()
     }
 
+    @Test
+    fun accessibility_withLabelAndDescription_setsContentDescriptionOnSlider() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Slider",
+                            properties =
+                                mapOf(
+                                    "value" to 50,
+                                    "max" to 100,
+                                    "accessibility" to
+                                        mapOf(
+                                            "label" to "Volume Slider",
+                                            "description" to "Adjusts volume level",
+                                        ),
+                                ),
+                        )
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNode(
+                hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)) and
+                    hasContentDescription("Volume Slider - Adjusts volume level")
+            )
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun accessibility_withVisualLabelAndNoAccessibility_appliesLabelToSlider() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Slider",
+                            properties =
+                                mapOf(
+                                    "value" to 50,
+                                    "max" to 100,
+                                    "label" to "Volume",
+                                ),
+                        )
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNodeWithText("Volume").assertIsDisplayed()
+        onNode(
+                hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)) and
+                    hasContentDescription("Volume")
+            )
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun accessibility_customAccessibilityOverridesVisualLabel() = runComposeUiTest {
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents =
+                    listOf(
+                        A2uiComponentPayload(
+                            id = "root",
+                            type = "Slider",
+                            properties =
+                                mapOf(
+                                    "value" to 50,
+                                    "max" to 100,
+                                    "label" to "Visual Volume",
+                                    "accessibility" to
+                                        mapOf(
+                                            "label" to "Accessible Volume",
+                                            "description" to "Adjusts sound",
+                                        ),
+                                ),
+                        )
+                    ),
+            )
+        val surface = controller.start()
+
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNodeWithText("Visual Volume").assertIsDisplayed()
+        onNode(
+                hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)) and
+                    hasContentDescription("Accessible Volume - Adjusts sound")
+            )
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun accessibility_withoutLabelAndWithoutAccessibility_sliderHasNoContentDescription() =
+        runComposeUiTest {
+            val controller =
+                A2uiTestController(
+                    catalog = testCatalog,
+                    initialComponents =
+                        listOf(
+                            A2uiComponentPayload(
+                                id = "root",
+                                type = "Slider",
+                                properties =
+                                    mapOf(
+                                        "value" to 50,
+                                        "max" to 100,
+                                    ),
+                            )
+                        ),
+                )
+            val surface = controller.start()
+
+            setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+            onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)))
+                .assertIsDisplayed()
+                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.ContentDescription))
+        }
+
+    @Test
+    fun accessibility_withVisualLabelAndDescriptionOnly_combinesVisualLabelAndDescription() =
+        runComposeUiTest {
+            val controller =
+                A2uiTestController(
+                    catalog = testCatalog,
+                    initialComponents =
+                        listOf(
+                            A2uiComponentPayload(
+                                id = "root",
+                                type = "Slider",
+                                properties =
+                                    mapOf(
+                                        "value" to 50,
+                                        "max" to 100,
+                                        "label" to "Volume",
+                                        "accessibility" to mapOf("description" to "Adjusts sound"),
+                                    ),
+                            )
+                        ),
+                )
+            val surface = controller.start()
+
+            setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+            onNodeWithText("Volume").assertIsDisplayed()
+            onNode(
+                    hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)) and
+                        hasContentDescription("Volume - Adjusts sound")
+                )
+                .assertIsDisplayed()
+        }
+
     private fun hasSetProgressAction(): SemanticsMatcher =
         SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress)
 
@@ -545,4 +711,228 @@ class MaterialA2uiBasicCatalogV1SliderTest {
                 actual.range == rangeInfo.range &&
                 actual.steps == rangeInfo.steps
         }
+
+    @Test
+    fun checks_allChecksPass_noErrorMessage() = runComposeUiTest {
+        val payload =
+            A2uiComponentPayload(
+                id = "root",
+                type = "Slider",
+                properties =
+                    mapOf(
+                        "label" to "Volume",
+                        "value" to 50,
+                        "max" to 100,
+                        "checks" to
+                            listOf(
+                                mapOf(
+                                    "condition" to
+                                        mapOf(
+                                            "call" to "required",
+                                            "args" to
+                                                mapOf(
+                                                    "value" to
+                                                        mapOf("path" to "/settings/audioProfile")
+                                                ),
+                                        ),
+                                    "message" to "Audio profile is required",
+                                )
+                            ),
+                    ),
+            )
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents = listOf(payload),
+                initialData = mapOf("settings" to mapOf("audioProfile" to "stereo")),
+            )
+        val surface = controller.start()
+
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNodeWithText("Volume").assertIsDisplayed()
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Error))
+        onNodeWithText("Audio profile is required").assertDoesNotExist()
+    }
+
+    @Test
+    fun checks_failedCheck_displaysErrorMessage() = runComposeUiTest {
+        val payload =
+            A2uiComponentPayload(
+                id = "root",
+                type = "Slider",
+                properties =
+                    mapOf(
+                        "label" to "Volume",
+                        "value" to 50,
+                        "max" to 100,
+                        "checks" to
+                            listOf(
+                                mapOf(
+                                    "condition" to
+                                        mapOf(
+                                            "call" to "required",
+                                            "args" to
+                                                mapOf(
+                                                    "value" to
+                                                        mapOf("path" to "/settings/audioProfile")
+                                                ),
+                                        ),
+                                    "message" to "Audio profile is required",
+                                )
+                            ),
+                    ),
+            )
+        val controller =
+            A2uiTestController(catalog = testCatalog, initialComponents = listOf(payload))
+        val surface = controller.start()
+
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNodeWithText("Volume").assertIsDisplayed()
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)))
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.Error,
+                    "Audio profile is required",
+                )
+            )
+        onNodeWithText("Audio profile is required").assertIsDisplayed()
+    }
+
+    @Test
+    fun checks_dynamicCondition_updatesErrorMessage() = runComposeUiTest {
+        val payload =
+            A2uiComponentPayload(
+                id = "root",
+                type = "Slider",
+                properties =
+                    mapOf(
+                        "label" to "Volume",
+                        "value" to 50,
+                        "max" to 100,
+                        "checks" to
+                            listOf(
+                                mapOf(
+                                    "condition" to
+                                        mapOf(
+                                            "call" to "required",
+                                            "args" to
+                                                mapOf(
+                                                    "value" to
+                                                        mapOf("path" to "/settings/audioProfile")
+                                                ),
+                                        ),
+                                    "message" to "Audio profile is required",
+                                )
+                            ),
+                    ),
+            )
+        val controller =
+            A2uiTestController(
+                catalog = testCatalog,
+                initialComponents = listOf(payload),
+            )
+        val surface = controller.start()
+
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)))
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.Error,
+                    "Audio profile is required",
+                )
+            )
+        onNodeWithText("Audio profile is required").assertIsDisplayed()
+
+        controller.updateData("/settings/audioProfile", "stereo")
+        controller.waitForIdle()
+        waitForIdle()
+
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Error))
+        onNodeWithText("Audio profile is required").assertDoesNotExist()
+    }
+
+    @Test
+    fun checks_multipleChecks_displaysFirstFailedCheck() = runComposeUiTest {
+        val payload =
+            A2uiComponentPayload(
+                id = "root",
+                type = "Slider",
+                properties =
+                    mapOf(
+                        "label" to "Volume",
+                        "value" to 50,
+                        "max" to 100,
+                        "checks" to
+                            listOf(
+                                mapOf(
+                                    "condition" to
+                                        mapOf(
+                                            "call" to "required",
+                                            "args" to
+                                                mapOf(
+                                                    "value" to
+                                                        mapOf("path" to "/settings/audioProfile")
+                                                ),
+                                        ),
+                                    "message" to "Audio profile is required",
+                                ),
+                                mapOf(
+                                    "condition" to
+                                        mapOf(
+                                            "call" to "required",
+                                            "args" to
+                                                mapOf(
+                                                    "value" to
+                                                        mapOf("path" to "/settings/outputDevice")
+                                                ),
+                                        ),
+                                    "message" to "Output device is required",
+                                ),
+                            ),
+                    ),
+            )
+        val controller =
+            A2uiTestController(catalog = testCatalog, initialComponents = listOf(payload))
+        val surface = controller.start()
+
+        setContent { MaterialTheme { A2uiTestSurface(surface = surface) } }
+
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)))
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.Error,
+                    "Audio profile is required",
+                )
+            )
+        onNodeWithText("Audio profile is required").assertIsDisplayed()
+        onNodeWithText("Output device is required").assertDoesNotExist()
+
+        controller.updateData("/settings/audioProfile", "stereo")
+        controller.waitForIdle()
+        waitForIdle()
+
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)))
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.Error,
+                    "Output device is required",
+                )
+            )
+        onNodeWithText("Audio profile is required").assertDoesNotExist()
+        onNodeWithText("Output device is required").assertIsDisplayed()
+
+        controller.updateData("/settings/outputDevice", "speaker")
+        controller.waitForIdle()
+        waitForIdle()
+
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(50f, 0f..100f, 99)))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Error))
+        onNodeWithText("Audio profile is required").assertDoesNotExist()
+        onNodeWithText("Output device is required").assertDoesNotExist()
+    }
 }

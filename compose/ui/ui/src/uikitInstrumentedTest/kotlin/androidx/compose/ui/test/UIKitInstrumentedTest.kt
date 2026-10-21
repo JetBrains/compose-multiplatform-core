@@ -1011,6 +1011,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         _window?.resignKeyWindow()
         _window?.windowScene = null
         _window?.rootViewController = UIViewController()
+        _window?.let(FrameChoreographer::disposeForWindow)
         _window = null
 
         allWindows.forEach {

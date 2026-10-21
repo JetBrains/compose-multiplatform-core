@@ -82,7 +82,7 @@ Execution failed for task ':compose:material3:material3:desktopApiCheck'.
 
 To fix this error:
 
-1. Run `./gradlew jbApiDump` or (for Linux/Window host) [CI task](https://teamcity.jetbrains.com/buildConfiguration/JetBrainsPublicProjects_Compose_CommitDumpApi) that creates a commit "Dump API" in a branch
+1. Run `./gradlew jbApiDump` and create a commit "Dump API"
 2. See what has changed in *.api files.
 3. If there are only additions - there is no binary incompatible change.
 4. If there are some removals - most probably there is a binary incompatible change and it needs to be fixed before merging it to the main branch.

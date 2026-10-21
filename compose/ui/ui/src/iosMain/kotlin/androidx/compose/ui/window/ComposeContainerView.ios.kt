@@ -64,6 +64,7 @@ internal class ComposeContainerView(
     var onIntrinsicContentSize: () -> CValue<CGSize>? = { null }
 
     val redrawer: MetalRedrawer? get() = metalView?.redrawer
+    val hasInvalidations: Boolean get() = redrawer?.hasInvalidations ?: false
 
     override fun canBecomeFirstResponder(): Boolean {
         return true

@@ -434,6 +434,8 @@ public fun CenterAlignedTopAppBar(
  *   work in conjunction with a scrolled content to change the top app bar appearance as the content
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @param contentPadding the padding applied to the content of this TopAppBar.
+ *
+ * @material3expressive
  */
 @Composable
 public fun TopAppBar(
@@ -609,6 +611,8 @@ public fun MediumTopAppBar(
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller than the
  *   [collapsedHeight]
+ *
+ * @material3expressive
  */
 @Composable
 public fun MediumFlexibleTopAppBar(
@@ -803,6 +807,8 @@ public fun LargeTopAppBar(
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller to the
  *   [collapsedHeight]
+ *
+ * @material3expressive
  */
 @Composable
 public fun LargeFlexibleTopAppBar(
@@ -916,6 +922,8 @@ public fun LargeFlexibleTopAppBar(
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller to the
  *   [collapsedHeight]
+ *
+ * @material3expressive
  */
 @Composable
 public fun TwoRowsTopAppBar(
@@ -1271,6 +1279,8 @@ public fun BottomAppBar(
  *   service (e.g., TalkBack) is active. See [BottomAppBarScrollBehavior.nestedScrollConnection].
  * @param content the content of this BottomAppBar. The default layout here is a [Row], so content
  *   inside will be placed horizontally.
+ *
+ * @material3expressive
  */
 @Composable
 public fun FlexibleBottomAppBar(
@@ -1781,6 +1791,54 @@ public object TopAppBarDefaults {
                 snapAnimationSpec = snapAnimationSpec,
                 flingAnimationSpec = flingAnimationSpec,
                 canScroll = canScroll,
+            )
+        }
+
+    /**
+     * Returns a [TopAppBarScrollBehavior]. A top app bar that is set up with this
+     * [TopAppBarScrollBehavior] will immediately collapse when the content is pulled up, and will
+     * immediately appear when the content is pulled down.
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   [EnterAlwaysScrollBehavior]
+     * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
+     *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
+     * @param reverseLayout indicates that this behavior is applied to a scrollable content that has
+     *   a reversed direction of scrolling and layout
+     */
+    @Deprecated(
+        message =
+            "Please use the enterAlwaysScrollBehavior() function that takes a scrollableState parameter.",
+        replaceWith =
+            ReplaceWith(
+                "enterAlwaysScrollBehavior(scrollableState, state, canScroll, snapAnimationSpec, flingAnimationSpec)"
+            ),
+        level = DeprecationLevel.WARNING,
+    )
+    @Composable
+    public fun enterAlwaysScrollBehavior(
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
+        reverseLayout: Boolean = false,
+    ): TopAppBarScrollBehavior =
+        remember(state, canScroll, snapAnimationSpec, flingAnimationSpec, reverseLayout) {
+            LegacyEnterAlwaysScrollBehavior(
+                state = state,
+                snapAnimationSpec = snapAnimationSpec,
+                flingAnimationSpec = flingAnimationSpec,
+                canScroll = canScroll,
+                reverseLayout = reverseLayout,
             )
         }
 
