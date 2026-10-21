@@ -36,7 +36,7 @@ class BasicInteractionTest {
     /**
      *  Distance in pixels a touch can wander before we think the user is scrolling.
      */
-    private val CUPERTINO_TOUCH_SLOP = 10.dp
+    private val CupertinoTouchSlop = 10.dp
 
     @Test
     fun testButtonClick() = runUIKitInstrumentedTest {
@@ -96,7 +96,7 @@ class BasicInteractionTest {
         }
 
         touchDown(screenSize.center)
-            .dragBy(dy = -(100.dp + CUPERTINO_TOUCH_SLOP))
+            .dragBy(dy = -(100.dp + CupertinoTouchSlop))
 
         waitForIdle()
 

@@ -53,7 +53,6 @@ class TestBasicsTest : AbstractTestBasicsTest(
     runUiTest = { runComposeUiTest(block = it) }
 )
 
-@OptIn(ExperimentalTestApi::class)
 class TestBasicsTestV2 : AbstractTestBasicsTest(
     runUiTest = { androidx.compose.ui.test.v2.runComposeUiTest(block = it) }
 )
@@ -61,7 +60,6 @@ class TestBasicsTestV2 : AbstractTestBasicsTest(
 /**
  * Basic tests of the testing framework itself.
  */
-@OptIn(ExperimentalTestApi::class)
 abstract class AbstractTestBasicsTest(
     private val runUiTest: (ComposeUiTest.() -> Unit) -> TestResult
 ) {
@@ -151,7 +149,7 @@ abstract class AbstractTestBasicsTest(
                     LaunchedEffect(Unit) {
                         effectLaunched = true
                         while (true) {
-                            delay(1000)
+                            delay(1.seconds)
                         }
                     }
                 }
@@ -174,7 +172,7 @@ abstract class AbstractTestBasicsTest(
         setContent {
             LaunchedEffect(Unit) {
                 repeat(5) {
-                    delay(1000)
+                    delay(1.seconds)
                     value = it+1
                 }
             }
@@ -197,7 +195,7 @@ abstract class AbstractTestBasicsTest(
             compositionValues.add(value)
             val capturedValue = value
             LaunchedEffect(capturedValue) {
-                delay(1000)
+                delay(1.seconds)
                 value = capturedValue + 1
             }
         }
@@ -265,7 +263,7 @@ abstract class AbstractTestBasicsTest(
         }
         sourceValue = 1
         runOnIdle {
-            assertEquals(targetValue, 1)
+            assertEquals(1, targetValue)
         }
     }
 
@@ -281,7 +279,7 @@ abstract class AbstractTestBasicsTest(
         runOnIdle {
             sourceValue = 1
         }
-        assertEquals(targetValue, 0)
+        assertEquals(0, targetValue)
     }
 
     @Test
