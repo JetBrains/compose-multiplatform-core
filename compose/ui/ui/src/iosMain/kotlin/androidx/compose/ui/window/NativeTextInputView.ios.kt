@@ -43,7 +43,6 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
-import platform.CoreGraphics.CGPointEqualToPoint
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectContainsPoint
 import platform.CoreGraphics.CGRectEqualToRect
@@ -52,7 +51,6 @@ import platform.CoreGraphics.CGRectGetWidth
 import platform.CoreGraphics.CGRectInset
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectZero
-import platform.CoreGraphics.CGSizeEqualToSize
 import platform.Foundation.NSComparisonResult
 import platform.Foundation.NSDictionary
 import platform.Foundation.NSOrderedAscending
@@ -65,7 +63,7 @@ import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionNatural
 import platform.UIKit.UIAction
 import platform.UIKit.UIColor
-import platform.UIKit.UIEdgeInsetsEqualToEdgeInsets
+import platform.UIKit.UIEditMenuInteraction
 import platform.UIKit.UIEdgeInsetsMake
 import platform.UIKit.UIEvent
 import platform.UIKit.UIGestureRecognizer
@@ -83,6 +81,7 @@ import platform.UIKit.UITextInputDelegateProtocol
 import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UITextInputTokenizerProtocol
 import platform.UIKit.UITextInteraction
+import platform.UIKit.UITextInteractionDelegateProtocol
 import platform.UIKit.UITextInteractionMode
 import platform.UIKit.UITextLayoutDirection
 import platform.UIKit.UITextLayoutDirectionDown
@@ -98,12 +97,16 @@ import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
 import platform.UIKit.addInteraction
+import platform.UIKit.interactions
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
 
 internal class NativeTextInputView(
     initialInput: NativeTextEditingDelegate,
-) : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
+) : CMPTextInputView(frame = CGRectZero.readValue()),
+    UIKeyInputProtocol,
+    UITextInputProtocol,
+    UITextInteractionDelegateProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
@@ -133,8 +136,21 @@ internal class NativeTextInputView(
         UITextInteraction.textInteractionForMode(UITextInteractionMode.UITextInteractionModeEditable)
             .also {
                 it.setTextInput(this)
+                it.setDelegate(this)
             }
     private var selectionInteractionAttached: Boolean = false
+
+    /** Whether a [selectionInteraction] gesture (e.g. the loupe) is tracking a touch. */
+    private var isSelectionInteractionActive = false
+
+    /**
+     * Whether the edit menu was visible when the first [selectionInteraction] gesture of the
+     * current touch began.
+     */
+    private var wasEditMenuVisibleOnTouchStart = false
+
+    /** Temporary flag to check whether the edit menu is visible */
+    private var isEditMenuRequested = false
 
     override fun didMoveToWindow() {
         super.didMoveToWindow()
@@ -640,6 +656,7 @@ internal class NativeTextInputView(
     }
 
     override fun editMenuForTextRange(textRange: UITextRange, suggestedActions: List<*>): UIMenu? {
+        isEditMenuRequested = true
         val customMenuElements = makeCustomMenuElements()
         if (customMenuElements.isEmpty()) return null // The default menu would be returned
 
@@ -647,6 +664,37 @@ internal class NativeTextInputView(
         val suggestedActionsElements = suggestedActions as List<UIMenuElement>
 
         return UIMenu.menuWithTitle("", children = customMenuElements + suggestedActionsElements)
+    }
+
+    /**
+     * A press on the caret starts the loupe almost immediately and, if released before the tap
+     * timeout, is also recognized as a tap. The loupe shows the edit menu when it ends without
+     * moving the caret, and the tap then toggles the menu off, so such presses never showed the
+     * menu. Native text fields toggle the menu relative to its state before the press.
+     */
+    override fun interactionShouldBegin(
+        interaction: UITextInteraction,
+        atPoint: CValue<CGPoint>
+    ): Boolean {
+        if (!isSelectionInteractionActive) {
+            isEditMenuRequested = false
+            // HACK: Check if edit menu visible. The `reloadVisibleMenu` will trigger the
+            // `editMenuForTextRange` in this case.
+            for (interaction in interactions) {
+                (interaction as? UIEditMenuInteraction)?.reloadVisibleMenu()
+            }
+            wasEditMenuVisibleOnTouchStart = isEditMenuRequested
+            return true
+        }
+        return wasEditMenuVisibleOnTouchStart
+    }
+
+    override fun interactionWillBegin(interaction: UITextInteraction) {
+        isSelectionInteractionActive = true
+    }
+
+    override fun interactionDidEnd(interaction: UITextInteraction) {
+        isSelectionInteractionActive = false
     }
 
     private fun makeCustomMenuElements(): List<UIMenuElement> {
@@ -739,6 +787,10 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         }
     }
 
+    private var previousDpFrame: DpRect? = null
+    private var previousDpTextBounds: DpRect? = null
+    private var previousDpInsets: DpInsets? = null
+
     /**
      * Updates frames and insets of the scroll view and underlying text view.
      *
@@ -747,6 +799,18 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
      * - `dpInsets` is in Compose `Dp` and can be passed to UIKit as POINTS directly.
      */
     fun setFrame(dpNewFrame: DpRect, dpTextBounds: DpRect, dpInsets: DpInsets) {
+        val hasChanges = previousDpFrame != dpNewFrame ||
+            previousDpTextBounds != dpTextBounds ||
+            previousDpInsets != dpInsets
+
+        if (!hasChanges) {
+            return
+        }
+
+        previousDpFrame = dpNewFrame
+        previousDpTextBounds = dpTextBounds
+        previousDpInsets = dpInsets
+
         val newFrame = dpNewFrame.toCGRect()
         val textBounds = dpTextBounds.toCGRect()
 
@@ -765,32 +829,17 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         )
 
         val scrollContentSize = textBounds.useContents { size.readValue() }
-        val scrollContentInset = textBounds.useContents { origin.readValue() }
+        val scrollContentOffset = textBounds.useContents { origin.readValue() }
 
-        val textFrameChanged =
-            textView?.let { !CGRectEqualToRect(it.frame, textViewFrame) } ?: false
-        val frameChanged = !CGRectEqualToRect(frame, newFrame)
-        val contentInsetChanged = !UIEdgeInsetsEqualToEdgeInsets(contentInset, insets)
-        val contentSizeChanged = !CGSizeEqualToSize(contentSize, scrollContentSize)
-        val contentOffsetChanged = !CGPointEqualToPoint(contentOffset, scrollContentInset)
+        textView?.selectionWillChange()
 
-        val hasChanges = textFrameChanged ||
-            frameChanged ||
-            contentInsetChanged ||
-            contentSizeChanged ||
-            contentOffsetChanged
+        textView?.setFrame(textViewFrame)
+        setFrame(newFrame)
+        setContentInset(insets)
+        setContentSize(scrollContentSize)
+        setContentOffset(scrollContentOffset)
 
-        if (hasChanges) {
-            textView?.selectionWillChange()
-
-            textView?.setFrame(textViewFrame)
-            setFrame(newFrame)
-            setContentInset(insets)
-            setContentSize(scrollContentSize)
-            setContentOffset(scrollContentInset)
-
-            textView?.selectionDidChange()
-        }
+        textView?.selectionDidChange()
     }
 
     fun interactionModeAt(point: CValue<CGPoint>): UIKitInteropInteractionMode? {
