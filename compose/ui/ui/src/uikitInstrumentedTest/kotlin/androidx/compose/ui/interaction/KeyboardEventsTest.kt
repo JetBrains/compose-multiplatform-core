@@ -189,6 +189,7 @@ class KeyboardEventsTest {
             LaunchedEffect(Unit) {
                 requester.requestFocus()
             }
+            @Suppress("DEPRECATION")
             BasicTextField(
                 value = value,
                 onValueChange = { value = it },
@@ -222,6 +223,7 @@ class KeyboardEventsTest {
                     }
             ) {
                 if (isTextFieldPresent) {
+                    @Suppress("DEPRECATION")
                     BasicTextField(
                         value = "",
                         onValueChange = {},

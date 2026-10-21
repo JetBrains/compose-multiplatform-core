@@ -40,9 +40,11 @@ class TextFieldFocusOrderTest {
         val dialogFocusRequester = FocusRequester()
 
         setContent {
+            @Suppress("DEPRECATION")
             TextField("Text 0", {})
 
             Dialog({}) {
+                @Suppress("DEPRECATION")
                 TextField("Text 1", {}, modifier = Modifier.focusRequester(dialogFocusRequester))
                 LaunchedEffect(Unit) {
                     dialogFocusRequester.requestFocus()
@@ -62,6 +64,7 @@ class TextFieldFocusOrderTest {
         val focusRequester2 = FocusRequester()
 
         setContent {
+            @Suppress("DEPRECATION")
             TextField("Text 0", {}, modifier = Modifier.focusRequester(focusRequester0))
             LaunchedEffect(Unit) {
                 focusRequester0.requestFocus()
@@ -69,6 +72,7 @@ class TextFieldFocusOrderTest {
 
             if (showDialog1.value) {
                 Dialog({}) {
+                    @Suppress("DEPRECATION")
                     TextField("Text 1", {}, modifier = Modifier.focusRequester(focusRequester1))
                     LaunchedEffect(Unit) {
                         focusRequester1.requestFocus()
@@ -78,6 +82,7 @@ class TextFieldFocusOrderTest {
 
             if (showDialog2.value) {
                 Dialog({}) {
+                    @Suppress("DEPRECATION")
                     TextField("Text 2", {}, modifier = Modifier.focusRequester(focusRequester2))
                     LaunchedEffect(Unit) {
                         focusRequester2.requestFocus()
@@ -116,6 +121,7 @@ class TextFieldFocusOrderTest {
 
         setContent {
             if (showTextField.value) {
+                @Suppress("DEPRECATION")
                 TextField("Text 0", {}, modifier = Modifier.focusRequester(focusRequester0))
                 LaunchedEffect(Unit) {
                     focusRequester0.requestFocus()
@@ -124,6 +130,7 @@ class TextFieldFocusOrderTest {
 
             if (showDialog1.value) {
                 Dialog({}) {
+                    @Suppress("DEPRECATION")
                     TextField("Text 1", {}, modifier = Modifier.focusRequester(focusRequester1))
                     LaunchedEffect(Unit) {
                         focusRequester1.requestFocus()
@@ -133,6 +140,7 @@ class TextFieldFocusOrderTest {
 
             if (showDialog2.value) {
                 Dialog({}) {
+                    @Suppress("DEPRECATION")
                     TextField("Text 2", {}, modifier = Modifier.focusRequester(focusRequester2))
                     LaunchedEffect(Unit) {
                         focusRequester2.requestFocus()
@@ -170,6 +178,7 @@ class TextFieldFocusOrderTest {
         setContent {
             Column {
                 focusManager1 = LocalFocusManager.current
+                @Suppress("DEPRECATION")
                 BasicTextField(
                     value = "Text 1",
                     onValueChange = {},
@@ -180,6 +189,7 @@ class TextFieldFocusOrderTest {
                 }
                 if (showDialog.value) {
                     Dialog({}) {
+                        @Suppress("DEPRECATION")
                         BasicTextField(
                             value = "Text 2",
                             onValueChange = {},

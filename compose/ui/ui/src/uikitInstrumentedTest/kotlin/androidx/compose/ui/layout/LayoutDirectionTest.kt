@@ -38,10 +38,12 @@ import kotlin.test.assertEquals
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 
+@Suppress("unused")
 internal class LayoutDirectionInHostingViewTest : LayoutDirectionTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
 )
 
+@Suppress("unused")
 internal class LayoutDirectionInHostingViewControllerTest : LayoutDirectionTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
 )
