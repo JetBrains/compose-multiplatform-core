@@ -29,6 +29,7 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSession
+import androidx.compose.ui.platform.TextEditorOffsetMapping
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -111,6 +112,7 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
                 onEditCommand = ::onEditCommand,
                 onImeAction = onImeAction,
                 textLayoutResult = layoutState::layoutResult,
+                offsetMapping = VisualTextOffsetMapping(state),
                 focusedRectInRoot = ::focusedRectInRoot,
                 textFieldRectInRoot = ::textFieldRectInRoot,
                 textClippingRectInRoot = ::textClippingRectInRoot,
@@ -124,6 +126,26 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
 
 private fun TextFieldCharSequence.toTextFieldValue() =
     TextFieldValue(toString(), selection, composition)
+
+/**
+ * Maps ranges between the untransformed text and the [TransformedTextFieldState.visualText].
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+private class VisualTextOffsetMapping(
+    private val state: TransformedTextFieldState,
+) : TextEditorOffsetMapping {
+    override fun mapToTransformed(range: TextRange): TextRange =
+        TextRange(
+            start = state.mapToTransformed(range.start).start,
+            end = state.mapToTransformed(range.end).start
+        )
+
+    override fun mapFromTransformed(range: TextRange): TextRange =
+        TextRange(
+            start = state.mapFromTransformed(range.start).start,
+            end = state.mapFromTransformed(range.end).start
+        )
+}
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalComposeUiApi::class)
@@ -245,6 +267,7 @@ internal data class SkikoPlatformTextInputMethodRequest(
     override val onEditCommand: (List<EditCommand>) -> Unit,
     override val onImeAction: ((ImeAction) -> Unit)?,
     override val textLayoutResult: () -> TextLayoutResult?,
+    override val offsetMapping: TextEditorOffsetMapping,
     override val focusedRectInRoot: () -> Rect?,
     override val textFieldRectInRoot: () -> Rect?,
     override val textClippingRectInRoot: () -> Rect?,

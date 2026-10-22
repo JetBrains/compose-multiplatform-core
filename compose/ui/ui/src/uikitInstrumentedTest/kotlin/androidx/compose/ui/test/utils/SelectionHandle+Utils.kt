@@ -326,7 +326,7 @@ private fun Float.clampedToStep(): Float = coerceIn(-NativeHandleDrag.Step, Nati
 /** Makes the vertical travel 1.5x longer, so touch slop does not stop the drag before the next line. */
 private fun DpOffset.clearingLineBoundary(): DpOffset = DpOffset(x, y * 1.5f)
 
-private fun UIKitInstrumentedTest.selectionRange(node: AccessibilityTestNode): TextRange? =
+internal fun UIKitInstrumentedTest.selectionRange(node: AccessibilityTestNode): TextRange? =
     node.semanticsNode.config.getOrNull(SemanticsProperties.TextSelectionRange)
 
 private fun TextRange.edgeOf(handle: TestHandle): Int =

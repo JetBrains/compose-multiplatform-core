@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.detachedCopy
+import androidx.compose.ui.platform.mapToTransformed
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
@@ -120,11 +121,12 @@ internal open class ComposeTextInputConnection(
         if (position < 0 || position > text.length) {
             return null
         }
-        if (position > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+        val transformedPosition = offsetMapping.mapToTransformed(position)
+        if (transformedPosition > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
             return null
         }
         val offset = textOffsetInRoot - viewOriginInRoot
-        val rect = currentTextLayoutResult.getCursorRect(position).translate(offset)
+        val rect = currentTextLayoutResult.getCursorRect(transformedPosition).translate(offset)
         return rect.toDpRect(rootView.density).let {
             val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
