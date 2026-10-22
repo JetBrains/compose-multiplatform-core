@@ -117,7 +117,6 @@ internal class TextInputServiceAdapter(
         unclippedTextOffsetInRoot = textClippingRectInRoot.topLeft - innerTextFieldBounds.topLeft
     }
 
-    /** Maps ranges between [textFieldValue] and the text of [textLayoutResult]. */
     private val transformedOffsetMapping = object : TextEditorOffsetMapping {
         override fun mapToTransformed(range: TextRange): TextRange = if (range.collapsed) {
             offsetMapping.originalToTransformed(range.start).let(::TextRange)

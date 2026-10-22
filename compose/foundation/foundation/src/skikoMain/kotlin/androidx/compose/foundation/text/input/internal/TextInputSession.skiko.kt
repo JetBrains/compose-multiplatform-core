@@ -127,9 +127,6 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
 private fun TextFieldCharSequence.toTextFieldValue() =
     TextFieldValue(toString(), selection, composition)
 
-/**
- * Maps ranges between the untransformed text and the [TransformedTextFieldState.visualText].
- */
 @OptIn(ExperimentalComposeUiApi::class)
 private class VisualTextOffsetMapping(
     private val state: TransformedTextFieldState,
