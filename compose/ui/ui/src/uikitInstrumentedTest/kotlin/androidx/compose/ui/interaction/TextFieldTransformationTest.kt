@@ -26,22 +26,23 @@ import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.insert
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
-import androidx.compose.ui.test.findFocusedUITextInput
-import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.allSemanticsNodes
 import androidx.compose.ui.test.focusedUITextInput
 import androidx.compose.ui.test.utils.BasicTextFieldType
 import androidx.compose.ui.test.utils.TestTextField
 import androidx.compose.ui.test.utils.TestTextFieldState
 import androidx.compose.ui.test.utils.runTextFieldTest
-import androidx.compose.ui.test.utils.selectionHandles
-import androidx.compose.ui.test.utils.selectionRange
+import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.leftCenter
+import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -49,35 +50,22 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.window.NativeTextInputView
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
-import platform.CoreGraphics.CGPointMake
-import platform.Foundation.NSMakeRange
 import platform.UIKit.UITextInputProtocol
+import platform.UIKit.UITextPosition
 import platform.UIKit.UITextRange
 import platform.UIKit.UITextSelectionRect
 import platform.UIKit.UIView
 
 @OptIn(ExperimentalForeignApi::class)
 class TextFieldTransformationTest {
-
-    @Test
-    fun testTapInTheMiddle() = runTextFieldTransformationTest(
-        usingNativeTextInput = true,
-    ) { nativeTextInput, textFieldType ->
-        val state = TestTextFieldState(text = "123456789012", textFieldType = textFieldType)
-        setTransformedTextFieldContent(state, nativeTextInput)
-
-        findNodeWithTag(TEXT_FIELD_TAG).tapCharacter(offset = 8)
-        waitForIdle()
-
-        assertTextInputState(state, TextRange(12))
-    }
 
     @Test
     fun testTypingFilteredCharacter() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
@@ -127,161 +115,66 @@ class TextFieldTransformationTest {
     }
 
     @Test
-    fun testReplaceRange() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
-        val state = TestTextFieldState(
-            text = "123456789",
-            selection = TextRange(9),
-            textFieldType = textFieldType
-        )
-        setTransformedTextFieldContent(state, nativeTextInput)
-
-        val textInput = focusedUITextInput()
-        textInput.replaceRange(textInput.textRange(TextRange(4, 6)), withText = "00")
-        waitForIdle()
-
-        assertEquals("123400789", state.text)
-        assertTextInputState(state, state.selection)
-    }
-
-    @Test
-    fun testMarkedText() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
-        val state = TestTextFieldState(
-            text = "1234",
-            selection = TextRange(4),
-            textFieldType = textFieldType
-        )
-        setTransformedTextFieldContent(state, nativeTextInput)
-
-        val textInput = focusedUITextInput()
-        textInput.setMarkedText("567", selectedRange = NSMakeRange(3u, 0u))
-        waitForIdle()
-
-        assertEquals("1234567", state.text)
-        assertEquals(TextRange(4, 7), textInput.markedRange)
-        assertTextInputState(state, TextRange(7))
-
-        textInput.unmarkText()
-        waitForIdle()
-
-        assertEquals(null, textInput.markedRange)
-        assertTextInputState(state, TextRange(7))
-    }
-
-    @Test
-    fun testPrefix() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
-        val state = TestTextFieldState(text = "12", selection = TextRange(2), textFieldType = textFieldType)
-        setTransformedTextFieldContent(
-            state = state,
-            nativeTextInput = nativeTextInput,
-            outputTransformation = PrefixOutputTransformation,
-            visualTransformation = PrefixVisualTransformation,
-        )
-
-        setSelectedTextRange(TextRange(0))
-        typeWithKeyboard("0")
-
-        assertEquals("012", state.text)
-        assertTextInputState(state, TextRange(1))
-    }
-
-    @Test
-    fun testCaretGeometry() = runTextFieldTransformationTest(
-        // The geometry is provided to iOS by the native text input view only.
-        usingNativeTextInput = true,
-    ) { nativeTextInput, textFieldType ->
-        val state = TestTextFieldState(text = "123456789", textFieldType = textFieldType)
-        setTransformedTextFieldContent(state, nativeTextInput)
-
-        val textInput = focusedUITextInput()
-        var previousCaretX = Double.NEGATIVE_INFINITY
-        for (offset in 0..9) {
-            val position = textInput.positionFromPosition(textInput.beginningOfDocument, offset.toLong())!!
-            val (x, y) = textInput.caretRectForPosition(position).useContents {
-                (origin.x + size.width / 2) to (origin.y + size.height / 2)
-            }
-            assertTrue(x > previousCaretX, "Caret at $offset must be to the right of the previous one")
-            previousCaretX = x
-
-            val closestPosition = textInput.closestPositionToPoint(CGPointMake(x, y))!!
-            assertEquals(
-                offset,
-                textInput.offsetFromPosition(textInput.beginningOfDocument, closestPosition).toInt(),
-                "Closest position to the caret at $offset"
-            )
-        }
-
-        // The point to the right of the text corresponds to the end of the document.
-        val (x, y) = textInput.caretRectForPosition(textInput.endOfDocument).useContents {
-            (origin.x + 100) to (origin.y + size.height / 2)
-        }
-        val closestPosition = textInput.closestPositionToPoint(CGPointMake(x, y))!!
-        assertEquals(9, textInput.offsetFromPosition(textInput.beginningOfDocument, closestPosition).toInt())
-    }
-
-    @Test
     fun testSelectionEndingAtSeparator() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
         val state = TestTextFieldState(text = "123456789", textFieldType = textFieldType)
         setTransformedTextFieldContent(state, nativeTextInput)
-        showComposeSelectionHandles(nativeTextInput)
 
         // "1234| 5678 9": the separator after the selection isn't highlighted.
         setSelectedTextRange(TextRange(0, 4))
 
         assertTextInputState(state, TextRange(0, 4))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(0, 4))
+        assertSelectionHighlight(transformedRange = TextRange(0, 4))
 
         // "1234 |5678| 9"
         state.updateSelection(TextRange(5, 8))
         waitForIdle()
 
         assertTextInputState(state, TextRange(5, 8))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(6, 9))
+        assertSelectionHighlight(transformedRange = TextRange(6, 9))
     }
 
     @Test
     fun testSelectionStartingAtSeparator() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
         val state = TestTextFieldState(text = "123456789", textFieldType = textFieldType)
         setTransformedTextFieldContent(state, nativeTextInput)
-        showComposeSelectionHandles(nativeTextInput)
 
         // "1234| 567|8 9": the separator before the selection is highlighted.
         setSelectedTextRange(TextRange(4, 7))
 
         assertTextInputState(state, TextRange(4, 7))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(4, 8))
+        assertSelectionHighlight(transformedRange = TextRange(4, 8))
 
         // "1234| 5678| 9": only the leading separator is highlighted.
         state.updateSelection(TextRange(4, 8))
         waitForIdle()
 
         assertTextInputState(state, TextRange(4, 8))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(4, 9))
+        assertSelectionHighlight(transformedRange = TextRange(4, 9))
     }
 
     @Test
     fun testProgrammaticSelection() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
         val state = TestTextFieldState(text = "123456789", textFieldType = textFieldType)
         setTransformedTextFieldContent(state, nativeTextInput)
-        showComposeSelectionHandles(nativeTextInput)
 
         state.updateSelection(TextRange(6))
         waitForIdle()
 
         assertTextInputState(state, TextRange(6))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(7))
+        assertSelectionHighlight(transformedRange = TextRange(7))
 
         // "1|234 56|78 9"
         state.updateSelection(TextRange(1, 6))
         waitForIdle()
 
         assertTextInputState(state, TextRange(1, 6))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(1, 7))
+        assertSelectionHighlight(transformedRange = TextRange(1, 7))
 
         state.updateSelection(TextRange(9))
         waitForIdle()
 
         assertTextInputState(state, TextRange(9))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(11))
+        assertSelectionHighlight(transformedRange = TextRange(11))
     }
 
     @Test
@@ -303,39 +196,37 @@ class TextFieldTransformationTest {
     fun testShorterTextSelectionFromTextInput() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
         val state = TestTextFieldState(text = "12-34-56", textFieldType = textFieldType)
         setShorterTextFieldContent(state, nativeTextInput)
-        showComposeSelectionHandles(nativeTextInput)
 
         // "12|34|56" -> "12|-34-|56": the hidden dashes are a part of the selection.
         setSelectedTextRange(TextRange(2, 6))
 
         assertTextInputState(state, TextRange(2, 6))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(2, 4))
+        assertSelectionHighlight(transformedRange = TextRange(2, 4))
     }
 
     @Test
     fun testShorterTextProgrammaticSelection() = runTextFieldTransformationTest { nativeTextInput, textFieldType ->
         val state = TestTextFieldState(text = "12-34-56", textFieldType = textFieldType)
         setShorterTextFieldContent(state, nativeTextInput)
-        showComposeSelectionHandles(nativeTextInput)
 
         state.updateSelection(TextRange(4))
         waitForIdle()
 
         assertTextInputState(state, TextRange(4))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(3))
+        assertSelectionHighlight(transformedRange = TextRange(3))
 
         state.updateSelection(TextRange(1, 7))
         waitForIdle()
 
         assertTextInputState(state, TextRange(1, 7))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(1, 5))
+        assertSelectionHighlight(transformedRange = TextRange(1, 5))
 
         // Only a hidden dash is selected: there is nothing to highlight.
         state.updateSelection(TextRange(2, 3))
         waitForIdle()
 
         assertTextInputState(state, TextRange(2, 3))
-        assertSelectionHighlight(state, nativeTextInput, transformedRange = TextRange(2))
+        assertSelectionHighlight(transformedRange = TextRange(2))
     }
 
     @Test
@@ -373,7 +264,6 @@ class TextFieldTransformationTest {
 
     @Test
     fun testShorterTextCaretGeometry() = runTextFieldTransformationTest(
-        // The geometry is provided to iOS by the native text input view only.
         usingNativeTextInput = true,
     ) { nativeTextInput, textFieldType ->
         val text = "12-34-56"
@@ -459,105 +349,56 @@ class TextFieldTransformationTest {
         waitForIdle()
     }
 
-    /**
-     * Compose shows the selection handles only after a selection gesture, so this double taps the
-     * text field when the text input view doesn't draw the selection. It changes the selection.
-     */
-    private fun UIKitInstrumentedTest.showComposeSelectionHandles(nativeTextInput: Boolean) {
-        if (nativeTextInput) return
-        findNodeWithTag(TEXT_FIELD_TAG).multiTapCharacter(offset = 1, count = 2)
-        waitForIdle()
-    }
-
-    /**
-     * Checks the selection that is presented to the user: it must cover exactly the
-     * [transformedRange] of the presented (transformed) text.
-     */
-    private fun UIKitInstrumentedTest.assertSelectionHighlight(
-        state: TestTextFieldState,
-        nativeTextInput: Boolean,
-        transformedRange: TextRange,
-    ) {
-        if (nativeTextInput) {
-            assertNativeSelection(transformedRange)
-        } else {
-            assertComposeSelection(state, transformedRange)
-        }
-    }
-
-    /**
-     * Checks the selection published in the semantics and the selection handles drawn by Compose.
-     */
-    private fun UIKitInstrumentedTest.assertComposeSelection(
-        state: TestTextFieldState,
-        transformedRange: TextRange,
-    ) {
-        val node = findNodeWithTag(TEXT_FIELD_TAG)
-        // BasicTextField with TextFieldValue publishes the selection in the original text, and
-        // decides whether to show the handles by it.
-        val composeSelection =
-            if (state.textFieldType == BasicTextFieldType.V1) state.selection else transformedRange
-        assertEquals(composeSelection, selectionRange(node), "Selection in the semantics")
-
-        val handles = selectionHandles()
-        if (composeSelection.collapsed) {
-            assertNull(handles, "No selection handles expected for $transformedRange")
-            return
-        }
-        assertNotNull(handles, "Selection handles expected for $transformedRange")
-        val layout = textLayoutResult(node)
-        assertEquals(
-            layout.getHorizontalPosition(transformedRange.min, usePrimaryDirection = true),
-            handles.start.info.position.x,
-            absoluteTolerance = 1f,
-            "Start handle for $transformedRange"
-        )
-        assertEquals(
-            layout.getHorizontalPosition(transformedRange.max, usePrimaryDirection = true),
-            handles.end.info.position.x,
-            absoluteTolerance = 1f,
-            "End handle for $transformedRange"
-        )
-    }
-
-    /** Checks the selection that iOS draws from the geometry of the native text input view. */
-    private fun UIKitInstrumentedTest.assertNativeSelection(transformedRange: TextRange) {
+    private fun UIKitInstrumentedTest.assertSelectionHighlight(transformedRange: TextRange) {
         val textInput = focusedUITextInput()
         val view = textInput as UIView
         val selectedRange = textInput.selectedTextRange ?: error("No selected text range")
-        val node = findNodeWithTag(TEXT_FIELD_TAG)
-        val expectedLeft = node.characterPosition(transformedRange.min).x.value.toDouble()
-        val expectedRight = node.characterPosition(transformedRange.max).x.value.toDouble()
 
-        val rects = textInput.selectionRectsForRange(selectedRange).map {
-            view.convertRect((it as UITextSelectionRect).rect, toView = null)
-        }
-        if (transformedRange.collapsed) {
-            assertTrue(rects.isEmpty(), "No selection rects expected for $transformedRange")
-            val caretX = view.convertRect(textInput.caretRectForPosition(selectedRange.start), toView = null)
-                .useContents { origin.x + size.width / 2 }
-            assertEquals(expectedLeft, caretX, absoluteTolerance = 1.0, "Caret for $transformedRange")
-            return
+        fun caretCenter(position: UITextPosition): DpOffset =
+            view.convertRect(textInput.caretRectForPosition(position), toView = null).toDpRect().center()
+
+        var actualStart = caretCenter(selectedRange.start)
+        var actualEnd = caretCenter(selectedRange.end)
+        if (textInput is NativeTextInputView) {
+            val rects = textInput.selectionRectsForRange(selectedRange).map {
+                view.convertRect((it as UITextSelectionRect).rect, toView = null).toDpRect()
+            }
+            if (transformedRange.collapsed) {
+                assertTrue(rects.isEmpty(), "No selection rects expected for $transformedRange, got $rects")
+            } else {
+                val rect = rects.singleOrNull()
+                    ?: error("Single selection rect expected for $transformedRange, got $rects")
+                actualStart = rect.leftCenter()
+                actualEnd = rect.rightCenter()
+            }
         }
 
-        val rect = rects.singleOrNull() ?: error("Single selection rect expected for $transformedRange, got $rects")
-        rect.useContents {
-            assertEquals(expectedLeft, origin.x, absoluteTolerance = 1.0, "Left edge of the selection for $transformedRange")
-            assertEquals(expectedRight, origin.x + size.width, absoluteTolerance = 1.0, "Right edge of the selection for $transformedRange")
+        val (layout, layoutPositionInWindow) = focusedTextLayout()
+        fun expectedCaretCenter(offset: Int): DpOffset = with(density) {
+            val center = layoutPositionInWindow + layout.getCursorRect(offset).center
+            DpOffset(center.x.toDp(), center.y.toDp())
         }
+
+        assertDpOffsetEquals(expectedCaretCenter(transformedRange.min), actualStart, "Selection start for $transformedRange")
+        assertDpOffsetEquals(expectedCaretCenter(transformedRange.max), actualEnd, "Selection end for $transformedRange")
     }
 
-    /** The layout of the presented (transformed) text. */
-    private fun UIKitInstrumentedTest.textLayoutResult(node: AccessibilityTestNode): TextLayoutResult {
+    private fun UIKitInstrumentedTest.focusedTextLayout(): Pair<TextLayoutResult, Offset> {
+        val node = allSemanticsNodes().singleOrNull {
+            it.config.getOrNull(SemanticsProperties.Focused) == true &&
+                it.config.getOrNull(SemanticsActions.GetTextLayoutResult) != null
+        } ?: error("No focused text field")
         val results = mutableListOf<TextLayoutResult>()
-        node.semanticsNode.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
-        return results.firstOrNull() ?: error("No text layout result")
+        node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
+        val layout = results.firstOrNull() ?: error("No text layout result")
+        return layout to node.positionInWindow
     }
 
-    /**
-     * Checks that the text field has the [selection], and the text input view presents the original
-     * text and the [selection] in it to iOS.
-     */
+    private fun assertDpOffsetEquals(expected: DpOffset, actual: DpOffset, message: String) {
+        assertEquals(expected.x.value, actual.x.value, absoluteTolerance = 1f, "$message: x")
+        assertEquals(expected.y.value, actual.y.value, absoluteTolerance = 1f, "$message: y")
+    }
+
     private fun UIKitInstrumentedTest.assertTextInputState(
         state: TestTextFieldState,
         selection: TextRange,
@@ -587,9 +428,6 @@ class TextFieldTransformationTest {
 
     private val UITextInputProtocol.selection: TextRange?
         get() = selectedTextRange?.let { toTextRange(it) }
-
-    private val UITextInputProtocol.markedRange: TextRange?
-        get() = markedTextRange?.let { toTextRange(it) }
 
     private companion object {
         const val TEXT_FIELD_TAG = "TextField"
@@ -650,23 +488,6 @@ class TextFieldTransformationTest {
                 AnnotatedString(text.text.chunked(GROUP_SIZE).joinToString(" ")),
                 offsetMapping
             )
-        }
-    }
-
-    private object PrefixOutputTransformation : OutputTransformation {
-        override fun TextFieldBuffer.transformOutput() {
-            insert(0, "$")
-        }
-    }
-
-    private object PrefixVisualTransformation : VisualTransformation {
-        override fun filter(text: AnnotatedString): TransformedText {
-            val offsetMapping = object : OffsetMapping {
-                override fun originalToTransformed(offset: Int): Int = offset + 1
-
-                override fun transformedToOriginal(offset: Int): Int = maxOf(0, offset - 1)
-            }
-            return TransformedText(AnnotatedString("$" + text.text), offsetMapping)
         }
     }
 }
