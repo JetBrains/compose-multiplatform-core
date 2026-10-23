@@ -190,19 +190,29 @@ internal class SkikoParagraph(
 
         // workaround for https://bugs.chromium.org/p/skia/issues/detail?id=11321 :(
         // Otherwise it shows a big cursor on a new empty line https://youtrack.jetbrains.com/issue/CMP-1895
-        val isNewEmptyLine = offset - 1 == line.startIndex && offset == text.length
+        // use the same metrics from font
+        // so height does not change when a line receives its first character https://youtrack.jetbrains.com/issue/CMP-8371
+        val usesEmptyLineCursorMetrics =
+            (line.startIndex == line.endIndex && offset == text.length) ||
+                (text.isNotEmpty() && !layouter.textStyle.lineHeight.isUnspecified)
+        val cursorMetrics = if (usesEmptyLineCursorMetrics && text.isNotEmpty()) {
+            emptyLineCursorMetrics
+        } else {
+            line
+        }
+
         val metrics = defaultFont.metrics
 
-        val asc = line.ascent.let {
-            if (isNewEmptyLine) {
+        val asc = cursorMetrics.ascent.let {
+            if (usesEmptyLineCursorMetrics) {
                 val ascent = -metrics.ascent.toDouble()
                 it.coerceAtMost(ascent)
             } else {
                 it
             }
         }
-        val desc = line.descent.let {
-            if (isNewEmptyLine) {
+        val desc = cursorMetrics.descent.let {
+            if (usesEmptyLineCursorMetrics) {
                 val descent = metrics.descent.toDouble()
                 it.coerceAtMost(descent)
             } else {
@@ -328,6 +338,7 @@ internal class SkikoParagraph(
         }
 
     private var _lineMetrics: Array<LineMetrics>? = null
+    private var _emptyLineCursorMetrics: LineMetrics? = null
     private val lineMetrics: Array<LineMetrics>
         get() {
             val lineMetrics = _lineMetrics ?: receiveLineMetrics().also {
@@ -335,6 +346,14 @@ internal class SkikoParagraph(
             }
             return lineMetrics
         }
+
+    private val emptyLineCursorMetrics: LineMetrics
+        get() = _emptyLineCursorMetrics ?: layouter
+            .emptyLineMetrics(paragraph)
+            .first()
+            .trimFirstAscent(defaultFont.metrics, layouter.textStyle)
+            .trimLastDescent(defaultFont.metrics, layouter.textStyle)
+            .also { _emptyLineCursorMetrics = it }
 
     private fun receiveLineMetrics(): Array<LineMetrics> {
         val lineMetrics = if (text.isEmpty()) {
