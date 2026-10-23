@@ -34,6 +34,7 @@ interface TextEditorOffsetMapping {
      */
     fun mapFromTransformed(range: TextRange): TextRange
 
+    @ExperimentalComposeUiApi
     companion object {
         /** The mapping for the text that isn't transformed. */
         val Identity: TextEditorOffsetMapping = object : TextEditorOffsetMapping {
