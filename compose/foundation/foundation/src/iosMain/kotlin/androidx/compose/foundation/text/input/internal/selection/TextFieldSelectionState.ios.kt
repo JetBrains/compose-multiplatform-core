@@ -344,8 +344,8 @@ private class IosTextFieldTextDragObserver(
 }
 
 internal actual class ClipboardPasteState actual constructor(private val clipboard: Clipboard) {
-    private var _hasClip by mutableStateOf(false)
-    private var _hasText by mutableStateOf(false)
+    private var _hasClip by mutableStateOf(clipboard.nativeClipboard.numberOfItems > 0)
+    private var _hasText by mutableStateOf(clipboard.nativeClipboard.hasStrings)
 
     actual val hasText: Boolean get() = _hasText
     actual val hasClip: Boolean get() = _hasClip
