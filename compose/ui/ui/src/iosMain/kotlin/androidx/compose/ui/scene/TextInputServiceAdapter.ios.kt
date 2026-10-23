@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.getValue
@@ -23,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.TextEditorOffsetMapping
 import androidx.compose.ui.platform.TextInputService
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -47,7 +50,6 @@ import kotlinx.coroutines.launch
  * Mimics the functionality of the LegacyPlatformTextInputServiceAdapter. Used to provide backward
  * compatibility for the [androidx.compose.ui.text.input.PlatformTextInputService].
  */
-@Suppress("DEPRECATION")
 internal class TextInputServiceAdapter(
     private val textInputService: TextInputService,
     private val coroutineScope: CoroutineScope,
@@ -61,6 +63,7 @@ internal class TextInputServiceAdapter(
 
     private var textFieldValue by mutableStateOf(TextFieldValue())
     private var textLayoutResult by mutableStateOf<TextLayoutResult?>(null)
+    private var offsetMapping by mutableStateOf(OffsetMapping.Identity)
     private var focusedRectInRoot by mutableStateOf(Rect.Zero)
     private var textFieldRectInRoot by mutableStateOf(Rect.Zero)
     private var textClippingRectInRoot by mutableStateOf(Rect.Zero)
@@ -104,6 +107,7 @@ internal class TextInputServiceAdapter(
     ) {
         this.textFieldValue = textFieldValue
         this.textLayoutResult = textLayoutResult
+        this.offsetMapping = offsetMapping
 
         val matrix = Matrix().also { textFieldToRootTransform(it) }
         textFieldRectInRoot = matrix.map(decorationBoxBounds)
@@ -111,6 +115,26 @@ internal class TextInputServiceAdapter(
         val cursorOffset = offsetMapping.originalToTransformed(textFieldValue.selection.max)
         focusedRectInRoot = matrix.map(textLayoutResult.getCursorRect(cursorOffset))
         unclippedTextOffsetInRoot = textClippingRectInRoot.topLeft - innerTextFieldBounds.topLeft
+    }
+
+    private val transformedOffsetMapping = object : TextEditorOffsetMapping {
+        override fun mapToTransformed(range: TextRange): TextRange = if (range.collapsed) {
+            offsetMapping.originalToTransformed(range.start).let(::TextRange)
+        } else {
+            TextRange(
+                start = offsetMapping.originalToTransformed(range.start),
+                end = offsetMapping.originalToTransformed(range.end)
+            )
+        }
+
+        override fun mapFromTransformed(range: TextRange): TextRange = if (range.collapsed) {
+            offsetMapping.transformedToOriginal(range.start).let(::TextRange)
+        } else {
+            TextRange(
+                start = offsetMapping.transformedToOriginal(range.start),
+                end = offsetMapping.transformedToOriginal(range.end)
+            )
+        }
     }
 
     private fun makeRequest(
@@ -136,6 +160,8 @@ internal class TextInputServiceAdapter(
             override val onImeAction: (ImeAction) -> Unit get() = onImeActionPerformed
             override val textLayoutResult: () -> TextLayoutResult?
                 get() = { this@TextInputServiceAdapter.textLayoutResult }
+            override val offsetMapping: TextEditorOffsetMapping
+                get() = transformedOffsetMapping
             override val focusedRectInRoot: () -> Rect?
                 get() = { this@TextInputServiceAdapter.focusedRectInRoot }
             override val textFieldRectInRoot: () -> Rect?

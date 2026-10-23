@@ -28,6 +28,8 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.platform.toUIColor
 import androidx.compose.ui.platform.detachedCopy
+import androidx.compose.ui.platform.mapFromTransformed
+import androidx.compose.ui.platform.mapToTransformed
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -173,10 +175,11 @@ internal class NativeTextInputConnection(
             return null
         }
         val currentTextLayoutResult = textLayoutResult ?: return null
-        if (position > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+        val transformedPosition = offsetMapping.mapToTransformed(position)
+        if (transformedPosition > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
             return null
         }
-        val rect = currentTextLayoutResult.getCursorRect(position)
+        val rect = currentTextLayoutResult.getCursorRect(transformedPosition)
         return rect.toDpRect(rootView.density).let {
             val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
@@ -190,17 +193,21 @@ internal class NativeTextInputConnection(
         if (range.collapsed || isIncorrect(range)) {
             return emptyList()
         }
+        val transformedRange = offsetMapping.mapToTransformed(range)
+        if (transformedRange.collapsed) {
+            return emptyList()
+        }
         val currentTextLayoutResult = textLayoutResult ?: return emptyList()
 
         // Layout in native text input mode may be outdated, so not checking this may cause OOB error
         // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
-        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return emptyList()
+        if (transformedRange.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return emptyList()
 
-        val startSelectionHandleRect = currentTextLayoutResult.getCursorRect(range.start)
-        val endSelectionHandleRect = currentTextLayoutResult.getCursorRect(range.end)
+        val startSelectionHandleRect = currentTextLayoutResult.getCursorRect(transformedRange.start)
+        val endSelectionHandleRect = currentTextLayoutResult.getCursorRect(transformedRange.end)
 
-        val firstLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
-        val lastLineNumber = currentTextLayoutResult.getLineForOffset(range.end)
+        val firstLineNumber = currentTextLayoutResult.getLineForOffset(transformedRange.start)
+        val lastLineNumber = currentTextLayoutResult.getLineForOffset(transformedRange.end)
 
         return if (firstLineNumber == lastLineNumber) {
             listOf(
@@ -282,24 +289,28 @@ internal class NativeTextInputConnection(
         if (range.collapsed || isIncorrect(range)) {
             return null
         }
+        val transformedRange = offsetMapping.mapToTransformed(range)
+        if (transformedRange.collapsed) {
+            return null
+        }
         val currentTextLayoutResult = textLayoutResult ?: return null
 
         // Layout in native text input mode may be outdated, so not checking this may cause OOB error
         // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
-        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return null
+        if (transformedRange.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return null
 
-        val startHandleLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
-        val endHandleLineNumber = currentTextLayoutResult.getLineForOffset(range.end)
+        val startHandleLineNumber = currentTextLayoutResult.getLineForOffset(transformedRange.start)
+        val endHandleLineNumber = currentTextLayoutResult.getLineForOffset(transformedRange.end)
 
-        val startHandleRect = currentTextLayoutResult.getCursorRect(range.start)
+        val startHandleRect = currentTextLayoutResult.getCursorRect(transformedRange.start)
 
         return if (startHandleLineNumber == endHandleLineNumber) {
             Rect(
                 topLeft = startHandleRect.topLeft,
-                bottomRight = currentTextLayoutResult.getCursorRect(range.end).bottomRight
+                bottomRight = currentTextLayoutResult.getCursorRect(transformedRange.end).bottomRight
             ).toDpRect(rootView.density)
         } else {
-            val startLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
+            val startLineNumber = currentTextLayoutResult.getLineForOffset(transformedRange.start)
             val startLineRight = currentTextLayoutResult.getLineRight(startLineNumber)
             Rect(
                 startHandleRect.left,
@@ -312,20 +323,23 @@ internal class NativeTextInputConnection(
 
     override fun closestPositionToPoint(point: DpOffset): Int? {
         return textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
+            ?.let { offsetMapping.mapFromTransformed(it) }
     }
 
     override fun closestPositionToPoint(point: DpOffset, withinRange: TextRange): Int? {
         val pointOffset =
             textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
                 ?: return null
-        return pointOffset.coerceIn(withinRange.start, withinRange.end)
+        return offsetMapping.mapFromTransformed(pointOffset)
+            .coerceIn(withinRange.start, withinRange.end)
     }
 
     override fun characterRangeAtPoint(point: DpOffset): TextRange? {
         val pointOffset =
             textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
                 ?: return null
-        return textLayoutResult?.getWordBoundary(pointOffset)
+        val wordBoundary = textLayoutResult?.getWordBoundary(pointOffset) ?: return null
+        return offsetMapping.mapFromTransformed(wordBoundary)
     }
 
     override fun positionWithinRange(
@@ -338,16 +352,18 @@ internal class NativeTextInputConnection(
             TextLayoutDirection.Down -> range.end
             else -> {
                 val layout = textLayoutResult ?: return null
-                val startLine = layout.getLineForOffset(range.start)
-                val endLine = layout.getLineForOffset(range.end)
+                val mapping = offsetMapping
+                val transformedRange = mapping.mapToTransformed(range)
+                val startLine = layout.getLineForOffset(transformedRange.start)
+                val endLine = layout.getLineForOffset(transformedRange.end)
 
                 val candidateOffsets = buildSet {
-                    add(range.start)
-                    add(range.end)
+                    add(transformedRange.start)
+                    add(transformedRange.end)
 
                     for (line in startLine..endLine) {
-                        add(max(range.start, layout.getLineStart(line)))
-                        add(min(range.end, layout.getLineEnd(line)))
+                        add(max(transformedRange.start, layout.getLineStart(line)))
+                        add(min(transformedRange.end, layout.getLineEnd(line)))
                     }
                 }
 
@@ -357,7 +373,7 @@ internal class NativeTextInputConnection(
                     TextLayoutDirection.Right ->
                         candidateOffsets.maxByOrNull { layout.getHorizontalPosition(it, true) }
                     else -> null
-                }
+                }?.let { mapping.mapFromTransformed(it) }
             }
         }
     }
