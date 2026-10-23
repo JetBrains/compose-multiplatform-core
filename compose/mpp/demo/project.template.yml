@@ -35,6 +35,8 @@ targets:
     sources:
       - path: "src/commonMain/resources/RobotoFlex-VariableFont.ttf"
         buildPhase: resources
+      - path: "src/commonMain/resources/Inconsolata-Regular.ttf"
+        buildPhase: resources
       # we don't have swift sources, but need a real path here (it doesn't matter what folder).
       # Xcode copies the files from this path. We need to ensure no file duplicates.
       - path: "src/swift"
