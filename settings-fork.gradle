@@ -27,6 +27,8 @@ def prebuiltsRoot = new File(
         "prebuilts"
 ).absolutePath
 def rootProjectRepositories
+def profileIntObjectMaps = providers.gradleProperty("compose.demo.profileIntObjectMaps")
+        .map { it.toBoolean() }.getOrElse(false)
 
 apply from: "buildSrc-fork/settingsScripts/out-setup.groovy"
 
@@ -41,6 +43,14 @@ getGradle().beforeProject { project ->
         // repositories from the root project than recreate identical ones
         // on each project
         project.repositories.addAll(rootProjectRepositories)
+    }
+    if (profileIntObjectMaps) {
+        project.configurations.configureEach { configuration ->
+            configuration.resolutionStrategy.dependencySubstitution { substitutions ->
+                substitutions.substitute(substitutions.module("androidx.collection:collection"))
+                        .using(substitutions.project(":collection:collection"))
+            }
+        }
     }
     project.ext.supportRootFolder = supportRootFolder
     project.ext.prebuiltsRoot = prebuiltsRoot
@@ -339,6 +349,7 @@ includeProject(":compose:desktop:desktop")
 includeProject(":compose:desktop:desktop:desktop-samples", "compose/desktop/desktop/samples")
 includeProject(":compose:mpp")
 includeProject(":compose:mpp:demo")
+includeProject(":collection:collection", "compose/mpp/demo/collection-profile")
 includeProject(":compose:mpp:demo-swiftui")
 includeProject(":compose:foundation:foundation")
 includeProject(":compose:foundation:foundation-layout")

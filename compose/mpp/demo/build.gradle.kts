@@ -33,6 +33,9 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
+val profileIntObjectMaps = providers.gradleProperty("compose.demo.profileIntObjectMaps")
+    .map(String::toBoolean).getOrElse(false)
+
 kotlin {
     applyDefaultHierarchyTemplate()
     jvm("desktop")
@@ -41,6 +44,16 @@ kotlin {
         browser {
             commonWebpackConfig {
                 outputFileName = "demo.js"
+            }
+            if (profileIntObjectMaps) {
+                testTask {
+                    environment("jetbrains.androidx.web.tests.enableChrome", "1")
+                    testLogging.showStandardStreams = true
+                    useKarma {
+                        useChrome()
+                        useConfigDirectory(rootProject.file("mpp/karma.config.d/js"))
+                    }
+                }
             }
         }
         binaries.executable()
@@ -61,6 +74,16 @@ kotlin {
                     static = (static ?: mutableListOf()).apply {
                         // Serve sources to debug inside browser
                         add(projectDirPath)
+                    }
+                }
+            }
+            if (profileIntObjectMaps) {
+                testTask {
+                    environment("jetbrains.androidx.web.tests.enableChrome", "1")
+                    testLogging.showStandardStreams = true
+                    useKarma {
+                        useChrome()
+                        useConfigDirectory(rootProject.file("mpp/karma.config.d/wasm"))
                     }
                 }
             }
@@ -176,6 +199,18 @@ kotlin {
 
                 // https://github.com/mrdoob/three.js/ for WebGl demo
                 implementation(npm("three", "0.185.0"))
+            }
+        }
+
+        val webTest by getting {
+            if (profileIntObjectMaps) {
+                dependencies {
+                    implementation(kotlin("test"))
+                    implementation(project(":collection:collection"))
+                    implementation(project(":compose:ui:ui-test"))
+                }
+            } else {
+                kotlin.exclude("**/IntObjectMapProfileTest.kt")
             }
         }
 
