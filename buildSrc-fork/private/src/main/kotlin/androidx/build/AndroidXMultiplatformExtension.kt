@@ -487,60 +487,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     }
 
     @JvmOverloads
-    fun androidNative(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
-        return listOfNotNull(
-            androidNativeX86(block),
-            androidNativeX64(block),
-            androidNativeArm64(block),
-            androidNativeArm32(block),
-        )
-    }
-
-    @JvmOverloads
-    fun androidNativeX86(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
-        potentiallyRedirecting("androidNativeX86") {
-            supportedPlatforms.add(PlatformIdentifier.ANDROID_NATIVE_X86)
-            if (project.enableAndroidNative()) {
-                kotlinExtension.androidNativeX86 { block?.execute(this) }
-            } else {
-                null
-            }
-        }
-
-    @JvmOverloads
-    fun androidNativeX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
-        potentiallyRedirecting("androidNativeX64") {
-            supportedPlatforms.add(PlatformIdentifier.ANDROID_NATIVE_X64)
-            if (project.enableAndroidNative()) {
-                kotlinExtension.androidNativeX64 { block?.execute(this) }
-            } else {
-                null
-            }
-        }
-
-    @JvmOverloads
-    fun androidNativeArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
-        potentiallyRedirecting("androidNativeArm64") {
-            supportedPlatforms.add(PlatformIdentifier.ANDROID_NATIVE_ARM64)
-            if (project.enableAndroidNative()) {
-                kotlinExtension.androidNativeArm64 { block?.execute(this) }
-            } else {
-                null
-            }
-        }
-
-    @JvmOverloads
-    fun androidNativeArm32(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
-        potentiallyRedirecting("androidNativeArm32") {
-            supportedPlatforms.add(PlatformIdentifier.ANDROID_NATIVE_ARM32)
-            if (project.enableAndroidNative()) {
-                kotlinExtension.androidNativeArm32 { block?.execute(this) }
-            } else {
-                null
-            }
-        }
-
-    @JvmOverloads
     fun androidLibrary(
         block: Action<KotlinMultiplatformAndroidLibraryTarget>? = null
     ): KotlinMultiplatformAndroidLibraryTarget? = potentiallyRedirecting("android") {
@@ -623,24 +569,12 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @JvmOverloads
     fun watchos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
         return listOfNotNull(
-            watchosArm32(block),
             watchosArm64(block),
             // TODO(https://youtrack.jetbrains.com/issue/CMP-9513) publish it
             // watchosDeviceArm64()
             watchosSimulatorArm64(block),
         )
     }
-
-    @JvmOverloads
-    fun watchosArm32(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
-        potentiallyRedirecting("watchosArm32") {
-            supportedPlatforms.add(PlatformIdentifier.WATCHOS_ARM_32)
-            if (project.enableMac()) {
-                kotlinExtension.watchosArm32 { block?.execute(this) }
-            } else {
-                null
-            }
-        }
 
     @JvmOverloads
     fun watchosArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
