@@ -16,4 +16,4 @@
 
 package androidx.compose.foundation.border
 
-internal actual fun shouldUseGraphicsLayerForGenericBorder(): Boolean = true
+internal actual fun shouldUseGraphicsLayerForGenericBorder(): Boolean = false
