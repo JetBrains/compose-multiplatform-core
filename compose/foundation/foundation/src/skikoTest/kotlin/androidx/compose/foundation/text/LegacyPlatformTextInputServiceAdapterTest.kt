@@ -131,7 +131,7 @@ class LegacyPlatformTextInputServiceAdapterTest {
         var text by mutableStateOf(TextFieldValue(""))
         lateinit var request: PlatformTextInputMethodRequest
         setContent {
-            InterceptPlatformTextInput({ r, nextHandler ->
+            InterceptPlatformTextInput({ r, _ ->
                 request = r
                 awaitCancellation()
             }) {

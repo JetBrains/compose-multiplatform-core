@@ -237,6 +237,7 @@ class TextInputPendingCompositionLayerTest {
         return input
     }
 
+    @Suppress("ConstPropertyName")
     private companion object {
         const val TextFieldTag = "TextField"
         const val OpenDialogButtonTag = "OpenDialogButton"

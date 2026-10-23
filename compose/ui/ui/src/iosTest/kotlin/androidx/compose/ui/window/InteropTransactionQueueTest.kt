@@ -218,7 +218,7 @@ class InteropTransactionQueueTest {
     fun `empty transaction completion drains all pending real transactions`() {
         val queue = SurfaceMetalRedrawer.InteropTransactionQueue()
         queue.scheduleTransaction(transaction("t0"))
-        val i1 = queue.scheduleTransaction(transaction("t1"))
+        queue.scheduleTransaction(transaction("t1"))
 
         val emptyIndex = queue.scheduleTransaction(emptyTransaction())
 

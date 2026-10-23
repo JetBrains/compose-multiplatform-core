@@ -113,7 +113,7 @@ class ImageComposeSceneTest {
 
     @Test
     fun `run multiple ImageComposeScene`() {
-        for (i in 1..300) {
+        repeat(300) {
             ImageComposeScene(800, 800).use {
                 it.setContent {
                     Box(Modifier.fillMaxWidth()) {

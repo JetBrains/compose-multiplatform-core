@@ -328,10 +328,8 @@ class DesktopMenuTest {
 
         val initialPosition = onNodeWithTag("box").getUnclippedBoundsInRoot().top
 
-        runBlocking {
-            scrollState.scroll {
-                scrollBy(10000f)
-            }
+        scrollState.scroll {
+            scrollBy(10000f)
         }
         assertThat(
             onNodeWithTag("box").getUnclippedBoundsInRoot().top
