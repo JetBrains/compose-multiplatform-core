@@ -318,9 +318,20 @@ internal class IosDragAndDropManager(
         }
     }
 
+    private val dragInteraction = UIDragInteraction(delegate = dragInteractionProxy)
+
     init {
-        view.addInteraction(UIDragInteraction(delegate = dragInteractionProxy))
+        view.addInteraction(dragInteraction)
         view.addInteraction(UIDropInteraction(delegate = dropInteractionProxy))
+
+        // UIKit text interactions wait for the drag lift gesture to fail, which delays the
+        // magnifier and the edit menu of a native text input. Disable dragging for touches that
+        // start on a native text input, unless a drag session is already in progress.
+        view.onTouchHitTest = { isNativeTextInputHit ->
+            if (dragSessionContext == null) {
+                dragInteraction.enabled = UIDragInteraction.enabledByDefault && !isNativeTextInputHit
+            }
+        }
 
         // UIDragInteraction adds its own gesture recogniser that can cancel the gesture that is
         // responsive to touch handling. Ignore this gesture if the drag session is not started

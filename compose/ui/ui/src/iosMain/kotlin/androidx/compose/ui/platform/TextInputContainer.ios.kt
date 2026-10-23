@@ -57,6 +57,8 @@ interface TextInputContainer {
 
         fun updateNativeTextInputTintColor(color: Color?)
 
+        fun setNativeGesturesEnabled(enabled: Boolean)
+
         fun usingNativeTextInput(): Boolean
     }
 
@@ -129,6 +131,8 @@ internal object EmptyTextInputContainer : TextInputContainer {
         ) = Unit
 
         override fun updateNativeTextInputTintColor(color: Color?) = Unit
+
+        override fun setNativeGesturesEnabled(enabled: Boolean) = Unit
 
         override fun usingNativeTextInput(): Boolean = false
     }

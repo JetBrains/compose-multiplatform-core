@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation.text
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -38,6 +40,9 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 
+
+// BTF 1
+
 internal fun Modifier.cupertinoTextFieldPointer(
     manager: TextFieldSelectionManager,
     enabled: Boolean,
@@ -45,7 +50,8 @@ internal fun Modifier.cupertinoTextFieldPointer(
     state: LegacyTextFieldState,
     focusRequester: FocusRequester,
     readOnly: Boolean,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
+    textSelectionGesturesEnabled: Boolean,
 ): Modifier = if (enabled) {
     this
         .updateSelectionTouchMode { state.isInTouchMode = it }
@@ -58,6 +64,9 @@ internal fun Modifier.cupertinoTextFieldPointer(
                 focusRequester,
                 !readOnly
             )
+
+            // Do not change the cursor position or show the context menu
+            if (wasFocused && !textSelectionGesturesEnabled) return@tapPressTextFieldModifier
 
             if (state.handleState != HandleState.Selection) {
                 state.layoutResult?.let { layoutResult ->
@@ -84,7 +93,14 @@ internal fun Modifier.cupertinoTextFieldPointer(
                 state.handleState = HandleState.Cursor
             }
         }
-        .then(CupertinoSelectionGesturesModifierElement(manager, state, offsetMapping))
+        .then(
+            CupertinoSelectionGesturesModifierElement(
+                manager,
+                state,
+                offsetMapping,
+                textSelectionGesturesEnabled
+            )
+        )
         .pointerHoverIcon(PointerIcon.Text)
 } else {
     this
@@ -94,12 +110,18 @@ private data class CupertinoSelectionGesturesModifierElement(
     private val manager: TextFieldSelectionManager,
     private val state: LegacyTextFieldState,
     private val offsetMapping: OffsetMapping,
+    private val textSelectionGesturesEnabled: Boolean,
 ) : ModifierNodeElement<CupertinoSelectionGesturesModifierNode>() {
     override fun create(): CupertinoSelectionGesturesModifierNode =
-        CupertinoSelectionGesturesModifierNode(manager, state, offsetMapping)
+        CupertinoSelectionGesturesModifierNode(
+            manager,
+            state,
+            offsetMapping,
+            textSelectionGesturesEnabled
+        )
 
     override fun update(node: CupertinoSelectionGesturesModifierNode) {
-        node.update(manager, state, offsetMapping)
+        node.update(manager, state, offsetMapping, textSelectionGesturesEnabled)
     }
 
     override fun InspectorInfo.inspectableProperties() {
@@ -111,6 +133,7 @@ private class CupertinoSelectionGesturesModifierNode(
     private var manager: TextFieldSelectionManager,
     private var state: LegacyTextFieldState,
     private var offsetMapping: OffsetMapping,
+    textSelectionGesturesEnabled: Boolean,
 ) : DelegatingNode() {
     private val longPressDragObserver = object : TextDragObserver {
         var dragTotalDistance = Offset.Zero
@@ -185,18 +208,32 @@ private class CupertinoSelectionGesturesModifierNode(
             manager.currentDragPosition = null
         }
     }
+    private val pointerInputNode = SuspendingPointerInputModifierNode {
+        awaitSelectionGestures(manager.mouseSelectionObserver, longPressDragObserver)
+    }
 
-    private val pointerInputNode = delegate(
-        SuspendingPointerInputModifierNode {
-            awaitSelectionGestures(manager.mouseSelectionObserver, longPressDragObserver)
+    init {
+        if (textSelectionGesturesEnabled) {
+            delegate(pointerInputNode)
         }
-    )
+    }
 
     fun update(
         manager: TextFieldSelectionManager,
         state: LegacyTextFieldState,
         offsetMapping: OffsetMapping,
+        textSelectionGesturesEnabled: Boolean,
     ) {
+        if (textSelectionGesturesEnabled) {
+            if (!pointerInputNode.node.isAttached) {
+                delegate(pointerInputNode)
+            }
+        } else {
+            if (pointerInputNode.node.isAttached) {
+                undelegate(pointerInputNode)
+            }
+        }
+
         if (this.manager != manager) {
             pointerInputNode.resetPointerInputHandler()
         }
