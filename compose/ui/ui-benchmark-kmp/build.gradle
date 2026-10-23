@@ -1,0 +1,113 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+plugins {
+    id("AndroidXComposePlugin")
+    id("org.jetbrains.kotlin.multiplatform")
+    alias(libs.plugins.kotlinBenchmark)
+}
+
+kotlin {
+    jvm("desktop")
+    wasmJs {
+        outputModuleName = "ui-bench"
+        nodejs()
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.kotlinBenchmarkRuntime)
+            implementation(libs.kotlinCoroutinesCore)
+            implementation(project(":compose:ui:ui"))
+            implementation(project(":compose:ui:ui-skiko"))
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+        }
+        desktopMain.dependencies {
+            runtimeOnly(libs.skikoAwtRuntime)
+        }
+        configureEach {
+            languageSettings.optIn("androidx.compose.ui.InternalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+        }
+    }
+}
+
+// Resolve friends from each compilation's classpath, preserving variant selection and build order.
+def friendProjects = [":compose:ui:ui"] as Set
+kotlin.targets.matching { it.name in ["desktop", "wasmJs"] }.configureEach { target ->
+    // Skiko declarations are not present in UI's common metadata. Compile these shared sources
+    // against the actual platform artifacts instead of introducing visibility suppressions.
+    target.compilations.getByName("main").defaultSourceSet.kotlin.srcDir("src/skikoMain/kotlin")
+    target.compilations.configureEach { compilation ->
+        def friends = project.configurations.getByName(compilation.compileDependencyConfigurationName)
+                .incoming.artifactView { view ->
+            view.componentFilter { id ->
+                id instanceof ProjectComponentIdentifier && friendProjects.contains(id.projectPath)
+            }
+        }.files
+        compilation.compileTaskProvider.configure {
+            friendPaths.from(friends)
+        }
+    }
+}
+
+configurations {
+    skikoWasmRuntime {
+        canBeConsumed = false
+        transitive = false
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "skiko-runtime"))
+        }
+    }
+}
+dependencies {
+    skikoWasmRuntime(libs.skikoWasmJs)
+}
+def unpackSkikoWasmRuntime = tasks.register("unpackSkikoWasmRuntime", Sync) {
+    from({ configurations.skikoWasmRuntime.collect { zipTree(it) } }) {
+        include("skiko.mjs", "skiko.wasm")
+        rename("skiko.mjs", "skiko-runtime.mjs")
+        // Skiko's browser loader cannot fetch file: URLs in Node. Pass the actual local bytes.
+        filesMatching("*.mjs") {
+            filter { line ->
+                line.replace("const awaitSkikoCore = loadSkikoWASM()",
+                        'const awaitSkikoCore = loadSkikoWASM({wasmBinary: await (await import("node:fs/promises")).readFile(new URL("./skiko.wasm", import.meta.url))})')
+            }
+        }
+    }
+    into(layout.buildDirectory.dir("skikoWasmRuntime"))
+}
+// Tests inherit main's resources; kotlinx-benchmark generates a separate executable compilation.
+tasks.withType(ProcessResources).configureEach {
+    if (name in ["wasmJsProcessResources", "wasmJsWasmJsBenchmarkProcessResources"]) {
+        from(unpackSkikoWasmRuntime)
+        from("src/wasmJsRuntime")
+    }
+}
+
+benchmark {
+    configurations {
+        configureEach {
+            def filter = providers.gradleProperty("benchmarkName").orNull
+            if (filter != null) include(filter)
+        }
+    }
+    targets {
+        register("desktop")
+        register("wasmJs")
+    }
+}
