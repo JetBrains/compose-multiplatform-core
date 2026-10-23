@@ -21,7 +21,6 @@
     CMPComposeContainerLifecycleState _lifecycleState;
     id<CMPComposeContainerLifecycleDelegate> _lifecycleDelegate;
     BOOL _isViewInWindowHierarchy;
-    __weak UIWindow *_lastAttachedWindow;
 }
 
 - (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate>)delegate {
@@ -59,12 +58,6 @@
 
 - (void)updateViewAppearanceState {
     BOOL isViewInWindowHierarchy = self.superview != nil && self.window != nil;
-
-    if (isViewInWindowHierarchy && _lastAttachedWindow != self.window) {
-        _isViewInWindowHierarchy = NO;
-        [self transitViewLifecycleToStopped];
-    }
-
     if (_isViewInWindowHierarchy != isViewInWindowHierarchy) {
         _isViewInWindowHierarchy = isViewInWindowHierarchy;
         if (isViewInWindowHierarchy) {
@@ -83,24 +76,10 @@
     switch (_lifecycleState) {
         case CMPComposeContainerLifecycleStateInitialized:
         case CMPComposeContainerLifecycleStateStopped:
-            _lastAttachedWindow = self.window;
             _lifecycleState = CMPComposeContainerLifecycleStateStarted;
             [self viewDidEnterWindowHierarchy];
             break;
         case CMPComposeContainerLifecycleStateStarted:
-            break;
-    }
-}
-
-- (void)transitViewLifecycleToStopped {
-    switch (_lifecycleState) {
-        case CMPComposeContainerLifecycleStateInitialized:
-        case CMPComposeContainerLifecycleStateStopped:
-            break;
-        case CMPComposeContainerLifecycleStateStarted:
-            _lifecycleState = CMPComposeContainerLifecycleStateStopped;
-            _lastAttachedWindow = nil;
-            [self viewDidLeaveWindowHierarchy];
             break;
     }
 }
@@ -118,7 +97,8 @@
             case CMPComposeContainerLifecycleStateStarted:
                 // perform check
                 if (!self->_isViewInWindowHierarchy) {
-                    [self transitViewLifecycleToStopped];
+                    self->_lifecycleState = CMPComposeContainerLifecycleStateStopped;
+                    [self viewDidLeaveWindowHierarchy];
                 }
                 break;
         }
@@ -156,7 +136,6 @@
 }
 
 - (void)dealloc {
-    _lastAttachedWindow = nil;
     if (_lifecycleState == CMPComposeContainerLifecycleStateStarted) {
         [self viewDidLeaveWindowHierarchy];
     }

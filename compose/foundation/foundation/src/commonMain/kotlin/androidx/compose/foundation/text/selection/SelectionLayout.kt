@@ -276,16 +276,20 @@ private class MultiSelectionLayout(
         })"
 
     private fun startOrEndSlotToIndex(slot: Int, isStartSlot: Boolean): Int {
-        val adjustSlot =
+        // Map slots to selectable indices to return the most compact range of selectables.
+        // For slots on a selectable, the rounding/adjustment doesn't change the result because
+        // they're odd.
+        // For slots between selectables return the index of the selectable after the slot for
+        // the start one and the selectable before the slot for the end one.
+        // When both slots are equal and are between selectables, return the index of the selectable
+        // before them.
+        val roundDown =
             when (crossStatus) {
-                // Adjust for max slot and for the slot after the last.
-                // (Only) matters for the slot after the last text (for others the result is the
-                // same)
-                CrossStatus.COLLAPSED -> true
-                CrossStatus.NOT_CROSSED -> !isStartSlot
-                CrossStatus.CROSSED -> isStartSlot
+                CrossStatus.COLLAPSED -> true // Collapsed implies startSlot==endSlot, so round down
+                CrossStatus.NOT_CROSSED -> !isStartSlot // Round down for end slot (it's larger)
+                CrossStatus.CROSSED -> isStartSlot // Round down for start slot (it's larger)
             }
-        val adjustment = if (adjustSlot) 1 else 0
+        val adjustment = if (roundDown) 1 else 0
         return (slot - adjustment) / 2
     }
 

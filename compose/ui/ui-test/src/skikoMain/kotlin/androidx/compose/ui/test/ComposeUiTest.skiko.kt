@@ -23,7 +23,7 @@ import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
@@ -228,6 +228,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     // Lazy on purpose: on JS Skia is only usable after onSkikoReady
     private val surface by lazy { Surface.makeRasterN32Premul(width, height) }
+    private val canvasHolder : SkiaCanvasHolder = SkiaCanvasHolder(surface.canvas)
+    
     private val size = IntSize(width, height)
 
     @InternalComposeUiApi
@@ -332,7 +334,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         scene.measureAndLayout()
         with(surface.canvas) {
             clear(Color.TRANSPARENT)
-            scene.draw(asComposeCanvas())
+            canvasHolder.drawInto(this, scene::draw)
         }
     }
 

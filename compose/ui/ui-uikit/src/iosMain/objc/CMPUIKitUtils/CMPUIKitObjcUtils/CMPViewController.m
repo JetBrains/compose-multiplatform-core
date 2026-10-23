@@ -65,8 +65,6 @@
     CMPComposeContainerLifecycleState _lifecycleState;
     id<CMPComposeContainerLifecycleDelegate> _lifecycleDelegate;
     BOOL _isViewAppeared;
-    __weak UIWindow *_lastAttachedWindow;
-    dispatch_block_t _hierarchyCheckWorkItem;
 }
 
 - (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate>)delegate {
@@ -132,13 +130,7 @@
 }
 
 - (void)onDidMoveToWindow {
-    UIWindow *window = self.view.window;
-
-    if (window != nil) {
-        if (_lastAttachedWindow != window) {
-            [self transitLifecycleToStopped];
-        }
-
+    if (self.view.window != nil) {
         [self transitLifecycleToStarted];
         [self notifyContainerWillAppearIfNeeded];
     }
@@ -171,7 +163,6 @@
         case CMPComposeContainerLifecycleStateInitialized:
         case CMPComposeContainerLifecycleStateStopped:
             _lifecycleState = CMPComposeContainerLifecycleStateStarted;
-            _lastAttachedWindow = self.view.window;
             [self viewControllerDidEnterWindowHierarchy];
             [self scheduleHierarchyContainmentCheck];
             break;
@@ -180,61 +171,28 @@
     }
 }
 
-- (void)transitLifecycleToStopped {
-    switch (_lifecycleState) {
-        case CMPComposeContainerLifecycleStateInitialized:
-        case CMPComposeContainerLifecycleStateStopped:
-            break;
-        case CMPComposeContainerLifecycleStateStarted:
-            _lifecycleState = CMPComposeContainerLifecycleStateStopped;
-            _lastAttachedWindow = nil;
-            [self cancelScheduledHierarchyContainmentCheck];
-            [self viewControllerDidLeaveWindowHierarchy];
-            break;
-    }
-}
-
 - (void)scheduleHierarchyContainmentCheck {
     double delayInSeconds = 0.5;
 
-    [self cancelScheduledHierarchyContainmentCheck];
-
-    __weak typeof(self) weakSelf = self;
-    _hierarchyCheckWorkItem = dispatch_block_create(0, ^{
-        [weakSelf performHierarchyContainmentCheck];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        switch (self->_lifecycleState) {
+            case CMPComposeContainerLifecycleStateInitialized:
+                NSAssert(false, @"Attempt to schedule hierarchy check without starting the container");
+                break;
+            case CMPComposeContainerLifecycleStateStopped:
+                break;
+            case CMPComposeContainerLifecycleStateStarted:
+                // perform check
+                if ([self cmp_isInWindowHierarchy]) {
+                    // everything is fine, schedule next one
+                    [self scheduleHierarchyContainmentCheck];
+                } else {
+                    self->_lifecycleState = CMPComposeContainerLifecycleStateStopped;
+                    [self viewControllerDidLeaveWindowHierarchy];
+                }
+                break;
+        }
     });
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)),
-                   dispatch_get_main_queue(),
-                   _hierarchyCheckWorkItem);
-}
-
-- (void)cancelScheduledHierarchyContainmentCheck {
-    if (_hierarchyCheckWorkItem != nil) {
-        dispatch_block_cancel(_hierarchyCheckWorkItem);
-        _hierarchyCheckWorkItem = nil;
-    }
-}
-
-- (void)performHierarchyContainmentCheck {
-    _hierarchyCheckWorkItem = nil;
-
-    switch (_lifecycleState) {
-        case CMPComposeContainerLifecycleStateInitialized:
-            NSAssert(false, @"Attempt to schedule hierarchy check without starting the container");
-            break;
-        case CMPComposeContainerLifecycleStateStopped:
-            break;
-        case CMPComposeContainerLifecycleStateStarted:
-            // perform check
-            if ([self cmp_isInWindowHierarchy]) {
-                // everything is fine, schedule next one
-                [self scheduleHierarchyContainmentCheck];
-            } else {
-                [self transitLifecycleToStopped];
-            }
-            break;
-    }
 }
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
@@ -261,8 +219,6 @@
 
 
 - (void)dealloc {
-    [self cancelScheduledHierarchyContainmentCheck];
-
     if (_lifecycleState == CMPComposeContainerLifecycleStateStarted) {
         [self viewControllerDidLeaveWindowHierarchy];
     }

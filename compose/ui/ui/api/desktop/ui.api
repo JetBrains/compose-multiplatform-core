@@ -724,9 +724,6 @@ public abstract interface class androidx/compose/ui/draganddrop/DragAndDropTarge
 }
 
 public final class androidx/compose/ui/draganddrop/DragAndDropTransferAction$Companion {
-	public final fun getCopy ()Landroidx/compose/ui/draganddrop/DragAndDropTransferAction;
-	public final fun getLink ()Landroidx/compose/ui/draganddrop/DragAndDropTransferAction;
-	public final fun getMove ()Landroidx/compose/ui/draganddrop/DragAndDropTransferAction;
 }
 
 public final class androidx/compose/ui/draganddrop/DragAndDropTransferData {
