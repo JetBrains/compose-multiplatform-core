@@ -75,7 +75,7 @@ internal abstract class TextInputConnection(
     protected var currentTextFieldValue: TextFieldValue? = null
         private set
 
-    protected val textLayoutResult get() = currentRequest?.textLayoutResult()
+    protected val textLayout get() = currentRequest?.textLayout()
     protected val unclippedTextOffsetInRoot get() = currentRequest?.unclippedTextOffsetInRoot()
     protected val textFieldRectInRoot get() = currentRequest?.textFieldRectInRoot()
 
@@ -317,7 +317,7 @@ internal abstract class TextInputConnection(
 
     override fun updateFloatingCursor(offset: DpOffset) {
         val translation = floatingCursorTranslation ?: return
-        val layout = textLayoutResult ?: return
+        val layout = textLayout ?: return
 
         val fingerPx = offset.toOffset(rootView.density)
         val virtualCursorPx = fingerPx + translation
@@ -350,7 +350,7 @@ internal abstract class TextInputConnection(
 
     override fun beginFloatingCursor(offset: DpOffset) {
         val start = currentTextFieldValue?.selection?.start ?: return
-        val cursorRect = textLayoutResult?.getCursorRect(start) ?: return
+        val cursorRect = textLayout?.getCursorRect(start) ?: return
         floatingCursorTranslation = cursorRect.center - offset.toOffset(rootView.density)
     }
 
@@ -442,18 +442,18 @@ internal abstract class TextInputConnection(
 
     override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? {
         val text = currentTextFieldValue?.text ?: return null
-        val layoutResult = textLayoutResult ?: return null
+        val layout = textLayout ?: return null
 
-        val line = layoutResult.getLineForOffset(position)
-        val lineStartOffset = layoutResult.getLineStart(line)
+        val line = layout.getLineForOffset(position)
+        val lineStartOffset = layout.getLineStart(line)
         val offsetInLine = position - lineStartOffset
         val targetLine = line + verticalOffset
         return when {
             targetLine < 0 -> 0
-            targetLine >= layoutResult.lineCount -> text.length
+            targetLine >= layout.lineCount -> text.length
             else -> {
-                val targetLineEnd = layoutResult.getLineEnd(targetLine)
-                val lineStart = layoutResult.getLineStart(targetLine)
+                val targetLineEnd = layout.getLineEnd(targetLine)
+                val lineStart = layout.getLineStart(targetLine)
                 positionFromPosition(
                     lineStart, min(offsetInLine, targetLineEnd - lineStart)
                 )
