@@ -19,21 +19,47 @@ package androidx.collection
 /** Records one lifetime peak per instance without retaining the maps or their contents. */
 internal object IntObjectMapStats {
     private val peaks = mutableListOf<Int>()
+    private val creationStacks = mutableListOf<String?>()
+    private val peakStacks = mutableListOf<String?>()
+
+    /** Optional allocation/write attribution. Stack strings do not retain the map or its values. */
+    var captureCallStacks: Boolean = false
 
     /** A checkpoint for measuring only instances constructed by a subsequent workload. */
     val instanceCount: Int
         get() = peaks.size
 
-    fun register(): Int = peaks.size.also { peaks.add(0) }
+    fun register(): Int = peaks.size.also {
+        peaks.add(0)
+        creationStacks.add(if (captureCallStacks) Throwable().stackTraceToString() else null)
+        peakStacks.add(null)
+    }
 
     fun record(id: Int, size: Int) {
-        if (size > peaks[id]) peaks[id] = size
+        if (size > peaks[id]) {
+            peaks[id] = size
+            if (captureCallStacks) peakStacks[id] = Throwable().stackTraceToString()
+        }
+    }
+
+    fun allocations(firstInstance: Int = 0): List<Allocation> {
+        require(firstInstance in 0..peaks.size)
+        return (firstInstance until peaks.size).map { id ->
+            Allocation(id, peaks[id], creationStacks[id], peakStacks[id])
+        }
     }
 
     fun snapshot(firstInstance: Int = 0): Snapshot {
         require(firstInstance in 0..peaks.size)
         return Snapshot(peaks.subList(firstInstance, peaks.size).sorted())
     }
+
+    internal data class Allocation(
+        val id: Int,
+        val peakSize: Int,
+        val creationStack: String?,
+        val peakStack: String?,
+    )
 
     internal data class Snapshot(val peakSizes: List<Int>) {
         val count: Int

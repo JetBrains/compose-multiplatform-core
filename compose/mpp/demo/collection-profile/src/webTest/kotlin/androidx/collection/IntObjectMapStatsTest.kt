@@ -18,7 +18,9 @@ package androidx.collection
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class IntObjectMapStatsTest {
     @Test
@@ -88,5 +90,33 @@ class IntObjectMapStatsTest {
         assertNull(stats.max)
         assertNull(stats.median)
         assertNull(stats.p75)
+    }
+
+    @Test
+    fun callStacksAreOptionalAndAttributeCreationAndGrowth() {
+        emptyIntObjectMap<Unit>()
+        val firstInstance = IntObjectMapStats.instanceCount
+        MutableIntObjectMap<Unit>()[0] = Unit
+        IntObjectMapStats.captureCallStacks = true
+        try {
+            MutableIntObjectMap<Unit>()
+            val populated = MutableIntObjectMap<Unit>()
+            populated[1] = Unit
+            val firstWrite = IntObjectMapStats.allocations(firstInstance).last().peakStack
+            assertNotNull(firstWrite)
+            populated[1] = Unit
+            populated.clear()
+            assertEquals(firstWrite, IntObjectMapStats.allocations(firstInstance).last().peakStack)
+
+            val allocations = IntObjectMapStats.allocations(firstInstance)
+            assertEquals(listOf(1, 0, 1), allocations.map { it.peakSize })
+            assertNull(allocations[0].creationStack)
+            assertNull(allocations[0].peakStack)
+            assertTrue(assertNotNull(allocations[1].creationStack).isNotBlank())
+            assertNull(allocations[1].peakStack)
+            assertTrue(assertNotNull(allocations[2].creationStack).isNotBlank())
+        } finally {
+            IntObjectMapStats.captureCallStacks = false
+        }
     }
 }

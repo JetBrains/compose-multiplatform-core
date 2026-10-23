@@ -36,36 +36,59 @@ class IntObjectMapProfileTest {
     @Test
     fun reportDemoMapPeakSizes(): TestResult {
         val firstInstance = IntObjectMapStats.instanceCount
+        IntObjectMapStats.captureCallStacks = true
         return runComposeUiTest {
-            lateinit var navController: NavHostController
-            val app = App()
-            setContent {
-                navController = rememberNavController()
-                app.Content(navController)
+            try {
+                lateinit var navController: NavHostController
+                val app = App()
+                setContent {
+                    navController = rememberNavController()
+                    app.Content(navController)
+                }
+                awaitIdle()
+
+                repeat(3) { iteration ->
+                    runOnIdle { navController.navigate("Example1") }
+                    mainClock.advanceTimeBy(600)
+                    awaitIdle()
+                    runOnIdle { assertEquals("Example1", navController.currentDestination?.route) }
+
+                    onNodeWithText("Press me!").performClick()
+                    onNodeWithText("I am TextField").performTextReplacement("map-profile-$iteration")
+                    awaitIdle()
+
+                    runOnIdle { assertTrue(navController.popBackStack()) }
+                    mainClock.advanceTimeBy(600)
+                    awaitIdle()
+                    runOnIdle {
+                        assertEquals(MainScreen.title, navController.currentDestination?.route)
+                    }
+                }
+
+                val stats = IntObjectMapStats.snapshot(firstInstance)
+                assertTrue(
+                    stats.count > 0,
+                    "No maps recorded; check the collection dependency substitution",
+                )
+                assertTrue((stats.max ?: 0) > 0, "No map insertions were recorded")
+                println("INT_OBJECT_MAP_STATS demo-main-example1-three-round-trips: $stats")
+                println("INT_OBJECT_MAP_PEAK_HISTOGRAM ${stats.peakSizes.groupingBy { it }.eachCount()}")
+                val origins = IntObjectMapStats.allocations(firstInstance).groupBy {
+                    it.creationStack to it.peakStack
+                }
+                for ((index, origin) in origins.values.withIndex()) {
+                    val allocation = origin.first()
+                    val histogram = origin.groupingBy { it.peakSize }.eachCount()
+                    println(
+                        "INT_OBJECT_MAP_TRACE_START origin=$index count=${origin.size} peaks=$histogram"
+                    )
+                    println("CREATION\n${allocation.creationStack}")
+                    println("PEAK_WRITE\n${allocation.peakStack}")
+                    println("INT_OBJECT_MAP_TRACE_END")
+                }
+            } finally {
+                IntObjectMapStats.captureCallStacks = false
             }
-            awaitIdle()
-
-            repeat(3) { iteration ->
-                runOnIdle { navController.navigate("Example1") }
-                mainClock.advanceTimeBy(600)
-                awaitIdle()
-                runOnIdle { assertEquals("Example1", navController.currentDestination?.route) }
-
-                onNodeWithText("Press me!").performClick()
-                onNodeWithText("I am TextField").performTextReplacement("map-profile-$iteration")
-                awaitIdle()
-
-                runOnIdle { assertTrue(navController.popBackStack()) }
-                mainClock.advanceTimeBy(600)
-                awaitIdle()
-                runOnIdle { assertEquals(MainScreen.title, navController.currentDestination?.route) }
-            }
-
-            val stats = IntObjectMapStats.snapshot(firstInstance)
-            assertTrue(stats.count > 0, "No maps recorded; check the collection dependency substitution")
-            assertTrue((stats.max ?: 0) > 0, "No map insertions were recorded")
-            println("INT_OBJECT_MAP_STATS demo-main-example1-three-round-trips: $stats")
-            println("INT_OBJECT_MAP_PEAK_HISTOGRAM ${stats.peakSizes.groupingBy { it }.eachCount()}")
         }
     }
 }
