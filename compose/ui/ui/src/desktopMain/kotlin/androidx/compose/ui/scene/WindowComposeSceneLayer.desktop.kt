@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.ui.awt.JLayeredPaneWithTransparencyHack
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.awt.hasMacOsShadow
 import androidx.compose.ui.awt.toAwtRectangle
@@ -40,6 +39,7 @@ import java.awt.Point
 import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import javax.swing.JLayeredPane
 import javax.swing.JWindow
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.DelicateSkikoApi
@@ -75,7 +75,7 @@ internal class WindowComposeSceneLayer(
             it.hasMacOsShadow = false
         }
     }
-    private val container = object : JLayeredPaneWithTransparencyHack() {
+    private val container = object : JLayeredPane() {
         override fun addNotify() {
             super.addNotify()
             mediator?.onComponentAttached()
