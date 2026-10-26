@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalGraphicsResourceCache
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -292,5 +293,11 @@ class ApplicationTest {
         )
     }
 
-
+    @Test
+    fun `accessing LocalGraphicsResourceCache does not crash`() = runApplicationTest {
+        launchTestApplication {
+            LocalGraphicsResourceCache.current
+        }
+        awaitIdle()
+    }
 }
