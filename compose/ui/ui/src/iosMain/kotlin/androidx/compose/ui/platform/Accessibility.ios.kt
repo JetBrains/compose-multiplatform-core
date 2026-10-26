@@ -1166,6 +1166,10 @@ internal class AccessibilityMediator(
         return rectInWindow.toDpRect().toRect(view.density)
     }
 
+    /**
+     * Provides the frame clock for the [scrollJob] animation. Runs only while the scroll is in
+     * progress: an idle display link would wake up the main thread on every frame.
+     */
     private var displayLinkListener: DisplayLinkListener? = null
 
     private var scrollJob: Job? = null
@@ -1181,7 +1185,7 @@ internal class AccessibilityMediator(
     }
 
     private fun scrollToAccessibilityElement(element: NSObject) {
-        val listener = displayLinkListener ?: return
+        if (!isAccessibilityActive) return
 
         val scrollableContainer = findFirstAccessibilityElementInHierarchy(element) {
             it.node.semanticsNode.canScroll
@@ -1196,13 +1200,37 @@ internal class AccessibilityMediator(
                     element.accessibilityFrame.toDpRect()
                         .toRect(scrollableContainer.node.semanticsNode.layoutNode.density)
             }
-            scrollJob = CoroutineScope(coroutineContext + listener.frameClock).launch {
+            val listener = startDisplayLinkIfNeeded()
+            val job = CoroutineScope(coroutineContext + listener.frameClock).launch {
                 scrollableContainer.node.semanticsNode.scrollToCenterRectIfNeeded(
                     targetRect = rect,
                     safeAreaRectInWindow = safeAreaRectInWindow
                 )
             }
+            scrollJob = job
+            job.invokeOnCompletion {
+                // A cancelled job may complete after the next scroll has started.
+                if (scrollJob === job) {
+                    scrollJob = null
+                    invalidateDisplayLink()
+                }
+            }
         }
+    }
+
+    private fun startDisplayLinkIfNeeded(): DisplayLinkListener {
+        return displayLinkListener ?: DisplayLinkListener().also {
+            it.start()
+            displayLinkListener = it
+            onDisplayLinkRunningChangedForTests?.invoke(true)
+        }
+    }
+
+    private fun invalidateDisplayLink() {
+        val listener = displayLinkListener ?: return
+        listener.invalidate()
+        displayLinkListener = null
+        onDisplayLinkRunningChangedForTests?.invoke(false)
     }
 
     fun getAccessibilityElement(key: AccessibilityElementKey): CMPAccessibilityElement? {
@@ -1411,8 +1439,9 @@ internal class AccessibilityMediator(
     }
 
     private fun cleanUp() {
-        displayLinkListener?.invalidate()
-        displayLinkListener = null
+        scrollJob?.cancel()
+        scrollJob = null
+        invalidateDisplayLink()
 
         disableAccessibilityJob = null
         isAccessibilityActive = false
@@ -1696,11 +1725,6 @@ internal class AccessibilityMediator(
         val (element, focusedElementKey, liveRegionAnnouncement) = traverseSemanticsTree(rootSemanticsNode)
         root.element = element
 
-        if (displayLinkListener == null) {
-            displayLinkListener = DisplayLinkListener()
-            displayLinkListener?.start()
-        }
-
         accessibilityDebugLogger?.let {
             debugTraverse(it, view)
         }
@@ -1885,6 +1909,11 @@ internal class AccessibilityMediator(
             }
             keyboardFocusedElementKey = null
         }
+    }
+
+    companion object {
+        // For testing purposes only
+        var onDisplayLinkRunningChangedForTests: ((Boolean) -> Unit)? = null
     }
 }
 
