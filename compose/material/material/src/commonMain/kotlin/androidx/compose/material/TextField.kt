@@ -37,6 +37,7 @@ import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
+import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
@@ -225,35 +226,38 @@ public fun TextField(
         interactionSource = interactionSource,
         scrollState = scrollState,
         lineLimits = lineLimits,
-        decorator = { innerTextField ->
-            val textPostTransformation =
-                if (outputTransformation == null) {
-                    state.text.toString()
-                } else {
-                    // TODO: use constructor to create TextFieldBuffer from TextFieldState when
-                    // available
-                    lateinit var buffer: TextFieldBuffer
-                    state.edit { buffer = this }
-                    // after edit completes, mutations on buffer are ineffective
+        decorator = object: TextFieldDecorator {
+            @Composable
+            override fun Decoration(innerTextField: @Composable () -> Unit) {
+                val textPostTransformation =
+                    if (outputTransformation == null) {
+                        state.text.toString()
+                    } else {
+                        // TODO: use constructor to create TextFieldBuffer from TextFieldState when
+                        // available
+                        lateinit var buffer: TextFieldBuffer
+                        state.edit { buffer = this }
+                        // after edit completes, mutations on buffer are ineffective
                     with(outputTransformation) { buffer.transformOutput() }
                     buffer.asCharSequence().toString()
                 }
 
-            TextFieldDefaults.TextFieldDecorationBox(
-                value = textPostTransformation,
-                visualTransformation = VisualTransformation.None,
-                innerTextField = innerTextField,
-                placeholder = placeholder,
-                label = label,
-                leadingIcon = leadingIcon,
-                trailingIcon = trailingIcon,
-                singleLine = lineLimits == SingleLine,
-                enabled = enabled,
-                isError = isError,
-                interactionSource = interactionSource,
-                shape = shape,
-                colors = colors,
-            )
+                TextFieldDefaults.TextFieldDecorationBox(
+                    value = textPostTransformation,
+                    visualTransformation = VisualTransformation.None,
+                    innerTextField = innerTextField,
+                    placeholder = placeholder,
+                    label = label,
+                    leadingIcon = leadingIcon,
+                    trailingIcon = trailingIcon,
+                    singleLine = lineLimits == SingleLine,
+                    enabled = enabled,
+                    isError = isError,
+                    interactionSource = interactionSource,
+                    shape = shape,
+                    colors = colors,
+                )
+            }
         },
     )
 }
