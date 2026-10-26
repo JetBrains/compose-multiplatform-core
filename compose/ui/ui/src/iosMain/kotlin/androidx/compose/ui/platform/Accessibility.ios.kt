@@ -60,7 +60,6 @@ import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
-import androidx.compose.ui.window.DisplayLinkListener
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 import kotlin.math.min
@@ -1093,6 +1092,9 @@ private sealed interface AccessibilityElementFocusMode {
 
 /**
  * A class responsible for mediating between the tree of specific SemanticsOwner and the iOS accessibility tree.
+ *
+ * The [coroutineContext] must contain a [androidx.compose.runtime.MonotonicFrameClock], which
+ * drives the scroll to a focused element.
  */
 internal class AccessibilityMediator(
     val view: UIView,
@@ -1166,12 +1168,6 @@ internal class AccessibilityMediator(
         return rectInWindow.toDpRect().toRect(view.density)
     }
 
-    /**
-     * Provides the frame clock for the [scrollJob] animation. Runs only while the scroll is in
-     * progress: an idle display link would wake up the main thread on every frame.
-     */
-    private var displayLinkListener: DisplayLinkListener? = null
-
     private var scrollJob: Job? = null
 
     private val focusObserver = AccessibilityFocusedElementObserver { focusedElement ->
@@ -1200,37 +1196,13 @@ internal class AccessibilityMediator(
                     element.accessibilityFrame.toDpRect()
                         .toRect(scrollableContainer.node.semanticsNode.layoutNode.density)
             }
-            val listener = startDisplayLinkIfNeeded()
-            val job = CoroutineScope(coroutineContext + listener.frameClock).launch {
+            scrollJob = CoroutineScope(coroutineContext).launch {
                 scrollableContainer.node.semanticsNode.scrollToCenterRectIfNeeded(
                     targetRect = rect,
                     safeAreaRectInWindow = safeAreaRectInWindow
                 )
             }
-            scrollJob = job
-            job.invokeOnCompletion {
-                // A cancelled job may complete after the next scroll has started.
-                if (scrollJob === job) {
-                    scrollJob = null
-                    invalidateDisplayLink()
-                }
-            }
         }
-    }
-
-    private fun startDisplayLinkIfNeeded(): DisplayLinkListener {
-        return displayLinkListener ?: DisplayLinkListener().also {
-            it.start()
-            displayLinkListener = it
-            onDisplayLinkRunningChangedForTests?.invoke(true)
-        }
-    }
-
-    private fun invalidateDisplayLink() {
-        val listener = displayLinkListener ?: return
-        listener.invalidate()
-        displayLinkListener = null
-        onDisplayLinkRunningChangedForTests?.invoke(false)
     }
 
     fun getAccessibilityElement(key: AccessibilityElementKey): CMPAccessibilityElement? {
@@ -1439,10 +1411,6 @@ internal class AccessibilityMediator(
     }
 
     private fun cleanUp() {
-        scrollJob?.cancel()
-        scrollJob = null
-        invalidateDisplayLink()
-
         disableAccessibilityJob = null
         isAccessibilityActive = false
 
@@ -1909,11 +1877,6 @@ internal class AccessibilityMediator(
             }
             keyboardFocusedElementKey = null
         }
-    }
-
-    companion object {
-        // For testing purposes only
-        var onDisplayLinkRunningChangedForTests: ((Boolean) -> Unit)? = null
     }
 }
 

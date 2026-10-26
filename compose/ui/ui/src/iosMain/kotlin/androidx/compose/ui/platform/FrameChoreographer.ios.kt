@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.TestOnly
 import androidx.compose.ui.node.WeakReference
 import androidx.compose.ui.uikit.toNanoSeconds
@@ -123,6 +124,14 @@ internal class FrameChoreographer private constructor(
         coroutineContext = coroutineContext,
         invalidate = ::requestFrame
     )
+
+    /**
+     * The frame clock of [frameRecomposer], for animations that run outside of composition.
+     * Awaiting a frame requests it, so the display link only runs while someone awaits one.
+     */
+    val frameClock: MonotonicFrameClock =
+        frameRecomposer.compositionContext.effectCoroutineContext[MonotonicFrameClock]
+            ?: error("No MonotonicFrameClock found in FrameRecomposer.compositionContext")
 
     private val displayLink = CADisplayLink.displayLinkWithTarget(
         target = DisplayLinkProxy(::onDisplayLinkTick),
