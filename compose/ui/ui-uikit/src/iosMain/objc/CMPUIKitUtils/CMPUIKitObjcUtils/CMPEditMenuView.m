@@ -206,6 +206,18 @@ id _editInteraction;
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
+- (BOOL)isTextInputEditable {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (BOOL)isEditable {
+    return [self isTextInputEditable];
+}
+
+- (UIWritingToolsResultOptions)allowedWritingToolsResultOptions API_AVAILABLE(ios(18.0)) {
+    return UIWritingToolsResultPlainText;
+}
+
 - (UITextField *)cmp_proxyTextField {
     if (![self isSecureTextEntry]) {
         return nil;
@@ -473,6 +485,13 @@ id _editInteraction;
     if (@selector(customAction7:) == action) return self.customActions.count > 7;
     if (@selector(customAction8:) == action) return self.customActions.count > 8;
     if (@selector(customAction9:) == action) return self.customActions.count > 9;
+
+    if (@available(iOS 18.2, *)) {
+        // UIKit implements Writing Tools for any responder conforming to UITextInput.
+        if (@selector(showWritingTools:) == action) {
+            return [super canPerformAction:action withSender:sender];
+        }
+    }
 
     return NO;
 }

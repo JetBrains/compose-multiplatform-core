@@ -138,6 +138,18 @@
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
+- (BOOL)isTextInputEditable {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (BOOL)isEditable {
+    return [self isTextInputEditable];
+}
+
+- (UIWritingToolsResultOptions)allowedWritingToolsResultOptions API_AVAILABLE(ios(18.0)) {
+    return UIWritingToolsResultPlainText;
+}
+
 - (UITextField *)cmp_proxyTextField {
     if (![self isSecureTextEntry]) {
         return nil;
