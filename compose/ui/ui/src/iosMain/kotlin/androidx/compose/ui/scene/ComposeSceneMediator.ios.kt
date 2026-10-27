@@ -417,7 +417,7 @@ internal class ComposeSceneMediator(
     private val semanticsOwnerListener by lazy {
         SemanticsOwnerListenerImpl(
             view = _overlayView,
-            coroutineContext = coroutineContext + frameChoreographer.frameClock,
+            coroutineContext = coroutineContext,
             performEscape = {
                 val down = onKeyboardEvent(KeyEvent(Key.Escape, KeyEventType.KeyDown))
                 val up = onKeyboardEvent(KeyEvent(Key.Escape, KeyEventType.KeyUp))

@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.collection.MutableIntSet
 import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.HitTestResult
@@ -1092,9 +1093,6 @@ private sealed interface AccessibilityElementFocusMode {
 
 /**
  * A class responsible for mediating between the tree of specific SemanticsOwner and the iOS accessibility tree.
- *
- * The [coroutineContext] must contain a [androidx.compose.runtime.MonotonicFrameClock], which
- * drives the scroll to a focused element.
  */
 internal class AccessibilityMediator(
     val view: UIView,
@@ -1196,7 +1194,9 @@ internal class AccessibilityMediator(
                     element.accessibilityFrame.toDpRect()
                         .toRect(scrollableContainer.node.semanticsNode.layoutNode.density)
             }
-            scrollJob = CoroutineScope(coroutineContext).launch {
+            val frameClock = scrollableContainer.node.semanticsNode.layoutNode.owner
+                ?.coroutineContext?.get(MonotonicFrameClock) ?: return
+            scrollJob = CoroutineScope(coroutineContext + frameClock).launch {
                 scrollableContainer.node.semanticsNode.scrollToCenterRectIfNeeded(
                     targetRect = rect,
                     safeAreaRectInWindow = safeAreaRectInWindow
