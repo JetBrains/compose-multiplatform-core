@@ -27,7 +27,12 @@ import kotlin.math.min
 import kotlinx.cinterop.useContents
 
 @Composable
-internal actual fun rememberPreferredDialogLayoutWidth(): Density.(Constraints) -> Int {
+internal actual fun rememberPlatformConstraintsModifier(
+    usePlatformDefaultWidth: Boolean
+): Density.(Constraints) -> Constraints {
+    if (!usePlatformDefaultWidth) {
+        return { it }
+    }
     val view = LocalUIView.current
     return remember(view) {
         { constraints ->
@@ -38,11 +43,11 @@ internal actual fun rememberPreferredDialogLayoutWidth(): Density.(Constraints) 
             // Note: reading bounds isn't observable, but the window size changes always
             // change the layer constraints as well, which triggers a new measure pass.
             val smallestConstraintsWidth = min(constraints.maxWidth, constraints.maxHeight).toDp()
-            val smallestWindowWidth = view.window?.bounds?.useContents {
+            val smallestWidth = view.window?.bounds?.useContents {
                 min(size.width, size.height).dp
             }?.let { min(it, smallestConstraintsWidth) } ?: smallestConstraintsWidth
 
-            preferredDialogWidth(smallestWindowWidth)
+            preferredDialogWidthConstraints(constraints, smallestWidth)
         }
     }
 }

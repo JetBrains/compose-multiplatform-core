@@ -34,21 +34,20 @@ import androidx.compose.ui.util.fastMaxOfOrDefault
 import kotlin.math.min
 
 /**
- * Returns a function that calculates the preferred width of the dialog (or popup) content
- * in pixels for the given layer [Constraints]. It's applied only when `usePlatformDefaultWidth`
- * is enabled.
+ * Returns a function that modifies the layer [Constraints] according to the platform defaults.
  */
 @Composable
-internal expect fun rememberPreferredDialogLayoutWidth(): Density.(Constraints) -> Int
+internal expect fun rememberPlatformConstraintsModifier(
+    usePlatformDefaultWidth: Boolean
+): Density.(Constraints) -> Constraints
 
 internal fun ComposeSceneLayerMeasurePolicy(
     platformInsets: PlatformInsets,
-    usePlatformDefaultWidth: Boolean,
-    preferredDialogWidth: Density.(Constraints) -> Int,
+    constraintsModifier: Density.(Constraints) -> Constraints,
     calculatePosition: MeasureScope.(contentSize: IntSize) -> IntOffset,
 ) = MeasurePolicy { measurables, constraints ->
     val platformConstraints = applyPlatformConstraints(
-        constraints, platformInsets, usePlatformDefaultWidth, preferredDialogWidth
+        constraints, platformInsets, constraintsModifier
     )
     val placeables = measurables.fastMap { it.measure(platformConstraints) }
     val contentSize = IntSize(
@@ -71,21 +70,12 @@ internal fun ComposeSceneLayerMeasurePolicy(
 private fun Density.applyPlatformConstraints(
     constraints: Constraints,
     platformInsets: PlatformInsets,
-    usePlatformDefaultWidth: Boolean,
-    preferredDialogWidth: Density.(Constraints) -> Int
+    constraintsModifier: Density.(Constraints) -> Constraints
 ): Constraints {
     val horizontal = platformInsets.left + platformInsets.right
     val vertical = platformInsets.top + platformInsets.bottom
     val platformConstraints = constraints.offset(-horizontal, -vertical)
-    return if (usePlatformDefaultWidth) {
-        platformConstraints.constrain(
-            otherConstraints = constraints.copy(
-                maxWidth = min(preferredDialogWidth(constraints), constraints.maxWidth)
-            )
-        )
-    } else {
-        platformConstraints
-    }
+    return platformConstraints.constrain(constraintsModifier(constraints))
 }
 
 @Suppress("UnusedReceiverParameter")
@@ -109,13 +99,31 @@ internal fun MeasureScope.positionWithInsets(
 }
 
 /**
- * The preferred dialog width based on the smallest dimension of the layer [constraints].
+ * The default implementation of [rememberPlatformConstraintsModifier], which provides
+ * the content width based on the smallest dimension of the layer constraints.
  */
-internal fun Density.preferredDialogWidth(constraints: Constraints): Int =
-    preferredDialogWidth(smallestWidth = min(constraints.maxWidth, constraints.maxHeight).toDp())
+internal fun defaultPlatformConstraintsModifier(
+    usePlatformDefaultWidth: Boolean
+): Density.(Constraints) -> Constraints = if (usePlatformDefaultWidth) {
+    { constraints ->
+        preferredDialogWidthConstraints(
+            constraints = constraints,
+            smallestWidth = min(constraints.maxWidth, constraints.maxHeight).toDp()
+        )
+    }
+} else {
+    { it }
+}
+
+internal fun Density.preferredDialogWidthConstraints(
+    constraints: Constraints,
+    smallestWidth: Dp
+): Constraints = constraints.copy(
+    maxWidth = min(preferredDialogWidth(smallestWidth), constraints.maxWidth)
+)
 
 // Ported from Android. See https://cs.android.com/search?q=abc_config_prefDialogWidth
-internal fun Density.preferredDialogWidth(smallestWidth: Dp): Int {
+private fun Density.preferredDialogWidth(smallestWidth: Dp): Int {
     return when {
         smallestWidth >= 600.dp -> 580.dp
         smallestWidth >= 480.dp -> 440.dp

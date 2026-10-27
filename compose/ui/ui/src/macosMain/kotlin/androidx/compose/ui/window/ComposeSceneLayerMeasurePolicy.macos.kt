@@ -17,10 +17,11 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 
 @Composable
-internal actual fun rememberPreferredDialogLayoutWidth(): Density.(Constraints) -> Int =
-    remember { Density::preferredDialogWidth }
+internal actual fun rememberPlatformConstraintsModifier(
+    usePlatformDefaultWidth: Boolean
+): Density.(Constraints) -> Constraints =
+    defaultPlatformConstraintsModifier(usePlatformDefaultWidth)
