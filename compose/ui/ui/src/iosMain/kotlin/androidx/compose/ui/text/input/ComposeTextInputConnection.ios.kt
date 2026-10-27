@@ -115,16 +115,16 @@ internal open class ComposeTextInputConnection(
         val viewOriginInRoot = textFieldRectInRoot?.topLeft ?: return null
         val textOffsetInRoot = unclippedTextOffsetInRoot ?: return null
         val text = currentTextFieldValue?.text ?: return null
-        val currentTextLayoutResult = textLayoutResult ?: return null
+        val currentTextLayout = textLayout ?: return null
 
         if (position < 0 || position > text.length) {
             return null
         }
-        if (position > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+        if (position > currentTextLayout.textLength) {
             return null
         }
         val offset = textOffsetInRoot - viewOriginInRoot
-        val rect = currentTextLayoutResult.getCursorRect(position).translate(offset)
+        val rect = currentTextLayout.getCursorRect(position).translate(offset)
         return rect.toDpRect(rootView.density).let {
             val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
