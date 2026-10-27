@@ -30,6 +30,7 @@ internal fun AssertThat<*>.isEmpty() {
     assertTrue((t as Collection<*>).isEmpty())
 }
 
+@Suppress("unused")
 internal fun AssertThat<*>.containsExactly(vararg varargs: Any?) {
     assertContentEquals((t as Collection<*>).toSet(), varargs.toSet().asIterable())
 }

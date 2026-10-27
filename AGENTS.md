@@ -51,6 +51,7 @@ Note: Since this a fork, new instruction files might get merged from the upstrea
 ### Introducing new changes
 - In this fork we avoid introducing code changes in the common code (see above). Before changing any code in them, notify and request an approval when such a change is necessary.
 - API: Unless a feature is intended for GA, avoid introduction of public API changes.
+- Refactoring, syntactic sugar and code re-formatting: avoid "sugaring" the existing code unless explicitly asked; avoid renaming or moving code unless it's necessary for the task implementation or unless it's explicitly requested; same for code formatting.
 
 ### Changes Verification
 - Running the tests every time might take too long. Compile the tests before running. Choose the relevant task: `compileTestKotlinIosArm64`, `compileTestDevelopmentExecutableKotlinJs`, `compileTestDevelopmentExecutableKotlinWasmJs`, `desktopTestClasses`
