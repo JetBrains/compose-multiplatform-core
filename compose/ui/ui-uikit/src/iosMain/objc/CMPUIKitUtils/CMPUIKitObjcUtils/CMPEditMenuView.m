@@ -91,6 +91,9 @@ typedef enum : NSUInteger {
 @property (assign, nonatomic) CGRect targetRect;
 @property (assign, nonatomic) CMPEditMenuState editMenuState;
 
+/// The edit menu must not be presented over the Writing Tools UI.
+@property (assign, nonatomic) BOOL isWritingToolsShown;
+
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
 - (void)dismissEditMenu;
@@ -135,6 +138,11 @@ id _editInteraction;
     self.selectBlock = selectBlock;
     self.selectAllBlock = selectAllBlock;
     self.customActions = customActions;
+
+    if (self.isWritingToolsShown) {
+        [self dismissEditMenu];
+        return;
+    }
 
     if (@available(iOS 16, *)) {
         [[CMPEditMenuViewRegister shared] hideAllMenusSkipping:self];
@@ -212,6 +220,20 @@ id _editInteraction;
 
 - (BOOL)isEditable {
     return [self isTextInputEditable];
+}
+
+- (void)willPresentWritingTools API_AVAILABLE(ios(18.0)) {
+    self.isWritingToolsShown = YES;
+    [self dismissEditMenu];
+}
+
+- (void)didDismissWritingTools API_AVAILABLE(ios(18.0)) {
+    self.isWritingToolsShown = NO;
+}
+
+- (BOOL)resignFirstResponder {
+    self.isWritingToolsShown = NO;
+    return [super resignFirstResponder];
 }
 
 - (UIWritingToolsResultOptions)allowedWritingToolsResultOptions API_AVAILABLE(ios(18.0)) {
