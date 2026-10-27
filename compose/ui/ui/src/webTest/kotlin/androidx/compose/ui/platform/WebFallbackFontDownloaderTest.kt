@@ -71,7 +71,7 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
             onFontsLoaded = {}
         )
         downloader.submit(setOf(0x4E2D))
-        advanceTimeBy(200)
+        advanceTimeBy(200.milliseconds)
         assertEquals(1, fake.calls.size)
         assertTrue(0x4E2D in fake.calls[0])
     }
@@ -87,7 +87,7 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
         downloader.submit(setOf(1))
         downloader.submit(setOf(2))
         downloader.submit(setOf(3))
-        advanceTimeBy(200)
+        advanceTimeBy(200.milliseconds)
         assertEquals(1, fake.calls.size)
         assertEquals(setOf(1, 2, 3), fake.calls[0])
     }
@@ -101,11 +101,11 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
             onFontsLoaded = {}
         )
         downloader.submit(setOf(1))
-        advanceTimeBy(200)
+        advanceTimeBy(200.milliseconds)
         assertEquals(1, fake.calls.size)
 
         downloader.submit(setOf(2))
-        advanceTimeBy(200)
+        advanceTimeBy(200.milliseconds)
         assertEquals(2, fake.calls.size)
         assertEquals(setOf(2), fake.calls[1])
     }
@@ -122,7 +122,7 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
         for (i in 1..15) {
             downloader.submit(setOf(i))
         }
-        advanceTimeBy(400)
+        advanceTimeBy(400.milliseconds)
         // Only one download call should happen; codepoints beyond the batch are drained
         assertEquals(1, fake.calls.size)
     }
@@ -146,7 +146,7 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
         )
 
         downloader.submit(setOf(0x4E2D, 0x6C34))
-        advanceTimeBy(1000)
+        advanceTimeBy(1000.milliseconds)
 
         assertEquals(2, calls.size, "Failed batch must be retried instead of being dropped")
         assertEquals(
@@ -179,15 +179,15 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
         downloader.submit(setOf(1))
 
         // First failure backs off by 0s, so the first retry happens (and fails) almost immediately.
-        advanceTimeBy(500)
+        advanceTimeBy(500.milliseconds)
         assertEquals(2, callCount, "First failure must retry immediately (0s backoff)")
 
         // Second failure backs off by 5s — no further attempt before that elapses.
-        advanceTimeBy(4000)
+        advanceTimeBy(4000.milliseconds)
         assertEquals(2, callCount, "Third attempt must wait for the 5s backoff")
 
         // Cross the 5s boundary — the third attempt fires.
-        advanceTimeBy(2000)
+        advanceTimeBy(2000.milliseconds)
         assertEquals(3, callCount, "Third attempt must run once the 5s backoff elapsed")
     }
 
@@ -209,13 +209,13 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
         )
 
         downloader.submit(setOf(1))
-        advanceTimeBy(1000)
+        advanceTimeBy(1000.milliseconds)
         assertEquals(2, callCount, "First batch fails then succeeds on the immediate retry")
 
         // The previous success must reset the backoff to 0, so this failure also retries immediately.
         // If the backoff were not reset, the retry would be delayed by 5s and callCount would stay 3.
         downloader.submit(setOf(2))
-        advanceTimeBy(1000)
+        advanceTimeBy(1000.milliseconds)
         assertEquals(4, callCount, "After a success, the next failure must retry immediately again")
     }
 
@@ -235,10 +235,10 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
         )
 
         downloader.submit(setOf(1))
-        advanceTimeBy(300)
+        advanceTimeBy(300.milliseconds)
 
         downloader.submit(setOf(2))
-        advanceTimeBy(300)
+        advanceTimeBy(300.milliseconds)
 
         assertTrue(
             calls.any { it == setOf(2) },
@@ -260,7 +260,7 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
             onFontsLoaded = { loaded += it }
         )
         downloader.submit(setOf(0x4E2D))
-        advanceTimeBy(200)
+        advanceTimeBy(200.milliseconds)
         assertEquals(1, loaded.size)
         assertEquals(listOf(fontFamily), loaded[0])
     }

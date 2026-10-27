@@ -16,12 +16,12 @@
 
 package androidx.compose.ui.test
 
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.TextField
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.test.Test
 
 /**
@@ -32,10 +32,8 @@ class TextActionsTest {
 
     @Composable
     fun TestTextField(text: String) {
-        var value by remember { mutableStateOf(TextFieldValue(text)) }
         TextField(
-            value = value,
-            onValueChange = { value = it },
+            state = rememberTextFieldState(text),
             modifier = Modifier.testTag("tag")
         )
     }
@@ -72,13 +70,13 @@ class TextActionsTest {
     @Test
     fun testPerformTextInput() = runComposeUiTest {
         setContent {
-            TestTextField("compose")
+            TestTextField("hello")
         }
 
         onNodeWithTag("tag").apply {
-            assertTextEquals("compose")
-            performTextInput("hello ")
-            assertTextEquals("hello compose")  // The caret is at 0 initially
+            assertTextEquals("hello")
+            performTextInput(" compose")
+            assertTextEquals("hello compose")
         }
     }
 

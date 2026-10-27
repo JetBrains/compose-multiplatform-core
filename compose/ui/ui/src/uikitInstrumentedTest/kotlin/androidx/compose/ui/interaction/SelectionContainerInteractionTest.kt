@@ -413,6 +413,7 @@ class SelectionContainerInteractionTest {
     private fun SelectionState.selectedText(): String =
         selectedTexts.joinToString(separator = "") { it.text }
 
+    @Suppress("ConstPropertyName")
     private companion object {
         private const val Tag = "SelectionContainer"
         private const val FirstTextTag = "SelectionContainerFirstText"

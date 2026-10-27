@@ -31,10 +31,12 @@ import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 import platform.UIKit.UIViewController
 
+@Suppress("unused")
 internal class ModalContainerSwipeBackInHostingViewTest : ModalContainerSwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
 )
 
+@Suppress("unused")
 internal class ModalContainerSwipeBackInHostingViewControllerTest : ModalContainerSwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
 )
