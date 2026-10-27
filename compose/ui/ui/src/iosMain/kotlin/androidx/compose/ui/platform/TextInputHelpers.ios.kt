@@ -50,10 +50,6 @@ import platform.UIKit.UITextWritingDirection
 internal interface TextEditingDelegate {
     val isInteractive: Boolean
 
-    /**
-     * Whether system text services, such as Writing Tools, are allowed to modify the text.
-     * https://developer.apple.com/documentation/uikit/uitextinput/iseditable
-     */
     val isEditable: Boolean get() = isInteractive
 
     val inputTraits: SkikoUITextInputTraits
