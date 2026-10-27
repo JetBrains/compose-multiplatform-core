@@ -119,7 +119,7 @@ internal class TextInputServiceAdapter(
 
     private val transformedOffsetMapping = object : TextEditorOffsetMapping {
         override fun mapToTransformed(range: TextRange): TextRange = if (range.collapsed) {
-            offsetMapping.originalToTransformed(range.start).let(::TextRange)
+            TextRange(offsetMapping.originalToTransformed(range.start))
         } else {
             TextRange(
                 start = offsetMapping.originalToTransformed(range.start),
@@ -128,7 +128,7 @@ internal class TextInputServiceAdapter(
         }
 
         override fun mapFromTransformed(range: TextRange): TextRange = if (range.collapsed) {
-            offsetMapping.transformedToOriginal(range.start).let(::TextRange)
+            TextRange(offsetMapping.transformedToOriginal(range.start))
         } else {
             TextRange(
                 start = offsetMapping.transformedToOriginal(range.start),
