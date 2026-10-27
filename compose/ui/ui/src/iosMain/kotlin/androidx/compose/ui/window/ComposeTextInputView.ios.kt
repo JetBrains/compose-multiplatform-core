@@ -28,6 +28,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toCGRect
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 import kotlinx.cinterop.CValue
@@ -89,7 +90,7 @@ internal class ComposeTextInputView(
                 }
                 field = value
                 if (isFirstResponder) {
-                    field?.onFocus()
+                    field.onFocus()
                 }
                 if (!field.isInteractive) {
                     hideTextMenu()
@@ -406,14 +407,19 @@ internal class ComposeTextInputView(
         forRange: UITextRange
     ) {}
 
-    override fun firstRectForRange(range: UITextRange): CValue<CGRect> =
-        CGRectNull.readValue()
+    override fun firstRectForRange(range: UITextRange): CValue<CGRect> {
+        val fallback = CGRectNull.readValue()
+        val textRange = range.toTextRange() ?: return fallback
+        return input.firstSelectionRectForRange(textRange)?.toCGRect() ?: fallback
+    }
 
     override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> =
         input.caretRectForPosition(position)
 
-    override fun selectionRectsForRange(range: UITextRange): List<*> =
-        listOf<UITextSelectionRect>()
+    override fun selectionRectsForRange(range: UITextRange): List<*> {
+        val textRange = range.toTextRange() ?: return listOf<UITextSelectionRect>()
+        return input.selectionDpRectsForRange(textRange)
+    }
 
     override fun closestPositionToPoint(point: CValue<CGPoint>): UITextPosition? = null
 
@@ -462,6 +468,8 @@ internal class ComposeTextInputView(
 
     override fun writingToolsBehavior(): UIWritingToolsBehavior =
         input.inputTraits.writingToolsBehavior()
+
+    override fun isEditable(): Boolean = input.isEditable
 
     /**
      * Call when something changes in text data
