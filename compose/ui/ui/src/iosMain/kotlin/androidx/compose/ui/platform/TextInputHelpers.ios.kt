@@ -50,7 +50,7 @@ import platform.UIKit.UITextWritingDirection
 internal interface TextEditingDelegate {
     val isInteractive: Boolean
 
-    val isEditable: Boolean get() = isInteractive
+    val isEditable: Boolean
 
     val inputTraits: SkikoUITextInputTraits
 
@@ -231,6 +231,8 @@ internal class DetachedTextEditingDelegate(
     override val inputTraits: SkikoUITextInputTraits = EmptyInputTraits,
 ) : NativeTextEditingDelegate {
     override val isInteractive: Boolean = false
+
+    override val isEditable: Boolean = false
 
     override fun onFocus() = Unit
 

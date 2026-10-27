@@ -46,6 +46,6 @@
 
 - (BOOL)isSecureTextEntry CMP_ABSTRACT_FUNCTION;
 
-- (BOOL)isTextInputEditable CMP_ABSTRACT_FUNCTION;
+- (BOOL)isEditable CMP_ABSTRACT_FUNCTION;
 
 @end

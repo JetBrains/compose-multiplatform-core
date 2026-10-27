@@ -553,7 +553,7 @@ internal class NativeTextInputView(
     override fun autocorrectionType(): UITextAutocorrectionType = input.inputTraits.autocorrectionType()
     override fun spellCheckingType(): UITextSpellCheckingType = input.inputTraits.spellCheckingType()
     override fun writingToolsBehavior(): UIWritingToolsBehavior = input.inputTraits.writingToolsBehavior()
-    override fun isTextInputEditable(): Boolean = input.isEditable
+    override fun isEditable(): Boolean = input.isEditable
 
     /**
      * Call when something changes in text data

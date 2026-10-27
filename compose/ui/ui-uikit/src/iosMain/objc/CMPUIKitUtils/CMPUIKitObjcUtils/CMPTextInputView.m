@@ -138,12 +138,8 @@
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
-- (BOOL)isTextInputEditable {
-    CMP_ABSTRACT_FUNCTION_CALLED
-}
-
 - (BOOL)isEditable {
-    return [self isTextInputEditable];
+    CMP_ABSTRACT_FUNCTION_CALLED
 }
 
 - (UIWritingToolsResultOptions)allowedWritingToolsResultOptions API_AVAILABLE(ios(18.0)) {

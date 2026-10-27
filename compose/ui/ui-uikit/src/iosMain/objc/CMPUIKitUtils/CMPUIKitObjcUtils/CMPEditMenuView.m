@@ -212,12 +212,8 @@ id _editInteraction;
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
-- (BOOL)isTextInputEditable {
-    CMP_ABSTRACT_FUNCTION_CALLED
-}
-
 - (BOOL)isEditable {
-    return [self isTextInputEditable];
+    CMP_ABSTRACT_FUNCTION_CALLED
 }
 
 - (void)willPresentWritingTools API_AVAILABLE(ios(18.0)) {

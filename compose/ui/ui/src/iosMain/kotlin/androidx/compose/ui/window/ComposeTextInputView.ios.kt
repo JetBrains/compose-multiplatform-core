@@ -90,7 +90,7 @@ internal class ComposeTextInputView(
                 }
                 field = value
                 if (isFirstResponder) {
-                    field?.onFocus()
+                    field.onFocus()
                 }
                 if (!field.isInteractive) {
                     hideTextMenu()
@@ -469,7 +469,7 @@ internal class ComposeTextInputView(
     override fun writingToolsBehavior(): UIWritingToolsBehavior =
         input.inputTraits.writingToolsBehavior()
 
-    override fun isTextInputEditable(): Boolean = input.isEditable
+    override fun isEditable(): Boolean = input.isEditable
 
     /**
      * Call when something changes in text data

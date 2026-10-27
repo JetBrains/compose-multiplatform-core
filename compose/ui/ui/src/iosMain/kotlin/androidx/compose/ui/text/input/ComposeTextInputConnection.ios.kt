@@ -58,6 +58,8 @@ internal open class ComposeTextInputConnection(
 
     override val isInteractive: Boolean = true
 
+    override val isEditable: Boolean = true
+
     override val textInputView =
         ComposeTextInputView(
             doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis,
