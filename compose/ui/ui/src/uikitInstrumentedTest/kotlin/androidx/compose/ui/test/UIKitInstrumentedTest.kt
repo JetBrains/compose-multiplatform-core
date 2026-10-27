@@ -974,8 +974,6 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             )
         }
 
-        // Must be applied before the Compose container is attached to the window: it picks the
-        // window layer speed up in `onDidMoveToWindow` to derive its `MotionDurationScale`.
         startObservingWindowVisibility()
         applyAnimationSpeed()
 
@@ -1049,6 +1047,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     private fun UIWindow.applyAnimationSpeed() {
         layer.speed = animationSpeed
+        FrameChoreographer.updateMotionSpeedForWindow(this)
     }
 
     /**
