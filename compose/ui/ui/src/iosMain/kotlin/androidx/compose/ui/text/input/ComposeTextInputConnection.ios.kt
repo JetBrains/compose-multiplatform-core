@@ -20,11 +20,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.TextInputSelectionRect
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.detachedCopy
 import androidx.compose.ui.scene.ComposeSceneFocusManager
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.style.ResolvedTextDirection
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.unit.DpRect
@@ -34,6 +38,8 @@ import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.window.ComposeTextInputView
 import androidx.compose.ui.window.FocusedViewsList
+import kotlin.math.max
+import kotlin.math.min
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import platform.UIKit.UIView
@@ -115,9 +121,9 @@ internal open class ComposeTextInputConnection(
     }
 
     /**
-     * The [textInputView] covers the text field, so the text layout origin is offset from it.
+     * Offset of the text layout origin relative to [textInputView], which covers the text field.
      */
-    override val textLayoutOffsetInView: Offset?
+    private val textOffsetInView: Offset?
         get() {
             val viewOriginInRoot = textFieldRectInRoot?.topLeft ?: return null
             val textOffsetInRoot = unclippedTextOffsetInRoot ?: return null
@@ -125,7 +131,7 @@ internal open class ComposeTextInputConnection(
         }
 
     override fun caretDpRectForPosition(position: Int): DpRect? {
-        val offset = textLayoutOffsetInView ?: return null
+        val offset = textOffsetInView ?: return null
         val text = currentTextFieldValue?.text ?: return null
         val currentTextLayoutResult = textLayoutResult ?: return null
 
@@ -140,6 +146,67 @@ internal open class ComposeTextInputConnection(
             val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
             it.copy(left = center - halfWidth, right = center + halfWidth)
+        }
+    }
+
+    override fun selectionDpRectsForRange(range: TextRange): List<TextInputSelectionRect> {
+        val lineRects = lineSelectionDpRects(range).toList()
+        return lineRects.mapIndexed { index, rect ->
+            TextInputSelectionRect(
+                dpRect = rect,
+                writingDirection = TextDirection.Content,
+                containsStart = index == 0,
+                containsEnd = index == lineRects.lastIndex,
+                isVertical = false
+            )
+        }
+    }
+
+    override fun firstSelectionRectForRange(range: TextRange): DpRect? =
+        lineSelectionDpRects(range).firstOrNull()
+
+    /**
+     * Returns one rectangle per text line with selected text in [range], in the [textInputView]
+     * coordinates. The Writing Tools UI, for example, uses them to anchor itself to the selected
+     * text. The rectangles are computed lazily, so taking only the first one is cheap.
+     */
+    private fun lineSelectionDpRects(range: TextRange): Sequence<DpRect> {
+        if (range.collapsed || isIncorrect(range)) {
+            return emptySequence()
+        }
+        val offset = textOffsetInView ?: return emptySequence()
+        val currentTextLayoutResult = textLayoutResult ?: return emptySequence()
+        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+            return emptySequence()
+        }
+
+        val firstLine = currentTextLayoutResult.getLineForOffset(range.start)
+        val lastLine = currentTextLayoutResult.getLineForOffset(range.end)
+        val startX = currentTextLayoutResult.getCursorRect(range.start).left
+        val endX = currentTextLayoutResult.getCursorRect(range.end).left
+        val density = rootView.density
+
+        return (firstLine..lastLine).asSequence().mapNotNull { line ->
+            val lineLeft = currentTextLayoutResult.getLineLeft(line)
+            val lineRight = currentTextLayoutResult.getLineRight(line)
+            val isRtl = currentTextLayoutResult.getParagraphDirection(
+                currentTextLayoutResult.getLineStart(line)
+            ) == ResolvedTextDirection.Rtl
+
+            val lineStartX = if (isRtl) lineRight else lineLeft
+            val lineEndX = if (isRtl) lineLeft else lineRight
+            val from = if (line == firstLine) startX else lineStartX
+            val to = if (line == lastLine) endX else lineEndX
+            if (from == to) {
+                // Nothing is selected on this line, e.g. the selection ends at its start.
+                return@mapNotNull null
+            }
+            Rect(
+                left = min(from, to),
+                top = currentTextLayoutResult.getLineTop(line),
+                right = max(from, to),
+                bottom = currentTextLayoutResult.getLineBottom(line)
+            ).translate(offset).toDpRect(density)
         }
     }
 
