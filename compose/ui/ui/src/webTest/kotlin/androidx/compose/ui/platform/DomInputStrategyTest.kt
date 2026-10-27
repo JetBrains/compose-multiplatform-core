@@ -19,10 +19,13 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.events.beforeInputWithTargetRange
 import androidx.compose.ui.events.compositionEnd
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.SetSelectionCommand
+import androidx.compose.ui.text.input.TextFieldValue
+import kotlin.js.unsafeCast
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -30,6 +33,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.runTest
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.OPEN
 import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
@@ -235,6 +239,74 @@ class DomInputStrategyTest {
                 strategy.dispose()
                 host.remove()
             }
+        }
+    }
+
+    /**
+     * When a contenteditable element regains focus on iOS Safari, the browser resets the
+     * DOM selection to (0,0). The fix in [BackingDomInput.focus] pauses the selection
+     * change listener and restores the correct selection before the pause is lifted,
+     * so the stale (0,0) must not be forwarded to Compose as a [SetSelectionCommand].
+     *
+     * See https://youtrack.jetbrains.com/issue/CMP-10978
+     */
+    @Test
+    fun selectionResetOnRefocusIsNotSentToCompose() = runTest {
+        val communicator = RecordingCommunicator()
+        val host = document.createElement("div")
+        document.body!!.appendChild(host)
+        val shadowRoot = host.attachShadow(ShadowRootInit(ShadowRootMode.OPEN))
+
+        val container = document.createElement("div") as HTMLElement
+        shadowRoot.appendChild(container)
+
+        val backingDomInput = BackingDomInput(
+            inputContainer = container,
+            imeOptions = ImeOptions.Default,
+            composeCommunicator = communicator,
+        )
+
+        try {
+            backingDomInput.register()
+
+            // Initial focus + populate text with selection at end (position 10)
+            backingDomInput.focus()
+            awaitAnimationFrame()
+
+            val textFieldValue = TextFieldValue(
+                text = "hello wrld",
+                selection = TextRange(10, 10)
+            )
+            backingDomInput.updateState(textFieldValue)
+            awaitAnimationFrame()
+
+            // Clear any commands from the setup phase
+            communicator.editCommands.clear()
+
+            // Simulate hiding the keyboard — the element loses focus
+            backingDomInput.blur()
+            awaitAnimationFrame()
+
+            // Simulate re-tapping the TextField — focus() is called again.
+            // On real iOS Safari, backingElement.focus() resets DOM selection to (0,0).
+            backingDomInput.focus()
+
+            // Simulate what Safari does after re-focus: DOM selection is at (0,0)
+            setSelectionRange(backingDomInput.backingElement, 0, 0)
+            document.dispatchEvent(Event("selectionchange"))
+            awaitAnimationFrame()
+            awaitAnimationFrame()
+
+            // The stale (0,0) selection must NOT have been sent to Compose
+            val selectionCommands = communicator.editCommands.filterIsInstance<SetSelectionCommand>()
+            assertTrue(
+                selectionCommands.none { it.start == 0 && it.end == 0 },
+                "Safari's stale (0,0) selection reset on re-focus must not be sent to Compose, " +
+                    "but got: $selectionCommands"
+            )
+        } finally {
+            backingDomInput.dispose()
+            host.remove()
         }
     }
 
