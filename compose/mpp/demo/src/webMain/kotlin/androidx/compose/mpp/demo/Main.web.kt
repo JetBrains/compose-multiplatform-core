@@ -42,15 +42,28 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+private fun isSdlEnvironment(): Boolean =
+    js("typeof globalThis.__skikoNativeGL !== 'undefined'")
+
 private fun queryParams(): Map<String, String> {
-    return window.location.search
-        .removePrefix("?")
-        .split("&")
-        .filter { it.contains("=") }
-        .associate { val (k, v) = it.split("=", limit = 2); k to v }
+    return try {
+        window.location.search
+            .removePrefix("?")
+            .split("&")
+            .filter { it.contains("=") }
+            .associate { val (k, v) = it.split("=", limit = 2); k to v }
+    } catch (e: Throwable) {
+        emptyMap()
+    }
 }
 
 fun main() {
+    if (isSdlEnvironment() || queryParams()["demo"] == "sdl") {
+        val canvasId = queryParams()["canvasId"] ?: "ComposeTarget"
+        startSdlComposeDemo(canvasId)
+        return
+    }
+
     val demo = queryParams()["demo"] ?: "default"
     when (demo) {
         "default" -> defaultComposeDemo()
@@ -110,4 +123,4 @@ fun defaultComposeDemo() {
 }
 
 @Serializable
-private data class FontsManifest(val fonts: List<String>)
+internal data class FontsManifest(val fonts: List<String>)

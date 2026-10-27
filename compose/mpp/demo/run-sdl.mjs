@@ -5,606 +5,292 @@ import fs from "node:fs";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(__dirname, "../../..");
 
-const nativeSkikoPath = process.env.SKIKO_NATIVE_GL_ADDON ??
-    "/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/native-skiko/build/Release/native_skiko.node";
+// Resolve native Skiko SDL2 OpenGL addon
+const defaultSkikoNativePath = "/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/native-skiko/build/Release/native_skiko.node";
+const nativeSkikoPath = process.env.SKIKO_NATIVE_GL_ADDON ?? defaultSkikoNativePath;
 
-if (!fs.existsSync(nativeSkikoPath)) {
-    console.error(`Native Skiko addon not found at: ${nativeSkikoPath}`);
-    process.exit(1);
+let nativeGL = null;
+if (fs.existsSync(nativeSkikoPath)) {
+    try {
+        nativeGL = require(nativeSkikoPath);
+        globalThis.__skikoNativeGL = nativeGL;
+        globalThis.__skikoNativeHost = nativeGL;
+    } catch (e) {
+        console.warn(`Could not load native Skiko addon from ${nativeSkikoPath}: ${e.message}`);
+    }
+} else {
+    console.warn(`Native Skiko addon not found at ${nativeSkikoPath}.`);
 }
-
-const nativeGL = require(nativeSkikoPath);
 
 const windowWidth = 1024;
 const windowHeight = 768;
-let windowTitle = "Compose MPP Demo (Wasm + Native SDL)";
+let windowTitle = "Compose MPP Demo (WASM + Native SDL)";
 
-const nativeSkikoHost = new Proxy({}, {
-    get(target, prop) {
-        if (prop === "createContext") {
-            return (canvas, attr) => {
-                if (typeof canvas === "object" && canvas !== null) {
-                    if (!canvas.width || typeof canvas.width !== "number" || canvas.width <= 0) {
-                        canvas.width = windowWidth;
-                    }
-                    if (!canvas.height || typeof canvas.height !== "number" || canvas.height <= 0) {
-                        canvas.height = windowHeight;
-                    }
+class MockWebGL2RenderingContext {
+    constructor() {
+        return new Proxy(this, {
+            get(target, prop) {
+                if (prop in target) {
+                    return target[prop];
                 }
-                const id = nativeGL.createContext(canvas, attr);
-                if (canvas && typeof canvas === "object") {
-                    canvas.__skikoNativeContext = id;
+                if (typeof prop === "string" && nativeGL && typeof nativeGL[prop] === "function") {
+                    return nativeGL[prop].bind(nativeGL);
                 }
-                return id;
-            };
-        }
-        const val = nativeGL[prop];
-        if (typeof val === "function") {
-            return val.bind(nativeGL);
-        }
-        return val;
-    },
-    has(target, prop) {
-        return prop in nativeGL;
-    }
-});
-
-// Expose Skiko native GL bridge
-globalThis.__skikoNativeGL = nativeSkikoHost;
-globalThis.__skikoNativeHost = nativeSkikoHost;
-
-// Minimal DOM polyfill hierarchy
-class NodePolyfill {
-    constructor(nodeName = "DIV") {
-        this.nodeName = nodeName.toUpperCase();
-        this.tagName = this.nodeName;
-        this.nodeType = nodeName.startsWith("#") ? 3 : 1;
-        this.childNodes = [];
-        this.children = [];
-        this.parentNode = null;
-        this.id = "";
-        this.textContent = "";
-        this.innerHTML = "";
-        this.style = new Proxy({}, {
-            get: (target, prop) => target[prop] ?? "",
-            set: (target, prop, value) => {
-                target[prop] = value;
-                return true;
+                return (...args) => {
+                    if (prop === "getError") return 0;
+                    if (prop === "checkFramebufferStatus") return 0x8CD5;
+                    if (prop === "createProgram" || prop === "createShader") return 1;
+                    if (prop === "getProgramParameter" || prop === "getShaderParameter") return 1;
+                    if (prop === "getUniformLocation") return 0;
+                    if (prop === "getAttribLocation") return 0;
+                    return 0;
+                };
             }
         });
-        this.style.setProperty = (k, v) => { this.style[k] = v; };
-        this.style.getPropertyValue = (k) => this.style[k] ?? "";
-        this.style.removeProperty = (k) => { delete this.style[k]; };
-        this.eventListeners = new Map();
-        this.attributes = new Map();
-        this.dataset = {};
-        this.width = windowWidth;
-        this.height = windowHeight;
-        this.__skikoNativeContext = 0;
     }
 
-    get firstChild() {
-        return this.childNodes[0] ?? null;
-    }
-
-    get lastChild() {
-        return this.childNodes[this.childNodes.length - 1] ?? null;
-    }
-
-    get firstElementChild() {
-        return this.children[0] ?? null;
-    }
-
-    get lastElementChild() {
-        return this.children[this.children.length - 1] ?? null;
-    }
-
-    get parentElement() {
-        return this.parentNode;
-    }
-
-    get ownerDocument() {
-        return globalThis.document;
-    }
-
-    get nextSibling() {
-        if (!this.parentNode) return null;
-        const i = this.parentNode.childNodes.indexOf(this);
-        return this.parentNode.childNodes[i + 1] ?? null;
-    }
-
-    get previousSibling() {
-        if (!this.parentNode) return null;
-        const i = this.parentNode.childNodes.indexOf(this);
-        return i > 0 ? this.parentNode.childNodes[i - 1] : null;
-    }
-
-    get nextElementSibling() {
-        if (!this.parentNode) return null;
-        const i = this.parentNode.children.indexOf(this);
-        return this.parentNode.children[i + 1] ?? null;
-    }
-
-    get previousElementSibling() {
-        if (!this.parentNode) return null;
-        const i = this.parentNode.children.indexOf(this);
-        return i > 0 ? this.parentNode.children[i - 1] : null;
-    }
-
-    appendChild(child) {
-        if (!child) return child;
-        child.parentNode = this;
-        this.childNodes.push(child);
-        if (child.nodeType === 1) {
-            this.children.push(child);
-        }
-        return child;
-    }
-
-    removeChild(child) {
-        const index = this.childNodes.indexOf(child);
-        if (index !== -1) {
-            this.childNodes.splice(index, 1);
-            const childIndex = this.children.indexOf(child);
-            if (childIndex !== -1) {
-                this.children.splice(childIndex, 1);
-            }
-            child.parentNode = null;
-        }
-        return child;
-    }
-
-    insertBefore(newNode, referenceNode) {
-        if (!referenceNode) return this.appendChild(newNode);
-        const index = this.childNodes.indexOf(referenceNode);
-        if (index === -1) return this.appendChild(newNode);
-        newNode.parentNode = this;
-        this.childNodes.splice(index, 0, newNode);
-        if (newNode.nodeType === 1) {
-            const refChildIndex = this.children.indexOf(referenceNode);
-            if (refChildIndex !== -1) {
-                this.children.splice(refChildIndex, 0, newNode);
-            } else {
-                this.children.push(newNode);
-            }
-        }
-        return newNode;
-    }
-
-    prepend(...nodes) {
-        for (let i = nodes.length - 1; i >= 0; i--) {
-            const node = nodes[i];
-            if (typeof node === "string") {
-                this.insertBefore(document.createTextNode(node), this.firstChild);
-            } else if (node) {
-                this.insertBefore(node, this.firstChild);
-            }
+    getParameter(pname) {
+        switch (pname) {
+            case 7936: // GL_VENDOR
+                return "JetBrains / Skiko";
+            case 7937: // GL_RENDERER
+                return "Skiko Native GL";
+            case 7938: // GL_VERSION
+                return "WebGL 2.0 (OpenGL ES 3.0 Native SDL)";
+            case 35724: // GL_SHADING_LANGUAGE_VERSION
+                return "WebGL GLSL ES 3.00";
+            case 0x80A9: // SAMPLES
+                return 0;
+            default:
+                return 0;
         }
     }
 
-    append(...nodes) {
-        for (const node of nodes) {
-            if (typeof node === "string") {
-                this.appendChild(document.createTextNode(node));
-            } else if (node) {
-                this.appendChild(node);
-            }
-        }
-    }
-
-    contains(other) {
-        let curr = other;
-        while (curr) {
-            if (curr === this) return true;
-            curr = curr.parentNode;
-        }
-        return false;
-    }
-
-    setAttribute(name, value) {
-        this.attributes.set(name, String(value));
-        this[name] = value;
-    }
-
-    getAttribute(name) {
-        return this.attributes.get(name) ?? this[name] ?? null;
-    }
-
-    removeAttribute(name) {
-        this.attributes.delete(name);
-        delete this[name];
-    }
-
-    hasAttribute(name) {
-        return this.attributes.has(name) || name in this;
-    }
-
-    addEventListener(type, listener, options) {
-        if (!this.eventListeners.has(type)) {
-            this.eventListeners.set(type, []);
-        }
-        this.eventListeners.get(type).push(listener);
-    }
-
-    removeEventListener(type, listener) {
-        const list = this.eventListeners.get(type);
-        if (list) {
-            this.eventListeners.set(type, list.filter(l => l !== listener));
-        }
-    }
-
-    dispatchEvent(event) {
-        if (!event.target) event.target = this;
-        event.currentTarget = this;
-        const list = this.eventListeners.get(event.type) || [];
-        for (const listener of list) {
-            if (typeof listener === "function") {
-                listener.call(this, event);
-            } else if (listener && typeof listener.handleEvent === "function") {
-                listener.handleEvent(event);
-            }
-        }
-        return !event.defaultPrevented;
-    }
-
-    focus() {}
-    blur() {}
-
-    getBoundingClientRect() {
+    getShaderPrecisionFormat(shaderType, precisionType) {
         return {
-            left: 0,
-            top: 0,
-            right: this.width || windowWidth,
-            bottom: this.height || windowHeight,
-            width: this.width || windowWidth,
-            height: this.height || windowHeight,
-            x: 0,
-            y: 0
+            rangeMin: 127,
+            rangeMax: 127,
+            precision: 23
         };
     }
 
-    hasChildNodes() {
-        return this.childNodes.length > 0;
+    getError() {
+        return 0;
     }
 
-    replaceChildren(...newChildren) {
-        this.childNodes = [];
-        this.children = [];
-        for (const child of newChildren) {
-            this.appendChild(child);
-        }
+    getExtension() { return null; }
+    getSupportedExtensions() { return []; }
+    enable() {}
+    disable() {}
+    clear() {}
+    viewport() {}
+}
+
+class MockWebGLRenderingContext extends MockWebGL2RenderingContext {}
+
+globalThis.WebGLRenderingContext = MockWebGLRenderingContext;
+globalThis.WebGL2RenderingContext = MockWebGL2RenderingContext;
+
+class NodeCanvas {
+    constructor(description) {
+        Object.assign(this, description);
+        this.style = {};
+        this.__skikoNativeContext = 0;
+        this._gl = new MockWebGL2RenderingContext();
     }
 
-    attachShadow(init) {
-        const shadow = new NodePolyfill("SHADOW-ROOT");
-        shadow.mode = init?.mode || "open";
-        this.shadowRoot = shadow;
-        return shadow;
-    }
-
-    getContext(type, attributes) {
-        if (type === "webgl2" || type === "webgl") {
-            return {
-                canvas: this,
-                getSupportedExtensions: () => [],
-                getExtension: (name) => null,
-                getShaderPrecisionFormat: (shadertype, precisiontype) => ({
-                    rangeMin: 127,
-                    rangeMax: 127,
-                    precision: 23
-                }),
-                getError: () => 0,
-                isContextLost: () => false,
-                finish: () => {},
-                flush: () => {},
-                viewport: () => {},
-                getParameter: (p) => {
-                    switch (p) {
-                        case 35724: return "WebGL GLSL ES 3.00";
-                        case 7938: return "WebGL 2.0 (OpenGL ES 3.0)";
-                        case 7936: case 37445: return "Skiko / JetBrains";
-                        case 7937: case 37446: return "Native Skiko SDL2 OpenGL";
-                        default: return 0;
-                    }
-                }
-            };
+    getContext(type, attrs) {
+        if (nativeGL?.createContext && !this.__skikoNativeContext) {
+            const id = nativeGL.createContext(this, attrs);
+            this.__skikoNativeContext = id;
         }
-        if (type === "2d") {
-            return {
-                canvas: this,
-                fillRect() {},
-                clearRect() {},
-                getImageData() { return { data: new Uint8Array() }; },
-                putImageData() {},
-                createImageData() { return { data: new Uint8Array() }; },
-                setTransform() {},
-                drawImage() {},
-                save() {},
-                restore() {}
-            };
-        }
-        return null;
+        return this._gl;
     }
 }
 
-const createdCanvases = new Set();
-const bodyElement = new NodePolyfill("BODY");
-const headElement = new NodePolyfill("HEAD");
-const rootCanvas = new NodePolyfill("CANVAS");
-rootCanvas.id = "ComposeTarget";
-createdCanvases.add(rootCanvas);
+const rootCanvas = new NodeCanvas({
+    id: "ComposeTarget",
+    width: windowWidth * 2,
+    height: windowHeight * 2
+});
+
+const canvases = new Map([["ComposeTarget", rootCanvas]]);
+const activeCanvas = rootCanvas;
 
 globalThis.window = globalThis;
 globalThis.self = globalThis;
-globalThis.global = globalThis;
+globalThis.HTMLCanvasElement = NodeCanvas;
+globalThis.devicePixelRatio = 2;
 
-globalThis.Node = NodePolyfill;
-globalThis.Element = NodePolyfill;
-globalThis.HTMLElement = NodePolyfill;
-globalThis.HTMLDivElement = NodePolyfill;
-globalThis.HTMLCanvasElement = NodePolyfill;
-globalThis.HTMLInputElement = NodePolyfill;
-globalThis.HTMLTextAreaElement = NodePolyfill;
-globalThis.HTMLSpanElement = NodePolyfill;
-globalThis.HTMLParagraphElement = NodePolyfill;
+if (!globalThis.Event) {
+    globalThis.Event = class Event {
+        constructor(type, init = {}) {
+            this.type = type;
+            this.bubbles = !!init.bubbles;
+            this.cancelable = !!init.cancelable;
+        }
+    };
+}
+if (!globalThis.UIEvent) {
+    globalThis.UIEvent = class UIEvent extends (globalThis.Event || Object) {
+        constructor(type, init = {}) {
+            super(type, init);
+            Object.assign(this, init);
+        }
+    };
+}
+if (!globalThis.MouseEvent) {
+    globalThis.MouseEvent = class MouseEvent extends (globalThis.UIEvent || globalThis.Event || Object) {
+        constructor(type, init = {}) {
+            super(type, init);
+            Object.assign(this, init);
+        }
+    };
+}
+if (!globalThis.WheelEvent) {
+    globalThis.WheelEvent = class WheelEvent extends (globalThis.MouseEvent || globalThis.UIEvent || Object) {
+        constructor(type, init = {}) {
+            super(type, init);
+            this.deltaX = init.deltaX || 0;
+            this.deltaY = init.deltaY || 0;
+            this.deltaZ = init.deltaZ || 0;
+            this.deltaMode = init.deltaMode || 0;
+        }
+    };
+}
+if (!globalThis.PointerEvent) {
+    globalThis.PointerEvent = class PointerEvent extends (globalThis.MouseEvent || Object) {};
+}
+if (!globalThis.KeyboardEvent) {
+    globalThis.KeyboardEvent = class KeyboardEvent extends (globalThis.UIEvent || Object) {};
+}
 
-globalThis.WebGLRenderingContext = class WebGLRenderingContext {};
-globalThis.WebGL2RenderingContext = class WebGL2RenderingContext extends globalThis.WebGLRenderingContext {};
-globalThis.WebGLBuffer = class WebGLBuffer {};
-globalThis.WebGLFramebuffer = class WebGLFramebuffer {};
-globalThis.WebGLProgram = class WebGLProgram {};
-globalThis.WebGLRenderbuffer = class WebGLRenderbuffer {};
-globalThis.WebGLShader = class WebGLShader {};
-globalThis.WebGLTexture = class WebGLTexture {};
-globalThis.WebGLUniformLocation = class WebGLUniformLocation {};
-globalThis.WebGLActiveInfo = class WebGLActiveInfo {};
-globalThis.WebGLShaderPrecisionFormat = class WebGLShaderPrecisionFormat {};
+globalThis.addEventListener = () => {};
+globalThis.removeEventListener = () => {};
+globalThis.dispatchEvent = () => true;
 
-globalThis.devicePixelRatio = 1;
-globalThis.innerWidth = windowWidth;
-globalThis.innerHeight = windowHeight;
-globalThis.outerWidth = windowWidth;
-globalThis.outerHeight = windowHeight;
-globalThis.scrollX = 0;
-globalThis.scrollY = 0;
-globalThis.pageXOffset = 0;
-globalThis.pageYOffset = 0;
-
-globalThis.visualViewport = {
-    width: windowWidth,
-    height: windowHeight,
-    offsetLeft: 0,
-    offsetTop: 0,
-    pageLeft: 0,
-    pageTop: 0,
-    scale: 1,
-    addEventListener() {},
-    removeEventListener() {}
-};
-
-globalThis.customElements = {
-    define(name, constructor, options) {},
-    get(name) { return undefined; },
-    whenDefined(name) { return Promise.resolve(); },
-    upgrade(root) {}
-};
-
-globalThis.FontFace = class {
-    constructor() {}
-    async load() { return this; }
-};
-
-globalThis.Event = class {
-    constructor(type, eventInitDict) {
-        this.type = type;
-        this.bubbles = !!eventInitDict?.bubbles;
-        this.cancelable = !!eventInitDict?.cancelable;
-        this.defaultPrevented = false;
-    }
-    preventDefault() { this.defaultPrevented = true; }
-    stopPropagation() {}
-    stopImmediatePropagation() {}
-};
-
-globalThis.CustomEvent = class extends globalThis.Event {
-    constructor(type, eventInitDict) {
-        super(type, eventInitDict);
-        this.detail = eventInitDict?.detail ?? null;
+const mockNavigator = {
+    language: "en-US",
+    languages: ["en-US", "en"],
+    userAgent: `Node.js ${process.version}`,
+    appVersion: `5.0 (Node.js ${process.version})`,
+    platform: process.platform,
+    appName: "Netscape",
+    vendor: "Google Inc.",
+    maxTouchPoints: 0,
+    clipboard: {
+        readText: async () => "",
+        writeText: async () => {}
     }
 };
 
-globalThis.UIEvent = class extends globalThis.Event {};
-globalThis.MouseEvent = class extends globalThis.UIEvent {};
-globalThis.PointerEvent = class extends globalThis.MouseEvent {};
-globalThis.WheelEvent = class extends globalThis.MouseEvent {};
-globalThis.KeyboardEvent = class extends globalThis.UIEvent {};
-globalThis.FocusEvent = class extends globalThis.UIEvent {};
-globalThis.InputEvent = class extends globalThis.UIEvent {};
-globalThis.TouchEvent = class extends globalThis.UIEvent {};
+try {
+    Object.defineProperty(globalThis, "navigator", {
+        value: mockNavigator,
+        configurable: true,
+        writable: true
+    });
+} catch (_) {
+    for (const [k, v] of Object.entries(mockNavigator)) {
+        try { globalThis.navigator[k] = v; } catch (_) {}
+    }
+}
 
-globalThis.isSecureContext = true;
+globalThis.matchMedia = () => ({
+    matches: false,
+    media: "",
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false
+});
+
 globalThis.location = {
     origin: "http://localhost",
     pathname: "/",
-    search: "",
+    search: "?demo=sdl",
     hash: "",
-    href: "http://localhost/",
-    hostname: "localhost",
-    host: "localhost",
-    port: "",
-    protocol: "http:",
-    assign(url) {},
-    replace(url) {},
-    reload() {},
-    toString() { return this.href; }
+    href: "http://localhost/?demo=sdl"
 };
-
-globalThis.history = {
-    length: 1,
-    state: null,
-    scrollRestoration: "auto",
-    pushState(data, title, url) {
-        this.state = data;
-        if (url) globalThis.location.pathname = url;
-    },
-    replaceState(data, title, url) {
-        this.state = data;
-        if (url) globalThis.location.pathname = url;
-    },
-    back() {},
-    forward() {},
-    go(delta) {}
-};
-
-Object.defineProperty(globalThis, "navigator", {
-    configurable: true,
-    value: {
-        language: "en-US",
-        languages: ["en-US", "en"],
-        platform: process.platform,
-        userAgent: `Node.js ${process.version}`,
-        clipboard: {
-            readText: async () => "",
-            writeText: async () => {}
-        }
-    }
-});
 
 globalThis.document = {
-    readyState: "complete",
-    compatMode: "CSS1Compat",
     get title() {
         return windowTitle;
     },
     set title(value) {
         windowTitle = String(value);
-        nativeGL.setWindowTitle(windowTitle);
-    },
-    body: bodyElement,
-    head: headElement,
-    documentElement: bodyElement,
-    createElement(tag) {
-        const el = new NodePolyfill(tag);
-        if (tag.toLowerCase() === "canvas") {
-            el.width = windowWidth;
-            el.height = windowHeight;
-            createdCanvases.add(el);
+        if (nativeGL?.setWindowTitle) {
+            nativeGL.setWindowTitle(windowTitle);
         }
-        return el;
-    },
-    createTextNode(text) {
-        const node = new NodePolyfill("#text");
-        node.textContent = String(text);
-        return node;
     },
     getElementById(id) {
-        if (id === "ComposeTarget" || id === "c1" || id === "root" || id === "app" || id === rootCanvas.id) return rootCanvas;
-        function findInNode(node) {
-            if (node.id === id) return node;
-            for (const child of node.childNodes) {
-                const found = findInNode(child);
-                if (found) return found;
-            }
-            return null;
+        if (!canvases.has(id)) {
+            canvases.set(id, new NodeCanvas({ id, width: windowWidth * 2, height: windowHeight * 2 }));
         }
-        return findInNode(bodyElement);
+        return canvases.get(id);
     },
-    querySelector(selector) {
-        if (selector === "canvas" || selector === "#ComposeTarget" || selector === "#c1") return rootCanvas;
-        if (selector === "body") return bodyElement;
-        if (selector === "head") return headElement;
-        return null;
+    createElement(tag) {
+        if (tag === "canvas") {
+            const canvas = new NodeCanvas({ id: "dynamic_canvas", width: windowWidth * 2, height: windowHeight * 2 });
+            return canvas;
+        }
+        return {
+            tagName: tag.toUpperCase(),
+            style: {},
+            children: [],
+            appendChild(c) { return c; },
+            setAttribute() {},
+            getAttribute() { return null; },
+            addEventListener() {},
+            removeEventListener() {},
+            getBoundingClientRect: () => ({ left: 0, top: 0, right: windowWidth, bottom: windowHeight, width: windowWidth, height: windowHeight, x: 0, y: 0 })
+        };
     },
-    querySelectorAll(selector) {
-        return [];
-    },
-    hasFocus() {
-        return true;
-    },
-    addEventListener(type, listener, options) {
-        bodyElement.addEventListener(type, listener, options);
-    },
-    removeEventListener(type, listener, options) {
-        bodyElement.removeEventListener(type, listener, options);
-    },
-    dispatchEvent(event) {
-        return bodyElement.dispatchEvent(event);
+    body: {
+        appendChild(c) { return c; },
+        style: {}
     }
 };
 
-globalThis.addEventListener = (type, l, opts) => bodyElement.addEventListener(type, l, opts);
-globalThis.removeEventListener = (type, l, opts) => bodyElement.removeEventListener(type, l, opts);
-globalThis.dispatchEvent = (e) => bodyElement.dispatchEvent(e);
-
-class MediaQueryList extends NodePolyfill {
-    constructor(media = "") {
-        super("MEDIA-QUERY-LIST");
-        this.media = media;
-        this.matches = false;
-        this.onchange = null;
+// Intercept WebAssembly instantiation to bind Skiko memory to native OpenGL addon
+let capturedMemory = null;
+const OrigMemory = WebAssembly.Memory;
+WebAssembly.Memory = class extends OrigMemory {
+    constructor(...args) {
+        super(...args);
+        capturedMemory = this;
     }
-    addListener(fn) { this.addEventListener("change", fn); }
-    removeListener(fn) { this.removeEventListener("change", fn); }
-}
-globalThis.MediaQueryList = MediaQueryList;
-
-globalThis.matchMedia = (query) => new MediaQueryList(query);
-
-globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
 };
 
-globalThis.MutationObserver = class {
-    observe() {}
-    disconnect() {}
-    takeRecords() { return []; }
+const origInstantiate = WebAssembly.instantiate;
+WebAssembly.instantiate = async function(bytesOrModule, importObject) {
+    const res = await origInstantiate.call(this, bytesOrModule, importObject);
+    const instance = res.instance || res;
+    const mem = capturedMemory || instance?.exports?.memory || importObject?.env?.memory;
+    const malloc = instance?.exports?.malloc || instance?.exports?._malloc || importObject?.env?.malloc;
+    if (nativeGL?.attachWasmRuntime && mem && malloc) {
+        nativeGL.attachWasmRuntime(mem, malloc);
+    }
+    return res;
 };
 
-// Search directories for font, wasm, and asset resolution
-const assetDirs = [
-    path.resolve(projectRoot, "out/compose-multiplatform-core/build/wasm/packages/mpp-demo/kotlin"),
-    path.resolve(projectRoot, "out/compose-multiplatform-core/compose/mpp/demo/build/compileSync/wasmJs/main/developmentExecutable/kotlin"),
-    path.resolve(projectRoot, "out/compose-multiplatform-core/build/wasm/packages_imported"),
-    path.resolve(__dirname, "src/webMain/resources"),
-    path.resolve(__dirname, "src/commonMain/composeResources"),
-    process.cwd()
-];
-
-function resolveAssetPath(input) {
-    let cleanPath = "";
-    if (typeof input === "string") {
-        if (input.startsWith("file://")) {
-            return fileURLToPath(input);
+const origInstantiateStreaming = WebAssembly.instantiateStreaming;
+if (origInstantiateStreaming) {
+    WebAssembly.instantiateStreaming = async function(response, importObject) {
+        const res = await origInstantiateStreaming.call(this, response, importObject);
+        const instance = res.instance || res;
+        if (nativeGL?.attachWasmRuntime && instance?.exports?.memory && instance?.exports?.malloc) {
+            nativeGL.attachWasmRuntime(instance.exports.memory, instance.exports.malloc);
         }
-        cleanPath = input.replace(/^\.\//, "").replace(/^http:\/\/localhost\//, "");
-    } else if (input instanceof URL) {
-        if (input.protocol === "file:") {
-            return fileURLToPath(input);
-        }
-        cleanPath = input.pathname.replace(/^\//, "");
-    } else if (input && typeof input.url === "string") {
-        return resolveAssetPath(input.url);
-    }
-
-    if (path.isAbsolute(cleanPath) && fs.existsSync(cleanPath)) {
-        return cleanPath;
-    }
-
-    for (const dir of assetDirs) {
-        const candidate = path.resolve(dir, cleanPath);
-        if (fs.existsSync(candidate)) {
-            return candidate;
-        }
-    }
-    return null;
+        return res;
+    };
 }
 
-// Polyfill XMLHttpRequest for Emscripten's local file reading
-globalThis.XMLHttpRequest = class {
+// Polyfill XMLHttpRequest for Emscripten loading skiko.wasm from file:// URI in Node.js
+class MockXMLHttpRequest {
     constructor() {
         this.status = 0;
         this.response = null;
@@ -613,81 +299,140 @@ globalThis.XMLHttpRequest = class {
         this.responseType = "";
     }
     open(method, url, async) {
-        this._url = url;
+        this.url = String(url);
     }
     send() {
-        const localPath = resolveAssetPath(this._url);
-        if (localPath && fs.existsSync(localPath)) {
-            try {
-                const buffer = fs.readFileSync(localPath);
-                this.status = 200;
-                this.response = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-                if (this.onload) setTimeout(() => this.onload(), 0);
-            } catch (err) {
-                if (this.onerror) setTimeout(() => this.onerror(err), 0);
-            }
-        } else {
-            if (this.onerror) setTimeout(() => this.onerror(new Error(`File not found: ${this._url}`)), 0);
-        }
-    }
-};
-
-// Polyfill fetch for local asset and wasm reading
-const originalFetch = globalThis.fetch;
-globalThis.fetch = async (input, init) => {
-    const localPath = resolveAssetPath(input);
-    if (localPath && fs.existsSync(localPath)) {
-        const buffer = await fs.promises.readFile(localPath);
-        return new Response(buffer, {
-            status: 200,
-            statusText: "OK",
-            headers: {
-                "Content-Type": localPath.endsWith(".wasm") ? "application/wasm" : "application/octet-stream"
-            }
-        });
-    }
-    if (originalFetch) {
         try {
-            return await originalFetch(input, init);
+            let filePath = this.url;
+            if (filePath.startsWith("file://")) {
+                filePath = fileURLToPath(filePath);
+            }
+            if (!fs.existsSync(filePath)) {
+                for (const dir of resourceDirs) {
+                    const candidate = path.resolve(dir, path.basename(filePath));
+                    if (fs.existsSync(candidate)) {
+                        filePath = candidate;
+                        break;
+                    }
+                }
+            }
+            const buf = fs.readFileSync(filePath);
+            this.status = 200;
+            const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+            this.response = ab;
+            if (this.onload) {
+                setTimeout(() => {
+                    if (this.onload) this.onload();
+                }, 0);
+            }
         } catch (e) {
-            // fallback
+            this.status = 404;
+            if (this.onerror) {
+                setTimeout(() => {
+                    if (this.onerror) this.onerror(e);
+                }, 0);
+            }
         }
     }
-    throw new Error(`Asset not found: ${input}`);
-};
+}
+globalThis.XMLHttpRequest = MockXMLHttpRequest;
 
-const origLog = console.log;
-console.log = (...args) => {
-    origLog("[CONSOLE.LOG]", ...args);
-};
+// Locate the compiled Wasm application
+const searchModulePaths = [
+    path.resolve(__dirname, "../../../out/compose-multiplatform-core/build/wasm/packages/mpp-demo/kotlin/mpp-demo.mjs"),
+    path.resolve(__dirname, "build/compileSync/wasmJs/main/developmentExecutable/kotlin/mpp-demo.mjs"),
+    path.resolve(__dirname, "build/dist/wasmJs/productionExecutable/mpp-demo.mjs"),
+];
 
-const origError = console.error;
-console.error = (...args) => {
-    try {
-        origError("[CONSOLE.ERROR]", ...args);
-    } catch (e) {
-        origError("[CONSOLE.ERROR (safe)]", String(args));
+let wasmModulePath = null;
+for (const p of searchModulePaths) {
+    if (fs.existsSync(p)) {
+        wasmModulePath = p;
+        break;
     }
+}
+
+const resourceDirs = [
+    path.resolve(__dirname, "src/webMain/resources"),
+    path.resolve(__dirname, "src/commonMain/composeResources"),
+    path.resolve(__dirname, "build/processedResources/wasmJs/main"),
+    wasmModulePath ? path.dirname(wasmModulePath) : __dirname
+];
+
+// Synchronize native Skiko WebAssembly runtime modules if available
+if (wasmModulePath) {
+    const targetDir = path.dirname(wasmModulePath);
+    const nativeSkikoBuildDir = "/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/build/wasm/packages/SkiaNonWebSample/kotlin";
+    if (fs.existsSync(nativeSkikoBuildDir)) {
+        const skikoMjs = path.join(nativeSkikoBuildDir, "skiko.mjs");
+        const skikoWasm = path.join(nativeSkikoBuildDir, "skiko.wasm");
+        const destMjs = path.join(targetDir, "skiko.mjs");
+        const destWasm = path.join(targetDir, "skiko.wasm");
+        if (fs.existsSync(skikoMjs) && fs.existsSync(skikoWasm)) {
+            try {
+                fs.copyFileSync(skikoMjs, destMjs);
+                fs.copyFileSync(skikoWasm, destWasm);
+            } catch (err) {
+                console.warn(`Could not sync native skiko artifacts: ${err.message}`);
+            }
+        }
+    }
+
+    // Ensure skiko-skottie.mjs does not fail eager side-module initialization if present
+    const skottieMjsPath = path.join(targetDir, "skiko-skottie.mjs");
+    if (fs.existsSync(skottieMjsPath)) {
+        try {
+            let skottieContent = fs.readFileSync(skottieMjsPath, "utf-8");
+            if (skottieContent.includes("registerSkikoWasmReadyCallback(() => ensureSkottieLoaded());")) {
+                skottieContent = skottieContent.replace(
+                    "registerSkikoWasmReadyCallback(() => ensureSkottieLoaded());",
+                    "// registerSkikoWasmReadyCallback(() => ensureSkottieLoaded());"
+                );
+                fs.writeFileSync(skottieMjsPath, skottieContent);
+            }
+        } catch (_) {}
+    }
+}
+
+// Polyfill fetch for loading resource files (.ttf, .json, .svg)
+globalThis.fetch = async (url) => {
+    const urlStr = String(url);
+    let resolvedPath = urlStr;
+    if (resolvedPath.startsWith("file://")) {
+        resolvedPath = fileURLToPath(resolvedPath);
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
+        const basename = path.basename(resolvedPath);
+        for (const dir of resourceDirs) {
+            const candidate = path.resolve(dir, basename);
+            if (fs.existsSync(candidate)) {
+                resolvedPath = candidate;
+                break;
+            }
+        }
+    }
+
+    if (fs.existsSync(resolvedPath)) {
+        const buffer = fs.readFileSync(resolvedPath);
+        return {
+            ok: true,
+            status: 200,
+            text: async () => buffer.toString("utf-8"),
+            json: async () => JSON.parse(buffer.toString("utf-8")),
+            arrayBuffer: async () => buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+        };
+    }
+
+    throw new Error(`Resource not found: ${url}`);
 };
 
-globalThis.reportError = (err) => {
-    console.error("[REPORT_ERROR]", err);
-};
+// Create the native SDL2 window if addon is present
+if (nativeGL?.createWindow) {
+    nativeGL.createWindow(windowWidth, windowHeight, windowTitle);
+}
 
-globalThis.onerror = (message, source, lineno, colno, error) => {
-    console.error("[WINDOW_ONERROR]", message, source, lineno, colno, error);
-};
-
-process.on("unhandledRejection", (reason, p) => {
-    console.error("[UNHANDLED_REJECTION]", reason);
-});
-process.on("uncaughtException", (err) => {
-    console.error("[UNCAUGHT_EXCEPTION]", err, err?.stack);
-});
-
-// Create native SDL window
-nativeGL.createWindow(windowWidth, windowHeight, windowTitle);
-
+// Render & animation frame loop
 let running = true;
 let nextAnimationFrameId = 1;
 let frameTimer = null;
@@ -706,8 +451,18 @@ function stop() {
     closeResolve();
 }
 
+function handleNativePointerEvent(type, x, y, button, scrollDeltaX, scrollDeltaY) {
+    if (globalThis.__dispatchPointerEvent) {
+        try {
+            globalThis.__dispatchPointerEvent(type, x, y, button, scrollDeltaX, scrollDeltaY);
+        } catch (err) {
+            console.error("Error dispatching pointer event:", err);
+        }
+    }
+}
+
 function pollEvents() {
-    if (running && !nativeGL.pollEvents()) {
+    if (running && nativeGL?.pollEvents && !nativeGL.pollEvents(handleNativePointerEvent)) {
         stop();
     }
 }
@@ -729,20 +484,23 @@ function runFrame() {
     for (const callback of callbacks) {
         try {
             callback(timestamp);
-        } catch (e) {
-            console.error("Frame callback error:", e);
+        } catch (err) {
+            console.error("Error in animation frame callback:", err);
         }
     }
 
-    for (const canvas of createdCanvases) {
-        if (canvas.__skikoNativeContext) {
-            nativeGL.present(canvas.__skikoNativeContext);
+    if (nativeGL?.present) {
+        if (activeCanvas && activeCanvas.__skikoNativeContext) {
+            nativeGL.present(activeCanvas.__skikoNativeContext);
+        } else {
+            const nonZero = [...canvases.values()].find((c) => c.__skikoNativeContext);
+            if (nonZero) {
+                nativeGL.present(nonZero.__skikoNativeContext);
+            }
         }
     }
 
-    if (animationFrameCallbacks.size > 0) {
-        scheduleFrame();
-    }
+    if (animationFrameCallbacks.size > 0) scheduleFrame();
 }
 
 globalThis.requestAnimationFrame = (callback) => {
@@ -756,83 +514,34 @@ globalThis.cancelAnimationFrame = (id) => {
     animationFrameCallbacks.delete(id);
 };
 
-globalThis.__skikoRequestAnimationFrame = globalThis.requestAnimationFrame;
-globalThis.__skikoCancelAnimationFrame = globalThis.cancelAnimationFrame;
-
-const eventInterval = setInterval(pollEvents, 16);
-
-// Sync Skiko native runtime if available
-const skikoSourceDir = "/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/build/wasm/packages/SkiaNonWebSample/kotlin";
-const possibleWasmModules = [
-    path.resolve(projectRoot, "out/compose-multiplatform-core/build/wasm/packages/mpp-demo/kotlin/mpp-demo.mjs"),
-    path.resolve(projectRoot, "out/compose-multiplatform-core/compose/mpp/demo/build/compileSync/wasmJs/main/developmentExecutable/kotlin/mpp-demo.mjs"),
-    path.resolve(__dirname, "build/compileSync/wasmJs/main/developmentExecutable/kotlin/mpp-demo.mjs"),
-    path.resolve(__dirname, "build/wasm/packages/mpp-demo/kotlin/mpp-demo.mjs")
-];
-
-let wasmModulePath = null;
-for (const p of possibleWasmModules) {
-    if (fs.existsSync(p)) {
-        wasmModulePath = p;
-        break;
-    }
-}
+// Periodic event polling timer
+const eventTimer = setInterval(pollEvents, 16);
 
 if (!wasmModulePath) {
-    console.error("Could not find compiled mpp-demo.mjs. Please build it first.");
+    console.error("Could not find compiled mpp-demo.mjs in build directories. Please compile the project first.");
+    if (nativeGL?.destroyWindow) nativeGL.destroyWindow();
     process.exit(1);
 }
 
-// Auto-sync skiko.mjs and skiko.wasm to the module dir if not already matching
-const moduleDir = path.dirname(wasmModulePath);
-if (fs.existsSync(skikoSourceDir)) {
-    for (const filename of ["skiko.mjs", "skiko.wasm", "js-skiko-reexport-symbols.mjs"]) {
-        const src = path.join(skikoSourceDir, filename);
-        const dst = path.join(moduleDir, filename);
-        if (fs.existsSync(src) && (!fs.existsSync(dst) || fs.statSync(src).size !== fs.statSync(dst).size)) {
-            fs.copyFileSync(src, dst);
-        }
-    }
-}
-
-// Ensure skiko.mjs in target directory handles dynamic side modules gracefully
-const targetSkikoMjs = path.join(moduleDir, "skiko.mjs");
-if (fs.existsSync(targetSkikoMjs)) {
-    let content = fs.readFileSync(targetSkikoMjs, "utf-8");
-    let patched = false;
-    if (content.includes('if (!wasmTable) throw new Error("Skiko core WASM does not export __indirect_function_table");')) {
-        content = content.replace(
-            'if (!wasmTable) throw new Error("Skiko core WASM does not export __indirect_function_table");',
-            'if (!wasmTable) { wasmTable = new WebAssembly.Table({ initial: 1024, element: "anyfunc" }); }'
-        );
-        patched = true;
-    }
-    if (content.includes('throw new Error(`Unresolved Skiko side-module imports: ${unresolvedImports.join(", ")}`);')) {
-        content = content.replace(
-            'throw new Error(`Unresolved Skiko side-module imports: ${unresolvedImports.join(", ")}`);',
-            'console.warn(`Unresolved Skiko side-module imports: ${unresolvedImports.join(", ")}`);'
-        );
-        patched = true;
-    }
-    if (patched) {
-        fs.writeFileSync(targetSkikoMjs, content, "utf-8");
-    }
-}
+console.log(`Launching Compose MPP Demo (DOM-less) from: ${wasmModulePath}`);
 
 try {
-    console.log(`Loading Compose MPP Demo from: ${wasmModulePath}`);
     await import(wasmModulePath);
-    console.log("Compose MPP Demo is running in native SDL2 window. Close window to exit.");
+    console.log("Compose MPP Demo is running. Close the window to exit.");
+    scheduleFrame();
     await closePromise;
 } catch (err) {
-    console.error("Error running Compose WASM Demo:", err);
+    console.error("Failed to execute Wasm module in Node SDL runner:", err);
 } finally {
-    clearInterval(eventInterval);
+    clearInterval(eventTimer);
     if (frameTimer !== null) clearTimeout(frameTimer);
-    for (const canvas of createdCanvases) {
-        if (canvas.__skikoNativeContext) {
+    for (const canvas of canvases.values()) {
+        if (canvas.__skikoNativeContext && nativeGL?.destroyContext) {
             nativeGL.destroyContext(canvas.__skikoNativeContext);
         }
     }
-    nativeGL.destroyWindow();
+    if (nativeGL?.destroyWindow) {
+        nativeGL.destroyWindow();
+    }
+    process.exit(0);
 }
