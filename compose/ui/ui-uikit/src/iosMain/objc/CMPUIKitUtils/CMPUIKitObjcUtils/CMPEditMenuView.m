@@ -90,8 +90,6 @@ typedef enum : NSUInteger {
 
 @property (assign, nonatomic) CGRect targetRect;
 @property (assign, nonatomic) CMPEditMenuState editMenuState;
-
-/// The edit menu must not be presented over the Writing Tools UI.
 @property (assign, nonatomic) BOOL isWritingToolsShown;
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));

@@ -489,11 +489,6 @@ internal abstract class TextInputConnection(
     override fun firstSelectionRectForRange(range: TextRange): DpRect? =
         lineSelectionDpRects(range).firstOrNull()
 
-    /**
-     * Returns one rectangle per text line with selected text in [range], in the [textInputView]
-     * coordinates. The Writing Tools UI, for example, uses them to anchor itself to the selected
-     * text. The rectangles are computed lazily, so taking only the first one is cheap.
-     */
     private fun lineSelectionDpRects(range: TextRange): Sequence<DpRect> {
         if (range.collapsed || isIncorrect(range)) {
             return emptySequence()
