@@ -49,6 +49,8 @@ import androidx.compose.ui.scene.Content
 import androidx.compose.ui.scene.rememberComposeSceneLayer
 import androidx.compose.ui.semantics.popup
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
@@ -570,7 +572,8 @@ private fun rememberPopupMeasurePolicy(
     containerSize: IntSize,
     platformInsets: PlatformInsets,
     layoutDirection: LayoutDirection,
-    parentBoundsInWindow: MutableState<IntRect?>
+    parentBoundsInWindow: MutableState<IntRect?>,
+    preferredDialogWidth: Density.(Constraints) -> Int = rememberPreferredDialogLayoutWidth()
 ) = remember(
     layer,
     popupPositionProvider,
@@ -578,11 +581,13 @@ private fun rememberPopupMeasurePolicy(
     containerSize,
     platformInsets,
     layoutDirection,
-    parentBoundsInWindow
+    parentBoundsInWindow,
+    preferredDialogWidth
 ) {
     ComposeSceneLayerMeasurePolicy(
         platformInsets = platformInsets,
-        usePlatformDefaultWidth = properties.usePlatformDefaultWidth
+        usePlatformDefaultWidth = properties.usePlatformDefaultWidth,
+        preferredDialogWidth = preferredDialogWidth
     ) { contentSize ->
         val parentRectInWindow = parentBoundsInWindow.value
         if (parentRectInWindow == null) {
