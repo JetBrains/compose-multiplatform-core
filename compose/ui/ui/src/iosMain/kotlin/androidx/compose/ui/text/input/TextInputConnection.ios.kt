@@ -17,37 +17,30 @@
 package androidx.compose.ui.text.input
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.EmptyInputTraits
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
-import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
-import androidx.compose.ui.platform.TextInputSelectionRect
 import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.platform.isValidIn
 import androidx.compose.ui.platform.movePositionByGraphemes
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.style.ResolvedTextDirection
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.ComposeTextInputView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.NativeTextInputView
 import androidx.compose.ui.window.OverlayInputView
-import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -87,11 +80,6 @@ internal abstract class TextInputConnection(
     protected val textFieldRectInRoot get() = currentRequest?.textFieldRectInRoot()
 
     abstract val rootView: UIView
-
-    /**
-     * Offset of the text layout origin in the [textInputView] coordinates.
-     */
-    protected open val textLayoutOffsetInView: Offset? get() = Offset.Zero
 
     open fun start(request: PlatformTextInputMethodRequest) {
         val inputViewWasFirstResponder = textInputView.isFirstResponder
@@ -470,62 +458,6 @@ internal abstract class TextInputConnection(
                     lineStart, min(offsetInLine, targetLineEnd - lineStart)
                 )
             }
-        }
-    }
-
-    override fun selectionDpRectsForRange(range: TextRange): List<TextInputSelectionRect> {
-        val lineRects = lineSelectionDpRects(range).toList()
-        return lineRects.mapIndexed { index, rect ->
-            TextInputSelectionRect(
-                dpRect = rect,
-                writingDirection = TextDirection.Content,
-                containsStart = index == 0,
-                containsEnd = index == lineRects.lastIndex,
-                isVertical = false
-            )
-        }
-    }
-
-    override fun firstSelectionRectForRange(range: TextRange): DpRect? =
-        lineSelectionDpRects(range).firstOrNull()
-
-    private fun lineSelectionDpRects(range: TextRange): Sequence<DpRect> {
-        if (range.collapsed || isIncorrect(range)) {
-            return emptySequence()
-        }
-        val offset = textLayoutOffsetInView ?: return emptySequence()
-        val currentTextLayoutResult = textLayoutResult ?: return emptySequence()
-        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
-            return emptySequence()
-        }
-
-        val firstLine = currentTextLayoutResult.getLineForOffset(range.start)
-        val lastLine = currentTextLayoutResult.getLineForOffset(range.end)
-        val startX = currentTextLayoutResult.getCursorRect(range.start).left
-        val endX = currentTextLayoutResult.getCursorRect(range.end).left
-        val density = rootView.density
-
-        return (firstLine..lastLine).asSequence().mapNotNull { line ->
-            val lineLeft = currentTextLayoutResult.getLineLeft(line)
-            val lineRight = currentTextLayoutResult.getLineRight(line)
-            val isRtl = currentTextLayoutResult.getParagraphDirection(
-                currentTextLayoutResult.getLineStart(line)
-            ) == ResolvedTextDirection.Rtl
-
-            val lineStartX = if (isRtl) lineRight else lineLeft
-            val lineEndX = if (isRtl) lineLeft else lineRight
-            val from = if (line == firstLine) startX else lineStartX
-            val to = if (line == lastLine) endX else lineEndX
-            if (from == to) {
-                // Nothing is selected on this line, e.g. the selection ends at its start.
-                return@mapNotNull null
-            }
-            Rect(
-                left = min(from, to),
-                top = currentTextLayoutResult.getLineTop(line),
-                right = max(from, to),
-                bottom = currentTextLayoutResult.getLineBottom(line)
-            ).translate(offset).toDpRect(density)
         }
     }
 
