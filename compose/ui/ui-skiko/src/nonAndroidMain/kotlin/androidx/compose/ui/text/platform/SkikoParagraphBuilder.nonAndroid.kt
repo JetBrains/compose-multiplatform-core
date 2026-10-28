@@ -163,7 +163,17 @@ private sealed interface ComputedStyle {
             return paint
         }
 
-        fun toSkTextStyle(fontFamilyResolver: FontFamily.Resolver): SkTextStyle {
+        fun resolveFont(fontFamilyResolver: FontFamily.Resolver): FontLoadResult? =
+            fontFamily?.let {
+                fontFamilyResolver.resolve(
+                    it,
+                    fontWeight ?: FontWeight.Normal,
+                    fontStyle ?: FontStyle.Normal,
+                    fontSynthesis ?: FontSynthesis.All
+                ).value as FontLoadResult
+            }
+
+        fun toSkTextStyle(font: FontLoadResult?): SkTextStyle {
             val res = SkTextStyle()
             if (textForegroundStyle.color.isSpecified) {
                 res.color = textForegroundStyle.color.toArgb()
@@ -205,15 +215,9 @@ private sealed interface ComputedStyle {
             res.subpixel = fontRasterizationSettings.subpixelPositioning
 
             res.fontSize = fontSize
-            fontFamily?.let {
-                val resolved = fontFamilyResolver.resolve(
-                    it,
-                    fontWeight ?: FontWeight.Normal,
-                    fontStyle ?: FontStyle.Normal,
-                    fontSynthesis ?: FontSynthesis.All
-                ).value as FontLoadResult
-                res.fontFamilies = resolved.aliases.toTypedArray()
-                res.typeface = resolved.typeface
+            font?.let {
+                res.fontFamilies = it.aliases.toTypedArray()
+                res.typeface = it.typeface
             }
 
             baselineShift?.let {
@@ -371,7 +375,9 @@ private fun ComputedStyle(
 // Building of SkTextStyle is a relatively expensive operation. We enable simple caching by
 // mapping SpanStyle to SkTextStyle. To increase the efficiency of this mapping we are making
 // most of the computations before converting Compose paragraph styles to Skia paragraph
-private val skTextStylesCache = WeakKeysCache<ComputedStyle.Immutable, SkTextStyle>()
+private val skTextStylesCache = WeakKeysCache<ComputedStyle.Immutable, CachedSkTextStyle>()
+
+private class CachedSkTextStyle(var font: FontLoadResult?, var skTextStyle: SkTextStyle)
 
 internal class ParagraphBuilder(
     val fontFamilyResolver: FontFamily.Resolver,
@@ -673,9 +679,16 @@ internal class ParagraphBuilder(
     }
 
     private fun makeSkTextStyle(style: ComputedStyle.Immutable): SkTextStyle {
-        return skTextStylesCache.getOrPut(style) {
-            it.toSkTextStyle(fontFamilyResolver)
+        val font = style.resolveFont(fontFamilyResolver)
+        val cached = skTextStylesCache.getOrPut(style) {
+            CachedSkTextStyle(font, it.toSkTextStyle(font))
         }
+        // An async font resolves to its fallback until it loads; don't keep using that style.
+        if (cached.font?.typeface != font?.typeface) {
+            cached.font = font
+            cached.skTextStyle = style.toSkTextStyle(font)
+        }
+        return cached.skTextStyle
     }
 
     internal val defaultFont by lazy {

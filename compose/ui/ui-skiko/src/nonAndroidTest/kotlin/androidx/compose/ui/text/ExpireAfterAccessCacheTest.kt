@@ -19,6 +19,7 @@ package androidx.compose.ui.text
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class ExpireAfterAccessCacheTest {
     private var time: Long = 0
@@ -85,6 +86,38 @@ class ExpireAfterAccessCacheTest {
         assertEquals(setOf("k2"), cache.map.keys)
         assertEquals(setOf("k2"), cache.accessTime.keys)
         assertEquals(time, cache.accessTime["k2"])
+    }
+
+    @Test
+    fun get_missingKey_returnsNull() {
+        assertNull(cache.get("k1"))
+        assertEquals(emptySet(), cache.accessTime.keys)
+    }
+
+    @Test
+    fun get_refreshesAccessTime() {
+        cache.getOrPut("k1") { "v1" }
+
+        time += 900.millisToNanos()
+        assertEquals("v1", cache.get("k1"))
+        assertEquals(time, cache.accessTime["k1"])
+
+        // Still alive: the last access was less than a second ago.
+        time += 900.millisToNanos()
+        cache.getOrPut("k2") { "v2" }
+        assertEquals(setOf("k1", "k2"), cache.map.keys)
+    }
+
+    @Test
+    fun get_evictsExpiredKeys() {
+        cache.getOrPut("k1") { "v1" }
+        time += 500.millisToNanos()
+        cache.getOrPut("k2") { "v2" }
+
+        time += 900.millisToNanos()
+        assertEquals("v2", cache.get("k2"))
+        assertEquals(setOf("k2"), cache.map.keys)
+        assertEquals(setOf("k2"), cache.accessTime.keys)
     }
 }
 
