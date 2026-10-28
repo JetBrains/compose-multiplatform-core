@@ -127,6 +127,7 @@ private fun UIKitInstrumentedTest.setUpField(
             setContent {
                 LaunchedEffect(Unit) { focusRequester.requestFocus() }
                 Box(Modifier.fillMaxSize()) {
+                    @Suppress("DEPRECATION")
                     BasicTextField(
                         value = value.value,
                         onValueChange = { value.value = it },

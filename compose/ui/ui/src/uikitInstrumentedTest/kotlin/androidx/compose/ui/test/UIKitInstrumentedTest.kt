@@ -228,6 +228,7 @@ internal fun runUIKitInstrumentedTest(
 internal class UIKitInstrumentedTest(
     val useHostingView: Boolean
 ) {
+    @Suppress("ConstPropertyName")
     companion object {
         /**
          * The factor by which animations are sped up in instrumented tests.
@@ -400,7 +401,7 @@ internal class UIKitInstrumentedTest(
         content: @Composable () -> Unit
     ): ComposeHostingView {
         val configuration = ComposeUIViewConfiguration()
-            .apply({ enforceStrictPlistSanityCheck = false })
+            .apply { enforceStrictPlistSanityCheck = false }
             .apply(configure)
 
         return ComposeHostingView(
@@ -421,7 +422,7 @@ internal class UIKitInstrumentedTest(
         content: @Composable () -> Unit
     ): ComposeHostingViewController {
         val configuration = ComposeUIViewControllerConfiguration()
-            .apply({ enforceStrictPlistSanityCheck = false })
+            .apply { enforceStrictPlistSanityCheck = false }
             .apply(configure)
 
         return ComposeHostingViewController(
@@ -889,7 +890,7 @@ internal class UIKitInstrumentedTest(
             delay(stepInterval.inWholeMilliseconds)
             val progress = (i + 1).toFloat() / steps.toFloat()
             val scale = 1.0 + (finalScale - 1.0) * progress
-            pinchEvent.pinchBy(scale.toDouble(), targetWindow)
+            pinchEvent.pinchBy(scale, targetWindow)
         }
 
         delay(stepInterval.inWholeMilliseconds)
@@ -973,8 +974,6 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             )
         }
 
-        // Must be applied before the Compose container is attached to the window: it picks the
-        // window layer speed up in `onDidMoveToWindow` to derive its `MotionDurationScale`.
         startObservingWindowVisibility()
         applyAnimationSpeed()
 
@@ -1048,6 +1047,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     private fun UIWindow.applyAnimationSpeed() {
         layer.speed = animationSpeed
+        FrameChoreographer.updateMotionSpeedForWindow(this)
     }
 
     /**
@@ -1201,7 +1201,7 @@ internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
     UIGraphicsGetCurrentContext() ?: return null
 
     val scene = appDelegate.window()?.windowScene ?: return null
-    scene.windows.mapNotNull { it as? UIWindow }
+    scene.windows.filterIsInstance<UIWindow>()
         .filter { !it.hidden && it.alpha > 0.0 }
         .sortedBy { it.windowLevel }
         .forEach { window ->
