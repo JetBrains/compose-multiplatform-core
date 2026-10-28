@@ -48,11 +48,7 @@ internal class SkikoParagraphIntrinsics(
     private val fontFamilyResolver: FontFamily.Resolver,
     private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
-<<<<<<< HEAD
-    private var resolvedTypefaces: TypefaceDirtyTrackerLinkedList? = null
-=======
     private val resolvedTypefaces = TypefaceDirtyTracker()
->>>>>>> origin/jb-main
 
     val textDirection =
         resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
@@ -62,11 +58,7 @@ internal class SkikoParagraphIntrinsics(
     private var hasUnresolvedFontStale by mutableStateOf(false)
 
     override val hasStaleResolvedFonts: Boolean
-<<<<<<< HEAD
-        get() = hasUnresolvedFontStale || (resolvedTypefaces?.isStaleResolvedFont ?: false)
-=======
         get() = hasUnresolvedFontStale || resolvedTypefaces.isStaleResolvedFont
->>>>>>> origin/jb-main
 
     private var layouter: ParagraphLayouter? = newLayouter()
 
@@ -86,13 +78,7 @@ internal class SkikoParagraphIntrinsics(
             density = density,
             fontFamilyResolver = fontFamilyResolver,
             onFontStale = { hasUnresolvedFontStale = true },
-<<<<<<< HEAD
-            onFontResolved = { state ->
-                resolvedTypefaces = TypefaceDirtyTrackerLinkedList(state, resolvedTypefaces)
-            },
-=======
             onFontResolved = resolvedTypefaces::track,
->>>>>>> origin/jb-main
         )
 
     override var minIntrinsicWidth = 0f
