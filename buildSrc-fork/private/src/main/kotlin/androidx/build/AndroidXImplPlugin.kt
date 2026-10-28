@@ -727,8 +727,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
         }
 
-        project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
-
         project.configureDependencyVerification(androidXExtension) { taskProvider ->
             kotlinMultiplatformAndroidTarget.compilations.configureEach {
                 taskProvider.configure { task -> task.dependsOn(it.compileTaskProvider) }
@@ -864,8 +862,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             // Disable debug build type for Android Libraries
             beforeVariants(selector().withBuildType("debug")) { variant -> variant.enable = false }
         }
-
-        project.configureVersionFileWriter(libraryAndroidComponentsExtension, androidXExtension)
 
         val prebuiltLibraries = listOf("libtracing_perfetto.so", "libc++_shared.so")
         libraryAndroidComponentsExtension.onVariants { variant ->
