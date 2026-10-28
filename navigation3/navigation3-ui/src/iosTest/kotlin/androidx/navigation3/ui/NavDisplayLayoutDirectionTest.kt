@@ -80,13 +80,14 @@ class NavDisplayLayoutDirectionTest {
 
     private fun incomingEdgeOffset(layoutDirection: LayoutDirection, pop: Boolean): Float {
         var extreme = 0f
+        @Suppress("DEPRECATION")
         runComposeUiTest {
             val backStack =
                 if (pop) mutableStateListOf(FIRST, SECOND) else mutableStateListOf(FIRST)
             setContent {
                 CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                     NavDisplay(backStack) { key ->
-                        NavEntry(key) { Box(Modifier.fillMaxSize().testTag(key.toString())) }
+                        NavEntry(key) { Box(Modifier.fillMaxSize().testTag(key)) }
                     }
                 }
             }

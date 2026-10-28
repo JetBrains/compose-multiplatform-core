@@ -131,6 +131,70 @@ class TextFieldEditMenuTest {
 
         openToolbar(textFieldTag = "TextField")
 
+        verifyFullToolbarPresent()
+    }
+
+    @Test
+    fun testBasicTextFieldToolbarNewContextMenu() = runContextMenuTest(true) {
+        UIPasteboard.generalPasteboard().string = "Paste text"
+        setContent {
+            val focusRequester = remember { FocusRequester() }
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                @Suppress("DEPRECATION")
+                TextField("Hello-LongLongLongLongLong-text", {}, modifier = textFieldModifier(focusRequester))
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        openToolbar(textFieldTag = "TextField")
+
+        verifyFullToolbarPresent()
+    }
+
+    @Test
+    fun testBasicTextField2ToolbarNewContextMenu() = runContextMenuTest(true) {
+        UIPasteboard.generalPasteboard().string = "Paste text"
+        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
+        setContent {
+            val focusRequester = remember { FocusRequester() }
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(textFieldState, modifier = textFieldModifier(focusRequester))
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        openToolbar(textFieldTag = "TextField")
+
+        verifyFullToolbarPresent()
+    }
+
+    @Test
+    fun testBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTest {
+        val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
+        setContent {
+            val focusRequester = remember { FocusRequester() }
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                @Suppress("DEPRECATION")
+                BasicTextField(
+                    value = textFieldValue.value,
+                    onValueChange = { textFieldValue.value = it },
+                    modifier = textFieldModifier(focusRequester)
+                )
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        fun MutableState<TextFieldValue>.isFullySelected(): Boolean =
+            value.selection.start == 0 && value.selection.end == value.text.length
+
+        openToolbar(textFieldTag = "TextField")
+
         waitForContextMenu()
         assertFalse(state.isFullySelected())
 
@@ -590,6 +654,7 @@ class TextFieldEditMenuTest {
             selectionState = rememberSelectionState()
             SelectionContainer(state = selectionState) {
                 Column(modifier = Modifier.safeDrawingPadding()) {
+                    @Suppress("DEPRECATION")
                     TextField(value = PARTIAL_SELECTION_TEXT, onValueChange = {})
                     Text(SELECTION_CONTAINER_TEXT, modifier = Modifier.testTag("SelectionText"))
                 }
@@ -780,5 +845,9 @@ class TextFieldEditMenuTest {
                 "Context menu item \"$label\" should be hidden"
             )
         }
+    }
+
+    private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
+        verifyContextMenuItemsVisible(listOf("Cut", "Copy", "Paste", "Select All"))
     }
 }

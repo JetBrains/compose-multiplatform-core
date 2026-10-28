@@ -29,7 +29,10 @@ import kotlin.test.assertEquals
 import platform.UIKit.UIContentSizeCategoryAccessibilityLarge
 import platform.UIKit.UIContentSizeCategoryLarge
 
+@Suppress("unused")
 internal class FontScaleInHostingViewTest: FontScaleTest({ runUIKitInstrumentedTest(true, it) })
+
+@Suppress("unused")
 internal class FontScaleInHostingViewControllerTest: FontScaleTest({ runUIKitInstrumentedTest(false, it) })
 
 internal abstract class FontScaleTest(
@@ -136,6 +139,7 @@ internal abstract class FontScaleTest(
         waitUntil { dialogFontScale == AccessibilityLargeFontScale }
     }
 
+    @Suppress("ConstPropertyName")
     private companion object {
         const val DefaultFontScale = 1f
         const val AccessibilityLargeFontScale = 1.5f

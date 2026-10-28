@@ -38,7 +38,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@OptIn(ExperimentalComposeUiApi::class)
 class SyntheticEventSenderTest {
     @Test
     fun `mouse, shouldn't generate new events if order is correct`() {

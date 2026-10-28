@@ -27,7 +27,6 @@ import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
-import kotlinx.coroutines.runBlocking
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSDate
 import platform.Foundation.NSRunLoop
