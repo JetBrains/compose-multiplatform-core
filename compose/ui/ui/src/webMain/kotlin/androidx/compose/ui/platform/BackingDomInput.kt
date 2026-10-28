@@ -67,7 +67,20 @@ internal class BackingDomInput(
         // and https://youtrack.jetbrains.com/issue/CMP-7836/
         // Safari will ignore a focus request if it's called not during user interaction.
 
-        if (!inputStrategy.isInputActive()) backingElement.focus()
+        if (!inputStrategy.isInputActive()) {
+            // Pause the selection change listener before focusing: Safari resets the DOM
+            // selection to (0,0) when a contenteditable regains focus, and the resulting
+            // selectionchange event must not be forwarded to Compose as a SetSelectionCommand.
+            // The pause will be reset by the subsequent updateState() call's rAF callback,
+            // or by the rAF below if updateState() doesn't run.
+            inputStrategy.pauseSelectionChangeListener = true
+            backingElement.focus()
+            // Safari has now reset the DOM selection to (0,0). Restore the correct selection
+            // from the last known Compose state so that when the pause is lifted the DOM
+            // selection matches Compose and no stale SetSelectionCommand is sent.
+            inputStrategy.restoreSelectionFromState()
+        }
+
         window.requestAnimationFrame {
             // TODO: requesting focus in rAF is rather redundant; need to verify
             // A new focus request will replace the previous one in iOS Safari 27+.
@@ -75,7 +88,9 @@ internal class BackingDomInput(
             // Such a request will be ignored and the software keyboard won't show up.
             // See https://github.com/WebKit/WebKit/commit/64ee64bad41e5d511964c29b8ab00ee77269821a
             // Therefore, make a new focus request conditionally:
-            if (!inputStrategy.isInputActive()) backingElement.focus()
+            if (!inputStrategy.isInputActive()) {
+                backingElement.focus()
+            }
         }
     }
 

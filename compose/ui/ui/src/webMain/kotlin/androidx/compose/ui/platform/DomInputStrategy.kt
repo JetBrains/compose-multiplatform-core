@@ -52,7 +52,7 @@ internal class DomInputStrategy(
     private var isInCompositionMode = false
 
     // To avoid the re-triggering of the selection change
-    private var pauseSelectionChangeListener = false
+    internal var pauseSelectionChangeListener = false
     private var selectionChangeListener: ((Event) -> Unit)? = null
 
     init {
@@ -65,6 +65,17 @@ internal class DomInputStrategy(
                 runCheckpoint(currentTextFieldValue = lastMeaningfulUpdate)
             }
         }
+    }
+
+    /**
+     * Restores the DOM selection to match the last known Compose selection.
+     * Used after re-focusing the contenteditable, which causes Safari to reset
+     * the DOM selection to (0,0). The [pauseSelectionChangeListener] flag must
+     * already be set before calling this method.
+     */
+    fun restoreSelectionFromState() {
+        val sel = lastMeaningfulUpdate.selection
+        setSelectionRange(htmlInput, sel.min, sel.max)
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
@@ -81,7 +92,6 @@ internal class DomInputStrategy(
 
         if (needsTextUpdate) {
             htmlInput.textContent = textFieldValue.text
-
             htmlInput.focus()
         }
 

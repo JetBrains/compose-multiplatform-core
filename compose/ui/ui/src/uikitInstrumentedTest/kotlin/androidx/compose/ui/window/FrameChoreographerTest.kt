@@ -18,15 +18,24 @@ package androidx.compose.ui.window
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import platform.Foundation.NSTimeInterval
+import platform.UIKit.UIWindow
 
 class FrameChoreographerTest {
 
@@ -51,6 +60,45 @@ class FrameChoreographerTest {
         } finally {
             choreographer.removeListener(listener)
         }
+    }
+
+    @Test
+    fun testChoreographerIsCreatedPerWindow() = runUIKitInstrumentedTest {
+        setContent { Box(Modifier.fillMaxSize()) }
+        val choreographer = frameChoreographer
+        assertNotNull(choreographer, "frameChoreographer is null")
+
+        val anotherWindow = UIWindow()
+        val anotherChoreographer = FrameChoreographer.choreographerForWindow(anotherWindow)
+        try {
+            assertNotSame(
+                choreographer,
+                anotherChoreographer,
+                "Each window must get its own choreographer"
+            )
+            assertSame(
+                anotherChoreographer,
+                FrameChoreographer.choreographerForWindow(anotherWindow),
+                "The choreographer must be reused for the same window"
+            )
+        } finally {
+            anotherChoreographer.dispose()
+        }
+    }
+
+    @Test
+    fun testCompositionEffectsUseWindowMotionDurationScale() = runUIKitInstrumentedTest {
+        var scaleFactor: Float? = null
+        setContent {
+            LaunchedEffect(Unit) {
+                scaleFactor = coroutineContext[MotionDurationScale]?.scaleFactor
+            }
+        }
+        waitForIdle()
+
+        val effectScaleFactor =
+            assertNotNull(scaleFactor, "MotionDurationScale is missing in the effect context")
+        assertEquals(1f / UIKitInstrumentedTest.TestsAnimationSpeed, effectScaleFactor, 1e-6f)
     }
 
     @Test
@@ -142,6 +190,48 @@ class FrameChoreographerTest {
             listener.displayLinkCount,
             "Removed listener should not receive further callbacks"
         )
+    }
+
+    @Test
+    fun testPerformOutsideFrameUpdateRunsImmediatelyOutsideFrame() = runUIKitInstrumentedTest {
+        setContent { Box(Modifier.fillMaxSize()) }
+        val choreographer = frameChoreographer
+        assertNotNull(choreographer, "frameChoreographer is null")
+        settleChoreographer()
+
+        val log = mutableListOf<String>()
+        log += "before"
+        choreographer.performOutsideRecomposerFrame { log += "action" }
+        log += "after"
+
+        assertEquals(listOf("before", "action", "after"), log)
+    }
+
+    @Test
+    fun testPerformOutsideFrameUpdateIsDeferredUntilFrameEnds() = runUIKitInstrumentedTest {
+        val log = mutableListOf<String>()
+        var isTriggered by mutableStateOf(false)
+        setContent {
+            Box(Modifier.fillMaxSize())
+            if (isTriggered) {
+                // Side effects are applied by the recomposer inside the frame
+                SideEffect {
+                    log += "effectStart"
+                    frameChoreographer?.performOutsideRecomposerFrame { log += "action" }
+                    log += "effectEnd"
+                }
+            }
+        }
+        val choreographer = frameChoreographer
+        assertNotNull(choreographer, "frameChoreographer is null")
+        settleChoreographer()
+
+        isTriggered = true
+        waitUntil("Deferred action should be performed after the frame") {
+            log.contains("action")
+        }
+
+        assertEquals(listOf("effectStart", "effectEnd", "action"), log)
     }
 
     private fun UIKitInstrumentedTest.settleChoreographer() {

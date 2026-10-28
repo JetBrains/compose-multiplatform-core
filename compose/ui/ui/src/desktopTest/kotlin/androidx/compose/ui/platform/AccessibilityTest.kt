@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.Button
 import androidx.compose.material.LinearProgressIndicator
@@ -392,6 +393,7 @@ class AccessibilityTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun verifyTextField1A11y() = runDesktopA11yTest {
         test.setContent {
@@ -415,6 +417,37 @@ class AccessibilityTest {
         }
 
         verifyTextFieldA11y(onNodeWithTag("textField"))
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-11013
+    @Test
+    fun accessibleEditableTextKeepsLastCharacter() = runDesktopA11yTest {
+        val state = TextFieldState("abcdef")
+        test.setContent {
+            BasicTextField(
+                state = state,
+                modifier = Modifier.testTag("textField")
+            )
+        }
+
+        fun editableText() = onNodeWithTag("textField")
+            .fetchAccessible().accessibleContext!!.accessibleEditableText!!
+
+        editableText().replaceText(1, 2, "Z")
+        waitForIdle()
+        assertEquals("aZcdef", state.text.toString())
+
+        editableText().insertTextAtIndex(3, "XY")
+        waitForIdle()
+        assertEquals("aZcXYdef", state.text.toString())
+
+        editableText().delete(1, 3)
+        waitForIdle()
+        assertEquals("aXYdef", state.text.toString())
+
+        editableText().replaceText(4, 6, "!")
+        waitForIdle()
+        assertEquals("aXYd!", state.text.toString())
     }
 
     @Test
@@ -493,6 +526,7 @@ class AccessibilityTest {
             .isEqualTo(AccessibleRole.PUSH_BUTTON)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldAccessibleNameUsesContentDescription() = runDesktopA11yTest {
         test.setContent {
@@ -512,6 +546,7 @@ class AccessibilityTest {
         assertThat(context?.accessibleDescription).isEqualTo("Email")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textFieldAccessibleNameIsNullWithoutContentDescription() = runDesktopA11yTest {
         test.setContent {

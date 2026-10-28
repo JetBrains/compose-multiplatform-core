@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("unused")
+
 package androidx.compose.ui
 
 import androidx.compose.runtime.Composable
@@ -27,7 +29,6 @@ import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Layout
@@ -41,9 +42,6 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.offset
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
-import kotlin.test.assertEquals
-import org.jetbrains.skia.Bitmap
 
 // A copy from androidInstrumentedTest/kotlin/androidx/compose/ui/AndroidLayoutDrawTest.kt
 
@@ -237,8 +235,8 @@ fun SimpleRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
         var width = 0
         var height = 0
         val placeables =
-            measurables.map {
-                it.measure(constraints.copy(maxWidth = constraints.maxWidth - width)).also {
+            measurables.map { measurable ->
+                measurable.measure(constraints.copy(maxWidth = constraints.maxWidth - width)).also {
                     width += it.width
                     height = max(height, it.height)
                 }

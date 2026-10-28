@@ -221,7 +221,7 @@ private class TestInputRequest: PlatformTextInputMethodRequest {
     override val state: TextEditorState get() = error("Test method")
     override val imeOptions: ImeOptions get() = error("Test method")
     override val onEditCommand: (List<EditCommand>) -> Unit get() = error("Test method")
-    override val onImeAction: ((ImeAction) -> Unit)? get() = error("Test method")
+    override val onImeAction: ((ImeAction) -> Unit) get() = error("Test method")
     override val textLayoutResult: () -> TextLayoutResult? get() = error("Test method")
     override val focusedRectInRoot: () -> Rect? get() = error("Test method")
     override val textFieldRectInRoot: () -> Rect? get() = error("Test method")

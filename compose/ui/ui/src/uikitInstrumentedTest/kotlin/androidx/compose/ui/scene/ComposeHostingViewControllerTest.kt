@@ -20,6 +20,7 @@ import androidx.compose.testutils.assertPixelColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.MockAppDelegate
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.utils.captureToImage
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Dp
@@ -27,13 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlin.test.Test
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import platform.CoreGraphics.CGRectMake
-import platform.Foundation.NSDate
-import platform.Foundation.NSRunLoop
-import platform.Foundation.dateWithTimeIntervalSinceNow
-import platform.Foundation.runUntilDate
 import platform.UIKit.UIColor
 import platform.UIKit.UIViewController
 import platform.UIKit.addChildViewController
@@ -41,7 +37,6 @@ import platform.UIKit.didMoveToParentViewController
 
 class ComposeHostingViewControllerTest {
     @Test
-    @OptIn(ExperimentalForeignApi::class)
     fun testOpaqueBackground() = runBlocking {
         val size = 100.dp
         val appDelegate = makeOpacityTestAppDelegate(size = size, opaque = true)
@@ -65,7 +60,6 @@ class ComposeHostingViewControllerTest {
     }
 
     @Test
-    @OptIn(ExperimentalForeignApi::class)
     fun testTransparentBackground() = runBlocking {
         val size = 100.dp
         val appDelegate = makeOpacityTestAppDelegate(size = size, opaque = false)
@@ -89,7 +83,7 @@ class ComposeHostingViewControllerTest {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private suspend fun makeOpacityTestAppDelegate(size: Dp, opaque: Boolean): MockAppDelegate {
+    private fun makeOpacityTestAppDelegate(size: Dp, opaque: Boolean): MockAppDelegate {
         val appDelegate = MockAppDelegate()
         val contentController = UIViewController().also {
             it.view.backgroundColor = UIColor.redColor
@@ -107,9 +101,8 @@ class ComposeHostingViewControllerTest {
         contentController.view.addSubview(composeController.view)
         composeController.didMoveToParentViewController(contentController)
 
-        while (composeController.hasInvalidations()) {
-            delay(100)
-            NSRunLoop.currentRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.1))
+        UIKitInstrumentedTest.waitUntil("Compose hosting view controller should become idle") {
+            !composeController.hasInvalidations()
         }
 
         return appDelegate

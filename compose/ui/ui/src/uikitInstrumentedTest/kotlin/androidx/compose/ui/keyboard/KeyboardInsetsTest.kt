@@ -85,10 +85,12 @@ import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
+@Suppress("unused")
 internal class KeyboardInsetsInHostingViewTest : KeyboardInsetsTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
 )
 
+@Suppress("unused")
 internal class KeyboardInsetsInHostingViewControllerTest : KeyboardInsetsTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
 )
@@ -114,6 +116,7 @@ internal class KeyboardInsetsRotationTest {
                         detectTapGestures { focusManager.clearFocus(force = true) }
                     }
             ) {
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -134,7 +137,7 @@ internal class KeyboardInsetsRotationTest {
             waitForIdle()
         }
 
-        // Any tap outside of the text field is handled by the box behind it and clears the focus.
+        // Any tap outside the text field is handled by the box behind it and clears the focus.
         fun tapOutsideTextField() {
             tap(DpOffset(screenSize.width / 2, screenSize.height / 4))
             waitForIdle()
@@ -144,12 +147,9 @@ internal class KeyboardInsetsRotationTest {
         }
 
         fun assertFocusedAboveKeyboard(step: String) {
-            assertTrue(isFocused, "Text field must be focused $step")
-            assertEquals(
-                expected = screenSize.height - keyboardHeight,
-                actual = textFieldRectInWindow?.bottom,
-                message = "Focused text field must be offset above the keyboard $step"
-            )
+            waitUntil("Text field must be focused and offset above the keyboard $step") {
+                isFocused && textFieldRectInWindow?.bottom == screenSize.height - keyboardHeight
+            }
         }
 
         tapTextField()
@@ -205,6 +205,7 @@ internal abstract class KeyboardInsetsTest(
                         drawContent()
                     }
             ) {
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -296,6 +297,7 @@ internal abstract class KeyboardInsetsTest(
                         contentFrames.add(lastContentFrame)
                     }
             ) {
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -379,6 +381,7 @@ internal abstract class KeyboardInsetsTest(
                     factory = { interopView },
                     modifier = Modifier.fillMaxSize()
                 )
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -425,15 +428,18 @@ internal abstract class KeyboardInsetsTest(
             fun TestTextField(
                 requester: FocusRequester,
                 onPositionInWindowChanged: (DpRect) -> Unit
-            ) = TextField(
-                value = "",
-                onValueChange = {},
-                modifier = Modifier
-                    .focusRequester(requester)
-                    .onGloballyPositioned {
-                        onPositionInWindowChanged(it.boundsInWindow().toDpRect(density))
-                    }
-            )
+            ) {
+                @Suppress("DEPRECATION")
+                TextField(
+                    value = "",
+                    onValueChange = {},
+                    modifier = Modifier
+                        .focusRequester(requester)
+                        .onGloballyPositioned {
+                            onPositionInWindowChanged(it.boundsInWindow().toDpRect(density))
+                        }
+                )
+            }
 
             Column(Modifier.fillMaxSize()) {
                 Spacer(modifier = Modifier.weight(1f))
@@ -501,6 +507,7 @@ internal abstract class KeyboardInsetsTest(
                 contentFrames.add(it.boundsInRoot().toDpRect(density))
             }) {
                 Spacer(Modifier.weight(1f))
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -572,6 +579,7 @@ internal abstract class KeyboardInsetsTest(
                 contentFrames.add(it.boundsInRoot().toDpRect(density))
             }) {
                 Spacer(Modifier.weight(1f))
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -615,6 +623,7 @@ internal abstract class KeyboardInsetsTest(
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
         }) {
             val focusRequester = remember { FocusRequester() }
+            @Suppress("DEPRECATION")
             BasicTextField(
                 value = "test Focusable AboveKeyboard Large Text Field".repeat(200),
                 onValueChange = {},
@@ -649,6 +658,7 @@ internal abstract class KeyboardInsetsTest(
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
         }) {
             val focusRequester = remember { FocusRequester() }
+            @Suppress("DEPRECATION")
             BasicTextField(
                 value = "test Focusable AboveKeyboard Large Text Field".repeat(200),
                 onValueChange = {},
@@ -687,6 +697,7 @@ internal abstract class KeyboardInsetsTest(
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
         }) {
             val imeInsets = WindowInsets.ime
+            @Suppress("DEPRECATION")
             BasicTextField(
                 value = "test Focusable AboveKeyboard Large Text Field".repeat(200),
                 onValueChange = {},
@@ -736,6 +747,7 @@ internal abstract class KeyboardInsetsTest(
             onFocusBehavior = OnFocusBehavior.DoNothing
         }) {
             val focusRequester = remember { FocusRequester() }
+            @Suppress("DEPRECATION")
             BasicTextField(
                 value = "test Focusable AboveKeyboard Large Text Field".repeat(200),
                 onValueChange = {},
@@ -778,6 +790,7 @@ internal abstract class KeyboardInsetsTest(
                 sheetState = sheetState,
                 contentWindowInsets = { WindowInsets.ime }
             ) {
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -809,6 +822,7 @@ internal abstract class KeyboardInsetsTest(
                 ),
                 content = {
                     Box(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+                        @Suppress("DEPRECATION")
                         BasicTextField(
                             value = "",
                             onValueChange = {},
@@ -843,6 +857,7 @@ internal abstract class KeyboardInsetsTest(
                 ),
                 content = {
                     Box(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+                        @Suppress("DEPRECATION")
                         BasicTextField(
                             value = "",
                             onValueChange = {},
@@ -880,6 +895,7 @@ internal abstract class KeyboardInsetsTest(
                     ),
                     content = {
                         Box(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+                            @Suppress("DEPRECATION")
                             BasicTextField(
                                 value = "",
                                 onValueChange = {},

@@ -26,7 +26,8 @@ internal actual fun ContextMenuArea(
     manager: TextFieldSelectionManager,
     content: @Composable () -> Unit
 ) {
-    WebTextToolbarArea { CommonContextMenuArea(manager, content) }
+    InstallWebTextToolbarRenderer()
+    CommonContextMenuArea(manager, content)
 }
 
 @Composable
@@ -35,7 +36,8 @@ internal actual fun ContextMenuArea(
     enabled: Boolean,
     content: @Composable () -> Unit
 ) {
-    WebTextToolbarArea { CommonContextMenuArea(selectionState, enabled, content) }
+    InstallWebTextToolbarRenderer()
+    CommonContextMenuArea(selectionState, enabled, content)
 }
 
 @Composable
@@ -43,5 +45,6 @@ internal actual fun ContextMenuArea(
     manager: SelectionManager,
     content: @Composable () -> Unit
 ) {
-    WebTextToolbarArea { CommonContextMenuArea(manager, content) }
+    InstallWebTextToolbarRenderer()
+    CommonContextMenuArea(manager, content)
 }

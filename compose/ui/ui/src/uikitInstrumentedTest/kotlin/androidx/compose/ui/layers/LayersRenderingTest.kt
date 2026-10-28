@@ -29,13 +29,16 @@ import androidx.compose.ui.background
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.captureScreenshot
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.forEachPixel
 import androidx.compose.ui.test.utils.forEachPixelInRect
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.window.Popup
@@ -43,6 +46,7 @@ import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import platform.UIKit.UIImage
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
@@ -193,4 +197,70 @@ class LayersRenderingTest {
         awaitPopupContentDisposal()
         assertFrameColor(Color.Blue)
     }
+
+    @Test
+    fun testRemovingTopPopupWithSiblingDoesNotLeaveStaleContent() = runUIKitInstrumentedTest {
+        val popupSize = 2.dp
+        var showRedPopup by mutableStateOf(true)
+        fun popupBoundsAt(y: Dp) = with(density) {
+            DpRect(
+                origin = DpOffset(x = 0.dp, y = y),
+                size = DpSize(popupSize, popupSize),
+            ).toRect().roundToIntRect()
+        }
+        val redPopup = ExpectedColorRect(popupBoundsAt(0.dp), Color.Red)
+        val bluePopup = ExpectedColorRect(popupBoundsAt(popupSize), Color.Blue)
+
+        setContent {
+            Box(Modifier.fillMaxSize().background(Color.White))
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = bluePopup.bounds.topLeft,
+                properties = PopupProperties(usePlatformInsets = false),
+            ) {
+                Box(Modifier.size(popupSize).background(Color.Blue))
+            }
+            if (showRedPopup) {
+                Popup(
+                    alignment = Alignment.TopStart,
+                    offset = redPopup.bounds.topLeft,
+                    properties = PopupProperties(usePlatformInsets = false),
+                ) {
+                    Box(Modifier.size(popupSize).background(Color.Red))
+                }
+            }
+        }
+
+        waitForIdle()
+        assertTrue(screenshotMatches(listOf(redPopup, bluePopup)))
+
+        showRedPopup = false
+        waitForIdle()
+        assertTrue(screenshotMatches(listOf(bluePopup)))
+    }
+}
+
+private fun UIKitInstrumentedTest.screenshotMatches(
+    expectedColorRects: List<ExpectedColorRect>,
+    backgroundColor: Color = Color.White,
+) = assertNotNull(captureScreenshot()).matchesColorLayout(backgroundColor, expectedColorRects)
+
+private data class ExpectedColorRect(
+    val bounds: IntRect,
+    val color: Color,
+)
+
+private fun UIImage.matchesColorLayout(
+    backgroundColor: Color,
+    expectedColorRects: List<ExpectedColorRect>,
+): Boolean {
+    var matches = true
+    forEachPixel { x, y, actualColor ->
+        val expectedColor = expectedColorRects.firstOrNull {
+            x in it.bounds.left until it.bounds.right &&
+                y in it.bounds.top until it.bounds.bottom
+        }?.color ?: backgroundColor
+        if (actualColor != expectedColor) matches = false
+    }
+    return matches
 }

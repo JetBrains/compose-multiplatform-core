@@ -228,6 +228,7 @@ internal fun runUIKitInstrumentedTest(
 internal class UIKitInstrumentedTest(
     val useHostingView: Boolean
 ) {
+    @Suppress("ConstPropertyName")
     companion object {
         /**
          * The factor by which animations are sped up in instrumented tests.
@@ -326,7 +327,7 @@ internal class UIKitInstrumentedTest(
     }
 
     val frameChoreographer: FrameChoreographer? get() =
-        appDelegate.window()?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
+        appDelegate.window()?.let { FrameChoreographer.choreographerForWindow(it) }
 
     fun setContent(
         configure: ComposeContainerConfiguration.() -> Unit = {},
@@ -400,7 +401,7 @@ internal class UIKitInstrumentedTest(
         content: @Composable () -> Unit
     ): ComposeHostingView {
         val configuration = ComposeUIViewConfiguration()
-            .apply({ enforceStrictPlistSanityCheck = false })
+            .apply { enforceStrictPlistSanityCheck = false }
             .apply(configure)
 
         return ComposeHostingView(
@@ -421,7 +422,7 @@ internal class UIKitInstrumentedTest(
         content: @Composable () -> Unit
     ): ComposeHostingViewController {
         val configuration = ComposeUIViewControllerConfiguration()
-            .apply({ enforceStrictPlistSanityCheck = false })
+            .apply { enforceStrictPlistSanityCheck = false }
             .apply(configure)
 
         return ComposeHostingViewController(
@@ -889,7 +890,7 @@ internal class UIKitInstrumentedTest(
             delay(stepInterval.inWholeMilliseconds)
             val progress = (i + 1).toFloat() / steps.toFloat()
             val scale = 1.0 + (finalScale - 1.0) * progress
-            pinchEvent.pinchBy(scale.toDouble(), targetWindow)
+            pinchEvent.pinchBy(scale, targetWindow)
         }
 
         delay(stepInterval.inWholeMilliseconds)
@@ -951,7 +952,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             throw CancellationException("Infinite animations are disabled on tests")
         }
     }
-    private var sceneJob = Job()
+    private var choreographerJob = Job()
 
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
@@ -959,17 +960,20 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
             ?: error("No window scene found")
 
-        sceneJob.cancel()
-        sceneJob = Job()
-        FrameChoreographer.configureForScene(scene, Dispatchers.Main + infiniteAnimationPolicy + sceneJob)
-
         val allWindows = scene.windows - _window
 
         _window?.backgroundColor = UIColor.systemBackgroundColor
         _window?.windowScene = scene
 
-        // Must be applied before the Compose container is attached to the window: it picks the
-        // window layer speed up in `onDidMoveToWindow` to derive its `MotionDurationScale`.
+        choreographerJob.cancel()
+        choreographerJob = Job()
+        _window?.let {
+            FrameChoreographer.configureForWindow(
+                window = it,
+                coroutineContext = Dispatchers.Main + infiniteAnimationPolicy + choreographerJob
+            )
+        }
+
         startObservingWindowVisibility()
         applyAnimationSpeed()
 
@@ -988,7 +992,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     fun cleanUp() {
         stopObservingWindowVisibility()
-        sceneJob.cancel()
+        choreographerJob.cancel()
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
@@ -1006,6 +1010,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         _window?.resignKeyWindow()
         _window?.windowScene = null
         _window?.rootViewController = UIViewController()
+        _window?.let(FrameChoreographer::disposeForWindow)
         _window = null
 
         allWindows.forEach {
@@ -1042,6 +1047,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     private fun UIWindow.applyAnimationSpeed() {
         layer.speed = animationSpeed
+        FrameChoreographer.updateMotionSpeedForWindow(this)
     }
 
     /**
@@ -1195,7 +1201,7 @@ internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
     UIGraphicsGetCurrentContext() ?: return null
 
     val scene = appDelegate.window()?.windowScene ?: return null
-    scene.windows.mapNotNull { it as? UIWindow }
+    scene.windows.filterIsInstance<UIWindow>()
         .filter { !it.hidden && it.alpha > 0.0 }
         .sortedBy { it.windowLevel }
         .forEach { window ->

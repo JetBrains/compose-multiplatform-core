@@ -36,18 +36,23 @@ import androidx.compose.ui.text.intl.isRtl
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.util.fastAny
 import kotlin.math.ceil
 
 internal class SkikoParagraphIntrinsics(
     val text: String,
     private val style: TextStyle,
-    private val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    private val annotations: List<Range<out AnnotatedString.Annotation>>,
     private val placeholders: List<Range<Placeholder>>,
     private val density: Density,
     private val fontFamilyResolver: FontFamily.Resolver,
     private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
+<<<<<<< HEAD
     private var resolvedTypefaces: TypefaceDirtyTrackerLinkedList? = null
+=======
+    private val resolvedTypefaces = TypefaceDirtyTracker()
+>>>>>>> origin/jb-main
 
     val textDirection =
         resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
@@ -57,7 +62,11 @@ internal class SkikoParagraphIntrinsics(
     private var hasUnresolvedFontStale by mutableStateOf(false)
 
     override val hasStaleResolvedFonts: Boolean
+<<<<<<< HEAD
         get() = hasUnresolvedFontStale || (resolvedTypefaces?.isStaleResolvedFont ?: false)
+=======
+        get() = hasUnresolvedFontStale || resolvedTypefaces.isStaleResolvedFont
+>>>>>>> origin/jb-main
 
     private var layouter: ParagraphLayouter? = newLayouter()
 
@@ -77,9 +86,13 @@ internal class SkikoParagraphIntrinsics(
             density = density,
             fontFamilyResolver = fontFamilyResolver,
             onFontStale = { hasUnresolvedFontStale = true },
+<<<<<<< HEAD
             onFontResolved = { state ->
                 resolvedTypefaces = TypefaceDirtyTrackerLinkedList(state, resolvedTypefaces)
             },
+=======
+            onFontResolved = resolvedTypefaces::track,
+>>>>>>> origin/jb-main
         )
 
     override var minIntrinsicWidth = 0f
@@ -89,20 +102,33 @@ internal class SkikoParagraphIntrinsics(
         private set
 
     init {
-        val para = layouter!!.layoutParagraph(Float.POSITIVE_INFINITY)
-        minIntrinsicWidth = ceil(para.minIntrinsicWidth)
-        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth)
+        val layouter = layouter!!
+        val para = layouter.layoutParagraph(Float.POSITIVE_INFINITY)
+
+        // Skia excludes the indentation from the intrinsic widths, so text laid out at that width
+        // breaks a line early.
+        val indent = layouter.firstLineIndentPx
+        minIntrinsicWidth = ceil(para.minIntrinsicWidth + indent)
+        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth + indent)
     }
 }
 
-private class TypefaceDirtyTrackerLinkedList(
-    private val resolveResult: State<Any>,
-    private val next: TypefaceDirtyTrackerLinkedList? = null,
-) {
-    private val initial = resolveResult.value
+internal class TypefaceDirtyTracker {
+    private val resolvedTypefaces = mutableListOf<ResolvedTypeface>()
+
+    fun track(resolveResult: State<Any>) {
+        // The same intrinsics can build multiple paragraphs (for example, during intrinsic
+        // measurements). Track each font state only once, retaining its original value so that
+        // resolving it again after an async update does not hide the change.
+        if (!resolvedTypefaces.fastAny { it.resolveResult === resolveResult }) {
+            resolvedTypefaces.add(ResolvedTypeface(resolveResult, resolveResult.value))
+        }
+    }
 
     val isStaleResolvedFont: Boolean
-        get() = resolveResult.value !== initial || (next?.isStaleResolvedFont == true)
+        get() = resolvedTypefaces.fastAny { it.resolveResult.value !== it.initial }
+
+    private class ResolvedTypeface(val resolveResult: State<Any>, val initial: Any)
 }
 
 internal fun resolveTextDirection(
