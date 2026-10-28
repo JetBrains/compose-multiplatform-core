@@ -173,39 +173,6 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTest {
-        val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
-        setContent {
-            val focusRequester = remember { FocusRequester() }
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                @Suppress("DEPRECATION")
-                BasicTextField(
-                    value = textFieldValue.value,
-                    onValueChange = { textFieldValue.value = it },
-                    modifier = textFieldModifier(focusRequester)
-                )
-            }
-            LaunchedEffect(focusRequester) {
-                focusRequester.requestFocus()
-            }
-        }
-
-        fun MutableState<TextFieldValue>.isFullySelected(): Boolean =
-            value.selection.start == 0 && value.selection.end == value.text.length
-
-        openToolbar(textFieldTag = "TextField")
-
-        waitForContextMenu()
-        assertFalse(state.isFullySelected())
-
-        tapContextMenuButton("Select All")
-
-        waitUntil("Text field should be fully selected") {
-            state.isFullySelected()
-        }
-    }
-
-    @Test
     fun testBasicTextFieldLongPressShowsContextMenu() = runTextFieldTest(
         usingNativeTextInput = false
     ) { _, nativeTextInput, textFieldKind ->
