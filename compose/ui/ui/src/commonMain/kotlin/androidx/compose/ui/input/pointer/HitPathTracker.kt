@@ -630,11 +630,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                     event.type == PointerEventType.PanStart ||
                     event.type == PointerEventType.PanMove ||
                     event.type == PointerEventType.PanEnd
-<<<<<<< HEAD
-            if (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan && isIn != hasEntered) {
-=======
-            if (isIn != wasIn && isPan) {
->>>>>>> d3941138086110d407e7779edb2bac24e73da3b1
+            if (isPan && isIn != hasEntered) {
                 // Create a synthetic Enter or Exit event to dispatch to hover listeners
                 // without altering the pan gesture event. Construct new PointerInputChange
                 // instances instead of calling copy() so they do not share consumedDelegate with
