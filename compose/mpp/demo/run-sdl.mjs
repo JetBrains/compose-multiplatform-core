@@ -27,6 +27,18 @@ const windowWidth = 1024;
 const windowHeight = 768;
 let windowTitle = "Compose MPP Demo (WASM + Native SDL)";
 
+const glNativeFn = (name) => {
+    if (!nativeGL) return null;
+    if (typeof nativeGL.getGLFunction === "function") {
+        const fn = nativeGL.getGLFunction(name);
+        if (typeof fn === "function") return fn.bind(nativeGL);
+    }
+    if (typeof nativeGL[name] === "function") {
+        return nativeGL[name].bind(nativeGL);
+    }
+    return null;
+};
+
 class MockWebGL2RenderingContext {
     constructor() {
         return new Proxy(this, {
@@ -34,8 +46,9 @@ class MockWebGL2RenderingContext {
                 if (prop in target) {
                     return target[prop];
                 }
-                if (typeof prop === "string" && nativeGL && typeof nativeGL[prop] === "function") {
-                    return nativeGL[prop].bind(nativeGL);
+                if (typeof prop === "string") {
+                    const fn = glNativeFn(prop) ?? glNativeFn(`gl${prop.charAt(0).toUpperCase()}${prop.slice(1)}`);
+                    if (fn) return fn;
                 }
                 return (...args) => {
                     if (prop === "getError") return 0;
@@ -48,6 +61,89 @@ class MockWebGL2RenderingContext {
                 };
             }
         });
+    }
+
+    createShader(type) {
+        const fn = glNativeFn("glCreateShader");
+        return fn ? fn(type) : 1;
+    }
+
+    shaderSource(shader, source) {
+        if (!nativeGL?.glShaderSource || !capturedMemory) return;
+        let transformed = String(source);
+        if (transformed.includes("#version 300 es")) {
+            transformed = transformed.replace(
+                "#version 300 es",
+                "#version 150\n#define mediump\n#define highp\n#define lowp\n#define precision //\n"
+            );
+            transformed = transformed.replace(/precision\s+(mediump|highp|lowp)\s+[a-zA-Z0-9_]+;/g, "");
+            transformed = transformed.replace(/#extension\s+GL_OES_[a-zA-Z0-9_]+\s*:\s*[a-zA-Z]+/g, "");
+        }
+
+        const encoded = Buffer.from(transformed + "\0", "utf-8");
+        const strOffset = 65536;
+        if (capturedMemory.buffer.byteLength < strOffset + encoded.length + 1024) {
+            return;
+        }
+        new Uint8Array(capturedMemory.buffer).set(encoded, strOffset);
+
+        const stringsOffset = 32768;
+        const lengthsOffset = 32772;
+        new Uint32Array(capturedMemory.buffer)[stringsOffset / 4] = strOffset;
+        new Uint32Array(capturedMemory.buffer)[lengthsOffset / 4] = encoded.length - 1;
+
+        nativeGL.glShaderSource(shader, 1, stringsOffset, lengthsOffset);
+    }
+
+    compileShader(shader) {
+        const fn = glNativeFn("glCompileShader");
+        if (fn) fn(shader);
+    }
+
+    createProgram() {
+        const fn = glNativeFn("glCreateProgram");
+        return fn ? fn() : 1;
+    }
+
+    attachShader(program, shader) {
+        const fn = glNativeFn("glAttachShader");
+        if (fn) fn(program, shader);
+    }
+
+    linkProgram(program) {
+        const fn = glNativeFn("glLinkProgram");
+        if (fn) fn(program);
+    }
+
+    useProgram(program) {
+        const fn = glNativeFn("glUseProgram");
+        if (fn) fn(program);
+    }
+
+    deleteShader(shader) {
+        const fn = glNativeFn("glDeleteShader");
+        if (fn) fn(shader);
+    }
+
+    deleteProgram(program) {
+        const fn = glNativeFn("glDeleteProgram");
+        if (fn) fn(program);
+    }
+
+    getShaderParameter(shader, pname) {
+        return 1;
+    }
+
+    getProgramParameter(program, pname) {
+        return 1;
+    }
+
+    getShaderInfoLog(shader) {
+        return "";
+    }
+
+    getProgramInfoLog(program) {
+        return "";
     }
 
     getParameter(pname) {
@@ -362,33 +458,136 @@ const resourceDirs = [
 // Synchronize native Skiko WebAssembly runtime modules if available
 if (wasmModulePath) {
     const targetDir = path.dirname(wasmModulePath);
-    const nativeSkikoBuildDir = "/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/build/wasm/packages/SkiaNonWebSample/kotlin";
-    if (fs.existsSync(nativeSkikoBuildDir)) {
-        const skikoMjs = path.join(nativeSkikoBuildDir, "skiko.mjs");
-        const skikoWasm = path.join(nativeSkikoBuildDir, "skiko.wasm");
-        const destMjs = path.join(targetDir, "skiko.mjs");
-        const destWasm = path.join(targetDir, "skiko.wasm");
-        if (fs.existsSync(skikoMjs) && fs.existsSync(skikoWasm)) {
-            try {
-                fs.copyFileSync(skikoMjs, destMjs);
-                fs.copyFileSync(skikoWasm, destWasm);
-            } catch (err) {
-                console.warn(`Could not sync native skiko artifacts: ${err.message}`);
+    const candidateDirs = [
+        "/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/build/wasm/packages/SkiaNonWebSample/kotlin",
+        "/Users/dustin.feucht/projects/skiko/samples/SkikoExtensionsSample/build/wasm/packages/SkikoExtensionsSample/kotlin"
+    ];
+
+    const copyFromCandidates = (filename, destFilename = filename) => {
+        for (const dir of candidateDirs) {
+            const src = path.join(dir, filename);
+            if (fs.existsSync(src)) {
+                try {
+                    fs.copyFileSync(src, path.join(targetDir, destFilename));
+                    return true;
+                } catch (err) {
+                    console.warn(`Could not sync ${filename} from ${dir}: ${err.message}`);
+                }
             }
         }
+        return false;
+    };
+
+    // First copy skiko.mjs from SkiaNonWebSample if available (has native GL support), or fallback to extensions sample
+    const nonWebSkikoMjs = "/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/build/wasm/packages/SkiaNonWebSample/kotlin/skiko.mjs";
+    if (fs.existsSync(nonWebSkikoMjs)) {
+        try {
+            fs.copyFileSync(nonWebSkikoMjs, path.join(targetDir, "skiko.mjs"));
+        } catch (_) {}
+    } else {
+        copyFromCandidates("skiko.mjs");
     }
 
-    // Ensure skiko-skottie.mjs does not fail eager side-module initialization if present
-    const skottieMjsPath = path.join(targetDir, "skiko-skottie.mjs");
-    if (fs.existsSync(skottieMjsPath)) {
+    // Copy extension-enabled skiko.wasm, skiko-skottie.wasm, and skiko-skottie.mjs
+    copyFromCandidates("skiko.wasm");
+    copyFromCandidates("skiko-skottie.wasm");
+    copyFromCandidates("skiko-skottie.mjs");
+
+    // Ensure skiko.mjs in target directory handles dynamic side modules gracefully
+    const targetSkikoMjs = path.join(targetDir, "skiko.mjs");
+    if (fs.existsSync(targetSkikoMjs)) {
         try {
-            let skottieContent = fs.readFileSync(skottieMjsPath, "utf-8");
-            if (skottieContent.includes("registerSkikoWasmReadyCallback(() => ensureSkottieLoaded());")) {
-                skottieContent = skottieContent.replace(
-                    "registerSkikoWasmReadyCallback(() => ensureSkottieLoaded());",
-                    "// registerSkikoWasmReadyCallback(() => ensureSkottieLoaded());"
+            let content = fs.readFileSync(targetSkikoMjs, "utf-8");
+            let patched = false;
+            if (content.includes('if (!wasmTable) throw new Error("Skiko core WASM does not export __indirect_function_table");')) {
+                content = content.replace(
+                    'if (!wasmTable) throw new Error("Skiko core WASM does not export __indirect_function_table");',
+                    'if (!wasmTable) { wasmTable = new WebAssembly.Table({ initial: 2048, element: "anyfunc" }); }'
                 );
-                fs.writeFileSync(skottieMjsPath, skottieContent);
+                patched = true;
+            }
+            if (content.includes('throw new Error(`Unresolved Skiko side-module import: ${String(prop)}`);')) {
+                content = content.replace(
+                    'throw new Error(`Unresolved Skiko side-module import: ${String(prop)}`);',
+                    'if (prop === "_Z8skStringPv") return (p) => {}; return (...args) => { console.warn(`Unresolved Skiko side-module import: ${String(prop)}`); return 0; };'
+                );
+                patched = true;
+            }
+            if (content.includes('throw new Error(`Unresolved Skiko side-module imports: ${unresolvedImports.join(", ")}`);')) {
+                content = content.replace(
+                    'throw new Error(`Unresolved Skiko side-module imports: ${unresolvedImports.join(", ")}`);',
+                    'console.warn(`Unresolved Skiko side-module imports: ${unresolvedImports.join(", ")}`);'
+                );
+                patched = true;
+            }
+            if (content.includes('fallbackStackPointer ||= new WebAssembly.Global({value: "i32", mutable: true}, 0);')) {
+                content = content.replace(
+                    'fallbackStackPointer ||= new WebAssembly.Global({value: "i32", mutable: true}, 0);',
+                    'fallbackStackPointer ||= new WebAssembly.Global({value: "i32", mutable: true}, (wasmExports.malloc ? wasmExports.malloc(131072) + 131072 : 131072));'
+                );
+                patched = true;
+            }
+            if (content.includes('const buf = new Uint8Array(wasmExports.memory.buffer, buf_ptr, buf_len);')) {
+                content = content.replace(
+                    'const buf = new Uint8Array(wasmExports.memory.buffer, buf_ptr, buf_len);',
+                    'if (buf_ptr < 0 || buf_ptr + buf_len > wasmExports.memory.buffer.byteLength) return 0; const buf = new Uint8Array(wasmExports.memory.buffer, buf_ptr, buf_len);'
+                );
+                patched = true;
+            }
+            if (content.includes("const callNativeGL = (name, args) => {")) {
+                const patchSnippet = `const callNativeGL = (name, args) => {
+    if (name === "glShaderSource" && wasmExports?.memory) {
+        const [shader, count, stringsOffset, lengthsOffset] = args;
+        const u32 = new Uint32Array(wasmExports.memory.buffer);
+        const i32 = new Int32Array(wasmExports.memory.buffer);
+        const u8 = new Uint8Array(wasmExports.memory.buffer);
+        let fullSource = "";
+        for (let i = 0; i < count; i++) {
+            const strPtr = u32[(stringsOffset / 4) + i];
+            const len = lengthsOffset ? i32[(lengthsOffset / 4) + i] : -1;
+            let str = "";
+            if (len >= 0) {
+                str = new TextDecoder().decode(u8.subarray(strPtr, strPtr + len));
+            } else {
+                let end = strPtr;
+                while (u8[end] !== 0) end++;
+                str = new TextDecoder().decode(u8.subarray(strPtr, end));
+            }
+            fullSource += str;
+        }
+
+        if (fullSource.includes("#version 300 es")) {
+            fullSource = fullSource.replace(
+                "#version 300 es",
+                "#version 150\\n#define mediump\\n#define highp\\n#define lowp\\n#define precision //\\n"
+            );
+            fullSource = fullSource.replace(/precision\\s+(mediump|highp|lowp)\\s+[a-zA-Z0-9_]+;/g, "");
+            fullSource = fullSource.replace(/#extension\\s+GL_OES_[a-zA-Z0-9_]+\\s*:\\s*[a-zA-Z]+/g, "");
+        }
+
+        const encoded = new TextEncoder().encode(fullSource + "\\0");
+        const newStrPtr = wasmExports.malloc(encoded.length);
+        new Uint8Array(wasmExports.memory.buffer).set(encoded, newStrPtr);
+
+        const newStringsPtr = wasmExports.malloc(4);
+        new Uint32Array(wasmExports.memory.buffer)[newStringsPtr / 4] = newStrPtr;
+
+        const newLengthsPtr = wasmExports.malloc(4);
+        new Int32Array(wasmExports.memory.buffer)[newLengthsPtr / 4] = encoded.length - 1;
+
+        syncNativeGLMemory();
+        nativeGLCalls.add(name);
+        const res = nativeGLHost.glShaderSource(shader, 1, newStringsPtr, newLengthsPtr);
+        wasmExports.free(newStrPtr);
+        wasmExports.free(newStringsPtr);
+        wasmExports.free(newLengthsPtr);
+        return { handled: true, value: res };
+    }`;
+                content = content.replace("const callNativeGL = (name, args) => {", patchSnippet);
+                patched = true;
+            }
+            if (patched) {
+                fs.writeFileSync(targetSkikoMjs, content, "utf-8");
             }
         } catch (_) {}
     }
