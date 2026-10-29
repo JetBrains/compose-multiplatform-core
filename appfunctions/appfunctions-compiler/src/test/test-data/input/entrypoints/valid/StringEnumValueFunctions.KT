@@ -1,0 +1,50 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.testdata
+
+import androidx.appfunctions.AppFunctionSerializable
+import androidx.appfunctions.AppFunctionStringValueConstraint
+import androidx.appfunctions.AppFunctionDeclaration
+import androidx.appfunctions.AppFunctionService
+import androidx.appfunctions.AppFunctionServiceEntryPoint
+
+@AppFunctionServiceEntryPoint("StringEnumValueFunctionsService", "app_functions_v2")
+abstract class StringEnumValueFunctions : AppFunctionService() {
+    @AppFunctionDeclaration(isDescribedByKDoc = false)
+    fun stringEnumParamFunction(
+        @AppFunctionStringValueConstraint(enumValues = ["ON", "OFF"])
+        stringParam: String
+    ) {
+    }
+
+    @AppFunctionDeclaration(isDescribedByKDoc = false)
+    @AppFunctionStringValueConstraint(enumValues = ["ON", "OFF"])
+    fun stringEnumReturnFunction(): String = "ON"
+
+    @AppFunctionDeclaration(isDescribedByKDoc = false)
+    fun stringEnumSerializableFunction(
+        stringEnumPropSerializable: StringEnumPropSerializable
+    ) {
+    }
+}
+
+@AppFunctionSerializable(isDescribedByKDoc = false)
+data class StringEnumPropSerializable(
+    @AppFunctionStringValueConstraint(enumValues = ["ON", "OFF"])
+    val stringProp: String
+)
+

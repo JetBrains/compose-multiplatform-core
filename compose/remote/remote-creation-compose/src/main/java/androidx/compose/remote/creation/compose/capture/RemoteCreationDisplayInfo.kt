@@ -23,7 +23,6 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
 
 private const val baseDensity = 160f
 
@@ -53,6 +52,7 @@ public enum class RemoteDensityBehavior(internal val value: Int) {
  * @property density The Compose [Density] of the virtual display.
  * @property isInspectionMode Whether the capture is happening in an inspection or preview
  *   environment (e.g. inside an IDE preview). Defaults to false.
+ * @property densityBehavior The [RemoteDensityBehavior] to use for interpreting dimension values.
  */
 public class RemoteCreationDisplayInfo
 internal constructor(
@@ -91,14 +91,6 @@ public fun RemoteCreationDisplayInfo(
         densityBehavior,
     )
 }
-
-/** The width of the display in [Dp] units. */
-public val RemoteCreationDisplayInfo.widthDp: Dp
-    get() = with(density) { size.width.toDp() }
-
-/** The height of the display in [Dp] units. */
-public val RemoteCreationDisplayInfo.heightDp: Dp
-    get() = with(density) { size.height.toDp() }
 
 internal fun RemoteCreationDisplayInfo.toCreationDisplayInfo() =
     CreationDisplayInfo(

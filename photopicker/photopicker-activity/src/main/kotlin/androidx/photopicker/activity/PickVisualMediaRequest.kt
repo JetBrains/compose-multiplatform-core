@@ -19,12 +19,18 @@
 package androidx.photopicker.activity
 
 import android.os.Build
+import android.provider.MediaStore
 import androidx.annotation.IntRange
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresExtension
 import androidx.photopicker.activity.PickVisualMedia.DefaultTab
 import androidx.photopicker.activity.PickVisualMedia.ImageAndVideo
 import androidx.photopicker.activity.PickVisualMedia.MediaCapabilities
 import androidx.photopicker.activity.PickVisualMedia.VisualMediaType
+import androidx.photopicker.activity.params.HighlightAlbumParams
+import androidx.photopicker.activity.params.HighlightSearchResultsParams
+import androidx.photopicker.activity.params.SelectionParams
+import androidx.photopicker.activity.params.UiCustomizationParams
 
 /**
  * Creates a request for a [PickMultipleVisualMedia] or [PickVisualMedia] Activity Contract.
@@ -125,7 +131,7 @@ public fun PickVisualMediaRequest(
  * @param maxItems limit the number of selectable items when using [PickMultipleVisualMedia]
  * @param isOrderedSelection whether the user can control the order of selected media when using
  *   [PickMultipleVisualMedia] (defaults to false)
- * @param defaultTab the tab to initially open in the picker (defaults to [DefaultTab.PhotosTab])
+ * @param defaultTab the tab to initially open the picker in (defaults to [DefaultTab.PhotosTab])
  * @return a PickVisualMediaRequest that contains the given input
  */
 @Suppress("MissingJvmstatic")
@@ -154,7 +160,7 @@ public fun PickVisualMediaRequest(
  * @param maxItems limit the number of selectable items when using [PickMultipleVisualMedia]
  * @param isOrderedSelection whether the user can control the order of selected media when using
  *   [PickMultipleVisualMedia] (defaults to false)
- * @param defaultTab the tab to initially open in the picker (defaults to [DefaultTab.PhotosTab])
+ * @param defaultTab the tab to initially open the picker in (defaults to [DefaultTab.PhotosTab])
  * @return a PickVisualMediaRequest that contains the given input
  */
 @Suppress("MissingJvmstatic")
@@ -191,6 +197,9 @@ public class PickVisualMediaRequest internal constructor() {
     public var defaultTab: DefaultTab = DefaultTab.PhotosTab
         internal set
 
+    public var isCustomDefaultTabApplied: Boolean = false
+        internal set
+
     public var isCustomAccentColorApplied: Boolean = false
         internal set
 
@@ -203,6 +212,19 @@ public class PickVisualMediaRequest internal constructor() {
     public var isLocationMetadataAccessRequested: Boolean = false
         internal set
 
+    public var highlightSearchResultsParams: HighlightSearchResultsParams? = null
+        internal set
+
+    public var highlightAlbumParams: HighlightAlbumParams? = null
+        internal set
+
+    @get:RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 22)
+    public var selectionParams: SelectionParams? = null
+        internal set
+
+    public var uiCustomizationParams: UiCustomizationParams? = null
+        internal set
+
     /** A builder for constructing [PickVisualMediaRequest] instances. */
     public class Builder {
 
@@ -210,10 +232,15 @@ public class PickVisualMediaRequest internal constructor() {
         private var maxItems: Int = PickMultipleVisualMedia.getMaxItems()
         private var isOrderedSelection: Boolean = false
         private var defaultTab: DefaultTab = DefaultTab.PhotosTab
+        private var isCustomDefaultTabApplied: Boolean = false
         private var isCustomAccentColorApplied: Boolean = false
         private var accentColor: Long = 0
         private var mediaCapabilitiesForTranscoding: MediaCapabilities? = null
         private var isLocationMetadataAccessRequested: Boolean = false
+        private var highlightSearchResultsParams: HighlightSearchResultsParams? = null
+        private var highlightAlbumParams: HighlightAlbumParams? = null
+        private var selectionParams: SelectionParams? = null
+        private var uiCustomizationParams: UiCustomizationParams? = null
 
         /**
          * Set the media type for the [PickVisualMediaRequest].
@@ -268,6 +295,7 @@ public class PickVisualMediaRequest internal constructor() {
          */
         public fun setDefaultTab(defaultTab: DefaultTab): Builder {
             this.defaultTab = defaultTab
+            this.isCustomDefaultTabApplied = true
             return this
         }
 
@@ -339,21 +367,121 @@ public class PickVisualMediaRequest internal constructor() {
         }
 
         /**
+         * Sets parameters for highlighting search results in the photo picker. This allows apps to
+         * highlight search results in the photopicker UI whenever feasible based on the given input
+         * text query. Only one of search results highlight or album highlight can be specified to
+         * either show a highlighted media section when the photopicker launches or to open the
+         * photopicker to show a highlighted media results grid based on the given input query.
+         * Specifying both album and search highlight will result in throwing
+         * [IllegalArgumentException].
+         *
+         * This feature was added in Android Tiramisu (API level 33 / T ext 19) and will be ignored
+         * on Android R and S.
+         *
+         * @param highlightSearchResultsParams The search result highlight configuration, or `null`
+         *   to clear.
+         * @return This builder.
+         * @see MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS
+         */
+        public fun setHighlightSearchResultsParams(
+            highlightSearchResultsParams: HighlightSearchResultsParams?
+        ): Builder {
+            this.highlightSearchResultsParams = highlightSearchResultsParams
+            return this
+        }
+
+        /**
+         * Sets parameters for highlighting a specific album's media in the photo picker.
+         *
+         * This allows apps to highlight media results of an album in the photo picker UI whenever
+         * feasible based on the given input album (one of [HighlightAlbumParams.HighlightAlbum]).
+         * Only one of search results highlight or album highlight can be specified to either show a
+         * highlighted media section when the photopicker launches or to open the photopicker to
+         * show a highlighted media results grid based on the given input album. Specifying both
+         * album and search highlight will result in throwing [IllegalArgumentException].
+         *
+         * This feature was added in Android Tiramisu (API level 33 / T ext 19) and will be ignored
+         * on Android R and S.
+         *
+         * @param highlightAlbumParams The album highlight configuration, or `null` to clear.
+         * @return This builder.
+         * @see MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_ALBUM
+         */
+        public fun setHighlightAlbumParams(highlightAlbumParams: HighlightAlbumParams?): Builder {
+            this.highlightAlbumParams = highlightAlbumParams
+            return this
+        }
+
+        /**
+         * Sets selection constraints for media items in the photo picker. The items that do not
+         * satisfy these input constraints will not be selectable in the photopicker grid.
+         *
+         * This feature was added for the system PhotoPicker in SDK extension version 22 (API level
+         * 34 / U ext 22) and is available starting from the same and higher. If the platform
+         * conditions are not met, this cannot be used. Callers of this must add this check before
+         * using.
+         *
+         * @param selectionParams The selection constraint parameters, or `null` to clear.
+         * @return This builder.
+         * @see android.provider.MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS
+         */
+        @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 22)
+        public fun setSelectionParams(selectionParams: SelectionParams?): Builder {
+            this.selectionParams = selectionParams
+            return this
+        }
+
+        /* Sets UI customization options in the PhotoPicker. Not passing this implies the
+         * photopicker will use its default UI.
+         *
+         * This feature was added for the system PhotoPicker in SDK extension version 22 on Android
+         * UpsideDownCake (API level 34) and higher. For devices running a system fallback photo
+         * picker, this preference is forwarded via
+         * [PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS]. If the
+         * underlying platform conditions or fallback picker implementation do not support this
+         * feature, this request is safely ignored.
+         *
+         * @param uiCustomizationParams The UI customization preferences, or `null` to clear.
+         * @return This builder.
+         * @see android.provider.MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS
+         */
+        public fun setUiCustomizationParams(
+            uiCustomizationParams: UiCustomizationParams?
+        ): Builder {
+            this.uiCustomizationParams = uiCustomizationParams
+            return this
+        }
+
+        /**
          * Build the PickVisualMediaRequest specified by this builder.
          *
          * @return the newly constructed PickVisualMediaRequest.
+         * @throws IllegalArgumentException if both search results highlight and album highlight
+         *   parameters are set.
          */
-        public fun build(): PickVisualMediaRequest =
-            PickVisualMediaRequest().apply {
+        public fun build(): PickVisualMediaRequest {
+            if (highlightSearchResultsParams != null && highlightAlbumParams != null) {
+                throw IllegalArgumentException(
+                    "Cannot set both highlightSearchResultsParams and highlightAlbumParams. " +
+                        "Only one highlight parameter may be configured per request."
+                )
+            }
+            return PickVisualMediaRequest().apply {
                 this.mediaType = this@Builder.mediaType
                 this.maxItems = this@Builder.maxItems
                 this.isOrderedSelection = this@Builder.isOrderedSelection
                 this.defaultTab = this@Builder.defaultTab
+                this.isCustomDefaultTabApplied = this@Builder.isCustomDefaultTabApplied
                 this.isCustomAccentColorApplied = this@Builder.isCustomAccentColorApplied
                 this.accentColor = this@Builder.accentColor
                 this.mediaCapabilitiesForTranscoding = this@Builder.mediaCapabilitiesForTranscoding
                 this.isLocationMetadataAccessRequested =
                     this@Builder.isLocationMetadataAccessRequested
+                this.highlightSearchResultsParams = this@Builder.highlightSearchResultsParams
+                this.highlightAlbumParams = this@Builder.highlightAlbumParams
+                this.selectionParams = this@Builder.selectionParams
+                this.uiCustomizationParams = this@Builder.uiCustomizationParams
             }
+        }
     }
 }

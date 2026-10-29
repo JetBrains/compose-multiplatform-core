@@ -161,6 +161,146 @@ public open class PickVisualMedia : ActivityResultContract<PickVisualMediaReques
             "androidx.activity.result.contract.extra.PICK_IMAGES_REQUEST_LOCATION_METADATA_ACCESS"
 
         /**
+         * Extra that will be sent by [PickVisualMedia] and [PickMultipleVisualMedia] to an Activity
+         * that handles [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] that indicates the search results to
+         * highlight in the picker.
+         */
+        @field:Suppress("ActionValue")
+        public const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS: String =
+            "androidx.activity.result.contract.extra.PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS"
+
+        /**
+         * Extra that will be sent by [PickVisualMedia] and [PickMultipleVisualMedia] to an Activity
+         * that handles [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] to indicate the predefined album to
+         * highlight in the picker.
+         */
+        @field:Suppress("ActionValue")
+        public const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM: String =
+            "androidx.activity.result.contract.extra.PICK_IMAGES_HIGHLIGHT_ALBUM"
+
+        /**
+         * Bundle key used in system fallback highlight extras to specify the value of the highlight
+         * type.
+         */
+        public const val KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_TYPE: String =
+            "androidx.activity.result.contract.key.PICK_IMAGES_HIGHLIGHT_TYPE"
+
+        /**
+         * Value for [KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_TYPE] specifying a collapsed
+         * highlight section.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_TYPE_COLLAPSED: Int = 0
+
+        /**
+         * Value for [KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_TYPE] specifying an expanded
+         * highlight grid.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_TYPE_EXPANDED: Int = 1
+
+        /**
+         * Bundle key used in system fallback search results highlight extras to specify the text
+         * query.
+         */
+        public const val KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_SEARCH_TEXT_QUERY: String =
+            "androidx.activity.result.contract.key.PICK_IMAGES_HIGHLIGHT_SEARCH_TEXT_QUERY"
+
+        /**
+         * Bundle key used in system fallback album highlight extras to specify the highlight album.
+         */
+        public const val KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_ID: String =
+            "androidx.activity.result.contract.key.PICK_IMAGES_HIGHLIGHT_ALBUM_ID"
+
+        /**
+         * Value for [KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_ID] specifying the Favorites
+         * album.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_FAVORITES: String =
+            "androidx.activity.result.contract.album.FAVORITES"
+
+        /**
+         * Value for [KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_ID] specifying the Camera
+         * album.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_CAMERA: String =
+            "androidx.activity.result.contract.album.CAMERA"
+
+        /**
+         * Value for [KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_ID] specifying the Downloads
+         * album.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_DOWNLOADS: String =
+            "androidx.activity.result.contract.album.DOWNLOADS"
+
+        /**
+         * Value for [KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_ID] specifying the Screenshots
+         * album.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_SCREENSHOTS: String =
+            "androidx.activity.result.contract.album.SCREENSHOTS"
+
+        /**
+         * Value for [KEY_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_ID] specifying the Videos
+         * album.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM_VIDEOS: String =
+            "androidx.activity.result.contract.album.VIDEOS"
+
+        @JvmStatic
+        internal fun areSystemHighlightParamsAvailable(): Boolean {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                getExtensionVersion(Build.VERSION_CODES.TIRAMISU) >= 19
+        }
+
+        /* Extra that will be sent by [PickVisualMedia] and [PickMultipleVisualMedia] to an Activity
+         * that handles [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] that specifies UI customization options
+         * for the picker.
+         *
+         * The value of this intent extra should be of type [android.os.Bundle] containing UI
+         * customization params for the fallback picker.
+         *
+         * The bundle may include the following keys:
+         * - [EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS_ASPECT_RATIO]: An [Int]
+         *   specifying the thumbnail aspect ratio, one of
+         *   [SYSTEM_FALLBACK_PICK_IMAGES_ASPECT_RATIO_SQUARE_1_1] or
+         *   [SYSTEM_FALLBACK_PICK_IMAGES_ASPECT_RATIO_PORTRAIT_9_16].
+         */
+        @field:Suppress("ActionValue")
+        /* Don't include SYSTEM_FALLBACK in the extra */
+        public const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS: String =
+            "androidx.activity.result.contract.extra.PICK_IMAGES_UI_CUSTOMIZATION_PARAMS"
+
+        /**
+         * Key within the [EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS] bundle
+         * specifying the thumbnail aspect ratio.
+         *
+         * Expected value is an integer: [SYSTEM_FALLBACK_PICK_IMAGES_ASPECT_RATIO_SQUARE_1_1] or
+         * [SYSTEM_FALLBACK_PICK_IMAGES_ASPECT_RATIO_PORTRAIT_9_16].
+         */
+        @field:Suppress("ActionValue")
+        /* Don't include SYSTEM_FALLBACK in the extra */
+        public const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS_ASPECT_RATIO:
+            String =
+            "androidx.activity.result.contract.extra.PICK_IMAGES_UI_CUSTOMIZATION_PARAMS_ASPECT_RATIO"
+
+        /**
+         * Value for [EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS_ASPECT_RATIO]
+         * specifying a square 1:1 aspect ratio thumbnail sizing within the media grid.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_ASPECT_RATIO_SQUARE_1_1: Int = 0
+
+        /**
+         * Value for [EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS_ASPECT_RATIO]
+         * specifying a portrait 9:16 aspect ratio thumbnail sizing within the media grid.
+         */
+        public const val SYSTEM_FALLBACK_PICK_IMAGES_ASPECT_RATIO_PORTRAIT_9_16: Int = 1
+
+        @JvmStatic
+        internal fun arePhotoPickerUiCustomizationParamsAvailable(): Boolean {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 22
+        }
+
+        /**
          * Check if the current device has support for the photo picker by checking the running
          * Android version, the SDK extension version or the picker provided by a system app
          * implementing [ACTION_SYSTEM_FALLBACK_PICK_IMAGES].
@@ -190,6 +330,12 @@ public open class PickVisualMedia : ActivityResultContract<PickVisualMediaReques
             } else {
                 false
             }
+        }
+
+        @JvmStatic
+        internal fun arePhotoPickerSelectionParamsAvailable(): Boolean {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 22
         }
 
         @JvmStatic
@@ -345,10 +491,29 @@ public open class PickVisualMedia : ActivityResultContract<PickVisualMediaReques
         return if (isSystemPickerAvailable()) {
             Intent(MediaStore.ACTION_PICK_IMAGES).apply {
                 type = getVisualMimeType(input.mediaType)
-                putExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+
+                if (input.isCustomDefaultTabApplied) {
+                    putExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+                }
 
                 if (input.isCustomAccentColorApplied) {
                     putExtra(MediaStore.EXTRA_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
+                }
+
+                if (areSystemHighlightParamsAvailable()) {
+                    input.highlightSearchResultsParams?.let {
+                        putExtra(
+                            MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS,
+                            it.createHighlightSearchResultsBundle(),
+                        )
+                    }
+
+                    input.highlightAlbumParams?.let {
+                        putExtra(
+                            MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_ALBUM,
+                            it.createHighlightAlbumBundle(),
+                        )
+                    }
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -365,13 +530,31 @@ public open class PickVisualMedia : ActivityResultContract<PickVisualMediaReques
                         putExtra(MediaStore.EXTRA_REQUEST_LOCATION_METADATA_ACCESS, true)
                     }
                 }
+
+                if (arePhotoPickerSelectionParamsAvailable()) {
+                    input.selectionParams?.toPhotoPickerSelectionParams()?.let { selectionParams ->
+                        putExtra(MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS, selectionParams)
+                    }
+                }
+
+                if (arePhotoPickerUiCustomizationParamsAvailable()) {
+                    input.uiCustomizationParams?.let { uiCustomizationParams ->
+                        putExtra(
+                            MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS,
+                            uiCustomizationParams.toPhotoPickerUiCustomizationParams(),
+                        )
+                    }
+                }
             }
         } else if (isSystemFallbackPickerAvailable(context)) {
             val fallbackPicker = checkNotNull(getSystemFallbackPicker(context)).activityInfo
             Intent(ACTION_SYSTEM_FALLBACK_PICK_IMAGES).apply {
                 setClassName(fallbackPicker.applicationInfo.packageName, fallbackPicker.name)
                 type = getVisualMimeType(input.mediaType)
-                putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+
+                if (input.isCustomDefaultTabApplied) {
+                    putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+                }
 
                 if (input.isCustomAccentColorApplied) {
                     putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
@@ -381,6 +564,27 @@ public open class PickVisualMedia : ActivityResultContract<PickVisualMediaReques
                     putExtra(
                         EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_REQUEST_LOCATION_METADATA_ACCESS,
                         true,
+                    )
+                }
+
+                input.highlightSearchResultsParams?.let {
+                    putExtra(
+                        EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS,
+                        it.createHighlightSearchResultsFallbackBundle(),
+                    )
+                }
+
+                input.highlightAlbumParams?.let {
+                    putExtra(
+                        EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM,
+                        it.createHighlightAlbumFallbackBundle(),
+                    )
+                }
+
+                input.uiCustomizationParams?.createFallbackUiParamBundle()?.let { bundle ->
+                    putExtra(
+                        EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS,
+                        bundle,
                     )
                 }
             }

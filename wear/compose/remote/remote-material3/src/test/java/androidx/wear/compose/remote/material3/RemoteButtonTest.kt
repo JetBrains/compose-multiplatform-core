@@ -30,7 +30,6 @@ import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
-import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.embedded.RcPlayer
 import androidx.compose.remote.testing.RemoteCaptureTestRule
 import androidx.compose.ui.Modifier
@@ -45,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.wear.compose.remote.material3.util.ComponentContainer
 import androidx.wear.compose.remote.material3.util.EnableEmbeddedPlayerRule
+import androidx.wear.compose.remote.material3.util.TestProfiles
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
@@ -116,7 +116,7 @@ class RemoteButtonTest {
             captureRule.captureDocument(
                 context = context,
                 creationDisplayInfo = displayInfo,
-                profile = RcPlatformProfiles.WEAR_WIDGETS,
+                profile = TestProfiles.wearWidgets,
             ) {
                 ComponentContainer {
                     RemoteButton(
@@ -167,6 +167,72 @@ class RemoteButtonTest {
             )
             .that(abs(redPixelsCount - expectedBorderWidthPx))
             .isAtMost(1)
+    }
+
+    @Test
+    fun button_provides_iconColor_to_icon_slot() = runTest {
+        var actualIconContentColor: RemoteColor? = null
+        var actualLabelContentColor: RemoteColor? = null
+        val expectedIconColor = RemoteColor(Color.Green)
+        val expectedContentColor = RemoteColor(Color.Red)
+
+        captureRule.captureDocument(
+            context = context,
+            creationDisplayInfo = creationDisplayInfo,
+        ) {
+            RemoteButton(
+                onClick = testAction,
+                colors =
+                    RemoteButtonDefaults.buttonColors(
+                        contentColor = expectedContentColor,
+                        iconColor = expectedIconColor,
+                    ),
+                icon = { actualIconContentColor = LocalRemoteContentColor.current },
+                label = { actualLabelContentColor = LocalRemoteContentColor.current },
+            )
+        }
+
+        assertThat(actualIconContentColor?.constantValue).isEqualTo(expectedIconColor.constantValue)
+        assertThat(actualLabelContentColor?.constantValue)
+            .isEqualTo(expectedContentColor.constantValue)
+    }
+
+    @Test
+    fun compactButton_provides_iconColor_to_icon_slot() = runTest {
+        var actualIconContentColor: RemoteColor? = null
+        var actualIconOnlyContentColor: RemoteColor? = null
+        val expectedIconColor = RemoteColor(Color.Green)
+        val expectedContentColor = RemoteColor(Color.Red)
+
+        captureRule.captureDocument(
+            context = context,
+            creationDisplayInfo = creationDisplayInfo,
+        ) {
+            RemoteCompactButton(
+                onClick = testAction,
+                colors =
+                    RemoteButtonDefaults.buttonColors(
+                        contentColor = expectedContentColor,
+                        iconColor = expectedIconColor,
+                    ),
+                icon = { actualIconContentColor = LocalRemoteContentColor.current },
+                label = { RemoteText("label".rs) },
+            )
+            RemoteCompactButton(
+                onClick = testAction,
+                colors =
+                    RemoteButtonDefaults.buttonColors(
+                        contentColor = expectedContentColor,
+                        iconColor = expectedIconColor,
+                    ),
+                icon = { actualIconOnlyContentColor = LocalRemoteContentColor.current },
+                label = null,
+            )
+        }
+
+        assertThat(actualIconContentColor?.constantValue).isEqualTo(expectedIconColor.constantValue)
+        assertThat(actualIconOnlyContentColor?.constantValue)
+            .isEqualTo(expectedIconColor.constantValue)
     }
 
     private fun String.normalizeWhiteSpace() = this.replace(Regex("\\s+"), " ").trim()

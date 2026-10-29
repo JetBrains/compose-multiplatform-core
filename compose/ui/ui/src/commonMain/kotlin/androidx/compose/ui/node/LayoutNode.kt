@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalComposeUiHostApi::class)
+
 package androidx.compose.ui.node
 
 import androidx.compose.runtime.ComposeNodeLifecycleCallback
@@ -47,6 +49,7 @@ import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.node.LayoutNode.Companion.NotPlacedPlaceOrder
 import androidx.compose.ui.node.LayoutNode.LayoutState.Idle
 import androidx.compose.ui.node.Nodes.PointerInput
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -83,7 +86,7 @@ internal class LayoutNode(
 ) :
     ComposeNodeLifecycleCallback,
     Remeasurement,
-    OwnerScope,
+    ObservationTarget,
     LayoutInfo,
     SemanticsInfo,
     ComposeUiNode,
@@ -630,7 +633,7 @@ internal class LayoutNode(
             return _zSortedChildren
         }
 
-    override val isValidOwnerScope: Boolean
+    override val isObservationValid: Boolean
         get() = isAttached
 
     override fun toString(): String {
@@ -837,7 +840,8 @@ internal class LayoutNode(
      * nextChildPlaceOrder and increments this counter. Not placed items will still have
      * [NotPlacedPlaceOrder] set.
      */
-    internal val placeOrder: Int
+    @OptIn(ExperimentalComposeUiHostApi::class)
+    override val placeOrder: Int
         get() = measurePassDelegate.placeOrder
 
     /** Remembers how the node was measured by the parent. */
@@ -874,7 +878,8 @@ internal class LayoutNode(
      * is 0. We use sum of the values passed as zIndex to place() by the parent layout and all the
      * applied modifiers.
      */
-    private val zIndex: Float
+    @OptIn(ExperimentalComposeUiHostApi::class)
+    override val zIndex: Float
         get() = measurePassDelegate.zIndex
 
     /** The inner state associated with [androidx.compose.ui.layout.SubcomposeLayout]. */
@@ -1513,7 +1518,9 @@ internal class LayoutNode(
             }
 
         /** Constant used by [placeOrder]. */
-        @Suppress("ConstPropertyName") internal const val NotPlacedPlaceOrder = Int.MAX_VALUE
+        @OptIn(ExperimentalComposeUiHostApi::class)
+        @Suppress("ConstPropertyName")
+        internal const val NotPlacedPlaceOrder = LayoutInfo.NotPlacedPlaceOrder
 
         /** Pre-allocated constructor to be used with ComposeNode */
         internal val Constructor: () -> LayoutNode = { LayoutNode() }

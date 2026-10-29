@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalComposeUiHostApi::class)
+
 package androidx.compose.ui.platform
 
 import android.annotation.SuppressLint
@@ -21,14 +23,14 @@ import androidx.collection.IntObjectMap
 import androidx.collection.MutableIntSet
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.node.OwnerScope
+import androidx.compose.ui.node.ObservationTarget
 import androidx.compose.ui.semantics.AdjustedSemanticsNode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsPropertyProvider
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.util.fastFirstOrNull
@@ -39,15 +41,17 @@ import androidx.compose.ui.util.fastMapNotNull
  * A snapshot of the semantics node. The children here is fixed and are taken from the time this
  * node is constructed. While a SemanticsNode always contains the up-to-date children.
  */
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal class SemanticsNodeCopy(
     semanticsNode: SemanticsNode,
     currentSemanticsNodes: IntObjectMap<AdjustedSemanticsNode>,
 ) {
-    val unmergedConfig = semanticsNode.unmergedConfig
+    val unmergedConfig = semanticsNode._unmergedConfig
     val children: MutableIntSet
 
     init {
-        val replacedChildren = semanticsNode.replacedChildren
+        val replacedChildren = mutableListOf<SemanticsNode>()
+        semanticsNode.collectAccessibilityChildren(replacedChildren)
         children = MutableIntSet(replacedChildren.size)
         replacedChildren.fastForEach { child ->
             if (currentSemanticsNodes.contains(child.id)) {
@@ -57,7 +61,8 @@ internal class SemanticsNodeCopy(
     }
 }
 
-internal fun getTextLayoutResult(configuration: SemanticsConfiguration): TextLayoutResult? {
+@OptIn(ExperimentalComposeUiHostApi::class)
+internal fun getTextLayoutResult(configuration: SemanticsPropertyProvider): TextLayoutResult? {
     val textLayoutResults = mutableListOf<TextLayoutResult>()
     val getLayoutResult =
         configuration
@@ -84,8 +89,9 @@ private const val ScrollViewportLengthIndex = 0
 private const val ScrollViewportBeforePaddingIndex = 1
 private const val ScrollViewportAfterPaddingIndex = 2
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 @SuppressLint("PrimitiveInCollection")
-internal fun getScrollViewportLength(configuration: SemanticsConfiguration): Float? {
+internal fun getScrollViewportLength(configuration: SemanticsPropertyProvider): Float? {
     val viewPortCalculationsResult = mutableListOf<Float>()
     val actionResult =
         configuration
@@ -104,9 +110,10 @@ internal class ScrollViewportPadding(
     val afterContentPadding: Float,
 )
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 @SuppressLint("PrimitiveInCollection")
 internal fun getScrollViewportPadding(
-    configuration: SemanticsConfiguration
+    configuration: SemanticsPropertyProvider
 ): ScrollViewportPadding? {
     val viewPortCalculationsResult = mutableListOf<Float>()
     val actionResult =
@@ -136,8 +143,8 @@ internal class ScrollObservationScope(
     var oldYValue: Float?,
     var horizontalScrollAxisRange: ScrollAxisRange?,
     var verticalScrollAxisRange: ScrollAxisRange?,
-) : OwnerScope {
-    override val isValidOwnerScope
+) : ObservationTarget {
+    override val isObservationValid
         get() = allScopes.contains(this)
 }
 
@@ -161,6 +168,7 @@ internal fun Role.toLegacyClassName(): String? =
         else -> null
     }
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal fun SemanticsNode.getPrimaryTextColor(): Int? {
     val textLayoutResult = getTextLayoutResult(unmergedConfig)
     if (textLayoutResult != null) {
@@ -178,6 +186,7 @@ internal fun SemanticsNode.getPrimaryTextColor(): Int? {
     return null
 }
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal fun SemanticsNode.getLinkTextColor(): Int? {
     val text = unmergedConfig.getOrNull(SemanticsProperties.Text)?.firstOrNull() ?: return null
 
@@ -196,6 +205,7 @@ internal fun SemanticsNode.getLinkTextColor(): Int? {
  * render if it is semitransparent; i.e. we do not do any calculations to blend multiple background
  * colors.
  */
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal fun SemanticsNode.getBackgroundColor(): Int? {
     val textLayoutResult = getTextLayoutResult(unmergedConfig)
     if (textLayoutResult != null) {

@@ -16,13 +16,16 @@
 
 package androidx.camera.camera2.pipe.testing
 
+import android.graphics.PixelFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.MetadataTransform
 import androidx.camera.camera2.pipe.Request
+import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.common.CameraFrameNumber
 import androidx.camera.common.Metadata
 import com.google.common.truth.Truth.assertThat
@@ -95,6 +98,55 @@ class CameraMetadataTest {
         assertThat(metadata[CameraCharacteristics.FLASH_INFO_AVAILABLE]).isTrue()
         assertThat(metadata[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL])
             .isEqualTo(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
+    }
+
+    @Test
+    fun verifyHighEndDeviceTemplate_providesDefaultStreamConfigurationMap() {
+        val metadata =
+            FakeCameraMetadata.fromTemplate(
+                template = HighEndDeviceTemplate,
+                cameraId = CameraId("0"),
+            )
+
+        val streamMap = metadata[CameraMetadata.CAMERA_STREAM_CONFIGURATION_MAP]
+        assertThat(streamMap).isNotNull()
+        assertThat(streamMap!!.getOutputFormats())
+            .containsAtLeast(
+                StreamFormat.YUV_420_888,
+                StreamFormat.JPEG,
+                StreamFormat.PRIVATE,
+                StreamFormat.RAW_SENSOR,
+                StreamFormat.RAW10,
+                StreamFormat.RAW12,
+                StreamFormat.YCBCR_P010,
+                StreamFormat.JPEG_R,
+            )
+        assertThat(streamMap.isOutputSupportedFor(StreamFormat.YUV_420_888)).isTrue()
+        assertThat(streamMap.isOutputSupportedFor(StreamFormat.RAW_SENSOR)).isTrue()
+    }
+
+    @Test
+    fun verifyHighEndDeviceTemplate_providesFrontStreamConfigurationMap() {
+        val frontMetadata =
+            FakeCameraMetadata.fromTemplate(
+                template = HighEndDeviceTemplate,
+                cameraId = CameraId("1"),
+                lensFacing = CameraCharacteristics.LENS_FACING_FRONT,
+            )
+
+        val frontStreamMap = frontMetadata[CameraMetadata.CAMERA_STREAM_CONFIGURATION_MAP]
+        assertThat(frontStreamMap).isNotNull()
+        assertThat(frontStreamMap!!.getOutputFormats())
+            .containsExactly(
+                StreamFormat(PixelFormat.RGB_888),
+                StreamFormat.RAW_SENSOR,
+                StreamFormat.JPEG,
+                StreamFormat.PRIVATE,
+                StreamFormat.YUV_420_888,
+                StreamFormat.RAW10,
+                StreamFormat.YCBCR_P010,
+                StreamFormat.JPEG_R,
+            )
     }
 
     @Test

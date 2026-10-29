@@ -18,12 +18,20 @@ function sedInPlace() {
   rm $TEMP_FILE
 }
 
+echo "checking whether gcert was run"
+source gbash.sh || exit 1
+
+# if the user doesn't have permission to upload to GCS, we don't want to proceed with downloading
+# artifacts. This is for the updating ASwB part
+source development/check_gcloud_permissions.sh
+checkGcloudPermissions || exit 1
+
 # Versions that the user should update when running this script
 echo Getting Studio version and link
-AGP_VERSION=${1:-9.5.0-alpha08}
-STUDIO_VERSION_STRING=${2:-"Android Studio Rabbit 2 | 2026.2.2 Canary 3"}
+AGP_VERSION=${1:-9.5.0-alpha09}
+STUDIO_VERSION_STRING=${2:-"Android Studio Rabbit 2 | 2026.2.2 Canary 4"}
 # Instructions for how to update the build id can be found here: go/androidx/playbook#update-aswb
-NEW_ASWB_BUILD_ID=${5:-"16488178"}
+NEW_ASWB_BUILD_ID=${5:-"16548196"}
 
 # Get studio version number from version name
 STUDIO_IFRAME_LINK=`curl "https://developer.android.com/studio/archive.html" | grep "<iframe " | sed "s/.* src=\"\([^\"]*\)\".*/\1/g"`

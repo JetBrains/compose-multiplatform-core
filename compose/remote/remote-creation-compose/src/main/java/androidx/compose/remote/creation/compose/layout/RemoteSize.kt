@@ -16,36 +16,26 @@
 
 package androidx.compose.remote.creation.compose.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.rf
-import androidx.compose.ui.geometry.Size
 
 /**
  * An immutable, 2D floating-point size with [width] and [height] represented as [RemoteFloat]s.
  *
  * This class is used in remote creation to represent dimensions that may be backed by remote state.
+ *
+ * @property width The horizontal dimension.
+ * @property height The vertical dimension.
  */
-public class RemoteSize {
-
-    public val width: RemoteFloat
-    public val height: RemoteFloat
-
-    public constructor(width: RemoteFloat, height: RemoteFloat) {
-        this.width = width
-        this.height = height
-    }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public constructor(size: Size) {
-        this.width = size.width.rf
-        this.height = size.height.rf
-    }
+public class RemoteSize(
+    public val width: RemoteFloat,
+    public val height: RemoteFloat,
+) {
 
     /**
-     * Returns a [RemoteSize] with the width and height decreased by the [offset]'s x and y
-     * coordinates, respectively.
+     * Returns a [RemoteSize] with the width and height decreased by [offset]'s x and y coordinates.
+     *
+     * @param offset The [RemoteOffset] to subtract from this size.
      */
     public fun offsetSize(offset: RemoteOffset): RemoteSize {
         return RemoteSize(width - offset.x, height - offset.y)
@@ -54,13 +44,6 @@ public class RemoteSize {
     /** The lesser of the magnitudes of the [width] and the [height]. */
     public val minDimension: RemoteFloat
         get() = width.min(height)
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun asSize(scope: RemoteStateScope): Size {
-        with(scope) {
-            return Size(width.floatId, height.floatId)
-        }
-    }
 
     /** The offset to the center of this [RemoteSize]. */
     public val center: RemoteOffset

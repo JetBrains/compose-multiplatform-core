@@ -17,17 +17,28 @@
 package androidx.photopicker.activity
 
 import android.os.Build
+import android.os.Bundle
 import android.os.ext.SdkExtensions
 import android.provider.MediaStore
+import android.widget.photopicker.PhotoPickerSelectionParams
+import android.widget.photopicker.PhotoPickerUiCustomizationParams
+import androidx.annotation.RequiresExtension
 import androidx.photopicker.activity.PickVisualMedia.MediaCapabilities
 import androidx.photopicker.activity.PickVisualMedia.MediaCapabilities.Companion.TYPE_HDR10
 import androidx.photopicker.activity.PickVisualMedia.MediaCapabilities.Companion.TYPE_HDR10_PLUS
 import androidx.photopicker.activity.PickVisualMedia.MediaCapabilities.Companion.TYPE_HLG10
+import androidx.photopicker.activity.params.HighlightAlbumParams
+import androidx.photopicker.activity.params.HighlightSearchResultsParams
+import androidx.photopicker.activity.params.HighlightType
+import androidx.photopicker.activity.params.SelectionParams
+import androidx.photopicker.activity.params.UiCustomizationParams
+import androidx.photopicker.activity.params.UiCustomizationParams.Companion.ASPECT_RATIO_PORTRAIT_9_16
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.time.Duration
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -119,24 +130,76 @@ class PickVisualMediaRequestTest {
 
     @Test
     fun testPickVisualMediaRequest_defaultTab() {
-        // test default
-        var request = PickVisualMediaRequest()
+        val context = InstrumentationRegistry.getInstrumentation().context
+
+        // test default from Builder
+        var request = PickVisualMediaRequest.Builder().build()
         assertThat(request.defaultTab).isEqualTo(PickVisualMedia.DefaultTab.PhotosTab)
+        assertThat(request.isCustomDefaultTabApplied).isEqualTo(false)
+
+        var singleIntent = PickVisualMedia().createIntent(context, request)
+        assertThat(singleIntent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB)).isFalse()
+
+        // test builder setDefaultTab with PhotosTab
+        request =
+            PickVisualMediaRequest.Builder()
+                .setDefaultTab(PickVisualMedia.DefaultTab.PhotosTab)
+                .build()
+        assertThat(request.defaultTab).isEqualTo(PickVisualMedia.DefaultTab.PhotosTab)
+        assertThat(request.isCustomDefaultTabApplied).isEqualTo(true)
+
+        singleIntent = PickVisualMedia().createIntent(context, request)
+        if (PickVisualMedia.isSystemPickerAvailable()) {
+            assertThat(singleIntent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB)).isTrue()
+            assertThat(singleIntent.getIntExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB, -1))
+                .isEqualTo(PickVisualMedia.DefaultTab.PhotosTab.value)
+        }
 
         // test given default tab in PickVisualMediaRequest
         request = PickVisualMediaRequest(defaultTab = PickVisualMedia.DefaultTab.AlbumsTab)
         assertThat(request.defaultTab).isEqualTo(PickVisualMedia.DefaultTab.AlbumsTab)
+        assertThat(request.isCustomDefaultTabApplied).isEqualTo(true)
+
+        singleIntent = PickVisualMedia().createIntent(context, request)
+        if (PickVisualMedia.isSystemPickerAvailable()) {
+            assertThat(singleIntent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB)).isTrue()
+            assertThat(singleIntent.getIntExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB, -1))
+                .isEqualTo(PickVisualMedia.DefaultTab.AlbumsTab.value)
+        }
     }
 
     @Test
     fun testPickVisualMediaRequest_isOrderedSelection() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+
         // test default
         var request = PickVisualMediaRequest()
         assertThat(request.isOrderedSelection).isEqualTo(false)
 
+        var multipleIntent = PickMultipleVisualMedia().createIntent(context, request)
+        assertThat(multipleIntent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER)).isFalse()
+
+        // test builder setOrderedSelection(true)
+        request = PickVisualMediaRequest.Builder().setOrderedSelection(true).build()
+        assertThat(request.isOrderedSelection).isEqualTo(true)
+
+        multipleIntent = PickMultipleVisualMedia().createIntent(context, request)
+        if (PickVisualMedia.isSystemPickerAvailable()) {
+            assertThat(multipleIntent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER)).isTrue()
+            assertThat(multipleIntent.getBooleanExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER, false))
+                .isTrue()
+        }
+
         // test given isOrderedSelection in PickVisualMediaRequest
         request = PickVisualMediaRequest(isOrderedSelection = true)
         assertThat(request.isOrderedSelection).isEqualTo(true)
+
+        multipleIntent = PickMultipleVisualMedia().createIntent(context, request)
+        if (PickVisualMedia.isSystemPickerAvailable()) {
+            assertThat(multipleIntent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER)).isTrue()
+            assertThat(multipleIntent.getBooleanExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER, false))
+                .isTrue()
+        }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
@@ -264,6 +327,152 @@ class PickVisualMediaRequestTest {
     }
 
     @Test
+    fun testPickVisualMediaRequest_highlightSearchResultsParams() {
+        val params =
+            HighlightSearchResultsParams.Builder()
+                .setHighlightType(HighlightType.EXPANDED)
+                .setHighlightSearchTextQuery("cats")
+                .build()
+
+        val request =
+            PickVisualMediaRequest.Builder().setHighlightSearchResultsParams(params).build()
+
+        assertThat(request.highlightSearchResultsParams).isNotNull()
+        assertThat(request.highlightSearchResultsParams?.highlightSearchTextQuery).isEqualTo("cats")
+        assertThat(request.highlightSearchResultsParams?.highlightType)
+            .isEqualTo(HighlightType.EXPANDED)
+    }
+
+    @Test
+    fun testPickVisualMediaRequest_highlightAlbumParams() {
+        val params =
+            HighlightAlbumParams.Builder()
+                .setHighlightType(HighlightType.COLLAPSED)
+                .setHighlightAlbum(HighlightAlbumParams.ALBUM_FAVORITES)
+                .build()
+
+        val request = PickVisualMediaRequest.Builder().setHighlightAlbumParams(params).build()
+
+        assertThat(request.highlightAlbumParams).isNotNull()
+        assertThat(request.highlightAlbumParams?.highlightAlbum)
+            .isEqualTo(HighlightAlbumParams.ALBUM_FAVORITES)
+        assertThat(request.highlightAlbumParams?.highlightType).isEqualTo(HighlightType.COLLAPSED)
+    }
+
+    @Test
+    fun testPickVisualMediaRequest_mutuallyExclusiveHighlightParams() {
+        val searchParams =
+            HighlightSearchResultsParams.Builder()
+                .setHighlightType(HighlightType.EXPANDED)
+                .setHighlightSearchTextQuery("cats")
+                .build()
+
+        val albumParams =
+            HighlightAlbumParams.Builder()
+                .setHighlightType(HighlightType.COLLAPSED)
+                .setHighlightAlbum(HighlightAlbumParams.ALBUM_FAVORITES)
+                .build()
+
+        assertThrows(IllegalArgumentException::class.java) {
+            PickVisualMediaRequest.Builder()
+                .setHighlightSearchResultsParams(searchParams)
+                .setHighlightAlbumParams(albumParams)
+                .build()
+        }
+    }
+
+    @Test
+    fun testPickVisualMedia_createIntent_highlightSearchResultsParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val params =
+            HighlightSearchResultsParams.Builder()
+                .setHighlightType(HighlightType.EXPANDED)
+                .setHighlightSearchTextQuery("cats")
+                .build()
+
+        val request =
+            PickVisualMediaRequest.Builder().setHighlightSearchResultsParams(params).build()
+
+        val intent = PickVisualMedia().createIntent(context, request)
+        if (
+            PickVisualMedia.isSystemPickerAvailable() &&
+                PickVisualMedia.areSystemHighlightParamsAvailable()
+        ) {
+            val searchBundle =
+                intent.getBundleExtra(MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS)
+
+            assertThat(searchBundle).isNotNull()
+            assertThat(searchBundle?.getInt(MediaStore.KEY_PICK_IMAGES_HIGHLIGHT_TYPE))
+                .isEqualTo(MediaStore.PICK_IMAGES_HIGHLIGHT_TYPE_EXPANDED)
+            assertThat(
+                    searchBundle?.getString(MediaStore.KEY_PICK_IMAGES_HIGHLIGHT_SEARCH_TEXT_QUERY)
+                )
+                .isEqualTo("cats")
+        }
+    }
+
+    @Test
+    fun testPickVisualMediaRequest_uiCustomizationParams() {
+        val params =
+            UiCustomizationParams.Builder().setAspectRatio(ASPECT_RATIO_PORTRAIT_9_16).build()
+
+        val request = PickVisualMediaRequest.Builder().setUiCustomizationParams(params).build()
+
+        assertThat(request.uiCustomizationParams).isNotNull()
+        assertThat(request.uiCustomizationParams?.aspectRatio).isEqualTo(ASPECT_RATIO_PORTRAIT_9_16)
+    }
+
+    @Test
+    @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 22)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    fun testPickVisualMedia_createIntent_uiCustomizationParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val params =
+            UiCustomizationParams.Builder().setAspectRatio(ASPECT_RATIO_PORTRAIT_9_16).build()
+
+        val request = PickVisualMediaRequest.Builder().setUiCustomizationParams(params).build()
+
+        val intent = PickVisualMedia().createIntent(context, request)
+        if (PickVisualMedia.isSystemPickerAvailable()) {
+            if (PickVisualMedia.arePhotoPickerUiCustomizationParamsAvailable()) {
+                assertThat(intent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS))
+                    .isTrue()
+                val parcelable =
+                    intent.getParcelableExtra(
+                        MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS,
+                        PhotoPickerUiCustomizationParams::class.java,
+                    )
+                assertThat(parcelable).isNotNull()
+                assertThat(parcelable?.aspectRatio)
+                    .isEqualTo(PhotoPickerUiCustomizationParams.ASPECT_RATIO_PORTRAIT_9_16)
+            } else {
+                assertThat(intent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS))
+                    .isFalse()
+            }
+        } else if (PickVisualMedia.isSystemFallbackPickerAvailable(context)) {
+            assertThat(
+                    intent.hasExtra(
+                        PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS
+                    )
+                )
+                .isTrue()
+            val bundle =
+                intent.getParcelableExtra(
+                    PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS,
+                    Bundle::class.java,
+                )
+            assertThat(bundle).isNotNull()
+            assertThat(
+                    bundle?.getInt(
+                        PickVisualMedia
+                            .EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS_ASPECT_RATIO
+                    )
+                )
+                .isEqualTo(PickVisualMedia.SYSTEM_FALLBACK_PICK_IMAGES_ASPECT_RATIO_PORTRAIT_9_16)
+        }
+    }
+
+    @Test
     fun testPickMultipleVisualMedia_createIntent_locationMetadataAccess() {
         val context = InstrumentationRegistry.getInstrumentation().context
 
@@ -337,5 +546,226 @@ class PickVisualMediaRequestTest {
             .isEqualTo(
                 "androidx.activity.result.contract.extra.PICK_IMAGES_REQUEST_LOCATION_METADATA_ACCESS"
             )
+    }
+
+    @Test
+    fun testPickVisualMedia_createIntent_highlightAlbumParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val params =
+            HighlightAlbumParams.Builder()
+                .setHighlightType(HighlightType.COLLAPSED)
+                .setHighlightAlbum(HighlightAlbumParams.ALBUM_CAMERA)
+                .build()
+
+        val request = PickVisualMediaRequest.Builder().setHighlightAlbumParams(params).build()
+
+        val intent = PickVisualMedia().createIntent(context, request)
+        if (
+            PickVisualMedia.isSystemPickerAvailable() &&
+                PickVisualMedia.areSystemHighlightParamsAvailable()
+        ) {
+            val albumBundle = intent.getBundleExtra(MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_ALBUM)
+
+            assertThat(albumBundle).isNotNull()
+            assertThat(albumBundle?.getInt(MediaStore.KEY_PICK_IMAGES_HIGHLIGHT_TYPE))
+                .isEqualTo(MediaStore.PICK_IMAGES_HIGHLIGHT_TYPE_COLLAPSED)
+            assertThat(albumBundle?.getString(MediaStore.KEY_PICK_IMAGES_HIGHLIGHT_ALBUM_ID))
+                .isEqualTo(MediaStore.PICK_IMAGES_HIGHLIGHT_ALBUM_CAMERA)
+        }
+    }
+
+    @Test
+    fun testPickMultipleVisualMedia_createIntent_highlightSearchResultsParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val params =
+            HighlightSearchResultsParams.Builder()
+                .setHighlightType(HighlightType.EXPANDED)
+                .setHighlightSearchTextQuery("dogs")
+                .build()
+
+        val request =
+            PickVisualMediaRequest.Builder().setHighlightSearchResultsParams(params).build()
+
+        val intent = PickMultipleVisualMedia().createIntent(context, request)
+        if (
+            PickVisualMedia.isSystemPickerAvailable() &&
+                PickVisualMedia.areSystemHighlightParamsAvailable()
+        ) {
+            val searchBundle =
+                intent.getBundleExtra(MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS)
+
+            assertThat(searchBundle).isNotNull()
+            assertThat(searchBundle?.getInt(MediaStore.KEY_PICK_IMAGES_HIGHLIGHT_TYPE))
+                .isEqualTo(MediaStore.PICK_IMAGES_HIGHLIGHT_TYPE_EXPANDED)
+            assertThat(
+                    searchBundle?.getString(MediaStore.KEY_PICK_IMAGES_HIGHLIGHT_SEARCH_TEXT_QUERY)
+                )
+                .isEqualTo("dogs")
+        }
+    }
+
+    @Test
+    fun testPickMultipleVisualMedia_createIntent_highlightAlbumParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val params =
+            HighlightAlbumParams.Builder()
+                .setHighlightType(HighlightType.COLLAPSED)
+                .setHighlightAlbum(HighlightAlbumParams.ALBUM_FAVORITES)
+                .build()
+
+        val request = PickVisualMediaRequest.Builder().setHighlightAlbumParams(params).build()
+
+        val intent = PickMultipleVisualMedia().createIntent(context, request)
+        if (
+            PickVisualMedia.isSystemPickerAvailable() &&
+                PickVisualMedia.areSystemHighlightParamsAvailable()
+        ) {
+            val albumBundle = intent.getBundleExtra(MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_ALBUM)
+
+            assertThat(albumBundle).isNotNull()
+            assertThat(albumBundle?.getInt(MediaStore.KEY_PICK_IMAGES_HIGHLIGHT_TYPE))
+                .isEqualTo(MediaStore.PICK_IMAGES_HIGHLIGHT_TYPE_COLLAPSED)
+            assertThat(albumBundle?.getString(MediaStore.KEY_PICK_IMAGES_HIGHLIGHT_ALBUM_ID))
+                .isEqualTo(MediaStore.PICK_IMAGES_HIGHLIGHT_ALBUM_FAVORITES)
+        }
+    }
+
+    @Test
+    @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 22)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun testPickVisualMediaRequest_selectionParams() {
+        // test default
+        var request = PickVisualMediaRequest()
+        assertThat(request.selectionParams).isNull()
+
+        // test given selectionParams in PickVisualMediaRequest
+        val selectionParams =
+            SelectionParams.Builder().setMinMediaItemResolutionInPixels(100L).build()
+        request = PickVisualMediaRequest.Builder().setSelectionParams(selectionParams).build()
+        assertThat(request.selectionParams).isEqualTo(selectionParams)
+    }
+
+    @Test
+    @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 22)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    fun testPickVisualMedia_createIntent_selectionParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val minResolution = 1000L
+        val maxResolution = 50000L
+        val minDuration = Duration.ofSeconds(5)
+        val maxDuration = Duration.ofMinutes(2)
+        val maxSize = 10 * 1024 * 1024L
+        val maxBatchSize = 50 * 1024 * 1024L
+        val mimeTypes = listOf("image/png", "video/mp4")
+
+        val selectionParams =
+            SelectionParams.Builder()
+                .setMinMediaItemResolutionInPixels(minResolution)
+                .setMaxMediaItemResolutionInPixels(maxResolution)
+                .setMinVideoDuration(minDuration)
+                .setMaxVideoDuration(maxDuration)
+                .setMaxMediaItemSizeInBytes(maxSize)
+                .setMaxSelectionBatchSizeInBytes(maxBatchSize)
+                .setMimeTypes(mimeTypes)
+                .build()
+
+        val request = PickVisualMediaRequest.Builder().setSelectionParams(selectionParams).build()
+
+        val intentSingle = PickVisualMedia().createIntent(context, request)
+        if (PickVisualMedia.isSystemPickerAvailable()) {
+            if (PickVisualMedia.arePhotoPickerSelectionParamsAvailable()) {
+                assertThat(intentSingle.hasExtra(MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS))
+                    .isTrue()
+                val parcelable =
+                    intentSingle.getParcelableExtra(
+                        MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS,
+                        PhotoPickerSelectionParams::class.java,
+                    )
+                assertThat(parcelable).isNotNull()
+                assertThat(parcelable?.minMediaItemResolutionInPixels).isEqualTo(minResolution)
+                assertThat(parcelable?.maxMediaItemResolutionInPixels).isEqualTo(maxResolution)
+                assertThat(parcelable?.minVideoDuration).isEqualTo(minDuration)
+                assertThat(parcelable?.maxVideoDuration).isEqualTo(maxDuration)
+                assertThat(parcelable?.maxMediaItemSizeInBytes).isEqualTo(maxSize)
+                assertThat(parcelable?.maxSelectionBatchSizeInBytes).isEqualTo(maxBatchSize)
+                assertThat(parcelable?.mimeTypes).containsExactly("image/png", "video/mp4")
+            } else {
+                assertThat(intentSingle.hasExtra(MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS))
+                    .isFalse()
+            }
+        }
+
+        val intentMultiple = PickMultipleVisualMedia().createIntent(context, request)
+        if (PickVisualMedia.isSystemPickerAvailable()) {
+            if (PickVisualMedia.arePhotoPickerSelectionParamsAvailable()) {
+                assertThat(intentMultiple.hasExtra(MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS))
+                    .isTrue()
+                val parcelable =
+                    intentMultiple.getParcelableExtra(
+                        MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS,
+                        PhotoPickerSelectionParams::class.java,
+                    )
+                assertThat(parcelable).isNotNull()
+                assertThat(parcelable?.minMediaItemResolutionInPixels).isEqualTo(minResolution)
+                assertThat(parcelable?.maxMediaItemResolutionInPixels).isEqualTo(maxResolution)
+                assertThat(parcelable?.minVideoDuration).isEqualTo(minDuration)
+                assertThat(parcelable?.maxVideoDuration).isEqualTo(maxDuration)
+                assertThat(parcelable?.maxMediaItemSizeInBytes).isEqualTo(maxSize)
+                assertThat(parcelable?.maxSelectionBatchSizeInBytes).isEqualTo(maxBatchSize)
+                assertThat(parcelable?.mimeTypes).containsExactly("image/png", "video/mp4")
+            } else {
+                assertThat(intentMultiple.hasExtra(MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS))
+                    .isFalse()
+            }
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 22)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    fun testPickMultipleVisualMedia_createIntent_uiCustomizationParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val params =
+            UiCustomizationParams.Builder().setAspectRatio(ASPECT_RATIO_PORTRAIT_9_16).build()
+
+        val request = PickVisualMediaRequest.Builder().setUiCustomizationParams(params).build()
+
+        val intent = PickMultipleVisualMedia().createIntent(context, request)
+        if (PickVisualMedia.isSystemPickerAvailable()) {
+            if (PickVisualMedia.arePhotoPickerUiCustomizationParamsAvailable()) {
+                assertThat(intent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS))
+                    .isTrue()
+                val parcelable =
+                    intent.getParcelableExtra(
+                        MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS,
+                        PhotoPickerUiCustomizationParams::class.java,
+                    )
+                assertThat(parcelable).isNotNull()
+                assertThat(parcelable?.aspectRatio)
+                    .isEqualTo(PhotoPickerUiCustomizationParams.ASPECT_RATIO_PORTRAIT_9_16)
+            } else {
+                assertThat(intent.hasExtra(MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS))
+                    .isFalse()
+            }
+        } else if (PickVisualMedia.isSystemFallbackPickerAvailable(context)) {
+            assertThat(
+                    intent.hasExtra(
+                        PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS
+                    )
+                )
+                .isTrue()
+            val bundle =
+                intent.getParcelableExtra(
+                    PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS,
+                    Bundle::class.java,
+                )
+            assertThat(bundle).isNotNull()
+            assertThat(
+                    bundle?.getInt(
+                        PickVisualMedia
+                            .EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS_ASPECT_RATIO
+                    )
+                )
+                .isEqualTo(PickVisualMedia.SYSTEM_FALLBACK_PICK_IMAGES_ASPECT_RATIO_PORTRAIT_9_16)
+        }
     }
 }

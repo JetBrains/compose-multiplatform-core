@@ -2,18 +2,18 @@
 # -----------------------------------------------------------------------------
 # All of the following should be updated in sync.
 # -----------------------------------------------------------------------------
-androidGradlePlugin = "9.5.0-alpha08"
+androidGradlePlugin = "9.5.0-alpha09"
 # NOTE: When updating the lint version we also need to update the `api` version
 # supported by `IssueRegistry`'s.' For e.g. r.android.com/1331903
-androidLint = "32.5.0-alpha08"
+androidLint = "32.5.0-alpha09"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudioIj = "2026.2.2.3"
-androidStudioName = "rabbit2-canary3"
+androidStudioIj = "2026.2.2.4"
+androidStudioName = "rabbit2-canary4"
 # For IntelliJ download via intellij gradle task
 intelliJVersion = "2026.2"
 # For opening aswb. For full instructions how to update, go to go/androidx/playbook#update-aswb
-aswbBuildId = "16488178"
+aswbBuildId = "16548196"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.1"
@@ -156,7 +156,7 @@ espressoIdlingResource = { module = "androidx.test.espresso:espresso-idling-reso
 espressoIntents = { module = "androidx.test.espresso:espresso-intents", version.ref = "espresso" }
 espressoRemote = { module = "androidx.test.espresso:espresso-remote", version.ref = "espresso" }
 espressoWeb = { module = "androidx.test.espresso:espresso-web", version.ref = "espresso" }
-errorProne = { module = "com.google.errorprone:error_prone_core", version = "2.45.0" }
+errorProne = { module = "com.google.errorprone:error_prone_core", version = "2.50.0" }
 findbugs = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 firebaseAppindexing = { module = "com.google.firebase:firebase-appindexing", version = "19.2.0" }
 freemarker = { module = "org.freemarker:freemarker", version = "2.3.31"}

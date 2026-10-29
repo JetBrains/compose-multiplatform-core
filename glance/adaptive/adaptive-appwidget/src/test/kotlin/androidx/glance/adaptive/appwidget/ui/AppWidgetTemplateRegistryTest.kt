@@ -18,12 +18,12 @@ package androidx.glance.adaptive.appwidget.ui
 
 import android.content.Context
 import android.widget.RemoteViews
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.runtime.AbstractApplier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.Recomposer
 import androidx.glance.adaptive.appwidget.ui.selection.AppWidgetGlanceSurface
-import androidx.glance.adaptive.core.ui.selection.ArchetypeSelector
 import androidx.glance.adaptive.core.ui.selection.Dimensions
 import androidx.glance.adaptive.core.ui.selection.HostConstraints
 import androidx.glance.adaptive.core.ui.templates.AdaptiveGlanceTemplate
@@ -41,11 +41,8 @@ import org.robolectric.annotation.Config
 class AppWidgetTemplateRegistryTest {
 
     private data class DummyTemplate(val title: String) : AdaptiveGlanceTemplate {
-        override val templateId: String = "DummyTemplate"
-    }
-
-    private enum class DummyArchetype {
-        CARD
+        override val templateName: String = "DummyTemplate"
+        override val templateId: Int = 1
     }
 
     private val surface = AppWidgetGlanceSurface.MOBILE_HOME_SCREEN
@@ -104,6 +101,25 @@ class AppWidgetTemplateRegistryTest {
     }
 
     @Test
+    fun render_remoteComposeRenderer_returnsRemoteComposeOutput() {
+        val expectedContent: @RemoteComposable @Composable () -> Unit = {}
+        AppWidgetTemplateRegistry.register(
+            DummyTemplate::class.java,
+            RemoteComposeTemplateRenderer { _, _ -> expectedContent },
+        )
+
+        val output =
+            AppWidgetTemplateRegistry.render(
+                DummyTemplate("Test"),
+                HostConstraints(Dimensions(200, 100), surface),
+            )
+
+        assertThat(output).isInstanceOf(RemoteComposeRenderOutput::class.java)
+        val contentOutput = output as RemoteComposeRenderOutput
+        assertThat(contentOutput.content).isSameInstanceAs(expectedContent)
+    }
+
+    @Test
     fun register_replacesPreviousRenderer() {
         var firstCalls = 0
         var secondCalls = 0
@@ -138,58 +154,6 @@ class AppWidgetTemplateRegistryTest {
             DummyTemplate("Unregistered"),
             HostConstraints(Dimensions(200, 100), surface),
         )
-    }
-
-    @Test
-    fun resolveArchetypeId_enumArchetype_returnsEnumName() {
-        AppWidgetTemplateRegistry.register(
-            DummyTemplate::class.java,
-            GlanceTemplateRenderer { _, _ -> {} },
-            ArchetypeSelector { _, _ -> DummyArchetype.CARD },
-        )
-
-        val archetypeId =
-            AppWidgetTemplateRegistry.resolveArchetypeId(
-                data = DummyTemplate("Test"),
-                surface = surface,
-                dimensions = Dimensions(200, 100),
-            )
-
-        assertThat(archetypeId).isEqualTo("CARD")
-    }
-
-    @Test
-    fun resolveArchetypeId_nonEnumArchetype_returnsToString() {
-        class CustomArchetype(private val id: String) {
-            override fun toString(): String = id
-        }
-
-        AppWidgetTemplateRegistry.register(
-            DummyTemplate::class.java,
-            GlanceTemplateRenderer { _, _ -> {} },
-            ArchetypeSelector { _, _ -> CustomArchetype("CUSTOM_SPLIT") },
-        )
-
-        val archetypeId =
-            AppWidgetTemplateRegistry.resolveArchetypeId(
-                data = DummyTemplate("Test"),
-                surface = surface,
-                dimensions = Dimensions(200, 100),
-            )
-
-        assertThat(archetypeId).isEqualTo("CUSTOM_SPLIT")
-    }
-
-    @Test
-    fun resolveArchetypeId_unregisteredTemplate_returnsNull() {
-        val archetypeId =
-            AppWidgetTemplateRegistry.resolveArchetypeId(
-                data = DummyTemplate("Unregistered"),
-                surface = surface,
-                dimensions = Dimensions(200, 100),
-            )
-
-        assertThat(archetypeId).isNull()
     }
 
     private fun runComposition(content: @Composable () -> Unit) {

@@ -269,7 +269,10 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @LargeTest
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(
+    ExperimentalMaterialApi::class,
+    androidx.compose.ui.platform.ExperimentalComposeUiHostApi::class,
+)
 @RunWith(AndroidJUnit4::class)
 class AndroidAccessibilityTest {
     @get:Rule val rule = createAndroidComposeRule<TestActivity>()
@@ -3535,7 +3538,7 @@ class AndroidAccessibilityTest {
     @Test
     fun sendTextEvents_whenSetText() {
         // Arrange.
-        val locale = Locale("en_US")
+        val locale = Locale("en-US")
         val initialText = "h"
         val finalText = "hello"
         setContent {

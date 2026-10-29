@@ -83,11 +83,31 @@ public open class PickMultipleVisualMedia(private val maxItems: Int = getMaxItem
                 }
 
                 putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, currentMaxItems)
-                putExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
-                putExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER, input.isOrderedSelection)
+                if (input.isCustomDefaultTabApplied) {
+                    putExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+                }
+                if (input.isOrderedSelection) {
+                    putExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER, true)
+                }
 
                 if (input.isCustomAccentColorApplied) {
                     putExtra(MediaStore.EXTRA_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
+                }
+
+                if (PickVisualMedia.areSystemHighlightParamsAvailable()) {
+                    input.highlightSearchResultsParams?.let {
+                        putExtra(
+                            MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS,
+                            it.createHighlightSearchResultsBundle(),
+                        )
+                    }
+
+                    input.highlightAlbumParams?.let {
+                        putExtra(
+                            MediaStore.EXTRA_PICK_IMAGES_HIGHLIGHT_ALBUM,
+                            it.createHighlightAlbumBundle(),
+                        )
+                    }
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -104,6 +124,21 @@ public open class PickMultipleVisualMedia(private val maxItems: Int = getMaxItem
                         putExtra(MediaStore.EXTRA_REQUEST_LOCATION_METADATA_ACCESS, true)
                     }
                 }
+
+                if (PickVisualMedia.arePhotoPickerSelectionParamsAvailable()) {
+                    input.selectionParams?.toPhotoPickerSelectionParams()?.let { selectionParams ->
+                        putExtra(MediaStore.EXTRA_PICK_IMAGES_SELECTION_PARAMS, selectionParams)
+                    }
+                }
+
+                if (PickVisualMedia.arePhotoPickerUiCustomizationParamsAvailable()) {
+                    input.uiCustomizationParams?.let { uiCustomizationParams ->
+                        putExtra(
+                            MediaStore.EXTRA_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS,
+                            uiCustomizationParams.toPhotoPickerUiCustomizationParams(),
+                        )
+                    }
+                }
             }
         } else if (PickVisualMedia.isSystemFallbackPickerAvailable(context)) {
             val fallbackPicker =
@@ -116,14 +151,15 @@ public open class PickMultipleVisualMedia(private val maxItems: Int = getMaxItem
                 require(currentMaxItems > 1) { "Max items must be greater than 1" }
 
                 putExtra(PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX, currentMaxItems)
-                putExtra(
-                    PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB,
-                    input.defaultTab.value,
-                )
-                putExtra(
-                    PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER,
-                    input.isOrderedSelection,
-                )
+                if (input.isCustomDefaultTabApplied) {
+                    putExtra(
+                        PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB,
+                        input.defaultTab.value,
+                    )
+                }
+                if (input.isOrderedSelection) {
+                    putExtra(PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER, true)
+                }
 
                 if (input.isCustomAccentColorApplied) {
                     putExtra(
@@ -137,6 +173,27 @@ public open class PickMultipleVisualMedia(private val maxItems: Int = getMaxItem
                         PickVisualMedia
                             .EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_REQUEST_LOCATION_METADATA_ACCESS,
                         true,
+                    )
+                }
+
+                input.highlightSearchResultsParams?.let {
+                    putExtra(
+                        PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_SEARCH_RESULTS,
+                        it.createHighlightSearchResultsFallbackBundle(),
+                    )
+                }
+
+                input.highlightAlbumParams?.let {
+                    putExtra(
+                        PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_HIGHLIGHT_ALBUM,
+                        it.createHighlightAlbumFallbackBundle(),
+                    )
+                }
+
+                input.uiCustomizationParams?.createFallbackUiParamBundle()?.let { bundle ->
+                    putExtra(
+                        PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_UI_CUSTOMIZATION_PARAMS,
+                        bundle,
                     )
                 }
             }

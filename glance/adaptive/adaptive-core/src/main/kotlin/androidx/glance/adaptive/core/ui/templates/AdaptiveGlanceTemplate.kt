@@ -22,12 +22,30 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface AdaptiveGlanceTemplate {
     /**
-     * Unique semantic identifier of the template for telemetry and registry lookups (e.g.,
+     * Unique semantic name of the template for human-readable identification (e.g.,
      * "list_template_v1").
      *
-     * Implementations must provide a stable constant string identifier that is unique across all
-     * templates within the application to ensure human-readable telemetry, accurate data
-     * partitioning, and no identifier collisions under R8/ProGuard class minification.
+     * Implementations must provide a stable constant string name that is unique across all
+     * templates within the application to avoid collisions under R8/ProGuard class minification.
      */
-    public val templateId: String
+    // AdaptiveGlanceTemplate is only implemented by library-group templates, not by external
+    // callers. Keeping `templateName` and `templateId` restricted without default getters triggers
+    // Metalava's HiddenAbstractMethodInInterface check, which we suppress here.
+    @get:Suppress("HiddenAbstractMethodInInterface")
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val templateName: String
+
+    /**
+     * Stable integer identifier representing this template type for OS platform telemetry (e.g.,
+     * `1` for [TrackTemplate], or [TEMPLATE_ID_UNKNOWN] (`0`) when unspecified).
+     */
+    @get:Suppress("HiddenAbstractMethodInInterface")
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val templateId: Int
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public companion object {
+        /** Default unknown template identifier (`0`) when no template type is specified. */
+        public const val TEMPLATE_ID_UNKNOWN: Int = 0
+    }
 }
