@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform.a11y
 
 import androidx.collection.mutableIntObjectMapOf
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -360,6 +361,7 @@ internal class SemanticsOwnerAccessibility(
     /**
      * Syncs [accessibleByNodeId] with the semantics node tree.
      */
+    @OptIn(ExperimentalComposeUiHostApi::class)
     private fun syncNodes() {
         fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
         // `InvisibleToUser` and `HideFromAccessibility` are unmerged properties, so it's ok to get
