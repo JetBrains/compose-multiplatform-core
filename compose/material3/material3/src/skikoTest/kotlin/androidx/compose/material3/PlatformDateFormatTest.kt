@@ -21,7 +21,6 @@ import androidx.compose.material3.internal.calendarLocale
 import kotlin.test.Test
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 internal class PlatformDateFormatTest {
 
     @Test

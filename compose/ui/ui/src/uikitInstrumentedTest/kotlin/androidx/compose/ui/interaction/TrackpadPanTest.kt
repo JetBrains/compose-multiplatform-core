@@ -83,7 +83,7 @@ internal class TrackpadPanTest {
         assertEquals(1, panStartCount)
         assertTrue(
             panMoveCount >= 1,
-            "Expected at least one PanMove, received ${panMoveCount}"
+            "Expected at least one PanMove, received $panMoveCount"
         )
         assertEquals(1, panEndCount)
 

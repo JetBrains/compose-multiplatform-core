@@ -17,22 +17,27 @@
 package androidx.compose.foundation.gestures
 
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
-import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.positionChangedIgnoreConsumed
+import androidx.compose.ui.util.fastFirstOrNull
 
 internal actual suspend fun AwaitPointerEventScope.awaitDragOrCancellationImpl(
     pointerId: PointerId
 ): PointerInputChange? {
-    if (currentEvent.isPointerUp(pointerId)) {
+    val currentPointerChange = currentEvent.changes.fastFirstOrNull { it.id == pointerId }
+    if (currentPointerChange?.pressed != true) {
         return null // The pointer has already been lifted, so the gesture is canceled
     }
-    // The default/Android implementation just checks whether the pointer moved.
-    // But if the target element has moved instead while the pointer is stationary, we still need to
-    // deliver the (synthetic) move event.
-    val change = awaitDragOrUp(pointerId) { event, change ->
-        change.positionChangedIgnoreConsumed() || (event.type == PointerEventType.Move)
+
+    var prevPosition = currentPointerChange.position
+    val change = awaitDragOrUp(pointerId) { _, change ->
+        // Can't use change.positionChangedIgnoreConsumed() due to
+        // https://issuetracker.google.com/issues/343917640
+        // change.previousPosition refers to the previous position in the *current* coordinate
+        // space, but we need the previous position in the *previous* coordinate space.
+        (change.position != prevPosition).also {
+            prevPosition = change.position
+        }
     }
     return if (change?.isConsumed == false) change else null
 }

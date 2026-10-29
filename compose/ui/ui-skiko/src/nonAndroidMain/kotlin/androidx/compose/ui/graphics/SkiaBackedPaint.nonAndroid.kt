@@ -99,19 +99,19 @@ internal class SkiaBackedPaint(
             field = value
         }
 
-    override var strokeJoin: StrokeJoin = StrokeJoin.Round
+    override var strokeJoin: StrokeJoin = StrokeJoin.Miter
         set(value) {
             internalSkiaPaint.strokeJoin = value.toSkia()
             field = value
         }
 
-    override var strokeMiterLimit: Float = 0f
+    override var strokeMiterLimit: Float = 4f
         set(value) {
             internalSkiaPaint.strokeMiter = value
             field = value
         }
 
-    override var filterQuality: FilterQuality = FilterQuality.Medium
+    override var filterQuality: FilterQuality = FilterQuality.Low
 
     override var shader: Shader? = null
         set(value) {

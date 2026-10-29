@@ -521,6 +521,7 @@ class MouseMoveTest {
         width = 8,
         height = 8
     ).use { scene ->
+        @Suppress("unused")
         fun log(obj: Any) = Unit
 //        fun log(obj: Any) = println(obj)
 
@@ -557,7 +558,7 @@ class MouseMoveTest {
                         .size(rect.width.dp, rect.height.dp)
                         .onPointerEvent(PointerEventType.Enter) {
                             log("Enter $rect")
-                            check(enteredIndex == -1) {
+                            require(enteredIndex == -1) {
                                 "There is already entered rect: $enteredIndex"
                             }
                             enteredIndex = index
@@ -565,7 +566,7 @@ class MouseMoveTest {
                         .onPointerEvent(PointerEventType.Exit) {
                             log("Exit $rect")
                             // Because
-                            check(enteredIndex == index) {
+                            require(enteredIndex == index) {
                                 "Exit fired on different rect $index. Entered rect: $enteredIndex"
                             }
                             enteredIndex = -1
@@ -597,11 +598,13 @@ class MouseMoveTest {
                     -1
                 }
 
-            check(expectedEnteredIndex == enteredIndex) {
+            assertEquals(
+                expectedEnteredIndex,
+                enteredIndex,
                 "Entered rect is different.\n" +
                     "Expected: $expectedEnteredIndex\n" +
                     "Actual: $enteredIndex"
-            }
+            )
         }
     }
 

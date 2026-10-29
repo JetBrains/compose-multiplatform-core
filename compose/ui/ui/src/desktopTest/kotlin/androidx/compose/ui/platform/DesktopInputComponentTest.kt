@@ -32,6 +32,7 @@ import java.awt.event.InputMethodEvent
 import java.awt.im.InputMethodRequests
 import java.text.AttributedString
 
+@Suppress("JavaIoSerializableObjectMustHaveReadResolve")
 private object DummyComponent : Component()
 
 @RunWith(JUnit4::class)

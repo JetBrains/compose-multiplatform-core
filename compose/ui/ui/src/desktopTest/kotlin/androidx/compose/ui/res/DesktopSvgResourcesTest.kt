@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import org.junit.Rule
 import org.junit.Test
 
+@Suppress("DEPRECATION")
 @OptIn(InternalTestApi::class)
 class DesktopSvgResourcesTest {
     @get:Rule

@@ -35,25 +35,21 @@ import platform.UIKit.UIGraphicsImageRenderer
 import platform.UIKit.UIViewController
 
 class ComposeLaunchTest {
-    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testViewControllerRenderFirstFrameWhenParallelRenderingDisabled() {
         runViewControllerRenderFirstFrameTest(parallelRenderingEnabled = false)
     }
 
-    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testViewControllerRenderFirstFrameWhenParallelRenderingEnabled() {
         runViewControllerRenderFirstFrameTest(parallelRenderingEnabled = true)
     }
 
-    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testViewRenderFirstFrameWhenParallelRenderingDisabled() {
         runViewRenderFirstFrameTest(parallelRenderingEnabled = false)
     }
 
-    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testViewRenderFirstFrameWhenParallelRenderingEnabled() {
         runViewRenderFirstFrameTest(parallelRenderingEnabled = true)

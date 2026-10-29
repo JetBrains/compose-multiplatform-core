@@ -23,6 +23,7 @@ import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.DisplayLinkFrameRate
 import androidx.compose.ui.window.IosOutOfFrameExecutor
+import androidx.compose.ui.window.ReduceMotionStatusListener
 import androidx.compose.ui.window.SceneForegroundStateListener
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
@@ -40,6 +41,7 @@ import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSTimeInterval
 import platform.QuartzCore.CADisplayLink
+import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIScreen
 import platform.UIKit.UIWindow
 import platform.darwin.NSInteger
@@ -56,7 +58,7 @@ import platform.objc.objc_setAssociatedObject
  */
 internal class FrameChoreographer private constructor(
     window: UIWindow,
-    val coroutineContext: CoroutineContext = Dispatchers.Main
+    baseCoroutineContext: CoroutineContext = Dispatchers.Main
 ) {
     companion object {
         fun choreographerForWindow(window: UIWindow): FrameChoreographer {
@@ -69,6 +71,11 @@ internal class FrameChoreographer private constructor(
         fun configureForWindow(window: UIWindow, coroutineContext: CoroutineContext) {
             window.frameChoreographer?.dispose()
             window.frameChoreographer = FrameChoreographer(window, coroutineContext)
+        }
+
+        @TestOnly
+        fun updateMotionSpeedForWindow(window: UIWindow) {
+            window.frameChoreographer?.updateMotionSpeed()
         }
 
         @TestOnly
@@ -119,6 +126,10 @@ internal class FrameChoreographer private constructor(
         fun dispose()
     }
 
+    private val motionDurationScale = MotionDurationScaleImpl()
+
+    val coroutineContext: CoroutineContext = baseCoroutineContext + motionDurationScale
+
     val frameRecomposer = FrameRecomposer(
         coroutineContext = coroutineContext,
         invalidate = ::requestFrame
@@ -144,6 +155,10 @@ internal class FrameChoreographer private constructor(
         onSceneForegroundStateChanged = { inForeground -> isSceneInForeground = inForeground }
     )
 
+    private val reduceMotionStatusListener = ReduceMotionStatusListener(
+        onReduceMotionStatusChanged = ::updateMotionSpeed
+    )
+
     private var isSceneInForeground: Boolean = foregroundStateListener.isSceneInForeground
         set(value) {
             if (field == value) return
@@ -156,6 +171,10 @@ internal class FrameChoreographer private constructor(
         }
 
     val outOfFrameExecutor = IosOutOfFrameExecutor()
+
+    init {
+        updateMotionSpeed()
+    }
 
     /**
      * The [listeners] list must not be changed when providing notifications. Also, [onDisplayLinkTick]
@@ -172,12 +191,23 @@ internal class FrameChoreographer private constructor(
     fun dispose() {
         displayLink.invalidate()
         foregroundStateListener.dispose()
+        reduceMotionStatusListener.dispose()
         frameRecomposer.close()
         outOfFrameExecutor.dispose()
 
         listeners.clear()
         pendingListenersToAdd.clear()
         pendingListenersToRemove.clear()
+    }
+
+    private fun updateMotionSpeed() {
+        motionDurationScale.scaleFactor = if (UIAccessibilityIsReduceMotionEnabled()) {
+            // 0f would cause motion to finish in the next frame callback.
+            // See [MotionDurationScale.scaleFactor] for more details.
+            0f
+        } else {
+            1f / (windowRef.get()?.layer?.speed?.takeIf { it > 0 } ?: 1f)
+        }
     }
 
     fun addListener(listener: Listener) {

@@ -84,7 +84,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
@@ -572,6 +571,7 @@ class ComponentsAccessibilitySemanticTest {
         setContent {
             Column {
                 Button({}, enabled = false) {}
+                @Suppress("DEPRECATION")
                 TextField("", {}, enabled = false)
                 Slider(value = 0f, onValueChange = {}, enabled = false)
                 Switch(checked = false, onCheckedChange = {}, enabled = false)
@@ -937,6 +937,7 @@ class ComponentsAccessibilitySemanticTest {
     @Test
     fun testTextFieldLabelSemantics() = runUIKitInstrumentedTest {
         setContent {
+            @Suppress("DEPRECATION")
             TextField(
                 value = "",
                 onValueChange = {},
@@ -955,6 +956,7 @@ class ComponentsAccessibilitySemanticTest {
     @Test
     fun testTextPlaceholderSemantics() = runUIKitInstrumentedTest {
         setContent {
+            @Suppress("DEPRECATION")
             TextField(
                 value = "",
                 onValueChange = {},
@@ -972,6 +974,7 @@ class ComponentsAccessibilitySemanticTest {
     @Test
     fun testTextFieldWithValueSemantics() = runUIKitInstrumentedTest {
         setContent {
+            @Suppress("DEPRECATION")
             TextField(
                 value = "Text",
                 onValueChange = {},
@@ -1249,6 +1252,7 @@ class ComponentsAccessibilitySemanticTest {
                 Box(modifier = Modifier.size(50.dp).semantics {
                     contentDescription = "Inner"
                 }) {
+                    @Suppress("DEPRECATION")
                     TextField(
                         value = "",
                         onValueChange = {},
@@ -1728,14 +1732,13 @@ class ComponentsAccessibilitySemanticTest {
     }
 }
 
-@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+@OptIn(ExperimentalForeignApi::class)
 private fun NSAttributedString.attributeForSubstring(name: String, substring: String): Any? {
     val location = string.indexOf(substring)
     assertTrue(location >= 0, "Substring \"$substring\" not found in \"$string\"")
     return attributesAtIndex(location.toULong(), null)[name]
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun NSAttributedString.assertSpelledOut(substring: String) {
     val value = attributeForSubstring(UIAccessibilitySpeechAttributeSpellOut!!, substring)
     assertEquals(
@@ -1745,7 +1748,6 @@ private fun NSAttributedString.assertSpelledOut(substring: String) {
     )
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun NSAttributedString.assertLanguage(substring: String, languageTag: String) {
     val value = attributeForSubstring(UIAccessibilitySpeechAttributeLanguage!!, substring)
     assertEquals(

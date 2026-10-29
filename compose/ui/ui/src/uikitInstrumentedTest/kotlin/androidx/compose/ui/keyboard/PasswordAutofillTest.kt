@@ -38,6 +38,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSSelectorFromString
@@ -126,7 +127,7 @@ internal class PasswordAutofillTest {
             )
         }
 
-    @OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testSecureInputViewTextSelectorReturnsWholeDocument() =
         runUIKitInstrumentedTest(params = configurations) { config ->
@@ -163,7 +164,7 @@ internal class PasswordAutofillTest {
             }
         }
 
-    @OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testDetachedCredentialViewsStillHoldTheirValues() =
         runUIKitInstrumentedTest(params = configurations) { config ->
@@ -181,7 +182,7 @@ internal class PasswordAutofillTest {
 
             visible.value = false
             waitForIdle()
-            delay(1000)
+            delay(1.seconds)
 
             assertEquals(
                 USERNAME,
@@ -248,12 +249,14 @@ internal class PasswordAutofillTest {
                     textObfuscationMode = TextObfuscationMode.Hidden,
                 )
             } else {
+                @Suppress("DEPRECATION")
                 BasicTextField(
                     value = USERNAME,
                     onValueChange = {},
                     modifier = usernameModifier,
                     keyboardOptions = usernameOptions,
                 )
+                @Suppress("DEPRECATION")
                 BasicTextField(
                     value = PASSWORD,
                     onValueChange = {},

@@ -1052,6 +1052,38 @@ class ComposePanelTest {
             frame.dispose()
         }
     }
+
+    @Test
+    fun `ComposePanel sets LocalAwtWindow after reattachment`() {
+        runBlocking(MainUIDispatcher) {
+            var localAwtWindow: Window? = null
+            val composePanel = ComposePanel()
+            composePanel.isDisposeOnRemove = false
+            composePanel.setContent {
+                localAwtWindow = LocalAwtWindow.current
+                Box(Modifier.size(100.dp))
+            }
+
+            fun packWindowAssertAndCleanup() {
+                val window = JFrame()
+                try {
+                    window.contentPane.add(composePanel)
+                    window.pack()
+                    assertEquals(window, localAwtWindow)
+                } finally {
+                    window.contentPane.remove(composePanel)
+                    window.dispose()
+                }
+            }
+            
+            try {
+                packWindowAssertAndCleanup()
+                packWindowAssertAndCleanup()
+            } finally {
+                composePanel.dispose()
+            }
+        }
+    }
 }
 
 private fun LayoutManager(sizeFunction: Component.() -> Dimension?): LayoutManager {

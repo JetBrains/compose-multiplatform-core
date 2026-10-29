@@ -20,7 +20,6 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import platform.Foundation.NSNotificationCenter

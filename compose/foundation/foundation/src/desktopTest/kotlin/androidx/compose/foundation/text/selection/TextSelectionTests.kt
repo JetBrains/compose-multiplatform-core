@@ -79,6 +79,7 @@ class TextSelectionTests {
         val state = mutableStateOf(TextFieldValue(initialValue))
 
         rule.setContent {
+            @Suppress("DEPRECATION")
             BasicTextField(
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -506,6 +507,7 @@ class TextSelectionTests {
         )
         lateinit var textLayout: TextLayoutResult
         rule.setContent {
+            @Suppress("DEPRECATION")
             BasicTextField(
                 value = textFieldValue,
                 onValueChange = { textFieldValue = it },

@@ -304,6 +304,7 @@ private fun UIKitInstrumentedTest.draggedSelectionEdge(underPosition: DpOffset):
 }
 
 /** The shape of a native handle drag, measured against the simulator rather than derived. */
+@Suppress("ConstPropertyName")
 private object NativeHandleDrag {
     /** Finger travel per step, short enough to catch the line snap within one step. */
     const val Step = 4f

@@ -215,6 +215,7 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
         size = IntSize(1083, 150)
     )
 
+    @Suppress("DEPRECATION")
     private fun simpleTextLayoutInput(text: String) = TextLayoutInput(
         text = AnnotatedString(text),
         style = TextStyle(),
@@ -228,6 +229,7 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
         constraints = Constraints(maxWidth = 1000)
     )
 
+    @Suppress("DEPRECATION")
     private fun simpleMultiParagraph(text: String) = MultiParagraph(
         annotatedString = AnnotatedString(text),
         style = TextStyle(),

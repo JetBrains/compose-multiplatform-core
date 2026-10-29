@@ -59,7 +59,6 @@ import platform.UIKit.willMoveToParentViewController
 
 @OptIn(NativeRuntimeApi::class, BetaInteropApi::class)
 class ComposeContainerLifecycleTest {
-    @OptIn(BetaInteropApi::class)
     @Test
     fun composeViewControllerLifecycleResumed() = runBlocking {
         val testViewController = TestContainerViewController()
@@ -102,7 +101,6 @@ class ComposeContainerLifecycleTest {
         appDelegate.cleanUp()
     }
 
-    @OptIn(BetaInteropApi::class)
     @Test
     fun composeViewLifecycleResumed() = runBlocking {
         val testViewController = TestContainerViewController()
@@ -145,7 +143,6 @@ class ComposeContainerLifecycleTest {
         appDelegate.cleanUp()
     }
 
-    @OptIn(BetaInteropApi::class)
     @Test
     fun composeViewControllerViewModelInitialisedAndCleared() = runBlocking {
         val testViewController = TestContainerViewController()
@@ -192,7 +189,6 @@ class ComposeContainerLifecycleTest {
         }
     }
 
-    @OptIn(BetaInteropApi::class)
     @Test
     fun composeViewViewModelInitialisedAndCleared() = runBlocking {
         val testViewController = TestContainerViewController()
@@ -239,7 +235,6 @@ class ComposeContainerLifecycleTest {
         }
     }
 
-    @OptIn(BetaInteropApi::class)
     @Test
     fun composeViewControllerSavedStateRestored() = runBlocking {
         val testViewController = TestContainerViewController()
@@ -290,7 +285,6 @@ class ComposeContainerLifecycleTest {
     }
 
 
-    @OptIn(BetaInteropApi::class)
     @Test
     fun composeViewSavedStateRestored() = runBlocking {
         val testViewController = TestContainerViewController()
@@ -349,7 +343,7 @@ class ComposeContainerLifecycleTest {
                     secs = duration.toDouble(DurationUnit.SECONDS)
                 )
             )
-            delay(duration.inWholeMilliseconds)
+            delay(duration)
             if (statement()) return
         }
 

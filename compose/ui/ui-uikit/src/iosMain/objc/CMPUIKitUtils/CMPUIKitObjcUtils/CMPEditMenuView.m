@@ -90,6 +90,7 @@ typedef enum : NSUInteger {
 
 @property (assign, nonatomic) CGRect targetRect;
 @property (assign, nonatomic) CMPEditMenuState editMenuState;
+@property (assign, nonatomic) BOOL isWritingToolsShown;
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
@@ -135,6 +136,11 @@ id _editInteraction;
     self.selectBlock = selectBlock;
     self.selectAllBlock = selectAllBlock;
     self.customActions = customActions;
+
+    if (self.isWritingToolsShown) {
+        [self dismissEditMenu];
+        return;
+    }
 
     if (@available(iOS 16, *)) {
         [[CMPEditMenuViewRegister shared] hideAllMenusSkipping:self];
@@ -204,6 +210,28 @@ id _editInteraction;
 
 - (BOOL)isSecureTextEntry {
     CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (BOOL)isEditable {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (void)willPresentWritingTools API_AVAILABLE(ios(18.0)) {
+    self.isWritingToolsShown = YES;
+    [self dismissEditMenu];
+}
+
+- (void)didDismissWritingTools API_AVAILABLE(ios(18.0)) {
+    self.isWritingToolsShown = NO;
+}
+
+- (BOOL)resignFirstResponder {
+    self.isWritingToolsShown = NO;
+    return [super resignFirstResponder];
+}
+
+- (UIWritingToolsResultOptions)allowedWritingToolsResultOptions API_AVAILABLE(ios(18.0)) {
+    return UIWritingToolsResultPlainText;
 }
 
 - (UITextField *)cmp_proxyTextField {
@@ -473,6 +501,13 @@ id _editInteraction;
     if (@selector(customAction7:) == action) return self.customActions.count > 7;
     if (@selector(customAction8:) == action) return self.customActions.count > 8;
     if (@selector(customAction9:) == action) return self.customActions.count > 9;
+
+    if (@available(iOS 18.2, *)) {
+        // UIKit implements Writing Tools for any responder conforming to UITextInput.
+        if (@selector(showWritingTools:) == action) {
+            return [super canPerformAction:action withSender:sender];
+        }
+    }
 
     return NO;
 }

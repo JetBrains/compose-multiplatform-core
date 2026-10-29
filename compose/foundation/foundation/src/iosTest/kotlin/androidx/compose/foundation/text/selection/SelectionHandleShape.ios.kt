@@ -18,8 +18,6 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.dp
-import platform.UIKit.UIDevice
 
 internal actual fun PlatformSelectionHandleShape(
     density: Density,

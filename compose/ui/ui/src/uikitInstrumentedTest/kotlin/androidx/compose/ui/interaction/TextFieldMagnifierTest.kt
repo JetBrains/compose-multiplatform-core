@@ -48,9 +48,9 @@ import kotlin.time.Duration.Companion.seconds
 class TextFieldMagnifierTest {
 
     private val params = listOf(
-        TextFieldMagnifierParam(useNativeTextInput = false) { fr -> BTF(fr, false) },
+        TextFieldMagnifierParam(useNativeTextInput = false) { fr -> BTF1(fr, false) },
         TextFieldMagnifierParam(useNativeTextInput = false) { fr -> BFT2(fr, false) },
-        TextFieldMagnifierParam(useNativeTextInput = true) { fr -> BTF(fr, true) },
+        TextFieldMagnifierParam(useNativeTextInput = true) { fr -> BTF1(fr, true) },
         TextFieldMagnifierParam(useNativeTextInput = true) { fr -> BFT2(fr, true) },
     )
 
@@ -175,8 +175,9 @@ class TextFieldMagnifierTest {
         .fillMaxWidth()
         .focusRequester(focusRequester)
 
+    @Suppress("DEPRECATION")
     @Composable
-    private fun BTF(
+    private fun BTF1(
         focusRequester: FocusRequester,
         useNativeTextInput: Boolean
     ) = BasicTextField(

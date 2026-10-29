@@ -16,10 +16,7 @@
 
 package androidx.compose.material3.internal
 
-import androidx.compose.material3.CalendarLocale
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.assertThat
-import androidx.compose.material3.defaultLocale
 import androidx.compose.material3.isEqualTo
 import kotlin.test.Test
 
@@ -32,7 +29,6 @@ expect fun getTimeZone() : String
 expect fun setTimeZone(id : String)
 
 // Tests were copied from Android CalendarModelTest and adopted to multiplatform
-@OptIn(ExperimentalMaterial3Api::class)
 internal class KotlinxDatetimeCalendarModelTest {
 
     @Test

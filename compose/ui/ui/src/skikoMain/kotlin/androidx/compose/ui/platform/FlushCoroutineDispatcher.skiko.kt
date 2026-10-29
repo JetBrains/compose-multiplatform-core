@@ -23,7 +23,7 @@ import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Delay
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.DisposableHandle
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Runnable
@@ -114,27 +114,49 @@ internal class FlushCoroutineDispatcher(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun scheduleResumeAfterDelay(timeMillis: Long, continuation: CancellableContinuation<Unit>) {
-        val block = Runnable { continuation.resume(Unit, null) }
+        val handle = scheduleDelayedTask(
+            timeMillis = timeMillis,
+            task = Runnable {
+                continuation.resume(
+                    value = Unit,
+                    onCancellation = null as ((cause: Throwable, value: Unit, context: CoroutineContext) -> Unit)?)
+            }
+        )
+        continuation.invokeOnCancellation { handle.dispose() }
+    }
+
+    override fun invokeOnTimeout(
+        timeMillis: Long,
+        block: Runnable,
+        context: CoroutineContext
+    ): DisposableHandle = scheduleDelayedTask(timeMillis, block)
+
+    /**
+     * Runs [task] after [timeMillis] in [scope], tracking it in [delayedTasks] until it runs or the
+     * returned handle is disposed.
+     */
+    private fun scheduleDelayedTask(timeMillis: Long, task: Runnable): DisposableHandle {
+        // A new instance for each call, so that removing it from delayedTasks removes only this task
         synchronized(delayedTasksLock) {
-            delayedTasks.add(block)
+            delayedTasks.add(task)
         }
         val job = scope.launch {
+            @Suppress("ConvertLongToDuration")
             kotlinx.coroutines.delay(timeMillis)
             performRun {
                 val isTaskAlive = synchronized(delayedTasksLock) {
-                    delayedTasks.remove(block)
+                    delayedTasks.remove(task)
                 }
                 if (isTaskAlive) {
-                    block.run()
+                    task.run()
                 }
             }
         }
-        continuation.invokeOnCancellation {
+        return DisposableHandle {
             job.cancel()
             synchronized(delayedTasksLock) {
-                delayedTasks.remove(block)
+                delayedTasks.remove(task)
             }
         }
     }

@@ -765,7 +765,7 @@ internal class ComposeAccessible(
                     buildAnnotatedString {
                         append(text.subSequence(0, index))
                         append(s)
-                        append(text.subSequence(index, text.length - 1))
+                        append(text.subSequence(index, text.length))
                     }
                 )
             }
@@ -779,7 +779,7 @@ internal class ComposeAccessible(
                 setText!!.action!!.invoke(
                     buildAnnotatedString {
                         append(text.subSequence(0, startIndex))
-                        append(text.subSequence(endIndex, text.length - 1))
+                        append(text.subSequence(endIndex, text.length))
                     }
                 )
             }
@@ -798,7 +798,7 @@ internal class ComposeAccessible(
                     buildAnnotatedString {
                         append(text.subSequence(0, startIndex))
                         append(s)
-                        append(text.subSequence(endIndex, text.length - 1))
+                        append(text.subSequence(endIndex, text.length))
                     }
                 )
             }

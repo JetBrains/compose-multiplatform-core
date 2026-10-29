@@ -29,6 +29,8 @@ internal class InactiveTextInputAdapter(
 ) : NativeTextEditingDelegate {
     override val isInteractive: Boolean = false
 
+    override val isEditable: Boolean = false
+
     private val text: String get() = delegate.text
 
     override fun onFocus() = Unit

@@ -60,7 +60,7 @@ fun ImageBitmap.assertPixels(
     if (expectedSize != null) {
         if (width != expectedSize.width || height != expectedSize.height) {
             throw AssertionError(
-                "Bitmap size is wrong! Expected '$expectedSize' but got " + "'$width x $height'"
+                "Bitmap size is wrong! Expected '$expectedSize' but got '$width x $height'"
             )
         }
     }

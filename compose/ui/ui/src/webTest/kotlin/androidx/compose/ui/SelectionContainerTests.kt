@@ -36,6 +36,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -100,7 +101,7 @@ class SelectionContainerTests : OnCanvasTests {
         // delay to prevent interpreting next single click as a second click of the previous click,
         // so we make sure it won't appear as a double click
         withContext(Dispatchers.Default) {
-            delay(viewConfiguration!!.doubleTapTimeoutMillis)
+            delay(viewConfiguration!!.doubleTapTimeoutMillis.milliseconds)
         }
 
         // now double click:
@@ -113,7 +114,7 @@ class SelectionContainerTests : OnCanvasTests {
         assertEquals(6, selection.end.offset)
 
         withContext(Dispatchers.Default) {
-            delay(viewConfiguration!!.doubleTapTimeoutMillis)
+            delay(viewConfiguration!!.doubleTapTimeoutMillis.milliseconds)
         }
         // reset selection by clicking
         canvas.doClick()
@@ -166,7 +167,7 @@ class SelectionContainerTests : OnCanvasTests {
         assertEquals(27, selection.end.offset)
 
         withContext(Dispatchers.Default) {
-            delay(viewConfiguration!!.doubleTapTimeoutMillis)
+            delay(viewConfiguration!!.doubleTapTimeoutMillis.milliseconds)
         }
         // reset selection by clicking
         canvas.doClick()
@@ -215,12 +216,12 @@ class SelectionContainerTests : OnCanvasTests {
         canvas.doClick()
         // pause to ensure no double-click
         withContext(Dispatchers.Default) {
-            delay(viewConfiguration!!.doubleTapTimeoutMillis)
+            delay(viewConfiguration!!.doubleTapTimeoutMillis.milliseconds)
         }
         // second single click
         canvas.doClick()
         withContext(Dispatchers.Default) {
-            delay(viewConfiguration!!.doubleTapTimeoutMillis)
+            delay(viewConfiguration!!.doubleTapTimeoutMillis.milliseconds)
         }
 
         repeat(selectionCallbackCounter) {

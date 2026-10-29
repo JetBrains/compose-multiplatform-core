@@ -18,7 +18,6 @@ package androidx.compose.ui.interop
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -31,12 +30,12 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.uikit.PreferredSizeReportingStrategy
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.uikit.PreferredSizeReportingStrategy
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -322,7 +321,6 @@ internal abstract class ComposeInSwiftUISizingTest(
         }
     }
 
-    @OptIn(ExperimentalLayoutApi::class)
     @Test
     fun testWrappingFlowRowTracksWidthProposalSequence() {
         val boxCount = 4
@@ -613,24 +611,28 @@ internal abstract class ComposeInSwiftUISizingTest(
 
 // Run every sizing loop with both hosts. Separate XCTest implementations avoid sharing a window
 // between tests, which would make their layout state flaky.
+@Suppress("unused")
 internal class ComposeInSwiftUISizingInHostingViewTest :
     ComposeInSwiftUISizingTest(
         runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) },
         sizingLoop = SizeThatFitsSwiftUISizingLoop,
     )
 
+@Suppress("unused")
 internal class ComposeInSwiftUISizingInHostingViewControllerTest :
     ComposeInSwiftUISizingTest(
         runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) },
         sizingLoop = SizeThatFitsSwiftUISizingLoop,
     )
 
+@Suppress("unused")
 internal class ComposeInSwiftUIIntrinsicSizingInHostingViewTest :
     ComposeInSwiftUISizingTest(
         runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) },
         sizingLoop = IntrinsicContentSizeSwiftUISizingLoop,
     )
 
+@Suppress("unused")
 internal class ComposeInSwiftUIIntrinsicSizingInHostingViewControllerTest :
     ComposeInSwiftUISizingTest(
         runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) },

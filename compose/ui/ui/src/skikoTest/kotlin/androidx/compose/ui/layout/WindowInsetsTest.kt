@@ -341,6 +341,7 @@ private fun TestContent(
     onTextFieldPositioned: (Rect) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize().imePadding()){
+        @Suppress("DEPRECATION")
         TextField(
             value = "",
             onValueChange = {},

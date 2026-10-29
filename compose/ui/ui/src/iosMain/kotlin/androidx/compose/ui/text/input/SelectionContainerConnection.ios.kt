@@ -43,6 +43,8 @@ internal class SelectionContainerConnection(
         override fun inputView(): UIView = emptyInputView
     }
 
+    override val isEditable: Boolean = false
+
     override var inputTraits: SkikoUITextInputTraits
         get() = keyboardlessInputTraits
         set(value) {}

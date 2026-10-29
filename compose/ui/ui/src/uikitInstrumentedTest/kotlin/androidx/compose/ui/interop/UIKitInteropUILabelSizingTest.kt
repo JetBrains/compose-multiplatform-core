@@ -54,8 +54,8 @@ import platform.UIKit.UIColor
 import platform.UIKit.UILabel
 
 class UIKitInteropUILabelSizingTest {
-    private val SHORT_TEXT: String = "TEXT"
-    private val LONG_TEXT: String = List(100) { "TEXT" }.joinToString(" ")
+    private val ShortText: String = "TEXT"
+    private val LongText: String = List(100) { "TEXT" }.joinToString(" ")
 
     @Test
     @OptIn(ExperimentalForeignApi::class)
@@ -68,7 +68,7 @@ class UIKitInteropUILabelSizingTest {
                 factory = {
                     UILabel().apply {
                         numberOfLines = 1
-                        text = SHORT_TEXT
+                        text = ShortText
                         uiLabelRect = { frame.toDpRect() }
                     }
                 },
@@ -91,7 +91,7 @@ class UIKitInteropUILabelSizingTest {
                 factory = {
                     UILabel().apply {
                         numberOfLines = 0
-                        text = SHORT_TEXT
+                        text = ShortText
                         uiLabelRect = { frame.toDpRect() }
                     }
                 },
@@ -114,7 +114,7 @@ class UIKitInteropUILabelSizingTest {
                 factory = {
                     UILabel().apply {
                         numberOfLines = 1
-                        text = LONG_TEXT
+                        text = LongText
                         uiLabelRect = { frame.toDpRect() }
                     }
                 },
@@ -137,7 +137,7 @@ class UIKitInteropUILabelSizingTest {
                 factory = {
                     UILabel().apply {
                         numberOfLines = 0
-                        text = LONG_TEXT
+                        text = LongText
                         uiLabelRect = { frame.toDpRect() }
                     }
                 },
@@ -160,7 +160,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 1
-                            text = SHORT_TEXT
+                            text = ShortText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { singleLineLabel = it.boundsInRoot().toDpRect(density) },
@@ -170,7 +170,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 0
-                            text = SHORT_TEXT
+                            text = ShortText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { multiLineLabel = it.boundsInRoot().toDpRect(density) },
@@ -198,7 +198,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 1
-                            text = LONG_TEXT
+                            text = LongText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { singleLineText = it.boundsInRoot().toDpRect(density) },
@@ -208,7 +208,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 0
-                            text = LONG_TEXT
+                            text = LongText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { multiLineText = it.boundsInRoot().toDpRect(density) },
@@ -233,7 +233,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 1
-                            text = SHORT_TEXT
+                            text = ShortText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { referenceViewRect = it.boundsInRoot().toDpRect(density) },
@@ -243,7 +243,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 1
-                            text = SHORT_TEXT
+                            text = ShortText
                         }
                     },
                     modifier = Modifier
@@ -269,7 +269,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 1
-                            text = SHORT_TEXT
+                            text = ShortText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { referenceViewRect = it.boundsInRoot().toDpRect(density) },
@@ -279,7 +279,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 1
-                            text = SHORT_TEXT
+                            text = ShortText
                         }
                     },
                     modifier = Modifier
@@ -305,7 +305,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 1
-                            text = SHORT_TEXT
+                            text = ShortText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { referenceViewRect = it.boundsInRoot().toDpRect(density) },
@@ -315,7 +315,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 1
-                            text = SHORT_TEXT
+                            text = ShortText
                         }
                     },
                     modifier = Modifier
@@ -341,7 +341,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 0
-                            text = LONG_TEXT
+                            text = LongText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { unboundedTextRect = it.boundsInRoot().toDpRect(density) },
@@ -351,7 +351,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 0
-                            text = LONG_TEXT
+                            text = LongText
                         }
                     },
                     modifier = Modifier
@@ -378,7 +378,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 0
-                            text = LONG_TEXT
+                            text = LongText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned {
@@ -390,7 +390,7 @@ class UIKitInteropUILabelSizingTest {
                     factory = {
                         UILabel().apply {
                             numberOfLines = 0
-                            text = LONG_TEXT
+                            text = LongText
                         }
                     },
                     modifier = Modifier
@@ -416,13 +416,13 @@ class UIKitInteropUILabelSizingTest {
         setContent {
             Row {
                 Text(
-                    SHORT_TEXT,
+                    ShortText,
                     modifier = Modifier.onGloballyPositioned { composeRect = it.boundsInRoot().toDpRect(density) }
                 )
                 UIKitView(
                     factory = {
                         UILabel().apply {
-                            text = LONG_TEXT
+                            text = LongText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { uiKitRect = it.boundsInRoot().toDpRect(density) },
@@ -445,13 +445,13 @@ class UIKitInteropUILabelSizingTest {
         setContent {
             Column {
                 Text(
-                    SHORT_TEXT,
+                    ShortText,
                     modifier = Modifier.onGloballyPositioned { composeRect = it.boundsInRoot().toDpRect(density) }
                 )
                 UIKitView(
                     factory = {
                         UILabel().apply {
-                            text = LONG_TEXT
+                            text = LongText
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { uiKitRect = it.boundsInRoot().toDpRect(density) },
@@ -470,7 +470,7 @@ class UIKitInteropUILabelSizingTest {
     @Test
     fun testUIKitLabelInInteropWithFillMaxSize() = runUIKitInstrumentedTestWithInterop { overlay ->
         val uiKitView = UILabel().apply {
-            text = LONG_TEXT
+            text = LongText
             numberOfLines = 0
             backgroundColor = UIColor.blueColor
         }
@@ -504,7 +504,7 @@ class UIKitInteropUILabelSizingTest {
             val fixedWidth = 50.dp
             val uiKitViewFactory = {
                 UILabel().apply {
-                    text = LONG_TEXT
+                    text = LongText
                     numberOfLines = 0
                     backgroundColor = UIColor.blueColor
                 }
@@ -550,7 +550,7 @@ class UIKitInteropUILabelSizingTest {
             val fixedHeight = 80.dp
             val uiKitViewFactory = {
                 UILabel().apply {
-                    text = LONG_TEXT
+                    text = LongText
                     numberOfLines = 0
                     backgroundColor = UIColor.blueColor
                 }
@@ -596,7 +596,7 @@ class UIKitInteropUILabelSizingTest {
         val fixedHeight = 80.dp
         val uiKitViewFactory = {
             UILabel().apply {
-                text = LONG_TEXT
+                text = LongText
                 numberOfLines = 0
                 backgroundColor = UIColor.blueColor
             }
@@ -631,7 +631,7 @@ class UIKitInteropUILabelSizingTest {
 
         val uiKitViewFactory = {
             UILabel().apply {
-                text = LONG_TEXT
+                text = LongText
                 numberOfLines = 0
                 backgroundColor = UIColor.blueColor
             }
@@ -675,7 +675,7 @@ class UIKitInteropUILabelSizingTest {
             val fixedWidth = 120.dp
             val fixedHeight = 120.dp
             val label = UILabel().apply {
-                text = SHORT_TEXT
+                text = ShortText
                 numberOfLines = 0
                 backgroundColor = UIColor.blueColor
             }
@@ -712,7 +712,7 @@ class UIKitInteropUILabelSizingTest {
             val boxWidth = mutableStateOf(0.dp)
             val uiKitViewFactory = {
                 UILabel().apply {
-                    text = LONG_TEXT
+                    text = LongText
                     numberOfLines = 0
                 }
             }
@@ -762,7 +762,7 @@ class UIKitInteropUILabelSizingTest {
             val boxWidth = mutableStateOf(10.dp)
             val uiKitViewFactory = {
                 UILabel().apply {
-                    text = LONG_TEXT
+                    text = LongText
                     numberOfLines = 0
                 }
             }

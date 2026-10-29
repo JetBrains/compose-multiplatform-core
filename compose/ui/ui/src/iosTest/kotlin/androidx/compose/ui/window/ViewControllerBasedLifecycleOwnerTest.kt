@@ -27,6 +27,7 @@ import platform.UIKit.UISceneWillDeactivateNotification
 import platform.UIKit.UISceneWillEnterForegroundNotification
 import platform.UIKit.UIWindowScene
 
+@Suppress("DEPRECATION")
 class ViewControllerBasedLifecycleOwnerTest {
     @Test
     fun allEvents() {

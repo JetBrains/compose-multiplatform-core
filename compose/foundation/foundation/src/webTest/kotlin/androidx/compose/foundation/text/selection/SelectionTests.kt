@@ -82,7 +82,6 @@ class WebSelectionTests {
         }
 
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun selectLineStart() =
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { node, state ->
@@ -98,7 +97,6 @@ class WebSelectionTests {
         }
 
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun selectTextStart() =
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { node, state ->
@@ -115,7 +113,6 @@ class WebSelectionTests {
         }
 
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun selectTextEnd() =
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { node, state ->
@@ -131,7 +128,6 @@ class WebSelectionTests {
         }
 
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun selectLineEnd() =
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { node, state ->
@@ -148,7 +144,6 @@ class WebSelectionTests {
         }
 
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun deleteAll() = textFieldSemanticInteraction("") { node, state ->
         node.performKeyInput { keyboardActions.apply { this@performKeyInput.deleteAll() } }
@@ -156,7 +151,6 @@ class WebSelectionTests {
     }
 
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun selectAll() = textFieldSemanticInteraction("Select this text") { node, state ->
         node.performKeyInput { keyboardActions.apply { this@performKeyInput.selectAll() } }

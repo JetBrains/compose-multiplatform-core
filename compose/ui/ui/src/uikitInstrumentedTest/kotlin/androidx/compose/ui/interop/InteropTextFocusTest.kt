@@ -49,6 +49,7 @@ class InteropTextFocusTest {
             Column(modifier = Modifier.fillMaxSize().safeDrawingPadding().onGloballyPositioned {
                 positions.add(it.boundsInWindow())
             }) {
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},

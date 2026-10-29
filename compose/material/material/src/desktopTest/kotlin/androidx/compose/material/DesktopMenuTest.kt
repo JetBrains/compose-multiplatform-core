@@ -54,7 +54,6 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalTestApi::class, InternalComposeUiApi::class)
 class DesktopMenuTest {
@@ -328,10 +327,8 @@ class DesktopMenuTest {
 
         val initialPosition = onNodeWithTag("box").getUnclippedBoundsInRoot().top
 
-        runBlocking {
-            scrollState.scroll {
-                scrollBy(10000f)
-            }
+        scrollState.scroll {
+            scrollBy(10000f)
         }
         assertThat(
             onNodeWithTag("box").getUnclippedBoundsInRoot().top

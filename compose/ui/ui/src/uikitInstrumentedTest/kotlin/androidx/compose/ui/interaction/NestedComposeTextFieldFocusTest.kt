@@ -41,10 +41,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UITextInputProtocol
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 class NestedComposeTextFieldFocusTest {
     @Test
     fun focusMovesToTextFieldInNestedComposeUIView() = runUIKitInstrumentedTest {
@@ -108,6 +107,7 @@ class NestedComposeTextFieldFocusTest {
         value: String,
         onFocusChanged: (Boolean) -> Unit
     ) {
+        @Suppress("DEPRECATION")
         BasicTextField(
             value = value,
             onValueChange = {},
@@ -127,6 +127,7 @@ class NestedComposeTextFieldFocusTest {
             return textInRange(range)
         }
 
+    @Suppress("ConstPropertyName")
     private companion object {
         const val OuterFieldTag = "OuterField"
         const val NestedFieldHostTag = "NestedFieldHost"

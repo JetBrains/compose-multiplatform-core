@@ -36,6 +36,7 @@ import androidx.compose.ui.text.intl.isRtl
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.util.fastAny
 import kotlin.math.ceil
 
 internal class SkikoParagraphIntrinsics(
@@ -47,7 +48,7 @@ internal class SkikoParagraphIntrinsics(
     private val fontFamilyResolver: FontFamily.Resolver,
     private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
-    private var resolvedTypefaces: TypefaceDirtyTrackerLinkedList? = null
+    private val resolvedTypefaces = TypefaceDirtyTracker()
 
     val textDirection =
         resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
@@ -57,7 +58,7 @@ internal class SkikoParagraphIntrinsics(
     private var hasUnresolvedFontStale by mutableStateOf(false)
 
     override val hasStaleResolvedFonts: Boolean
-        get() = hasUnresolvedFontStale || (resolvedTypefaces?.isStaleResolvedFont ?: false)
+        get() = hasUnresolvedFontStale || resolvedTypefaces.isStaleResolvedFont
 
     private var layouter: ParagraphLayouter? = newLayouter()
 
@@ -77,10 +78,8 @@ internal class SkikoParagraphIntrinsics(
             density = density,
             fontFamilyResolver = fontFamilyResolver,
             onFontStale = { hasUnresolvedFontStale = true },
-        onFontResolved = { state ->
-            resolvedTypefaces = TypefaceDirtyTrackerLinkedList(state, resolvedTypefaces)
-        },
-    )
+            onFontResolved = resolvedTypefaces::track,
+        )
 
     override var minIntrinsicWidth = 0f
         private set
@@ -100,14 +99,22 @@ internal class SkikoParagraphIntrinsics(
     }
 }
 
-private class TypefaceDirtyTrackerLinkedList(
-    private val resolveResult: State<Any>,
-    private val next: TypefaceDirtyTrackerLinkedList? = null,
-) {
-    private val initial = resolveResult.value
+internal class TypefaceDirtyTracker {
+    private val resolvedTypefaces = mutableListOf<ResolvedTypeface>()
+
+    fun track(resolveResult: State<Any>) {
+        // The same intrinsics can build multiple paragraphs (for example, during intrinsic
+        // measurements). Track each font state only once, retaining its original value so that
+        // resolving it again after an async update does not hide the change.
+        if (!resolvedTypefaces.fastAny { it.resolveResult === resolveResult }) {
+            resolvedTypefaces.add(ResolvedTypeface(resolveResult, resolveResult.value))
+        }
+    }
 
     val isStaleResolvedFont: Boolean
-        get() = resolveResult.value !== initial || (next?.isStaleResolvedFont == true)
+        get() = resolvedTypefaces.fastAny { it.resolveResult.value !== it.initial }
+
+    private class ResolvedTypeface(val resolveResult: State<Any>, val initial: Any)
 }
 
 internal fun resolveTextDirection(
