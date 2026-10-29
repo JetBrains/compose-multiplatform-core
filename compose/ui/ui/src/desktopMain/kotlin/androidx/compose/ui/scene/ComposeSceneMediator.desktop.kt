@@ -1020,13 +1020,11 @@ private val MouseEvent.keyboardModifiers get() = PointerKeyboardModifiers(
 private fun Component.subscribeToMouseEvents(mouseAdapter: MouseAdapter) {
     addMouseListener(mouseAdapter)
     addMouseMotionListener(mouseAdapter)
-    addMouseWheelListener(mouseAdapter)
 }
 
 private fun Component.unsubscribeFromMouseEvents(mouseAdapter: MouseAdapter) {
     removeMouseListener(mouseAdapter)
     removeMouseMotionListener(mouseAdapter)
-    removeMouseWheelListener(mouseAdapter)
 }
 
 private fun getLockingKeyStateSafe(
