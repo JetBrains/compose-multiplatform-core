@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.border
+package androidx.compose.foundation
 
 internal actual fun shouldUseGraphicsLayerForGenericBorder(): Boolean = true
