@@ -29,7 +29,11 @@ androidxTestMonitor = "1.8.0"
 androidxTestCore = "1.7.0"
 androidxTestExtJunit = "1.3.0"
 androidxTestExtTruth = "1.7.0"
+<<<<<<< HEAD
 annotationVersion = "1.7.0"
+=======
+annotationVersion = "1.9.1"
+>>>>>>> origin/jb-main
 atomicFu = "0.28.0"
 autoService = "1.0-rc6"
 autoValue = "1.6.3"
