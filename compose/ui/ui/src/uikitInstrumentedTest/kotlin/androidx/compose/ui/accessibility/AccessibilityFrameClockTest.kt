@@ -51,10 +51,12 @@ class AccessibilityFrameClockTest {
 
     private fun UIKitInstrumentedTest.assertChoreographerIsIdle(ticks: TickCounter) {
         waitForIdle()
+        // The display link pauses two frames after the last frame request.
         delay(100)
 
         val ticksBefore = ticks.count
-        delay(500)
+        // A running display link ticks about three times in this window.
+        delay(50)
         assertEquals(
             ticksBefore,
             ticks.count,
