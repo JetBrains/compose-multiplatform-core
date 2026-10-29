@@ -441,6 +441,13 @@ internal class UIKitInstrumentedTest(
         attachedViewController?.view?.endEditing(force = true)
         try {
             waitForIdle()
+            if (attachedViewController != null) {
+                // The loupe is hosted by a window that outlives the test, so it must be hidden
+                // before the next test starts looking for it.
+                waitUntil("Selection loupe should hide before the next test") {
+                    findFirstDescendant { it.isLoupeView } == null
+                }
+            }
         } finally {
             AccessibilityNotification.onNotificationPostedForTests = null
             appDelegate.cleanUp()

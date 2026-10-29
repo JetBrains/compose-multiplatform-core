@@ -84,11 +84,13 @@ class TextFieldMagnifierTest {
             message = "Text input mode should be ${factory.textInputModeName}"
         )
 
-        findNodeWithTag("textField").touchDown()
+        val touch = findNodeWithTag("textField").touchDown()
 
         waitUntil {
             findFirstDescendant { it.isLoupeView } != null
         }
+
+        touch.up()
     }
 
     @Test
@@ -160,6 +162,8 @@ class TextFieldMagnifierTest {
         waitUntil {
             findFirstDescendant { it.isLoupeView } == null
         }
+
+        touch.up()
     }
 
     private val textValue = "TEXT"
