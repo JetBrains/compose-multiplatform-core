@@ -1,1 +1,9 @@
 Merge script: conflict
+
+Merge solver: fixed in 40e28708dd705ddb153a85d86c34f408c0db49e2
+
+Resolved the gradle/libs.versions.toml conflict by retaining annotationVersion 1.7.0 from the upstream AOSP state.
+
+Verified with ./gradlew assemble compileTests --console=plain.
+
+Produced by Air Automations. Name: AOSP Merges / Run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/aeefe510-9f34-4bbe-b6f6-db539bf3d1bb?run=5562dae9-167c-4c15-ab77-73a69c21bf18
