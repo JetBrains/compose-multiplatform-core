@@ -48,6 +48,7 @@ import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.isLoupeView
+import androidx.compose.ui.test.utils.bottomCenter
 import androidx.compose.ui.test.utils.leftCenter
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
@@ -60,6 +61,7 @@ import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.scrollBy
 import androidx.compose.ui.test.utils.scrollEventAt
 import androidx.compose.ui.test.utils.toCGPoint
+import androidx.compose.ui.test.utils.topCenter
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.text.TextLayoutResult
@@ -1051,6 +1053,14 @@ internal class UIKitInstrumentedTest(
         toPosition = { leftCenter().offsetBy(dx = 16.dp) },
         duration = duration
     )
+
+    fun AccessibilityTestNode.swipeUp(duration: Duration = SwipeDuration): UITouch {
+        return swipe(fromPosition = { bottomCenter().offsetBy(dy = (-16).dp) }, toPosition = { topCenter().offsetBy(dy = 16.dp) }, duration = duration)
+    }
+
+    fun AccessibilityTestNode.swipeDown(duration: Duration = SwipeDuration): UITouch {
+        return swipe(fromPosition = { topCenter().offsetBy(dy = 16.dp) }, toPosition = { bottomCenter().offsetBy(dy = (-16).dp) }, duration = duration)
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)
