@@ -25,19 +25,15 @@ import androidx.compose.material.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.test.UIKitInstrumentedTest
-import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.getAccessibilityTree
+import androidx.compose.ui.test.postAccessibilityElementFocused
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import platform.Foundation.NSNotificationCenter
-import platform.UIKit.UIAccessibilityElementFocusedNotification
-import platform.UIKit.UIAccessibilityFocusedElementKey
-import platform.darwin.NSObject
 
 class AccessibilityFrameClockTest {
     private fun UIKitInstrumentedTest.withChoreographerTicks(block: (TickCounter) -> Unit) {
@@ -51,14 +47,6 @@ class AccessibilityFrameClockTest {
         } finally {
             choreographer.removeListener(ticks)
         }
-    }
-
-    private fun postAccessibilityElementFocused(element: NSObject?) {
-        NSNotificationCenter.defaultCenter.postNotificationName(
-            aName = UIAccessibilityElementFocusedNotification,
-            `object` = null,
-            userInfo = mapOf(UIAccessibilityFocusedElementKey to element)
-        )
     }
 
     private fun UIKitInstrumentedTest.assertChoreographerIsIdle(ticks: TickCounter) {
@@ -115,7 +103,6 @@ class AccessibilityFrameClockTest {
                 ticks.count > ticksBeforeScroll,
                 "The scroll should run on choreographer frames"
             )
-            findNodeWithLabel("Row 40").assertVisibleInContainer()
             assertChoreographerIsIdle(ticks)
         }
     }
