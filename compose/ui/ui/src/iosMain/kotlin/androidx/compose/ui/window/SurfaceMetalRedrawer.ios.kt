@@ -70,7 +70,8 @@ internal class SurfaceMetalRedrawer(
     private val device = metalLayer.device as? MTLDeviceProtocol
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
     private val queue = getCachedCommandQueue(device)
-    private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
+    // Created for the first frame, and again after releaseRenderingResources closed it.
+    private var context: DirectContext? = null
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
 
@@ -153,6 +154,16 @@ internal class SurfaceMetalRedrawer(
         disposeDrawableAssociatedResources(metalLayer.drawablesGeneration.toInt())
     }
 
+    /**
+     * Drains the drawables and closes the Skia context, which keeps GPU memory (offscreen layer
+     * textures, glyph atlases) for as long as it lives. The next frame creates a new context.
+     */
+    fun releaseRenderingResources() {
+        drainSkiaSurfaces()
+        context?.close()
+        context = null
+    }
+
     override fun dispose() {
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
@@ -166,7 +177,7 @@ internal class SurfaceMetalRedrawer(
         awaitRenderingQueueTasksCompletion()
         disposeDrawableAssociatedResources(null)
         pictureRecorder.close()
-        context.close()
+        context?.close()
     }
 
     private fun awaitRenderingQueueTasksCompletion() {
@@ -335,6 +346,9 @@ internal class SurfaceMetalRedrawer(
             height = IOSurfaceGetHeight(drawable.surface).toInt(),
             texturePtr = drawable.drawableTexture().rawValue,
         )
+
+        val context = context
+            ?: DirectContext.makeMetal(device.objcPtr(), queue.objcPtr()).also { this.context = it }
 
         val surface = Surface.makeFromBackendRenderTarget(
             context,
