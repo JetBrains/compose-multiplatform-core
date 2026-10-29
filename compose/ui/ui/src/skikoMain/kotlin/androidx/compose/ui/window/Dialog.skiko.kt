@@ -34,7 +34,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.MotionDurationScale
+import androidx.compose.ui.animation.durationScale
 import androidx.compose.ui.animation.easeOutTimingFunction
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.draw.drawBehind
@@ -64,7 +64,6 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
-import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -416,7 +415,3 @@ internal fun getDialogScrimBlendMode(isWindowTransparent: Boolean) =
     } else {
         BlendMode.SrcOver
     }
-
-private fun CoroutineContext.durationScale(): Float {
-    return this[MotionDurationScale]?.scaleFactor ?: 1f
-}

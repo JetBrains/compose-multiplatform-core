@@ -249,7 +249,9 @@ internal class ComposeSceneMediator(
             lastFrameTimestamp: NSTimeInterval,
             targetTimestamp: NSTimeInterval
         ) {
-            if (!didDrawSinceDisplayLink && interopContainer.hasPendingViewUpdatesOnly) {
+            val hasPendingInteropUpdates = interopContainer.hasPendingViewUpdatesOnly ||
+                interopContainer.hasPendingFrameSynchronizedUpdates
+            if (!didDrawSinceDisplayLink && hasPendingInteropUpdates) {
                 schedulePendingInteropViewUpdates()
             }
 
@@ -411,7 +413,6 @@ internal class ComposeSceneMediator(
     private fun isPointInsideInteractionBounds(point: CValue<CGPoint>) =
         interactionBounds.contains(point.toDpOffset().toOffset(screenDensity).round())
 
-    @OptIn(InternalComposeUiApi::class)
     var rootForTestListener: PlatformContext.RootForTestListener? by DelegateRootForTestListener()
 
     private val semanticsOwnerListener by lazy {
@@ -491,7 +492,8 @@ internal class ComposeSceneMediator(
             keyboardManager.hasPendingWork ||
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
-            textInputService.hasInvalidations
+            textInputService.hasInvalidations ||
+            interopContainer.hasPendingUpdates
     }
 
     init {
@@ -772,7 +774,7 @@ internal class ComposeSceneMediator(
     }
 
     val needsComposeSceneDraw: Boolean
-        get() = scene.hasPendingDraw
+        get() = scene.hasPendingDraw || interopContainer.hasPendingFrameSynchronizedUpdates
 
     fun retrieveInteropTransaction(): InteropSyncTransaction =
         interopContainer.retrieveTransaction()
@@ -780,7 +782,6 @@ internal class ComposeSceneMediator(
     fun retrievePendingViewUpdatesInteropTransaction(): InteropSyncTransaction =
         interopContainer.retrievePendingViewUpdatesTransaction()
 
-    @OptIn(InternalComposeUiApi::class)
     @Composable
     private fun ProvideComposeSceneMediatorCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(

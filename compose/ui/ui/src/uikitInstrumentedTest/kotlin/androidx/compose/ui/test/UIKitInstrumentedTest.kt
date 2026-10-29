@@ -18,7 +18,6 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
@@ -224,7 +223,7 @@ internal fun runUIKitInstrumentedTest(
  * Constructor properties are initialized with the attributes of the main screen and a mock delegate to simulate
  * the application setup.
  */
-@OptIn(ExperimentalForeignApi::class, InternalComposeUiApi::class)
+@OptIn(ExperimentalForeignApi::class)
 internal class UIKitInstrumentedTest(
     val useHostingView: Boolean
 ) {
@@ -269,6 +268,7 @@ internal class UIKitInstrumentedTest(
         ) {
             val runLoop = NSRunLoop.currentRunLoop()
             val endTime = TimeSource.Monotonic.markNow() + timeoutMillis.milliseconds
+            runLoop.runUntilDate(NSDate())
             while (!condition()) {
                 if (TimeSource.Monotonic.markNow() > endTime) {
                     throw AssertionError(conditionDescription ?: "Timeout ${timeoutMillis}ms reached.")
@@ -477,6 +477,9 @@ internal class UIKitInstrumentedTest(
             timeoutMillis = timeoutMillis
         ) {
             clearComposeContainerReferencesIfDetached()
+            // Apply pending UIKit layout, e.g., after interop view frame changes. It may update
+            // Compose state (insets, sizes) and schedule more work.
+            appDelegate.window?.layoutIfNeeded()
             isIdle
         }
     }
@@ -1150,7 +1153,6 @@ internal fun UIKitInstrumentedTest.findAllUITextInputViews(): List<UIView> {
  * Implements the `PlatformContext.RootForTestListener` interface to manage the lifecycle
  * of roots being created and disposed.
  */
-@OptIn(InternalComposeUiApi::class)
 internal class RootForTestRegistry : PlatformContext.RootForTestListener {
     private val trackedRoots = mutableSetOf<PlatformRootForTest>()
 
@@ -1165,7 +1167,6 @@ internal class RootForTestRegistry : PlatformContext.RootForTestListener {
     }
 }
 
-@OptIn(InternalComposeUiApi::class)
 internal fun UIKitInstrumentedTest.allSemanticsNodes(): List<SemanticsNode> =
     rootForTestRegistry.roots.flatMap {
         it.semanticsOwner.getAllSemanticsNodes(mergingEnabled = false)

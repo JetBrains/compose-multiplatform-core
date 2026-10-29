@@ -19,6 +19,7 @@ package androidx.compose.ui.window
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -37,6 +38,12 @@ internal class FocusedViewsList {
 
     private var parent: FocusedViewsList? = null
     private val children = mutableListOf<FocusedViewsList>()
+
+    private var scheduledTasksCount = 0
+
+    val hasScheduledTasks: Boolean get() {
+        return scheduledTasksCount > 0 || children.any { it.hasScheduledTasks }
+    }
 
     /**
      * Add new view to list and focus on it.
@@ -87,27 +94,43 @@ internal class FocusedViewsList {
 
         resignedViews += activeViews
         activeViews = emptyList()
+        scheduledTasksCount++
         mainScope.launch {
             resignScheduledViews()
+            scheduledTasksCount--
         }
     }
 
     private fun onListHierarchyChanged(delay: Duration?) {
-        fun refocusOnLastViewInHierarchy() {
+        fun refocusOnLastViewInHierarchy(): Boolean {
             val viewToFocus = lastViewToFocus()
             if (viewToFocus != null) {
+                scheduledTasksCount++
                 viewToFocus.becomeFirstResponder()
                 viewToFocus.window?.makeKeyWindow()
+                mainScope.launch {
+                    scheduledTasksCount--
+                }
+                return true
             } else {
                 resignScheduledViews()
+                return false
             }
         }
         if (delay == null) {
             refocusOnLastViewInHierarchy()
         } else {
+            scheduledTasksCount++
             mainScope.launch {
                 delay(delay)
-                refocusOnLastViewInHierarchy()
+                val refocused = refocusOnLastViewInHierarchy()
+
+                // With lots of show/hide keyboard requests, iOS postpones next operations for a while,
+                // which makes some tests fail. Adding a small delay to fix this issue.
+                if (refocused) {
+                    delay(50.milliseconds)
+                }
+                scheduledTasksCount--
             }
         }
     }
