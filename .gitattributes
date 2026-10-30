@@ -5,3 +5,5 @@ gradle/gradle-daemon-jvm.properties merge=ours
 AGENTS.md merge=ours
 compose/AGENTS.md merge=ours
 compose/material3/material3/AGENTS.md merge=ours
+.github/actions/build-single-project/action.yml merge=ours
+.github/workflows/presubmit.yml merge=ours
