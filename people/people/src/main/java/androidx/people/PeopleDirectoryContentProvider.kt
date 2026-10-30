@@ -27,6 +27,11 @@ import android.os.Bundle
 import android.os.CancellationSignal
 import androidx.annotation.CallSuper
 import androidx.annotation.RestrictTo
+import androidx.people.internal.PeopleBackendResolver
+import androidx.people.internal.platform.PeopleContractCompat
+import androidx.people.internal.platform.toCursor
+import androidx.people.internal.platform.toGroupQuery
+import androidx.people.internal.platform.toPersonQuery
 
 /**
  * Base [ContentProvider] that a People Directory application extends to publish its people and
@@ -86,14 +91,36 @@ public abstract class PeopleDirectoryContentProvider : ContentProvider() {
         }
     }
 
-    override fun getType(uri: Uri): String? = TODO("Implemented in the follow-up change")
+    override fun getType(uri: Uri): String? {
+        return when (uriMatcher.match(uri)) {
+            MATCH_PERSONS -> PeopleContractCompat.Persons.CONTENT_TYPE
+            MATCH_GROUPS -> PeopleContractCompat.Groups.CONTENT_TYPE
+            else -> null
+        }
+    }
 
     override fun query(
         uri: Uri,
         projection: Array<out String>?,
         queryArgs: Bundle?,
         cancellationSignal: CancellationSignal?,
-    ): Cursor? = TODO("Implemented in the follow-up change")
+    ): Cursor? {
+        return when (uriMatcher.match(uri)) {
+            MATCH_PERSONS -> {
+                val query = queryArgs.toPersonQuery()
+                val results =
+                    if (query != null) queryPersons(query, cancellationSignal) else emptyList()
+                results.toCursor(projection, query)
+            }
+            MATCH_GROUPS -> {
+                val query = queryArgs.toGroupQuery()
+                val results =
+                    if (query != null) queryGroups(query, cancellationSignal) else emptyList()
+                results.toCursor(projection, query)
+            }
+            else -> null
+        }
+    }
 
     override fun query(
         uri: Uri,
@@ -191,7 +218,7 @@ public abstract class PeopleDirectoryContentProvider : ContentProvider() {
          */
         @JvmStatic
         public suspend fun requestRefresh(context: Context): Boolean =
-            TODO("Implemented in the follow-up change")
+            PeopleBackendResolver.resolve(context).requestRefresh()
 
         /**
          * Notifies the system People Directory that records matching [query] have changed.
@@ -208,7 +235,7 @@ public abstract class PeopleDirectoryContentProvider : ContentProvider() {
          */
         @JvmStatic
         public suspend fun notifyChange(context: Context, query: PersonQuery): Boolean =
-            TODO("Implemented in the follow-up change")
+            PeopleBackendResolver.resolve(context).notifyChange(query)
 
         /**
          * Notifies the system People Directory that groups matching [query] have changed.
@@ -225,8 +252,9 @@ public abstract class PeopleDirectoryContentProvider : ContentProvider() {
          */
         @JvmStatic
         public suspend fun notifyChange(context: Context, query: GroupQuery): Boolean =
-            TODO("Implemented in the follow-up change")
+            PeopleBackendResolver.resolve(context).notifyChange(query)
 
+        private const val TAG = "PeopleDirectoryContentProvider"
         private const val MATCH_PERSONS = 1
         private const val MATCH_GROUPS = 2
     }
