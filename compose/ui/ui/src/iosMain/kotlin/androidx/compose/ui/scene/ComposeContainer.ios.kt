@@ -98,7 +98,6 @@ internal class ComposeContainer(
 
     private var mediator: ComposeSceneMediator? = null
 
-    @OptIn(InternalComposeUiApi::class)
     var rootForTestListener: PlatformContext.RootForTestListener? = null
         set(value) {
             field = value
@@ -151,6 +150,8 @@ internal class ComposeContainer(
     val currentLifecycleState: Lifecycle.State get() =
         architectureComponentsOwner.lifecycle.currentState
 
+    private var isAppearanceTransitionInProgress: Boolean? = null
+
     init {
         view.onSizeThatFits = sceneSizing::sizeThatFits
         view.onIntrinsicContentSize = sceneSizing::intrinsicContentSize
@@ -177,7 +178,9 @@ internal class ComposeContainer(
 
     fun hasInvalidations(): Boolean {
         return view.hasInvalidations || mediator?.hasInvalidations == true ||
-            layersHolder?.layersViewController?.hasInvalidations == true
+            layersHolder?.layersViewController?.hasInvalidations == true ||
+            focusedViewsList.hasScheduledTasks ||
+            isAppearanceTransitionInProgress == true
     }
 
     private fun onLayoutSubviews() {
@@ -208,6 +211,9 @@ internal class ComposeContainer(
     fun updateInterfaceOrientationState() = mediaScope.updateInterfaceOrientationState()
 
     fun sceneDidAppear() {
+        if (isAppearanceTransitionInProgress == true) {
+            isAppearanceTransitionInProgress = false
+        }
         mediator?.sceneDidAppear()
 
         // Because the container view can change during the modal transition animation,
@@ -226,7 +232,10 @@ internal class ComposeContainer(
 
     fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) = mediaScope.updateUserInterfaceStyle(style)
 
- fun initializeComposeScene() {
+    fun initializeComposeScene() {
+        if (isAppearanceTransitionInProgress == null) {
+            isAppearanceTransitionInProgress = true
+        }
         sceneJob = Job()
         val frameChoreographer = view.window
             ?.let(FrameChoreographer::choreographerForWindow)
@@ -343,6 +352,7 @@ internal class ComposeContainer(
     }
 
     fun disposeComposeScene() {
+        isAppearanceTransitionInProgress = null
         if (mediator == null) return
 
         // Store the current state in the local savedState property. It is used to
