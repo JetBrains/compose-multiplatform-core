@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.uikit.utils.CMPTextInputStringTokenizer
