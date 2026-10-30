@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.asComposeSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
@@ -85,7 +86,7 @@ internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> =
         null
     }
 
-@OptIn(InternalComposeApi::class)
+@OptIn(InternalComposeApi::class, ExperimentalMediaQueryApi::class)
 internal class ComposeWindow(
     internal val htmlCanvas: HTMLCanvasElement,
     private val rootNode: Node,
@@ -459,6 +460,7 @@ internal class ComposeWindow(
         skiaLayer.detach()
 
         insetsManager?.dispose()
+        platformContext.mediaScope.dispose()
         systemThemeObserver.dispose()
         state.dispose()
         // modern browsers supposed to garbage collect all events on the element disposed
