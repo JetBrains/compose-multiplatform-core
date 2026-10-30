@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
-import kotlin.getValue
 import kotlin.math.abs
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -212,10 +211,7 @@ private class TouchesGestureRecognizer(
                 TouchesEventKind.MOVED
             )
             if (result.anyMovementConsumed) {
-                if (!state.isOngoing) {
-                    setState(UIGestureRecognizerStateBegan)
-                    cancelTouchesFailure()
-                }
+                beginGesture()
             }
         }
 
@@ -273,6 +269,13 @@ private class TouchesGestureRecognizer(
         super.touchesCancelled(touches, withEvent)
 
         cancelAllTrackedTouches()
+    }
+
+    private fun beginGesture() {
+        if (!state.isOngoing) {
+            setState(UIGestureRecognizerStateBegan)
+            cancelTouchesFailure()
+        }
     }
 
     private fun cancelAllTrackedTouches() {
@@ -707,6 +710,11 @@ internal class OverlayInputView(
      */
     var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean = { false }
 
+    /**
+     * See [androidx.compose.ui.draganddrop.IosDragAndDropManager] for more context
+     */
+    var setDragDropGesturesEnabled: (isDragDropEnabled: Boolean) -> Unit = {}
+
     var isInterceptingOutsideEvents: Boolean = false
     var onOutsidePointerEvent: (PointerEventType) -> Unit = {}
 
@@ -838,6 +846,7 @@ internal class OverlayInputView(
                 it.hitTest(inputPoint, withEvent)
             }
         }
+        setDragDropGesturesEnabled(nativeTextInputViewHitTest == null)
         if (nativeTextInputViewHitTest != null) {
             return nativeTextInputViewHitTest
         }
@@ -887,6 +896,7 @@ internal class OverlayInputView(
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         canIgnoreDragGesture = { false }
+        setDragDropGesturesEnabled = {}
         onKeyboardPresses = {}
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _, _ -> PointerEventResult() }
