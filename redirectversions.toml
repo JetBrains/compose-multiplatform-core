@@ -24,3 +24,22 @@
 "androidx.performance" = "1.0.0-alpha01"
 "androidx.savedstate" = "1.5.0-alpha01"
 "androidx.window" = "1.5.0"
+
+# androidx.dev builds backing the `-SNAPSHOT` entries above, for library states merged from a commit
+# Google has cut but not yet published to Google Maven. One build normally covers several groups,
+# which is why the build id is the key. Absent entirely on a released state, and it must be absent
+# again before a release branch is cut.
+#
+# `groups` must name group prefixes whose `[versions]` value ends in `-SNAPSHOT`, and every
+# `-SNAPSHOT` above must appear in exactly one entry — a snapshot version with no build id is not
+# resolvable. `repo` is optional and defaults to "kmp"
+# (https://androidx.dev/kmp/builds/<buildId>/artifacts/snapshots/repository); "androidx"
+# (https://androidx.dev/snapshots/builds/<buildId>/artifacts/repository) serves the Android-only
+# groups the KMP build does not carry.
+#
+# After changing a build id, run once with `--refresh-dependencies`: Google reuses the version string
+# across builds, so Gradle's changing-module cache would keep serving the previous build.
+#
+# [[snapshots]]
+# buildId = "15316886"
+# groups = ["androidx.compose", "androidx.compose.material3"]
