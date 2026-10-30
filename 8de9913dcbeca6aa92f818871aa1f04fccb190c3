@@ -1,1 +1,9 @@
 Merge script: compilation failure
+
+Merge solver: fixed in 373292539d755932c7d7be66572b4971d6050999
+
+Added the missing Skiko actuals for the Look Up icon and string; the unsupported icon maps to ID_NULL.
+
+Verified: ./gradlew assemble compileTests --console=plain passed after running the Gradle-managed Node.js setup tasks.
+
+Produced by Air Automations. Name: AOSP Merges / Run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/aeefe510-9f34-4bbe-b6f6-db539bf3d1bb?run=870785d8-4b3b-4235-b592-558eac2f0a93
