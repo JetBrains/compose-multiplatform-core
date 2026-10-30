@@ -730,10 +730,10 @@ internal class ComposeSceneMediator(
 
     private var isLayoutTransitionAnimating = false
     fun prepareAndGetSizeTransitionAnimation(withProgress: suspend ((Float) -> Unit) -> Unit): suspend () -> Unit {
+        val initialSize = scene.size?.toSize() ?: return {}
         isLayoutTransitionAnimating = true
 
         val initialWindowInsets = windowInsetsManager.windowInsetsSnapshot()
-        val initialSize = scene.size?.toSize() ?: return {}
 
         return {
             try {
