@@ -43,7 +43,6 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
-import platform.CoreGraphics.CGPointEqualToPoint
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectContainsPoint
 import platform.CoreGraphics.CGRectEqualToRect
@@ -52,7 +51,6 @@ import platform.CoreGraphics.CGRectGetWidth
 import platform.CoreGraphics.CGRectInset
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectZero
-import platform.CoreGraphics.CGSizeEqualToSize
 import platform.Foundation.NSComparisonResult
 import platform.Foundation.NSDictionary
 import platform.Foundation.NSOrderedAscending
@@ -65,7 +63,6 @@ import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionNatural
 import platform.UIKit.UIAction
 import platform.UIKit.UIColor
-import platform.UIKit.UIEdgeInsetsEqualToEdgeInsets
 import platform.UIKit.UIEdgeInsetsMake
 import platform.UIKit.UIEvent
 import platform.UIKit.UIGestureRecognizer
@@ -703,6 +700,8 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         setClipsToBounds(true)
     }
 
+    var nativeGesturesEnabled = true
+
     var textView: NativeTextInputView? = null
         set(value) {
             if (field != value) {
@@ -740,6 +739,10 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         }
     }
 
+    private var previousDpFrame: DpRect? = null
+    private var previousDpTextBounds: DpRect? = null
+    private var previousDpInsets: DpInsets? = null
+
     /**
      * Updates frames and insets of the scroll view and underlying text view.
      *
@@ -748,6 +751,18 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
      * - `dpInsets` is in Compose `Dp` and can be passed to UIKit as POINTS directly.
      */
     fun setFrame(dpNewFrame: DpRect, dpTextBounds: DpRect, dpInsets: DpInsets) {
+        val hasChanges = previousDpFrame != dpNewFrame ||
+            previousDpTextBounds != dpTextBounds ||
+            previousDpInsets != dpInsets
+
+        if (!hasChanges) {
+            return
+        }
+
+        previousDpFrame = dpNewFrame
+        previousDpTextBounds = dpTextBounds
+        previousDpInsets = dpInsets
+
         val newFrame = dpNewFrame.toCGRect()
         val textBounds = dpTextBounds.toCGRect()
 
@@ -766,32 +781,13 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         )
 
         val scrollContentSize = textBounds.useContents { size.readValue() }
-        val scrollContentInset = textBounds.useContents { origin.readValue() }
+        val scrollContentOffset = textBounds.useContents { origin.readValue() }
 
-        val textFrameChanged =
-            textView?.let { !CGRectEqualToRect(it.frame, textViewFrame) } ?: false
-        val frameChanged = !CGRectEqualToRect(frame, newFrame)
-        val contentInsetChanged = !UIEdgeInsetsEqualToEdgeInsets(contentInset, insets)
-        val contentSizeChanged = !CGSizeEqualToSize(contentSize, scrollContentSize)
-        val contentOffsetChanged = !CGPointEqualToPoint(contentOffset, scrollContentInset)
-
-        val hasChanges = textFrameChanged ||
-            frameChanged ||
-            contentInsetChanged ||
-            contentSizeChanged ||
-            contentOffsetChanged
-
-        if (hasChanges) {
-            textView?.selectionWillChange()
-
-            textView?.setFrame(textViewFrame)
-            setFrame(newFrame)
-            setContentInset(insets)
-            setContentSize(scrollContentSize)
-            setContentOffset(scrollContentInset)
-
-            textView?.selectionDidChange()
-        }
+        textView?.setFrame(textViewFrame)
+        setFrame(newFrame)
+        setContentInset(insets)
+        setContentSize(scrollContentSize)
+        setContentOffset(scrollContentOffset)
     }
 
     fun interactionModeAt(point: CValue<CGPoint>): UIKitInteropInteractionMode? {

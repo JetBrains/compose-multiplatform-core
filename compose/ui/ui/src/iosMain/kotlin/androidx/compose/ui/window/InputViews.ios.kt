@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
-import kotlin.getValue
 import kotlin.math.abs
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -201,6 +200,10 @@ private class TouchesGestureRecognizer(
             return
         }
 
+        if (touches.any { trackedTouches[it].isNativeTextInputWithDisabledGestures() }) {
+            beginGesture()
+        }
+
         fun processGesture() {
             if (trackedTouches.isEmpty()) {
                 return
@@ -212,10 +215,7 @@ private class TouchesGestureRecognizer(
                 TouchesEventKind.MOVED
             )
             if (result.anyMovementConsumed) {
-                if (!state.isOngoing) {
-                    setState(UIGestureRecognizerStateBegan)
-                    cancelTouchesFailure()
-                }
+                beginGesture()
             }
         }
 
@@ -260,10 +260,14 @@ private class TouchesGestureRecognizer(
         if (state.isOngoing) {
             endTouchesEvent()
         } else {
-            val hasHitTestResult = touches.firstNotNullOfOrNull { trackedTouches[it] } != null
-            if (hasHitTestResult) {
+            val touchHitTest = touches.firstNotNullOfOrNull { trackedTouches[it] }
+            val nativeTextInput = touchHitTest.asNativeTextInput()
+            if (touchHitTest != null && nativeTextInput == null) {
                 cancelAllTrackedTouches()
             } else {
+                if (nativeTextInput?.nativeGesturesEnabled == false) {
+                    beginGesture()
+                }
                 endTouchesEvent()
             }
         }
@@ -273,6 +277,13 @@ private class TouchesGestureRecognizer(
         super.touchesCancelled(touches, withEvent)
 
         cancelAllTrackedTouches()
+    }
+
+    private fun beginGesture() {
+        if (!state.isOngoing) {
+            setState(UIGestureRecognizerStateBegan)
+            cancelTouchesFailure()
+        }
     }
 
     private fun cancelAllTrackedTouches() {
@@ -297,7 +308,10 @@ private class TouchesGestureRecognizer(
     override fun canBePreventedByGestureRecognizer(
         preventingGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return if (preventingGestureRecognizer is BackGestureRecognizer) {
+        val nativeTextInput = preventingGestureRecognizer.view.asNativeTextInput()
+        return if (nativeTextInput != null) {
+            nativeTextInput.nativeGesturesEnabled
+        } else if (preventingGestureRecognizer is BackGestureRecognizer) {
             cancelAllTrackedTouches()
             true
         } else if (canIgnoreDragGesture(preventingGestureRecognizer)) {
@@ -328,7 +342,10 @@ private class TouchesGestureRecognizer(
     override fun canPreventGestureRecognizer(
         preventedGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return if (isInChildHierarchy(preventedGestureRecognizer.view)) {
+        val nativeTextInput = preventedGestureRecognizer.view.asNativeTextInput()
+        return if (nativeTextInput != null) {
+            !nativeTextInput.nativeGesturesEnabled
+        } else if (isInChildHierarchy(preventedGestureRecognizer.view)) {
             super.canPreventGestureRecognizer(preventedGestureRecognizer)
         } else if (preventedGestureRecognizer is UIScreenEdgePanGestureRecognizer) {
             preventedGestureRecognizer.isUINavigationControllerContentSwipeGestureRecognizer()
@@ -707,6 +724,11 @@ internal class OverlayInputView(
      */
     var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean = { false }
 
+    /**
+     * See [androidx.compose.ui.draganddrop.IosDragAndDropManager] for more context
+     */
+    var onTouchHitTest: (isNativeTextInputHit: Boolean) -> Unit = {}
+
     var isInterceptingOutsideEvents: Boolean = false
     var onOutsidePointerEvent: (PointerEventType) -> Unit = {}
 
@@ -838,6 +860,7 @@ internal class OverlayInputView(
                 it.hitTest(inputPoint, withEvent)
             }
         }
+        onTouchHitTest(nativeTextInputViewHitTest != null)
         if (nativeTextInputViewHitTest != null) {
             return nativeTextInputViewHitTest
         }
@@ -887,6 +910,7 @@ internal class OverlayInputView(
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         canIgnoreDragGesture = { false }
+        onTouchHitTest = {}
         onKeyboardPresses = {}
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _, _ -> PointerEventResult() }
@@ -1006,6 +1030,15 @@ private fun UIView.findAncestorInteractionMode(touch: UITouch): UIKitInteropInte
 private fun Double.equalWithinPixelTolerance(other: Double): Boolean {
     return abs(other - this) < 0.1 // Any number smaller than a pixel size is sufficient here
 }
+
+private fun UIView?.asNativeTextInput(): NativeTextInputScrollView? = when (this) {
+    is NativeTextInputScrollView -> this
+    is NativeTextInputView -> superview as? NativeTextInputScrollView
+    else -> null
+}
+
+private fun UIView?.isNativeTextInputWithDisabledGestures(): Boolean =
+    asNativeTextInput()?.nativeGesturesEnabled == false
 
 private fun UIView?.hasTrackingUIScrollView(): Boolean {
     var view: UIView? = this

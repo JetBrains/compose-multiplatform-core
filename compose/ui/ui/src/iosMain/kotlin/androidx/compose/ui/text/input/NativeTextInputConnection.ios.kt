@@ -70,6 +70,10 @@ internal class NativeTextInputConnection(
 
     override val rootView: UIView get() = scrollView
 
+    fun setNativeGesturesEnabled(enabled: Boolean) {
+        scrollView.nativeGesturesEnabled = enabled
+    }
+
     override fun start(request: PlatformTextInputMethodRequest) {
         super.start(request)
 
