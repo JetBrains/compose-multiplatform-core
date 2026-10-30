@@ -1,1 +1,7 @@
 Merge script: compilation failure
+
+Merge solver: fixed in 85a56d57cfe
+
+Validation: ./gradlew assemble compileTests passed after installing the Gradle-managed Node 24.16.0 runtime.
+
+Produced by Air Automations. Name: AOSP Merges / Run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/aeefe510-9f34-4bbe-b6f6-db539bf3d1bb?run=83af4a52-0088-46b3-b656-16c64f034016
