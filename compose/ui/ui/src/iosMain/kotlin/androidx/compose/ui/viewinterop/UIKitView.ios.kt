@@ -56,7 +56,7 @@ fun <T : UIView> UIKitView(
 ) {
     val interopContainer = LocalInteropContainer.current
 
-    key(properties) {
+    key(properties.placedAsOverlay) {
         val compositionContext = rememberCompositionContext()
         InteropView(
             factory = { compositeKeyHash ->
@@ -74,7 +74,7 @@ fun <T : UIView> UIKitView(
             update = {
                 update(it)
 
-                val holder = interopContainer.holderOfView(it) as? IosInteropViewHolder<*>
+                val holder = interopContainer.holderOfView(it) as? IosInteropElementHolder<*>
                 holder?.properties = properties
             }
         )

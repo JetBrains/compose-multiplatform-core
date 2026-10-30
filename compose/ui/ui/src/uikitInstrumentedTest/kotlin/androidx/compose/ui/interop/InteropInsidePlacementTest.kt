@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -110,6 +111,30 @@ class InteropInsidePlacementTest {
 
         assertTrue(backgroundInteropView.viewDepth < overlayInteropView.viewDepth)
         assertTrue(overlayInteropView.viewDepth < dynamicInteropView.viewDepth)
+    }
+
+    @Test
+    fun testInteropViewIsRecreatedWhenOverlayPlacementChanges() = runUIKitInstrumentedTest {
+        val isOverlay = mutableStateOf(false)
+        var factoryCalls = 0
+
+        setContent {
+            UIKitView(
+                factory = {
+                    factoryCalls++
+                    UIView()
+                },
+                modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(placedAsOverlay = isOverlay.value),
+            )
+        }
+
+        assertEquals(1, factoryCalls)
+
+        isOverlay.value = true
+        waitForIdle()
+
+        assertEquals(2, factoryCalls)
     }
 }
 
