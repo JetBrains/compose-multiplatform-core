@@ -53,6 +53,8 @@ internal class WebMediaScope(private val windowInfo: WindowInfo) : UiMediaScope 
     private val hoveringPointer = MediaFeature("(any-hover: hover)")
 
     // Foldable screen / posture features
+    // TODO: consider using Viewport.segments to better support non-full-screen ComposeViewport
+    // https://developer.mozilla.org/en-US/docs/Web/API/Viewport/segments
     private val horizontalSegments = MediaFeature("(horizontal-viewport-segments: 2)")
     private val verticalSegments = MediaFeature("(vertical-viewport-segments: 2)")
     private val folded = MediaFeature("(device-posture: folded)")
