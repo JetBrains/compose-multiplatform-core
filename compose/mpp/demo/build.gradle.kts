@@ -138,6 +138,10 @@ kotlin {
                 implementation(project(":navigation:navigation-compose"))
                 implementation(project(":navigation:navigation-runtime"))
 
+//                implementation("org.jetbrains.androidx.navigation:navigation-common:2.9.2")
+//                implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.2")
+//                implementation("org.jetbrains.androidx.navigation:navigation-runtime:2.9.2")
+
                 implementation("org.jetbrains.compose.material:material-icons-core:1.7.3") {
                     // exclude dependencies, because they override local projects when we build 0.0.0-* version
                     // (see https://repo1.maven.org/maven2/org/jetbrains/compose/material/material-icons-core-desktop/1.6.11/material-icons-core-desktop-1.6.11.module)
@@ -232,6 +236,8 @@ if (System.getProperty("os.name") == "Mac OS X") {
             }
         }
     } else {
+        kotlinBinary.debuggable = true
+        kotlinBinary.optimized = false
         // Otherwise copy the executable into the Xcode output directory.
         tasks.register("packForXCode", Copy::class.java) {
             dependsOn(kotlinBinary.linkTaskProvider)
