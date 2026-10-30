@@ -17,33 +17,17 @@
 package androidx.compose.ui.semantics
 
 import androidx.compose.ui.unit.IntRect
-import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Region
 
 private class SemanticRegionImpl : SemanticsRegion {
     val region = Region()
 
-    private var bounds = IRect.makeLTRB(0, 0, 0, 0)
-
-    override fun set(left: Int, top: Int, right: Int, bottom: Int) {
-        region.setRect(left, top, right, bottom)
+    override fun set(rect: IntRect) {
+        region.setRect(rect.left, rect.top, rect.right, rect.bottom)
     }
 
-    override fun updateBounds() {
-        bounds = region.bounds
-    }
-
-    override val boundsLeft: Int
-        get() = bounds.left
-
-    override val boundsTop: Int
-        get() = bounds.top
-
-    override val boundsRight: Int
-        get() = bounds.right
-
-    override val boundsBottom: Int
-        get() = bounds.bottom
+    override val bounds: IntRect
+        get() = region.bounds.let { IntRect(it.left, it.top, it.right, it.bottom) }
 
     override val isEmpty: Boolean
         get() = region.isEmpty
@@ -52,8 +36,8 @@ private class SemanticRegionImpl : SemanticsRegion {
         return this.region.op((region as SemanticRegionImpl).region, Region.Op.INTERSECT)
     }
 
-    override fun difference(left: Int, top: Int, right: Int, bottom: Int): Boolean {
-        return region.op(left, top, right, bottom, Region.Op.DIFFERENCE)
+    override fun difference(rect: IntRect): Boolean {
+        return region.op(rect.left, rect.top, rect.right, rect.bottom, Region.Op.DIFFERENCE)
     }
 }
 
