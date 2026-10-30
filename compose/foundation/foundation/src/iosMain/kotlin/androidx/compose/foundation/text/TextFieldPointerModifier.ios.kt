@@ -17,6 +17,7 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.text.selection.IosWordSelectionAdjustment
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -40,4 +41,5 @@ internal actual fun Modifier.textFieldPointer(
     focusRequester,
     readOnly,
     offsetMapping,
+    IosWordSelectionAdjustment,
 )
