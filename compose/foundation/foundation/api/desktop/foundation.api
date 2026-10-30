@@ -24,6 +24,12 @@ public final class androidx/compose/foundation/BorderKt {
 	public static final fun border-ziNgDLE (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Brush;Landroidx/compose/ui/graphics/Shape;)Landroidx/compose/ui/Modifier;
 }
 
+public final class androidx/compose/foundation/BorderRenderer {
+	public static final field $stable I
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public final fun drawBorder-ziNgDLE (Landroidx/compose/ui/graphics/drawscope/DrawScope;FLandroidx/compose/ui/graphics/Brush;Landroidx/compose/ui/graphics/Outline;)V
+}
+
 public final class androidx/compose/foundation/BorderStroke {
 	public static final field $stable I
 	public synthetic fun <init> (FLandroidx/compose/ui/graphics/Brush;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -1184,6 +1190,7 @@ public final class androidx/compose/foundation/lazy/grid/LazyGridItemInfo$Compan
 public abstract interface class androidx/compose/foundation/lazy/grid/LazyGridItemScope {
 	public abstract fun animateItem (Landroidx/compose/ui/Modifier;Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/FiniteAnimationSpec;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun animateItem$default (Landroidx/compose/foundation/lazy/grid/LazyGridItemScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/FiniteAnimationSpec;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public abstract fun getCrossAxisCellCount ()I
 }
 
 public abstract interface class androidx/compose/foundation/lazy/grid/LazyGridItemSpanScope {
@@ -2397,10 +2404,18 @@ public final class androidx/compose/foundation/style/StyleResolver : androidx/co
 	public fun <init> (Landroidx/compose/foundation/style/CommonStyle;Landroidx/compose/foundation/style/StyleState;)V
 	public synthetic fun <init> (Landroidx/compose/foundation/style/CommonStyle;Landroidx/compose/foundation/style/StyleState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getAccessorScope ()Landroidx/compose/foundation/style/StyleResolverScope;
+	public final fun getStyle ()Landroidx/compose/foundation/style/CommonStyle;
+	public final fun getStyleState ()Landroidx/compose/foundation/style/StyleState;
 	public fun onAbandoned ()V
 	public fun onForgotten ()V
 	public fun onRemembered ()V
 	public final fun resolve (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public final fun setStyle (Landroidx/compose/foundation/style/CommonStyle;)V
+	public final fun setStyleState (Landroidx/compose/foundation/style/StyleState;)V
+}
+
+public final class androidx/compose/foundation/style/StyleResolverKt {
+	public static final fun rememberStyleResolver (Landroidx/compose/foundation/style/CommonStyle;Landroidx/compose/foundation/style/StyleState;Landroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/style/StyleResolver;
 }
 
 public final class androidx/compose/foundation/style/StyleResolverNodeKt {
@@ -2728,6 +2743,7 @@ public final class androidx/compose/foundation/text/contextmenu/data/TextContext
 	public final fun getAutofillKey ()Ljava/lang/Object;
 	public final fun getCopyKey ()Ljava/lang/Object;
 	public final fun getCutKey ()Ljava/lang/Object;
+	public final fun getLookUpKey ()Ljava/lang/Object;
 	public final fun getPasteKey ()Ljava/lang/Object;
 	public final fun getSelectAllKey ()Ljava/lang/Object;
 }

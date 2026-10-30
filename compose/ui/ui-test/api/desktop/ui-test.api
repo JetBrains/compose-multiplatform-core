@@ -796,6 +796,14 @@ public final class androidx/compose/ui/test/SkikoImageHelpersKt {
 	public static final fun captureToImage (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Landroidx/compose/ui/graphics/ImageBitmap;
 }
 
+public final class androidx/compose/ui/test/SwipeInfo {
+	public static final field $stable I
+	public synthetic fun <init> (JJFLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEnd-F1C5BW0 ()J
+	public final fun getEndVelocity ()F
+	public final fun getStart-F1C5BW0 ()J
+}
+
 public final class androidx/compose/ui/test/TestContext {
 	public static final field $stable I
 	public synthetic fun <init> (Landroidx/compose/ui/test/TestOwner;FILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -930,6 +938,8 @@ public final class androidx/compose/ui/test/TouchInjectionScopeKt {
 	public static synthetic fun longClick-d-4ec7I$default (Landroidx/compose/ui/test/TouchInjectionScope;JJILjava/lang/Object;)V
 	public static final fun multiTouchSwipe (Landroidx/compose/ui/test/TouchInjectionScope;Ljava/util/List;JLjava/util/List;)V
 	public static synthetic fun multiTouchSwipe$default (Landroidx/compose/ui/test/TouchInjectionScope;Ljava/util/List;JLjava/util/List;ILjava/lang/Object;)V
+	public static final fun multiTouchSwipeWithVelocity (Landroidx/compose/ui/test/TouchInjectionScope;Ljava/util/List;JLandroidx/collection/LongList;)V
+	public static synthetic fun multiTouchSwipeWithVelocity$default (Landroidx/compose/ui/test/TouchInjectionScope;Ljava/util/List;JLandroidx/collection/LongList;ILjava/lang/Object;)V
 	public static final fun pinch-_QUENCA (Landroidx/compose/ui/test/TouchInjectionScope;JJJJJ)V
 	public static synthetic fun pinch-_QUENCA$default (Landroidx/compose/ui/test/TouchInjectionScope;JJJJJILjava/lang/Object;)V
 	public static final fun swipe (Landroidx/compose/ui/test/TouchInjectionScope;Lkotlin/jvm/functions/Function1;JLjava/util/List;)V

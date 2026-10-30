@@ -986,6 +986,13 @@ public final class androidx/compose/material3/FabPosition$Companion {
 	public final fun getStart-ERTFSPs ()I
 }
 
+public final class androidx/compose/material3/FadeThroughNavigationTransition {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/FadeThroughNavigationTransition;
+	public final fun predictiveBackTransform (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/unit/Density;)Landroidx/compose/animation/MutableContentTransform;
+	public final fun transform ()Landroidx/compose/animation/ContentTransform;
+}
+
 public final class androidx/compose/material3/FilledTonalToggleButtonDefaults {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/material3/FilledTonalToggleButtonDefaults;
@@ -1211,6 +1218,15 @@ public final class androidx/compose/material3/FloatingToolbarVerticalFabPosition
 public final class androidx/compose/material3/FloatingToolbarVerticalFabPosition$Companion {
 	public final fun getBottom-dDJPGzU ()I
 	public final fun getTop-dDJPGzU ()I
+}
+
+public final class androidx/compose/material3/HorizontalSharedAxisNavigationTransition {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/HorizontalSharedAxisNavigationTransition;
+	public final fun backwardTransform ()Landroidx/compose/animation/ContentTransform;
+	public final fun forwardTransform ()Landroidx/compose/animation/ContentTransform;
+	public final fun getScrimColor (Landroidx/compose/runtime/Composer;I)J
+	public final fun predictiveBackTransform-mxwnekA (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/unit/Density;J)Landroidx/compose/animation/MutableContentTransform;
 }
 
 public final class androidx/compose/material3/IconButtonColors {
