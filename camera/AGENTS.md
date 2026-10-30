@@ -13,28 +13,33 @@ description: >-
 > (each sized `< 45,000 bytes` and `<= 780 lines` so **1 single `read_file`
 > call** loads 100% of any file).
 >
-> **Before starting ANY task**, identify all matching domains below and call
-> `read_file` (or `view_file`) on each corresponding `SKILL.md` in full:
+> **Before starting ANY task or answering ANY CameraX question**, identify all
+> matching domains below and call `read_file` (or `view_file`) on each
+> corresponding `SKILL.md` in full:
 >
-> 1. **Code Review, PR Audit, Plan/Report Audit, or Multi-Model Verification**
->    *(Steps 1-7 & Modes 1-5)* -> Read
->    `camera/.agents/skills/camerax-code-review/SKILL.md`
+> 1. **Technical/Architectural Questions, Codebase Explanations, Code Review, PR
+>    Audit, Plan/Report Audit, or Multi-Model Verification** *(Steps 1-7 & Modes
+>    1-5)* -> Read `camera/.agents/skills/camerax-code-review/SKILL.md`
 >    ([`camerax-code-review`][skill-review]).
-> 2. **Writing/Modifying Code, API Changes, Refactoring, or Updating Docs**
->    *(Standards Hierarchy, Development Workflow, & `Skill: CameraX Agent
->    Guidelines & Experience Capture`)* -> Read
+> 2. **Writing/Modifying Code, API/Design Questions, Refactoring, Preparing
+>    Commits / CLs, or Updating Docs** *(Standards Hierarchy, 4-Layer
+>    Package/Object-Job Map, Pre-Placement Checklist, Development Workflow,
+>    Git Commit Rules, & `Skill: CameraX Agent Guidelines & Experience
+>    Capture`)* -> Read
 >    `camera/.agents/skills/camerax-guidelines-governance/SKILL.md`
->    ([`camerax-guidelines-governance`][skill-gov]).
-> 3. **Writing/Running Unit (Robolectric) or Device (`androidTest`) Tests,
->    Debugging Leaks, or Migrating Tests Across the Test Pyramid**
->    *(`Testing` & `Skill: CameraX Troubleshooting & Code Verification`
->    Sections 1-4 & Section 9)* -> Read
+>    ([`camerax-guidelines-governance`][skill-gov]) (and when modifying code
+>    or fixing bugs, also read `camerax-testing/SKILL.md` Section 1 for
+>    mandatory pre-coding test case study).
+> 3. **Writing/Running Unit (Robolectric) or Device (`androidTest`) Tests, Test
+>    Strategy Questions, Debugging Leaks, or Migrating Tests Across the Test
+>    Pyramid** *(`Testing` & `Skill: CameraX Troubleshooting & Code
+>    Verification` Sections 1-4 & Section 9)* -> Read
 >    `camera/.agents/skills/camerax-testing/SKILL.md`
 >    ([`camerax-testing`][skill-test]).
-> 4. **Bug Triage, Device-Specific Failures, `Quirk` Scoping, or Hardware
->    Capability Abstraction** *(`Skill: CameraX Troubleshooting & Code
->    Verification` Sections 5, 6 (`6.A`-`6.G`), 7, & 8)* -> Read
->    `camera/.agents/skills/camerax-triage-and-quirks/SKILL.md`
+> 4. **Bug Triage, Behavioral/HAL Inquiries, Device-Specific Failures, `Quirk`
+>    Scoping, or Hardware Capability Abstraction** *(`Skill: CameraX
+>    Troubleshooting & Code Verification` Sections 5, 6 (`6.A`-`6.G`), 7, & 8)*
+>    -> Read `camera/.agents/skills/camerax-triage-and-quirks/SKILL.md`
 >    ([`camerax-triage-and-quirks`][skill-triage]).
 >
 > **Zero-Checkout / Remote Fallback**: If operating without a local checkout of
@@ -51,9 +56,49 @@ description: >-
 
 # Project: CameraX
 
+## Senior CameraX SWE Deep Study Protocol (Questions & Proposals)
+
+Whenever answering any question about CameraX, explaining codebase behavior,
+evaluating feasibility, diagnosing an issue, or proposing a solution—even when
+no code edit is requested—agents **MUST** operate with the rigor and full-stack
+knowledge of a **Senior CameraX SWE** and **NEVER** reply quickly from memory or
+isolated search snippets:
+
+1. **Full-Stack Call-Chain, Package Responsibility & Test Study**: Scan callers
+   and tests (`git --no-lazy-fetch grep -- camera/<module>/src/...`) and read
+   complete target classes, sibling implementations, and `src/test/` +
+   `src/androidTest/` test cases across all 4 layers (`public API / UseCase /
+   View / Video / Extensions / Compose / Effects` -> `CameraInternal /
+   core.internal.CameraUseCaseAdapter / StreamSharing` -> `camera-camera2`
+   (`UseCaseCamera`, `CapturePipeline`, `adapter/`, `impl/`, `internal/`,
+   `config/`, `compat/`) -> `camera-camera2-pipe` (`CameraGraph`,
+   `RequestProcessor`); full map in [`camerax-testing`][skill-test] Section 1).
+   Verify package responsibility ("object job"), `@CameraScope` vs.
+   `@UseCaseCameraScope` boundaries, and partial re-bind (`hasUseCases == true`)
+   vs. full unbind (`hasUseCases == false`) before proposing any solution,
+   calling internal APIs, or placing code changes.
+2. **Historical Intent & Guidelines Check (`git blame` / `git log` / KDoc)**:
+   Inspect KDoc, inline comments, and git history (`git --no-lazy-fetch blame`,
+   `git --no-lazy-fetch log`) to verify *why* existing ordering, state checks,
+   or workarounds exist before forming a conclusion, and cross-check the
+   **Standards Hierarchy** (AndroidX -> Android Platform/Camera2 -> Google-wide)
+   plus the **Simulation Rubric (`Section 6.A`)**, **3-Step Root-Cause Hierarchy
+   (`Section 6.B-6.F`)**, and **6-Phase Capability Framework (`Section 8`)**.
+3. **Evidence Citations & Conditional Clean-Context Multi-Model Plan/Verify
+   Gate**: Ground every claim in exact `file:line` references (and commit SHAs /
+   guideline sections). Whenever a question or problem is **not** a trivial
+   flash single-fact lookup (e.g., root-cause "why" inquiries, concurrency or
+   lifecycle analysis, design/feasibility trade-offs, `Quirk` scoping, or
+   solution proposals), write the candidate answer/plan and raw evidence paths
+   to `<scratch_or_tmp>/draft_deliverable.md` and run the **Clean-Context
+   Multi-Model Verification Gate** ([`camerax-code-review`][skill-review] Modes
+   2, 3, or 5 with the Two-Turn Blind Read Barrier) **before** presenting the
+   final answer to the user.
+
 ## Standards & Guidelines Hierarchy
 
-When writing new code, reviewing existing code, or fixing bugs in CameraX,
+When answering technical questions, writing new code, reviewing existing code,
+or fixing bugs in CameraX,
 agents **MUST** actively read and strictly adhere to the relevant guidelines,
 style guides, and correctness checks in this precedence order (full recursive
 traversal protocol in [`camerax-guidelines-governance`][skill-gov]):
@@ -130,14 +175,18 @@ invariants:
   `aosp/androidx-main`; in CoG workspaces, follow `manage_cl_workspaces`).
 - **CameraPipe Backend & Lifecycle Scopes**: `camera-camera2` now runs on top of
   `camera-camera2-pipe` (`CameraPipe`). Never conflate:
-  - `@CameraScope` (`CameraInternal`, `CameraControlInternal`,
-    `CameraUseCaseAdapter`): survives across use-case binds/unbinds
-    (`setActiveResumeMode`, zoom/torch, `Closing -> Closed` teardown).
+  - `@CameraScope` (`CameraInternalAdapter`, `CameraControlAdapter`,
+    `UseCaseManager` in `camera-camera2`, wired via `CameraConfig` and backing
+    `camera-core`'s `CameraInternal` / `CameraControlInternal`): survives across
+    use-case binds/unbinds (`setActiveResumeMode`, zoom/torch,
+    `Closing -> Closed` teardown). Never retain a `@UseCaseCameraScope`
+    reference inside a `@CameraScope` owner without invalidating on re-bind.
   - `@UseCaseCameraScope` (`UseCaseCamera`, `UseCaseCameraRequestControl`,
-    `CapturePipeline`): recreated whenever the active use-case set or session
-    config changes. Distinguish **partial re-bind** (`hasUseCases == true`)
-    from **full unbind** (`hasUseCases == false`, tearing down `UseCaseCamera`
-    and closing the underlying `CameraGraph` / `CameraDevice`).
+    `CapturePipeline`, `UseCaseSurfaceManager`, and per-session `CameraGraph`,
+    wired via `UseCaseCameraConfig`): recreated whenever the active use-case set
+    or session config changes. Distinguish **partial re-bind** (`hasUseCases ==
+    true`) from **full unbind** (`hasUseCases == false`, tearing down
+    `UseCaseCamera` and closing the underlying `CameraGraph` / `CameraDevice`).
 - **Public API Contract Fidelity & Idiomatic Kotlin**:
   - Honor explicit caller configurations (`ImageCapture`, `Preview`,
     `VideoCapture`, `ResolutionSelector`, `DynamicRange`) unless hardware or
@@ -248,21 +297,21 @@ invariants:
 >    Baseline**: Defer to repo-wide `AGENTS.md` and `.agents/skills/*` when
 >    present, documenting only CameraX-specific overrides.
 > 3. **Prompt Update Precedence — 3rd: CameraX Project Prompt Governance**:
->    Apply **The 3-Tier Signal Filter** and **The 1-Year Litmus Test** (exclude
->    Tier-1 transient noise and Tier-2 class-private mechanics; wrap prose at
+>    Apply **The 3-Tier Signal Filter**, **The 1-Year Litmus Test**, and the
+>    **All-Stage `.md`, `SKILL.md` & Tool/Script Update Checklist** (split/move
+>    to a sibling `SKILL.md` with headroom instead of deleting knowledge; design
+>    scripts for multi-env fallbacks and unit tests; wrap prose at
 >    **`<= 80` characters** with 100% public purity), keep `camera/AGENTS.md`
 >    under **`24,000 bytes`** (no `@`-prefixed `[label](path)` inline includes),
 >    keep every `SKILL.md` file under **`45,000 bytes` and `780 lines`**, and
 >    refresh all 5 files (`camera/AGENTS.md` + 4 `SKILL.md` files, plus
 >    `$CAMERAX_INTERNAL_TOOLS_DIR/AGENTS_INTERNAL.md` when available) together.
 
-## Git Commit Messages
+## Git Commit Messages & Amend (CameraX Overrides)
 
-When the repo-wide `manage_commits` skill is auto-discovered, follow its
-commit/amend and workspace rules (`repo upload` in standard Git checkouts vs.
-`gob_vcs` in CoG workspaces) alongside CameraX's stricter length limits (`<= 50`
-char title, `<= 72` char body lines), with each section separated by a blank
-line:
+Read [`camerax-guidelines-governance`][skill-gov] (`## Git Commit Messages` and
+`### Git Commit Amend`) and the repo-wide `manage_commits` skill before
+committing or amending:
 
 ```
 <Commit Title>
@@ -274,51 +323,20 @@ Bug: <bug id>
 Test: <test instructions>
 ```
 
-**Commit Title:**
-- A short, descriptive summary of the change.
-- Use the imperative mood (e.g., "Add feature" not "Added feature").
-- Strictly <= 50 characters (or < 60 characters) to prevent Gerrit upload
-  warnings.
-
-**Additional Details (Optional):**
-- Keep commit messages simple, direct, and easy to scan.
-- Explain the problem the change solves and the approach taken.
-- Provide context for the change.
-- Prefer concise, clear, and readable messages without losing any required
-  info. Using bullet points to summarize specific changes can help with
-  readability.
-
-**RelNote:**
-- Focus on the observable impact for developers using the library (the "What",
-  not the "How"). Do not mention implementation details or internal test apps
-  (like `core-test-app`) in the RelNote.
-- This will be used to generate release notes.
-- **Requirement**: Should only be added for public API changes (e.g., changes
-  in `camera/**/api/` directories) or bugs impacting public users.
-- **When to omit** (CameraX override over generic `manage_commits`): If a change
-  is an internal bug fix, a fix/follow-up for an unreleased feature or API not
-  yet released to developers, refactoring, test/doc update, or change to
-  restricted APIs marked with `@RestrictTo` (without a public API or
-  user-facing behavior change), **do not add the RelNote tag at all**.
-- **Edge cases**: `RelNote: N/A` can be used if a release note is explicitly
-  not applicable despite a public API change, e.g. when reverting a CL that had
-  a public API change meant for release.
-- Refer to https://developer.android.com/jetpack/androidx/releases/camera for
-  previous examples.
-
-**Bug:**
-- The ID(s) of the bug(s) this commit fixes. List each bug ID on a new line,
-  prefixed with 'Bug:'.
-  Example:
-  ```
-  Bug: 123456
-  Bug: 123457
-  ```
-
-**Test:**
-- Describe the tests that were added or modified to verify the change.
-- Mention any manual testing steps if applicable. Use project names like
-  `core-test-app` instead of specific activity names where appropriate.
+- **Commit Title & Body**: Imperative summary strictly `<= 50` chars (or `< 60`
+  chars) to prevent Gerrit upload warnings; body lines `<= 72` chars explaining
+  the problem, context, and approach.
+- **RelNote (CameraX Override over `manage_commits`)**: Focus on observable
+  developer impact (never mention internal test apps like `core-test-app`). Add
+  **only** for public API changes (`camera/**/api/`) or bugs impacting public
+  users; **omit `RelNote` entirely** for internal fixes, unreleased API
+  follow-ups, refactorings, test/doc updates, or `@RestrictTo` changes without
+  user-facing impact (`RelNote: N/A` only when reverting a public API change).
+- **Bug, Test & `Change-Id` Preservation on Amend**: Prefix each bug ID with
+  `Bug: <id>` on its own line and state added/modified tests in `Test:`. When
+  running `git commit --amend`, **never** use `-m` alone without appending the
+  existing `Change-Id:` line from `git log -1` (recover via `git reflog` if
+  lost).
 
 ## Description of sub-projects:
 
@@ -374,25 +392,6 @@ Test: <test instructions>
 - https://android-developers.googleblog.com/search?q=camerax
 - Camera2 API Reference:
   https://developer.android.com/reference/android/hardware/camera2/package-summary
-
-## AndroidX-specific Instructions
-
-### Git Commit Amend
-
-Some git commit messages contain a `Change-Id:` line (usually as the last line)
-required by the Gerrit code review system. This ID is essential for updating
-existing CLs.
-
-When amending a previous commit (e.g., with `git commit --amend`):
-- **Do not modify or remove this line.**
-- **CRITICAL: NEVER use the `-m` flag** alone when amending. It replaces the
-  *entire* message, stripping the `Change-Id` and causing CL upload to create a
-  duplicate CL.
-- **Best Practice**: Run `git log -1` first to capture the existing message/ID.
-  When using `-m`, ensure you manually append the correct `Change-Id` to the
-  end of the new message.
-- **Recovery**: If the ID is lost, find it in the previous commit via
-  `git reflog` and `git log`, then re-amend to restore it.
 
 [skill-review]: .agents/skills/camerax-code-review/SKILL.md
 [skill-gov]: .agents/skills/camerax-guidelines-governance/SKILL.md

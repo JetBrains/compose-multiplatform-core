@@ -26,6 +26,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.collection.intSetOf
 import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
@@ -38,12 +39,14 @@ import androidx.glance.wear.core.WearWidgetParams
 import androidx.glance.wear.core.WearWidgetRawContent
 import androidx.glance.wear.core.WearWidgetUpdateRequest
 import androidx.glance.wear.core.WidgetInstanceId
+import androidx.glance.wear.parcel.WearWidgetCapture
 import androidx.glance.wear.parcel.WearWidgetCapture.addCreationUptimeMillis
 import androidx.glance.wear.parcel.WidgetUpdateClient
 import androidx.glance.wear.parcel.WidgetUpdateClientImpl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -70,6 +73,7 @@ internal constructor(
      *
      * @param context the context from which this method is called
      * @param params the parameters that describe the widget for which the data is being provided.
+     * @return the widget data for this Widget.
      */
     @MainThread
     public abstract suspend fun provideWidgetData(
@@ -78,25 +82,34 @@ internal constructor(
     ): WearWidgetData
 
     /**
-     * Internal method to provide widget data as raw content, based on [provideWidgetData] and
-     * [WearWidgetData.captureRawContent].
+     * Provides widget data as raw content, based on [provideWidgetData] and
+     * [WearWidgetData.captureRawContent], and checks that it can be sent to the Host.
      *
      * @param context the context from which this method is called.
      * @param params the parameters that describe the widget for which the data is being provided.
+     * @param isInspectionMode whether the capture is in inspection mode (e.g., for IDE previews).
      * @return the widget data as raw content.
+     * @throws WearWidgetContentTooLargeException if the raw content exceeds the maximum size that
+     *   can be sent to the Host in a single Binder transaction.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
-    internal suspend fun provideWidgetDataAsRawContentInternal(
+    public suspend fun provideWidgetDataAsRawContent(
         context: Context,
         params: WearWidgetParams,
+        isInspectionMode: Boolean = false,
     ): WearWidgetRawContent {
-        // We need this flag to be false (meaning empty axis won't be send and default normal weight
-        // would be used, for the 1.6 renderer and the player that has a bug in it.
-        RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis =
-            RendererVersion.fromPlHostPackage(context) >
-                RendererVersion(1, 6, 0, /* not important */ intSetOf())
+        if (!isInspectionMode) {
+            // We need this flag to be false (meaning empty axis won't be send and default normal
+            // weight would be used, for the 1.6 renderer and the player that has a bug in it.
+            RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis =
+                RendererVersion.fromPlHostPackage(context) >
+                    RendererVersion(1, 6, 0, /* not important */ intSetOf())
+        }
         val widgetContent = provideWidgetData(context, params)
-        return widgetContent.captureRawContent(context, params)
+        val rawContent = widgetContent.captureRawContent(context, params, isInspectionMode)
+        WearWidgetCapture.checkContentSize(rawContent.rcDocument.size)
+        return rawContent
     }
 
     /**
@@ -120,14 +133,14 @@ internal constructor(
      * This method is called from the main thread.
      *
      * @param context the context from which this method is called
-     * @param widgetHandle the handle of the widget.
+     * @param widgetHandle the handle of the active widget.
      */
     @MainThread
     public open suspend fun onRemoved(context: Context, widgetHandle: ActiveWearWidgetHandle) {}
 
     /**
      * Called when the system sends a batch of interaction events. The time between calls to this
-     * method may vary, do not depend on it for time-sensitive or critical tasks.
+     * method may vary; do not depend on it for time-sensitive or critical tasks.
      *
      * Interaction events represent user direct interaction with a widget, for example when a widget
      * was visible.
@@ -138,13 +151,13 @@ internal constructor(
      * This method is called from the main thread.
      *
      * @param context the context from which this method is called
-     * @param events A list [WearWidgetEvent] representing interactions that occurred.
+     * @param events A list of [WearWidgetEvent] representing interactions that occurred.
      */
     @MainThread public open suspend fun onEvents(context: Context, events: List<WearWidgetEvent>) {}
 
     /**
      * Triggers a content update for the given widget [instanceId], resulting in a call to
-     * [provideWidgetData], after which the results to the Host.
+     * [provideWidgetData], after which the results are pushed to the Host.
      *
      * All [WidgetInstanceId] for active widgets associated with this class can be retrieved from
      * [GlanceWearWidgetManager.fetchActiveWidgets(KClass)].
@@ -155,6 +168,8 @@ internal constructor(
      * @param instanceId the ID of the widget instance to update.
      * @throws [IllegalArgumentException] if the provided [WidgetInstanceId] is invalid or not owned
      *   by the calling application.
+     * @throws [WearWidgetContentTooLargeException] if the widget content exceeds the maximum size
+     *   that can be sent to the Host in a single Binder transaction.
      */
     public suspend fun triggerUpdate(context: Context, instanceId: WidgetInstanceId) {
         if (context.isDebuggableBuild()) {
@@ -171,6 +186,10 @@ internal constructor(
      * being called.
      *
      * @param context the context from which this method is called.
+     * @throws [WearWidgetContentTooLargeException] if the content of any widget instance exceeds
+     *   the maximum size that can be sent to the Host in a single Binder transaction. Other widget
+     *   instances are still updated. If several instances fail, the exceptions for the others are
+     *   attached to the thrown one as [suppressed exceptions][Throwable.suppressedExceptions].
      */
     @SuppressLint("ListIterator") // Not running inside Compose code.
     public suspend fun triggerUpdateAll(context: Context) {
@@ -195,19 +214,31 @@ internal constructor(
             Log.i(TAG, "No active instances found in the system to update.")
             return
         }
-        coroutineScope {
-            for (handle in activeWidgets) {
-                launch {
-                    try {
-                        triggerUpdateInternal(context, handle.instanceId, cachedHandle = handle)
-                    } catch (ex: IllegalArgumentException) {
-                        Log.i(
-                            TAG,
-                            "WidgetInstanceId is no longer valid. It may have been removed after the update was triggered: ${handle.instanceId}",
-                        )
+        val contentTooLargeExceptions = coroutineScope {
+            activeWidgets
+                .map { handle ->
+                    async {
+                        try {
+                            triggerUpdateInternal(context, handle.instanceId, cachedHandle = handle)
+                            null
+                        } catch (ex: IllegalArgumentException) {
+                            Log.i(
+                                TAG,
+                                "WidgetInstanceId is no longer valid. It may have been removed after the update was triggered: ${handle.instanceId}",
+                            )
+                            null
+                        } catch (ex: WearWidgetContentTooLargeException) {
+                            // Don't cancel the updates of other instances. This is rethrown below.
+                            ex
+                        }
                     }
                 }
-            }
+                .awaitAll()
+                .filterNotNull()
+        }
+        contentTooLargeExceptions.firstOrNull()?.let { first ->
+            contentTooLargeExceptions.drop(1).forEach { first.addSuppressed(it) }
+            throw first
         }
     }
 
@@ -275,7 +306,7 @@ internal constructor(
 
         val rawContent =
             withContext(Dispatchers.Main.immediate) {
-                provideWidgetDataAsRawContentInternal(context, params)
+                provideWidgetDataAsRawContent(context, params)
             }
         rawContent.extras.addCreationUptimeMillis(creationUptimeMillis)
 

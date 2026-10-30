@@ -2,21 +2,32 @@
 name: camerax-guidelines-governance
 description: >-
   Enforces CameraX coding standards hierarchy, recursive guideline traversal,
-  CameraPipe lifecycle scope invariants, pre-upload verification gates, and
-  long-term prompt/skill governance rules. Use when writing or refactoring
-  CameraX code, preparing a commit for upload, or updating AGENTS.md and
-  SKILL.md files. Don't use for device-specific failure triage (use
-  camerax-triage-and-quirks) or test writing mechanics (use camerax-testing).
+  Senior CameraX SWE deep codebase study, 4-layer package/object-job placement
+  map, multi-path call-chain and Dagger/thread invariants, pre-upload gates, and
+  long-term prompt/skill governance rules. Use when answering CameraX
+  API/architecture questions, studying module/package responsibilities before
+  using internal APIs or placing code, writing or refactoring CameraX code,
+  preparing a commit, or updating AGENTS.md and SKILL.md files. Don't use for
+  device-specific failure triage (use camerax-triage-and-quirks) or test
+  execution mechanics (use camerax-testing).
 ---
 
 # Project: CameraX
 
 ## Standards & Guidelines Hierarchy
 
-When writing new code, reviewing existing code, or fixing bugs in
-CameraX, agents **MUST** actively read and strictly adhere to the relevant
-guidelines, style guides, and correctness checks before modifying code,
-following the precedence order (AndroidX → Android Platform → Google-Wide).
+When answering technical/API questions, writing new code, reviewing existing
+code, or fixing bugs in CameraX, agents **MUST** operate as a **Senior CameraX
+SWE**: trace the full end-to-end call chain (`UseCase / View / Video /
+Extensions` -> `CameraInternal / CameraUseCaseAdapter / StreamSharing` ->
+`camera-camera2` -> `camera-camera2-pipe`), verify `@CameraScope` vs.
+`@UseCaseCameraScope` and partial re-bind vs. full unbind, inspect KDoc and
+`git --no-lazy-fetch blame` / `log` history, and actively read and adhere to
+the relevant guidelines, style guides, and correctness checks before proposing
+answers or modifying code (and for any non-flash question or solution proposal,
+stage `<scratch_or_tmp>/draft_deliverable.md` and run the Step 6 Clean-Context
+Multi-Model Verification Gate in `camerax-code-review`), following the
+precedence order (AndroidX → Android Platform → Google-Wide).
 
 ### Automatic Recursive Index & Reference Traversal Protocol:
 When directed to an index page, directory list, or guide linking to sub-guides
@@ -163,16 +174,54 @@ When directed to an index page, directory list, or guide linking to sub-guides
       `camera-camera2` or `camera-core` before modifying low-level
       `camera-camera2-pipe` primitives.
     - Distinguish `@CameraScope` components (`CameraInternalAdapter`,
-      `UseCaseManager`, which live across the camera's lifetime) from
-      `@UseCaseCameraScope` components (`UseCaseCamera`,
-      `UseCaseSurfaceManager`, `CameraGraph`, which are recreated per binding
-      session).
+      `CameraControlAdapter`, `UseCaseManager`, wired in `CameraConfig` and
+      living across the camera's lifetime) from `@UseCaseCameraScope`
+      components (`UseCaseCamera`, `UseCaseCameraRequestControl`,
+      `CapturePipeline`, `UseCaseSurfaceManager`, and the per-session
+      `CameraGraph`, wired in `UseCaseCameraConfig` and recreated per binding
+      session). Never retain a `@UseCaseCameraScope` reference inside a
+      `@CameraScope` owner without invalidating on re-bind.
     - Distinguish **partial UseCase re-binding** (`useCases` remains non-empty
       and surfaces migrate across consecutive `UseCaseCamera` instances) from
       **full unbind / teardown** (`useCases.isEmpty()` or `close()`). Never tie
       camera-wide surface/resource teardown to a single transient
       `@UseCaseCameraScope` session without guarding against stale callbacks
       cancelling newly active sessions.
+  - **4-Layer Architecture, Package Responsibility ("Object Job") & Pre-Coding
+    Study (Full Map in `camerax-testing/SKILL.md` Section 1)**:
+    Before calling internal helpers or placing code, verify the target package's
+    intended responsibility across CameraX's 4 layers and read the complete
+    **4-Layer Package Responsibility Map, Multi-Path Call-Chain Anchors,
+    Pre-Placement Checklist, and Pre-Coding Test Study** in
+    `camerax-testing/SKILL.md` (`#### 1. Research, Code Structure & Context
+    Gathering (Before Modifying Code)`):
+    1. **Layer 1 (`camera-lifecycle`, `camera-view`, `camera-compose`,
+       `camera-viewfinder`, `camera-extensions`)**: Lifecycle binding
+       (`ProcessCameraProvider`), UI controllers/widgets (`CameraController`,
+       `PreviewView`, `CameraXViewfinder`, `Viewfinder`), and OEM extension
+       delegation (`VendorExtender` vending a `camera-core` `SessionProcessor`
+       via `createSessionProcessor()`). Never embed core session state machines
+       or HAL workarounds here.
+    2. **Layer 2 (`camera-core`, `camera-video`, `camera-effects`)**: `core/`
+       (public APIs in `api/current.txt`), `core/impl/` (`@RestrictTo` SPIs in
+       `api/restricted_current.txt`), `core/internal/` (binding & stream spec
+       calculation like `core.internal.CameraUseCaseAdapter`,
+       `StreamSpecsCalculator`), and domain pipelines (`imagecapture/`,
+       `processing/`, `streamsharing/`, `featuregroup/`, `resolutionselector/`,
+       and `camera-video` `Recorder`/`video/internal/`).
+    3. **Layer 3 (`camera-camera2`)**: `config/` (Dagger `CameraConfig`
+       `@CameraScope` vs. `UseCaseCameraConfig` `@UseCaseCameraScope`),
+       `adapter/` (`CameraInternalAdapter`, `CameraControlAdapter`,
+       `SupportedSurfaceCombination`, and `camera2.adapter.CameraUseCaseAdapter`
+       for `UseCaseConfigFactory`—distinct from
+       `core.internal.CameraUseCaseAdapter`), `impl/` (`@UseCaseCameraScope`
+       `UseCaseCamera` / `CapturePipeline` alongside `@CameraScope`
+       `UseCaseManager` / `StillCaptureRequestControl`), `internal/` (unscoped
+       resolvers like `DynamicRangeResolver`, `StreamUseCaseUtil`),
+       `compat/quirk/` & `compat/workaround/` (per-module `DeviceQuirks` vs.
+       `CameraQuirks` + encapsulated workaround consumers), and `interop/`.
+    4. **Layer 4 (`camera-camera2-pipe`)**: Low-level `CameraGraph`,
+       `GraphLoop` / `CaptureSequenceProcessor`, and `Camera2DeviceManager`.
 - **Mandatory Pre-Coding Guideline Reading & Recursive Traversal**: Before
   modifying or creating code, agents MUST use `view_file` to read the relevant
   local guideline files into active context. When encountering index pages,
@@ -393,6 +442,87 @@ When directed to an index page, directory list, or guide linking to sub-guides
     clean git review histories.
 
 
+## Git Commit Messages
+
+When the repo-wide `manage_commits` skill is auto-discovered, follow its
+commit/amend and workspace rules (`repo upload` in standard Git checkouts vs.
+`gob_vcs` in CoG workspaces) alongside CameraX's stricter length limits (`<= 50`
+char title, `<= 72` char body lines), with each section separated by a blank
+line:
+
+```
+<Commit Title>
+
+<Additional details about the change.>
+
+RelNote: <release note text>
+Bug: <bug id>
+Test: <test instructions>
+```
+
+**Commit Title:**
+- A short, descriptive summary of the change.
+- Use the imperative mood (e.g., "Add feature" not "Added feature").
+- Strictly <= 50 characters (or < 60 characters) to prevent Gerrit upload
+  warnings.
+
+**Additional Details (Optional):**
+- Keep commit messages simple, direct, and easy to scan.
+- Explain the problem the change solves and the approach taken.
+- Provide context for the change.
+- Prefer concise, clear, and readable messages without losing any required
+  info. Using bullet points to summarize specific changes can help with
+  readability.
+
+**RelNote:**
+- Focus on the observable impact for developers using the library (the "What",
+  not the "How"). Do not mention implementation details or internal test apps
+  (like `core-test-app`) in the RelNote.
+- This will be used to generate release notes.
+- **Requirement**: Should only be added for public API changes (e.g., changes
+  in `camera/**/api/` directories) or bugs impacting public users.
+- **When to omit** (CameraX override over generic `manage_commits`): If a change
+  is an internal bug fix, a fix/follow-up for an unreleased feature or API not
+  yet released to developers, refactoring, test/doc update, or change to
+  restricted APIs marked with `@RestrictTo` (without a public API or
+  user-facing behavior change), **do not add the RelNote tag at all**.
+- **Edge cases**: `RelNote: N/A` can be used if a release note is explicitly
+  not applicable despite a public API change, e.g. when reverting a CL that had
+  a public API change meant for release.
+- Refer to https://developer.android.com/jetpack/androidx/releases/camera for
+  previous examples.
+
+**Bug:**
+- The ID(s) of the bug(s) this commit fixes. List each bug ID on a new line,
+  prefixed with 'Bug:'.
+  Example:
+  ```
+  Bug: 123456
+  Bug: 123457
+  ```
+
+**Test:**
+- Describe the tests that were added or modified to verify the change.
+- Mention any manual testing steps if applicable. Use project names like
+  `core-test-app` instead of specific activity names where appropriate.
+
+### Git Commit Amend
+
+Some git commit messages contain a `Change-Id:` line (usually as the last line)
+required by the Gerrit code review system. This ID is essential for updating
+existing CLs.
+
+When amending a previous commit (e.g., with `git commit --amend`):
+- **Do not modify or remove this line.**
+- **CRITICAL: NEVER use the `-m` flag** alone when amending. It replaces the
+  *entire* message, stripping the `Change-Id` and causing CL upload to create a
+  duplicate CL.
+- **Best Practice**: Run `git log -1` first to capture the existing message/ID.
+  When using `-m`, ensure you manually append the correct `Change-Id` to the
+  end of the new message.
+- **Recovery**: If the ID is lost, find it in the previous commit via
+  `git reflog` and `git log`, then re-amend to restore it.
+
 
 ## Skill: CameraX Agent Guidelines & Experience Capture
 
@@ -510,6 +640,37 @@ Route documentation updates according to repository scope:
   all 4 `camera/.agents/skills/*/SKILL.md` files (plus `AGENTS_INTERNAL.md` and
   its companion skills when internal tools are configured) to refresh any
   affected routing tables, chapter/section numbers, or shared rubrics.
+
+#### 6. All-Stage `.md`, `SKILL.md` & Tool/Script Update Checklist
+Whenever updating any `.md` guide, `SKILL.md` skill, or helper script/tool,
+enforce this 4-stage checklist:
+1. **Stage 1 — Pre-Update Sync & Zero-Knowledge-Loss Splitting**:
+   - Sync target repositories to latest `HEAD` before editing.
+   - **Never Delete Valid Existing Knowledge to Fit Size Caps**: When a `.md` or
+     `SKILL.md` file nears its byte/line budget, **never strip or gut valid
+     existing rules, examples, or capabilities** (remove content *only* if
+     genuinely obsolete or contradicted by current architecture). Instead,
+     **split or move** self-contained sections to a sibling `SKILL.md` file that
+     has headroom and leave a clear cross-reference pointer.
+2. **Stage 2 — Long-Term Durability (`1-Year Litmus Test`)**:
+   - Express rules in terms of durable architectural roles, package contracts
+     ("object jobs"), and dynamic verification steps using representative `e.g.`
+     anchors rather than brittle line numbers or transient IDs.
+3. **Stage 3 — Multi-Environment & Infra-Resilient Tool/Script Design**:
+   - When creating or updating any script or CLI tool (`.sh`, `.py`), design for
+     diverse team member machines, headless/container/team-agent environments,
+     and future infra/folder shifts: avoid hardcoded personal usernames, `$HOME`
+     paths, or single-environment assumptions; implement multi-tier discovery
+     and fallback chains (e.g., CLI flag -> env var -> upward CWD walk -> MRU
+     state file -> standard default / bounded marker scan) with automatic
+     self-healing when a cached folder or marker is moved or deleted.
+4. **Stage 4 — Test Coverage, Cross-File Refresh & Multi-Model Audit**:
+   - Add/update unit and edge-case tests (e.g., Gradle `test` tasks or script
+     unit test suites) covering normal flows, non-default environments, and
+     recovery paths; run all tests and doc bundle format/alignment checks
+     (including AOSP Gerrit presubmit legal-contract keyword checks); and
+     complete the Step 6 Clean-Context Multi-Model Verification Loop before
+     upload.
 
 
 ---
