@@ -310,6 +310,68 @@ class DomInputStrategyTest {
         }
     }
 
+    /**
+     * When the input is already active (focused), calling [BackingDomInput.focus] again
+     * must not produce spurious selection commands. This also serves as a regression guard
+     * for CMP-10971: the fix for CMP-10978 must not wrap backingElement.focus() in a guard
+     * that skips it when the input is already active, because on iOS Safari the focus() call
+     * is what brings up the software keyboard on repeated taps.
+     *
+     * See https://youtrack.jetbrains.com/issue/CMP-10971
+     * See https://youtrack.jetbrains.com/issue/CMP-10978
+     */
+    @Test
+    fun repeatedFocusWhileActiveProducesNoSelectionCommands() = runTest {
+        val communicator = RecordingCommunicator()
+        val host = document.createElement("div")
+        document.body!!.appendChild(host)
+        val shadowRoot = host.attachShadow(ShadowRootInit(ShadowRootMode.OPEN))
+
+        val container = document.createElement("div") as HTMLElement
+        shadowRoot.appendChild(container)
+
+        val backingDomInput = BackingDomInput(
+            inputContainer = container,
+            imeOptions = ImeOptions.Default,
+            composeCommunicator = communicator,
+        )
+
+        try {
+            backingDomInput.register()
+
+            // Initial focus + populate text with selection at end
+            backingDomInput.focus()
+            awaitAnimationFrame()
+
+            val textFieldValue = TextFieldValue(
+                text = "hello",
+                selection = TextRange(5, 5)
+            )
+            backingDomInput.updateState(textFieldValue)
+            awaitAnimationFrame()
+
+            // Monkey-patch the DOM element's focus() to track whether it's called.
+            // We can't rely on the "focus" event because browsers don't fire it
+            // when .focus() is called on an already-focused element.
+            installFocusTracker(backingDomInput.backingElement)
+
+            // Call focus() again while already active (simulates repeated tap on iOS Safari)
+            backingDomInput.focus()
+            awaitAnimationFrame()
+
+            // No spurious selection commands should be produced
+            val selectionCommands = communicator.editCommands.filterIsInstance<SetSelectionCommand>()
+            assertTrue(
+                selectionCommands.isEmpty(),
+                "Repeated focus on already-active input must not produce selection commands, " +
+                    "but got: $selectionCommands"
+            )
+        } finally {
+            backingDomInput.dispose()
+            host.remove()
+        }
+    }
+
     private suspend fun awaitAnimationFrame() {
         suspendCancellableCoroutine { continuation ->
             window.requestAnimationFrame { continuation.resumeWith(Result.success(Unit)) }
