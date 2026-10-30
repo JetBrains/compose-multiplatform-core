@@ -212,7 +212,11 @@ private class OffsetToFocusedRectNode(
         constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
-        contentSize = IntSize(placeable.width, placeable.height)
+        // Insets are relative to the available area, not to the content that may wrap its size.
+        contentSize = IntSize(
+            width = if (constraints.hasBoundedWidth) constraints.maxWidth else placeable.width,
+            height = if (constraints.hasBoundedHeight) constraints.maxHeight else placeable.height,
+        )
         canSettleOffset = !isSettlingOffset
         isSettlingOffset = false
         currentOffset = calculatedOffset()
