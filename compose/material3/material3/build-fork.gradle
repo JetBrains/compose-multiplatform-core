@@ -57,11 +57,11 @@ androidXMultiplatform {
 
         commonMain.dependencies {
             // Keep pinned unless there is a need for tip of tree behavior
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.7.0")
             // unpinning to use `Style`, will pin to next Alpha.
             implementation(project(":compose:animation:animation-core"))
             api(project(":compose:animation:animation"))
-            api("androidx.navigationevent:navigationevent:$navigationEventVersion")
+            api("androidx.navigationevent:navigationevent:1.1.2")
             implementation(project(":compose:ui:ui-util"))
             api(project(":compose:foundation:foundation-layout"))
             api(project(":compose:material:material-ripple"))
