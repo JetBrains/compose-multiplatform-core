@@ -413,6 +413,35 @@ internal abstract class KeyboardInsetsTest(
     }
 
     @Test
+    fun testFocusableAboveKeyboardDoesNotOffsetWrapContentRoot() = runUIKitInstrumentedTest {
+        var textRectInWindow: DpRect? = null
+
+        setContent({
+            onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
+        }) {
+            val focusRequester = remember { FocusRequester() }
+            // The root content doesn't fill the screen and the text field is far above the keyboard.
+            Column(Modifier.padding(top = 100.dp)) {
+                BasicTextField(
+                    state = rememberTextFieldState("Text"),
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .onGloballyPositioned { coordinates ->
+                            textRectInWindow = coordinates.boundsInWindow().toDpRect(density)
+                        }
+                )
+            }
+
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        assertTrue(keyboardHeight > 0.dp, "Keyboard must be shown")
+        assertEquals(100.dp, textRectInWindow?.top, "Text field must not be offset")
+    }
+
+    @Test
     fun testFocusableAboveKeyboardRefocusBehavior() = runUIKitInstrumentedTest {
         var text1RectInWindow: DpRect? = null
         var text2RectInWindow: DpRect? = null
