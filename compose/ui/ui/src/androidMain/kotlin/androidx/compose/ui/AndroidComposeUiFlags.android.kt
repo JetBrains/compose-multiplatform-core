@@ -79,7 +79,7 @@ public object AndroidComposeUiFlags {
     // TODO: b/529483648
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isDelayAndroidViewsHandlerCreationEnabled: Boolean = true
+    public var isDelayAndroidViewsHandlerCreationEnabled: Boolean = false
 
     /**
      * This flag forces scroll capture to center the content being rendered even if it's already
@@ -147,4 +147,15 @@ public object AndroidComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isShowOnScreenContentPaddingEnabled: Boolean = true
+
+    /**
+     * Enables dispatching nested scroll events from [androidx.compose.ui.viewinterop.AndroidView]
+     * to parent Compose nested scroll connections when the root hosted `View` has
+     * `isNestedScrollingEnabled` set to `false` by default (such as `FrameLayout` or
+     * `FragmentContainerView` wrapping a scrolling child `View`).
+     */
+    // TODO(b/541378736): Cleanup feature flag once proven stable.
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isNestedScrollInteropViewHolderFixEnabled: Boolean = true
 }

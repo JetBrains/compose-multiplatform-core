@@ -23,9 +23,9 @@ import android.os.Build
 import androidx.camera.camera2.compat.workaround.FlashAvailabilityCheckerTest.TestCameraMetadata.Mode
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
-import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.testing.FakeCameraProperties
+import androidx.camera.common.CameraId
 import androidx.camera.common.Metadata
 import com.google.common.truth.Truth
 import java.lang.Class
@@ -81,7 +81,7 @@ class FlashAvailabilityCheckerTest(
         override val keys: Set<CameraCharacteristics.Key<*>> = emptySet(),
         override val requestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
         override val resultKeys: Set<CaptureResult.Key<*>> = emptySet(),
-        override val sessionKeys: Set<CaptureRequest.Key<*>> = emptySet(),
+        override val sessionCaptureRequestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
         override val sessionCharacteristicsKeys: Set<CameraCharacteristics.Key<*>> = emptySet(),
         val physicalMetadata: Map<CameraId, CameraMetadata> = emptyMap(),
         override val physicalRequestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
@@ -92,7 +92,7 @@ class FlashAvailabilityCheckerTest(
             DEFAULT,
         }
 
-        override fun <T> get(key: CameraCharacteristics.Key<T>): T? {
+        override fun <T : Any> get(key: CameraCharacteristics.Key<T>): T? {
             @Suppress("UNCHECKED_CAST")
             return when (mode) {
                 Mode.ALWAYS_NULL -> null

@@ -22,7 +22,6 @@ import android.hardware.camera2.CaptureResult
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.GraphState.GraphStateError
 import androidx.camera.camera2.pipe.GraphState.GraphStateStarted
@@ -36,6 +35,7 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.media.ImageReaderWrapper
+import androidx.camera.common.CameraId
 import androidx.camera.common.ImageWrapper
 import androidx.test.core.app.ApplicationProvider
 import androidx.testutils.assertThrows
@@ -603,6 +603,11 @@ class CameraGraphSimulatorTest {
         assertThat(lastStreamId).isEqualTo(cameraStream.id)
         assertThat(lastOutputId).isEqualTo(cameraStream.outputs.single().id)
         assertThat(lastImage).isNotNull()
+
+        val totalCaptureResultEvent = listener.onTotalCaptureResultFlow.first()
+        assertThat(totalCaptureResultEvent.frameNumber).isEqualTo(completedFrame.frameNumber)
+        assertThat(totalCaptureResultEvent.frameInfo.metadata[CaptureResult.LENS_APERTURE])
+            .isEqualTo(1.8f)
 
         val completeEvent = listener.onCompleteFlow.first()
         assertThat(completeEvent.frameNumber).isEqualTo(completedFrame.frameNumber)

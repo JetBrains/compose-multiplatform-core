@@ -26,7 +26,6 @@ import android.view.Surface
 import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.AudioRestrictionMode
-import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraInterop
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
@@ -35,6 +34,7 @@ import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
 import androidx.camera.camera2.pipe.writeParameter
+import androidx.camera.common.CameraId
 import androidx.camera.common.UnsafeWrapper
 import androidx.camera.common.unwrapAs
 import java.lang.Class
@@ -443,7 +443,7 @@ internal class AndroidCameraDevice(
                 // This compares and sets ONLY the session keys for this camera. Setting parameters
                 // that are not listed in availableSessionKeys can cause an unusual amount of extra
                 // latency.
-                val sessionKeyNames = cameraMetadata.sessionKeys.map { it.name }
+                val sessionKeyNames = cameraMetadata.sessionCaptureRequestKeys.map { it.name }
 
                 // Iterate template parameters and CHECK BY NAME, as there have been cases where
                 // equality checks did not pass.
