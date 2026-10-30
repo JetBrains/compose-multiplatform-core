@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(androidx.compose.ui.platform.ExperimentalComposeUiHostApi::class)
+
 package androidx.compose.ui.platform.accessibility
 
 import androidx.collection.IntSet
