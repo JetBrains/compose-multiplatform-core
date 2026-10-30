@@ -494,9 +494,9 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
             }
         }
 
-        // Pin selectables that have a selection but are not yet pinned
-        selectionRegistrar.subselections.forEach { selectableId, subSelection ->
-            if (subSelection.start.offset == subSelection.end.offset) return@forEach
+        // Pin selectables that have a selection but are not yet pinned. Collapsed selections are
+        // pinned too: a Shift+click extends from their anchor, which must still be registered.
+        selectionRegistrar.subselections.forEach { selectableId, _ ->
             val selectable = selectionRegistrar.selectableMap[selectableId] ?: return@forEach
             val pinnableContainer = selectable.pinnableContainer ?: return@forEach
             if (selectableId !in pinnedHandleBySelectableId) {
