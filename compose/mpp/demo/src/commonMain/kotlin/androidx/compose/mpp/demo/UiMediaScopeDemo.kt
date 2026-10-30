@@ -32,8 +32,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalMediaQueryApi
-import androidx.compose.ui.LocalUiMediaScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.mediaQuery
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMediaQueryApi::class)
 @Composable
 fun UiMediaScopeDemo() {
-    val mediaScope = LocalUiMediaScope.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     var text by rememberSaveable { mutableStateOf("") }
@@ -50,7 +49,7 @@ fun UiMediaScopeDemo() {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("keyboardKind: ${mediaScope.keyboardKind}")
+        Text("keyboardKind: ${mediaQuery { keyboardKind }}")
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
@@ -65,14 +64,14 @@ fun UiMediaScopeDemo() {
             Text("Hide keyboard")
         }
 
-        Text("windowWidth: ${mediaScope.windowWidth}")
-        Text("windowHeight: ${mediaScope.windowHeight}")
-        Text("windowPosture: ${mediaScope.windowPosture}")
-        Text("isFlat: ${mediaScope.windowPosture.isFlat}")
-        Text("isTabletop: ${mediaScope.windowPosture.isTabletop}")
-        Text("pointerPrecision: ${mediaScope.pointerPrecision}")
-        Text("hasMicrophone: ${mediaScope.hasMicrophone}")
-        Text("hasCamera: ${mediaScope.hasCamera}")
-        Text("viewingDistance: ${mediaScope.viewingDistance}")
+        Text("windowWidth: ${mediaQuery { windowWidth }}")
+        Text("windowHeight: ${mediaQuery { windowHeight }}")
+        Text("windowPosture: ${mediaQuery { windowPosture }}")
+        Text("isFlat: ${mediaQuery { windowPosture.isFlat }}")
+        Text("isTabletop: ${mediaQuery { windowPosture.isTabletop }}")
+        Text("pointerPrecision: ${mediaQuery { pointerPrecision }}")
+        Text("hasMicrophone: ${mediaQuery { hasMicrophone }}")
+        Text("hasCamera: ${mediaQuery { hasCamera }}")
+        Text("viewingDistance: ${mediaQuery { viewingDistance }}")
     }
 }
