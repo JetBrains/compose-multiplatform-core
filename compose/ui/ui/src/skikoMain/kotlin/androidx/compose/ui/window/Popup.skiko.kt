@@ -37,6 +37,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.EmptyLayout
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -570,47 +571,51 @@ private fun rememberPopupMeasurePolicy(
     containerSize: IntSize,
     platformInsets: PlatformInsets,
     layoutDirection: LayoutDirection,
-    parentBoundsInWindow: MutableState<IntRect?>
-) = remember(
-    layer,
-    popupPositionProvider,
-    properties,
-    containerSize,
-    platformInsets,
-    layoutDirection,
-    parentBoundsInWindow
-) {
-    ComposeSceneLayerMeasurePolicy(
-        platformInsets = platformInsets,
-        usePlatformDefaultWidth = properties.usePlatformDefaultWidth
-    ) { contentSize ->
-        val parentRectInWindow = parentBoundsInWindow.value
-        if (parentRectInWindow == null) {
-            // Keep an unanchored layer out of the visible window until its content is measured.
-            layer.boundsInWindow = IntRect.Zero
-            return@ComposeSceneLayerMeasurePolicy IntOffset.Zero
-        }
-        val positionWithInsets =
-            positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
-                // Position provider works in coordinates without insets.
-                val boundsWithoutInsets = parentRectInWindow.translate(
-                    -platformInsets.left,
-                    -platformInsets.top
-                )
-                val positionInWindow = popupPositionProvider.calculatePosition(
-                    anchorBounds = boundsWithoutInsets,
-                    windowSize = sizeWithoutInsets,
-                    layoutDirection = layoutDirection,
-                    popupContentSize = contentSize
-                )
-                if (properties.clippingEnabled) {
-                    clipPosition(positionInWindow, contentSize, sizeWithoutInsets)
-                } else {
-                    positionInWindow
-                }
+    parentBoundsInWindow: MutableState<IntRect?>,
+): MeasurePolicy {
+    val constraintsModifier = rememberPlatformConstraintsModifier(properties.usePlatformDefaultWidth)
+    return remember(
+        layer,
+        popupPositionProvider,
+        properties,
+        containerSize,
+        platformInsets,
+        layoutDirection,
+        parentBoundsInWindow,
+        constraintsModifier
+    ) {
+        ComposeSceneLayerMeasurePolicy(
+            platformInsets = platformInsets,
+            constraintsModifier = constraintsModifier
+        ) { contentSize ->
+            val parentRectInWindow = parentBoundsInWindow.value
+            if (parentRectInWindow == null) {
+                // Keep an unanchored layer out of the visible window until its content is measured.
+                layer.boundsInWindow = IntRect.Zero
+                return@ComposeSceneLayerMeasurePolicy IntOffset.Zero
             }
-        layer.boundsInWindow = IntRect(positionWithInsets, contentSize)
-        layer.calculateLocalPosition(positionWithInsets)
+            val positionWithInsets =
+                positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
+                    // Position provider works in coordinates without insets.
+                    val boundsWithoutInsets = parentRectInWindow.translate(
+                        -platformInsets.left,
+                        -platformInsets.top
+                    )
+                    val positionInWindow = popupPositionProvider.calculatePosition(
+                        anchorBounds = boundsWithoutInsets,
+                        windowSize = sizeWithoutInsets,
+                        layoutDirection = layoutDirection,
+                        popupContentSize = contentSize
+                    )
+                    if (properties.clippingEnabled) {
+                        clipPosition(positionInWindow, contentSize, sizeWithoutInsets)
+                    } else {
+                        positionInWindow
+                    }
+                }
+            layer.boundsInWindow = IntRect(positionWithInsets, contentSize)
+            layer.calculateLocalPosition(positionWithInsets)
+        }
     }
 }
 
