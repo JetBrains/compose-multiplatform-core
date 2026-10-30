@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.ExperimentalMediaQueryApi
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.KeyEvent
@@ -27,6 +29,7 @@ import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebHapticFeedback
+import androidx.compose.ui.platform.WebMediaScope
 import androidx.compose.ui.platform.WebOutOfFrameExecutor
 import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.platform.WebTextInputService
@@ -64,6 +67,9 @@ internal abstract class WebWindowPlatformContext(
     protected abstract fun sendKeyEvent(keyEvent: KeyEvent): Boolean
 
     override val textToolbar: WebTextToolbar = WebTextToolbar()
+
+    @ExperimentalMediaQueryApi
+    override val mediaScope: WebMediaScope = WebMediaScope(windowInfo)
 
     override val screenReader: PlatformScreenReader
         get() = object : PlatformScreenReader {
