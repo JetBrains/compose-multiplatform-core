@@ -25,7 +25,6 @@ import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
-import kotlin.js.unsafeCast
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -350,10 +349,8 @@ class DomInputStrategyTest {
             backingDomInput.updateState(textFieldValue)
             awaitAnimationFrame()
 
-            // Monkey-patch the DOM element's focus() to track whether it's called.
-            // We can't rely on the "focus" event because browsers don't fire it
-            // when .focus() is called on an already-focused element.
-            installFocusTracker(backingDomInput.backingElement)
+            // Clear any commands from the setup phase
+            communicator.editCommands.clear()
 
             // Call focus() again while already active (simulates repeated tap on iOS Safari)
             backingDomInput.focus()
