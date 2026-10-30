@@ -31,17 +31,55 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
+import org.w3c.dom.pointerevents.PointerEvent
+import org.w3c.dom.pointerevents.PointerEventInit
 
 class KeyEventTests : OnCanvasTests {
+
+    @Test
+    fun inputModeChangesToKeyboardBeforePreviewKeyEvent() = runTest {
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        var modeInPreview: InputMode? = null
+
+        createComposeWindow {
+            inputModeManager = LocalInputModeManager.current
+            Box(
+                modifier = Modifier.fillMaxSize().focusRequester(focusRequester).onPreviewKeyEvent {
+                    modeInPreview = inputModeManager.inputMode
+                    false
+                }.focusTarget()
+            )
+            SideEffect { focusRequester.requestFocus() }
+        }
+
+        for ((key, code) in listOf("a" to "KeyA", "Tab" to "Tab", "ArrowRight" to "ArrowRight")) {
+            dispatchEvents(
+                PointerEvent("pointerenter", PointerEventInit(clientX = 8, clientY = 8, pointerType = "mouse")),
+                PointerEvent("pointerdown", PointerEventInit(clientX = 8, clientY = 8, button = 0, buttons = 1, pointerType = "mouse")),
+                PointerEvent("pointerup", PointerEventInit(clientX = 8, clientY = 8, button = 0, buttons = 0, pointerType = "mouse"))
+            )
+            assertEquals(InputMode.Touch, inputModeManager.inputMode, "After clicking before $key")
+
+            modeInPreview = null
+            dispatchEvents(keyEvent(key, code = code, composed = true))
+            assertEquals(InputMode.Keyboard, modeInPreview, "During preview for $key")
+            assertEquals(InputMode.Keyboard, inputModeManager.inputMode, "After $key")
+        }
+    }
+
     @Test
     // https://github.com/JetBrains/compose-multiplatform/issues/3644
     fun keyMappingIsValid() = runTest {
