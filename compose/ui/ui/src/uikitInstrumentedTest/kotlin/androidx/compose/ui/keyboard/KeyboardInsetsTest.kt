@@ -801,9 +801,15 @@ internal abstract class KeyboardInsetsTest(
                         }
                 )
             }
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
+            LaunchedEffect(sheetState.currentValue) {
+                if (sheetState.currentValue == SheetValue.Expanded) {
+                    focusRequester.requestFocus()
+                }
             }
+        }
+
+        waitUntil("Bottom sheet text field must settle above the keyboard") {
+            keyboardHeight > 0.dp && lastTextFieldFrame.bottom == screenSize.height - keyboardHeight
         }
 
         assertEquals(screenSize.height - keyboardHeight, lastTextFieldFrame.bottom)

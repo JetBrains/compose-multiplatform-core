@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(androidx.compose.ui.platform.ExperimentalComposeUiHostApi::class)
+
 package androidx.compose.ui.platform.accessibility
 
 import androidx.collection.IntSet
@@ -25,8 +27,8 @@ import androidx.compose.ui.platform.getString
 import androidx.compose.ui.semantics.AccessibilityAction
 import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsPropertyProvider
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsProperties.HideFromAccessibility
 import androidx.compose.ui.semantics.SemanticsProperties.InvisibleToUser
@@ -328,7 +330,7 @@ internal fun SemanticsNode.canBeAccessibilityElement(): Boolean {
     return replacedChildren.isEmpty()
 }
 
-private val SemanticsConfiguration.isActionableNode: Boolean
+private val SemanticsPropertyProvider.isActionableNode: Boolean
     get() = (contains(SemanticsActions.RequestFocus) ||
         contains(SemanticsActions.OnClick) ||
         contains(SemanticsActions.OnLongClick) ||
@@ -345,7 +347,7 @@ private val SemanticsConfiguration.isActionableNode: Boolean
         contains(SemanticsActions.Dismiss) ||
         contains(SemanticsActions.CustomActions))
 
-private val SemanticsConfiguration.isSpeakingNode: Boolean get() {
+private val SemanticsPropertyProvider.isSpeakingNode: Boolean get() {
     return contains(SemanticsProperties.ContentDescription) ||
         contains(SemanticsProperties.EditableText) ||
         contains(SemanticsProperties.Text) ||
