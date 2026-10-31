@@ -48,7 +48,10 @@ class ModalBottomSheetTest {
                         Modifier
                             .fillMaxWidth()
                             .height(10.dp)
-                            .onGloballyPositioned { contentRect = it.boundsInWindow().toDpRect(density) }
+                            .onGloballyPositioned {
+                                contentRect = it.boundsInWindow().toDpRect(density)
+                                println("Sheet content: $contentRect, safe drawing: $safeDrawingRect, screen: $screenSize")
+                            }
                     )
                 }
             )

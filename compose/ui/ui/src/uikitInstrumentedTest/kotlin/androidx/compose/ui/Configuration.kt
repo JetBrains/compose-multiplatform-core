@@ -23,6 +23,9 @@ import platform.XCTest.XCTestSuite
 @Suppress("unused")
 @OptIn(ExperimentalForeignApi::class)
 fun testSuite(): XCTestSuite = setupXCTestSuite(
+    androidx.compose.ui.layers.ModalBottomSheetTest::class,
+    androidx.compose.ui.keyboard.KeyboardInsetsInHostingViewControllerTest::testFocusableAboveKeyboardInModalBottomSheet,
+    androidx.compose.ui.keyboard.KeyboardInsetsInHostingViewTest::testFocusableAboveKeyboardInModalBottomSheet,
     // Run all test cases from the tests
     // BasicInteractionTest::class,
     // LayersAccessibilityTest::class,
