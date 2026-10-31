@@ -37,8 +37,10 @@ import androidx.compose.ui.uikit.PlistSanityCheck
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
@@ -116,6 +118,11 @@ internal class ComposeContainer(
     )
     private val windowContext = WindowContext()
     private var layersHolder: ComposeLayersHolder? = null
+
+    private val layersBackdropBlurRadius: Dp
+        get() = layersHolder?.layersViewController?.backdropBlurRadius ?: 0.dp
+
+    private var drawnBackdropBlurRadius: Dp = 0.dp
     private var layoutDirection = getApplicationLayoutDirection()
         set(value) {
             field = value
@@ -249,7 +256,10 @@ internal class ComposeContainer(
             draw = { canvas ->
              canvasHolder.drawInto(canvas) {
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
+                    val blurRadius = layersBackdropBlurRadius
+                    drawnBackdropBlurRadius = blurRadius
                     mediator?.draw(this@drawInto)
+                    blurBackdrop(blurRadius, view.density)
                 }
               }
             }
@@ -321,7 +331,8 @@ internal class ComposeContainer(
                 onDraw = { needsSynchronousDraw ->
                     metalView.redrawer.onDraw(
                         needsSynchronousDraw = needsSynchronousDraw,
-                        needsDraw = mediator.needsComposeSceneDraw,
+                        needsDraw = mediator.needsComposeSceneDraw ||
+                            layersBackdropBlurRadius != drawnBackdropBlurRadius,
                         retrievePendingViewUpdatesInteropTransaction =
                             mediator::retrievePendingViewUpdatesInteropTransaction,
                     )
