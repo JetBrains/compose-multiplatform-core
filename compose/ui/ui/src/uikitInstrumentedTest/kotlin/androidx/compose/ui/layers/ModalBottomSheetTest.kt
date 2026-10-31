@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -43,15 +45,16 @@ class ModalBottomSheetTest {
         setContent {
             ModalBottomSheet(
                 onDismissRequest = {},
+                sheetState = rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+                ),
                 content = {
                     Box(
                         Modifier
                             .fillMaxWidth()
                             .height(10.dp)
-                            .onGloballyPositioned {
-                                contentRect = it.boundsInWindow().toDpRect(density)
-                                println("Sheet content: $contentRect, safe drawing: $safeDrawingRect, screen: $screenSize")
-                            }
+                            .onGloballyPositioned { contentRect = it.boundsInWindow().toDpRect(density) }
                     )
                 }
             )

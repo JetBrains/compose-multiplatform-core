@@ -16,9 +16,6 @@
 
 package androidx.compose.ui
 
-import androidx.compose.ui.keyboard.KeyboardInsetsInHostingViewControllerTest
-import androidx.compose.ui.keyboard.KeyboardInsetsInHostingViewTest
-import androidx.compose.ui.layers.ModalBottomSheetTest
 import androidx.compose.xctest.setupXCTestSuite
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.XCTest.XCTestSuite
@@ -26,18 +23,6 @@ import platform.XCTest.XCTestSuite
 @Suppress("unused")
 @OptIn(ExperimentalForeignApi::class)
 fun testSuite(): XCTestSuite = setupXCTestSuite(
-    testCases = mapOf(
-        ModalBottomSheetTest::class.qualifiedName to setOf(
-            ModalBottomSheetTest::testContentBottomInset,
-            ModalBottomSheetTest::testContentBottomInsetWithKeyboardOpen
-        ),
-        KeyboardInsetsInHostingViewControllerTest::class.qualifiedName to setOf(
-            KeyboardInsetsInHostingViewControllerTest::testFocusableAboveKeyboardInModalBottomSheet
-        ),
-        KeyboardInsetsInHostingViewTest::class.qualifiedName to setOf(
-            KeyboardInsetsInHostingViewTest::testFocusableAboveKeyboardInModalBottomSheet
-        )
-    )
     // Run all test cases from the tests
     // BasicInteractionTest::class,
     // LayersAccessibilityTest::class,

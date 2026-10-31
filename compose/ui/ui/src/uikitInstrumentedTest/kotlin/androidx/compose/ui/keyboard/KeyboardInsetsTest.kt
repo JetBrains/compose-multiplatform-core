@@ -798,12 +798,13 @@ internal abstract class KeyboardInsetsTest(
                         .focusRequester(focusRequester)
                         .onGloballyPositioned { coordinates ->
                             lastTextFieldFrame = coordinates.boundsInWindow().toDpRect(density)
-                            println("Sheet text field: $lastTextFieldFrame, keyboard: $keyboardHeight, screen: $screenSize")
                         }
                 )
             }
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
+            LaunchedEffect(sheetState.currentValue) {
+                if (sheetState.currentValue == SheetValue.Expanded) {
+                    focusRequester.requestFocus()
+                }
             }
         }
 
