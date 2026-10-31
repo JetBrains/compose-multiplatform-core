@@ -806,6 +806,10 @@ internal abstract class KeyboardInsetsTest(
             }
         }
 
+        waitUntil("Bottom sheet text field must settle above the keyboard") {
+            keyboardHeight > 0.dp && lastTextFieldFrame.bottom == screenSize.height - keyboardHeight
+        }
+
         assertEquals(screenSize.height - keyboardHeight, lastTextFieldFrame.bottom)
     }
 

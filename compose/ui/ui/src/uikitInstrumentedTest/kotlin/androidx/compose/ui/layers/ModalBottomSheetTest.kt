@@ -54,6 +54,10 @@ class ModalBottomSheetTest {
             )
         }
 
+        waitUntil("Bottom sheet content must settle above the safe drawing inset") {
+            contentRect.bottom == safeDrawingRect.bottom
+        }
+
         assertEquals(safeDrawingRect.bottom, contentRect.bottom)
     }
 
