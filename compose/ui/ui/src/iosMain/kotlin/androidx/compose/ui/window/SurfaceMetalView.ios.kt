@@ -21,6 +21,7 @@ import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
+import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.ObjCClass
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
@@ -34,6 +35,9 @@ import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.CoreGraphics.CGSizeMake
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSSelectorFromString
+import platform.UIKit.UIApplicationDidReceiveMemoryWarningNotification
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIView
@@ -77,6 +81,23 @@ internal class SurfaceMetalView(
         metalLayer.contentsScale = this.contentScaleFactor
 
         updateCanvasBackgroundColor()
+
+        NSNotificationCenter.defaultCenter.addObserver(
+            observer = this,
+            selector = NSSelectorFromString(::applicationDidReceiveMemoryWarning.name),
+            name = UIApplicationDidReceiveMemoryWarningNotification,
+            `object` = null
+        )
+    }
+
+    // Out of the window, the Skia context keeps its GPU memory until the view is disposed;
+    // release it when the system runs low on memory.
+    @OptIn(BetaInteropApi::class)
+    @ObjCAction
+    fun applicationDidReceiveMemoryWarning() {
+        if (window == null) {
+            redrawer.releaseRenderingResources()
+        }
     }
 
     override fun traitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
@@ -97,6 +118,11 @@ internal class SurfaceMetalView(
     }
 
     fun dispose() {
+        NSNotificationCenter.defaultCenter.removeObserver(
+            observer = this,
+            name = UIApplicationDidReceiveMemoryWarningNotification,
+            `object` = null
+        )
         cancelPendingDrawableDrain()
         redrawer.dispose()
     }
