@@ -35,9 +35,11 @@ import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.window.FocusedViewsList
@@ -63,7 +65,7 @@ internal class IosComposeSceneLayer(
     private val mediaScope: IosUiMediaScope,
     private var invalidateLayout: () -> Unit,
     private var invalidateDraw: () -> Unit,
-) : ComposeSceneLayer {
+) : BackdropBlurComposeSceneLayer {
     private val layerJob = Job()
     private val layerCoroutineContext = parentCoroutineContext + layerJob
 
@@ -169,6 +171,14 @@ internal class IosComposeSceneLayer(
             }
         }
 
+    override var backdropBlurRadius: Dp = 0.dp
+        set(value) {
+            if (field != value) {
+                field = value
+                layersViewController.updateBackdropBlurRadius()
+            }
+        }
+
     private val scrimPaint = Paint()
 
     private fun onDidMoveToWindow(window: UIWindow?) {
@@ -181,6 +191,7 @@ internal class IosComposeSceneLayer(
     fun doMeasureAndLayout() = mediator.requestMeasureAndLayout()
 
     fun draw(canvas: Canvas) {
+        canvas.blurBackdrop(backdropBlurRadius, density)
         if (scrimColor != null) {
             val density = windowContext.screenDensity
             val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)

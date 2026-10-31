@@ -55,14 +55,18 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.exclude
 import androidx.compose.ui.platform.union
+import androidx.compose.ui.scene.BackdropBlurComposeSceneLayer
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
+import androidx.compose.ui.scene.isBackdropBlurEnabled
 import androidx.compose.ui.scene.rememberComposeSceneLayer
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
@@ -97,6 +101,9 @@ private const val AnimatedLayerDisappearanceDuration = 0.1
  * software keyboard inset.
  * @property scrimColor Color of background fill.
  * @property animateTransition Whether to animate the appearance and disappearance of the dialog.
+ * @property blurBehindRadius Blurs the content behind the dialog. [Dp.Unspecified] or `0.dp` means
+ * no blur. The content is blurred only where the dialog shares a canvas with it: on iOS, web, and on
+ * desktop unless the dialog is placed in a separate Swing component or window.
  */
 @Immutable
 actual class DialogProperties @ExperimentalComposeUiApi constructor(
@@ -108,11 +115,13 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
     val scrimColor: Color = DefaultScrimColor,
     @property:ExperimentalComposeUiApi
     val animateTransition: Boolean = ComposeUiFlags.isDialogAnimationEnabled,
+    actual val blurBehindRadius: Dp = Dp.Unspecified,
 ) {
     actual constructor(
         dismissOnBackPress: Boolean,
         dismissOnClickOutside: Boolean,
         usePlatformDefaultWidth: Boolean,
+        blurBehindRadius: Dp,
     ) : this(
         dismissOnBackPress = dismissOnBackPress,
         dismissOnClickOutside = dismissOnClickOutside,
@@ -120,8 +129,41 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
         usePlatformInsets = true,
         useSoftwareKeyboardInset = true,
         scrimColor = DefaultScrimColor,
+        blurBehindRadius = blurBehindRadius,
     )
 
+    constructor(
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        usePlatformDefaultWidth: Boolean = true,
+        usePlatformInsets: Boolean = true,
+        useSoftwareKeyboardInset: Boolean = true,
+        scrimColor: Color = DefaultScrimColor,
+        blurBehindRadius: Dp = Dp.Unspecified,
+    ) : this(
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        usePlatformInsets = usePlatformInsets,
+        useSoftwareKeyboardInset = useSoftwareKeyboardInset,
+        scrimColor = scrimColor,
+        animateTransition = ComposeUiFlags.isDialogAnimationEnabled,
+        blurBehindRadius = blurBehindRadius,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    constructor(
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        usePlatformDefaultWidth: Boolean = true,
+    ) : this(
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        blurBehindRadius = Dp.Unspecified,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
     constructor(
         dismissOnBackPress: Boolean = true,
         dismissOnClickOutside: Boolean = true,
@@ -136,7 +178,28 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
         usePlatformInsets = usePlatformInsets,
         useSoftwareKeyboardInset = useSoftwareKeyboardInset,
         scrimColor = scrimColor,
-        animateTransition = ComposeUiFlags.isDialogAnimationEnabled,
+        blurBehindRadius = Dp.Unspecified,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    @ExperimentalComposeUiApi
+    constructor(
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        usePlatformDefaultWidth: Boolean = true,
+        usePlatformInsets: Boolean = true,
+        useSoftwareKeyboardInset: Boolean = true,
+        scrimColor: Color = DefaultScrimColor,
+        animateTransition: Boolean = ComposeUiFlags.isDialogAnimationEnabled,
+    ) : this(
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        usePlatformInsets = usePlatformInsets,
+        useSoftwareKeyboardInset = useSoftwareKeyboardInset,
+        scrimColor = scrimColor,
+        animateTransition = animateTransition,
+        blurBehindRadius = Dp.Unspecified,
     )
 
     override fun equals(other: Any?): Boolean {
@@ -150,6 +213,7 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
         if (useSoftwareKeyboardInset != other.useSoftwareKeyboardInset) return false
         if (scrimColor != other.scrimColor) return false
         if (animateTransition != other.animateTransition) return false
+        if (blurBehindRadius != other.blurBehindRadius) return false
 
         return true
     }
@@ -162,6 +226,7 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
         result = 31 * result + useSoftwareKeyboardInset.hashCode()
         result = 31 * result + scrimColor.hashCode()
         result = 31 * result + animateTransition.hashCode()
+        result = 31 * result + blurBehindRadius.hashCode()
         return result
     }
 }
@@ -299,6 +364,7 @@ private class DialogAppearanceController(
         }
         appearanceProgress = 1f
         layer.scrimColor = properties.scrimColor
+        updateBackdropBlur(progress = 1f)
     }
 
     fun hideDialog() {
@@ -346,6 +412,13 @@ private class DialogAppearanceController(
     private fun updateScrimLayerColor(progress: Float) {
         layer.scrimColor =
             properties.scrimColor.copy(properties.scrimColor.alpha * contentAlpha(progress))
+        updateBackdropBlur(progress)
+    }
+
+    private fun updateBackdropBlur(progress: Float) {
+        if (layer !is BackdropBlurComposeSceneLayer) return
+        val radius = properties.blurBehindRadius
+        layer.backdropBlurRadius = if (radius.isBackdropBlurEnabled) radius * progress else 0.dp
     }
 
     private fun contentAlpha(progress: Float): Float =
