@@ -941,10 +941,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.setUpBlankProguardFileForJarIfNeeded(javaExtension)
         project.configureJavaCompilationWarnings(androidXExtension)
 
-        if (
-            project.multiplatformExtension == null ||
-                project.multiplatformExtension!!.hasJavaEnabled()
-        ) {
+        if (project.multiplatformExtension == null) {
             project.configureDependencyVerification(androidXExtension) { taskProvider ->
                 taskProvider.configure { task ->
                     task.dependsOn(project.tasks.named(JavaPlugin.COMPILE_JAVA_TASK_NAME))
@@ -1652,10 +1649,6 @@ private fun Project.enforceBanOnVersionRanges() {
 internal fun Project.hasAndroidMultiplatformPlugin(): Boolean =
     extensions.findByType(AndroidXMultiplatformExtension::class.java)?.hasAndroidMultiplatform()
         ?: false
-
-@Suppress("DEPRECATION")
-internal fun KotlinMultiplatformExtension.hasJavaEnabled(): Boolean =
-    targets.withType(KotlinJvmTarget::class.java).singleOrNull()?.withJavaEnabled ?: false
 
 internal fun KotlinMultiplatformExtension.hasJvmTarget(): Boolean =
     targets.withType(KotlinJvmTarget::class.java).isEmpty().not()
