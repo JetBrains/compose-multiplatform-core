@@ -15,6 +15,14 @@
  */
 
 #import "CMPTextInputView.h"
+#import "CMPBaseProxy.h"
+
+@protocol CMPTextInputReplacement <NSObject>
+
+- (nullable UITextRange *)range;
+- (nullable NSString *)replacementText;
+
+@end
 
 @interface CMPTextInputView ()
 
@@ -124,6 +132,18 @@
 - (nullable UITextPosition *)positionWithinRangeAtCharacterOffset:(UITextRange *)range
                                                 atCharacterOffset:(NSInteger)offset {
     CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (void)replace:(NSObject *)replacement {
+    id<CMPTextInputReplacement> proxy = (id<CMPTextInputReplacement>)[[CMPBaseProxy alloc] initWithObject:replacement
+                                                                                                 protocol:@protocol(CMPTextInputReplacement)];
+    NSString *text = proxy.replacementText;
+    UITextRange *range = proxy.range;
+
+    if (![text isKindOfClass:[NSString class]] || ![range isKindOfClass:[UITextRange class]]) {
+        return;
+    }
+    [self replaceRange:range withText:text];
 }
 
 - (void)deleteBackward {
