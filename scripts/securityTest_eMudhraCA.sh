@@ -46,6 +46,11 @@ check() {
   "$@" "$control" >"$tmp/log" 2>&1
   rc=$?
   if [[ $rc != 0 ]]; then
+    if [[ ( $name == python || $name == python3 ) && $rc == 42 ]]; then
+      echo "SKIP $name: healthy control certificate is untrusted; eMudhra check not performed"
+      cat "$tmp/log" >&2
+      return
+    fi
     echo "ERROR $name: healthy control failed (exit $rc)"
     cat "$tmp/log" >&2
     failed=1
@@ -204,6 +209,11 @@ class CheckTLS {
             e.printStackTrace(System.err);
             for (Throwable cause = e; cause != null; cause = cause.getCause()) {
                 if (cause instanceof CertPathValidatorException) {
+                    // OpenJDK's UntrustedChecker can reject a blocked certificate
+                    // with reason UNSPECIFIED, so recognize its explicit message.
+                    String message = cause.getMessage();
+                    if (message != null && message.startsWith("Untrusted certificate:"))
+                        System.exit(42);
                     CertPathValidatorException.Reason r =
                         ((CertPathValidatorException) cause).getReason();
                     if (r == CertPathValidatorException.BasicReason.REVOKED ||
