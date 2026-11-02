@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.subtreeSortedByGeometryGrouping
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.time.Duration.Companion.milliseconds
@@ -143,6 +144,12 @@ internal class ComposeWebSemanticsListener(
         // Event delegation: all nodes delegate to global accessibility action listeners.
         webSemanticsRoot.addEventListener("click", onClick)
         webSemanticsRoot.addEventListener("keydown", onKeyDown)
+        webSemanticsRoot.addEventListener("focusin", onFocusIn)
+        webSemanticsRoot.addEventListener("focusout", clearA11YFocus)
+        // Clear virtual-cursor focus even when DOM focus moves outside the semantics tree.
+        // The root's focusin listener records an A11Y target after this capture listener runs.
+        document.addEventListener("focusin", clearA11YFocus, true)
+        document.addEventListener("focusout", clearA11YFocus)
     }
 
     private val semanticsOwners = mutableObjectListOf<SemanticsOwner>()
@@ -185,20 +192,32 @@ internal class ComposeWebSemanticsListener(
     // Responsible for scroll synchronization between Compose and Dom tree
     private val a11YScrollController = A11YScrollController(idToA11YNode, a11yNodeToSemanticsNode)
 
+    private var focusedA11YNode: HTMLElement? = null
+
+    private val onFocusIn: (Event) -> Unit = { event ->
+        focusedA11YNode = (event.target as? HTMLElement)
+            ?.takeIf { a11yNodeToSemanticsNode.containsKey(it) }
+    }
+
+    private val clearA11YFocus: (Event) -> Unit = {
+        focusedA11YNode = null
+    }
+
     /**
      * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
      * It's expected to be triggered by A11Y tools and tests (element.click()), not by pointer input.
      */
     private val onClick: (Event) -> Unit = onClick@ { event ->
-        val semanticsNode = (event.target as? HTMLElement)
-            ?.let { a11yNodeToSemanticsNode[it] }
-            ?: return@onClick
+        val htmlNode = event.target as? HTMLElement ?: return@onClick
+        val semanticsNode = a11yNodeToSemanticsNode[htmlNode] ?: return@onClick
 
         val config = semanticsNode.config
 
         if (!config.contains(SemanticsProperties.Disabled) &&
             config.contains(SemanticsActions.OnClick)
         ) {
+            // A screen reader's virtual cursor can activate an element without giving it DOM focus.
+            focusedA11YNode = htmlNode
             config[SemanticsActions.OnClick].action?.invoke()
         }
     }
@@ -224,6 +243,8 @@ internal class ComposeWebSemanticsListener(
      * position changes.
      */
     private fun syncSemanticsWithWebA11Y() {
+        // Removing the focused element can dispatch focusout synchronously, so remember it first.
+        val focusedBeforeSync = focusedA11YNode
         targetParentToChildren.clear()
         targetChildToParent.clear()
 
@@ -256,6 +277,35 @@ internal class ComposeWebSemanticsListener(
 
         a11YScrollController.applyScrollOffsets()
         updateInertRoots()
+
+        if (focusedBeforeSync != null &&
+            (!focusedBeforeSync.isConnected || focusedBeforeSync.closest("[inert]") != null)
+        ) {
+            focusFirstA11YNode()
+        }
+    }
+
+    private fun focusFirstA11YNode() {
+        focusedA11YNode = null
+        for (index in 0 until semanticsOwners.size) {
+            val root = semanticsOwners[index].rootSemanticsNode
+            // Draw/DOM order can put a Scaffold's body before its top bar. Use the same geometry
+            // and traversal-group ordering as native accessibility to find the first element.
+            val candidates = root.subtreeSortedByGeometryGrouping(
+                isVisible = { node ->
+                    !node.boundsInRoot.isEmpty && idToA11YNode[node.id]?.let {
+                        it.closest("[inert]") == null
+                    } == true
+                },
+                isFocusableContainer = { node ->
+                    idToA11YNode[node.id]?.hasAttribute("tabindex") == true
+                },
+                listToSort = listOf(root),
+            )
+            val first = candidates.firstOrNull() ?: continue
+            idToA11YNode[first.id]?.focus()
+            return
+        }
     }
 
     // The last (top) root is never inert.
@@ -500,13 +550,16 @@ internal class ComposeWebSemanticsListener(
         val roleId = config.getRoleId()
         setA11YAriaRole(element = htmlNode, roleId)
 
-        if (roleId == AriaRoleId.Slider &&
-            !config.contains(SemanticsProperties.Disabled) &&
-            config.contains(SemanticsActions.SetProgress)
-        ) {
-            htmlNode.setAttribute("tabindex", "0")
-        } else {
+        val tabIndex = when {
+            !semanticsNode.isA11YFocusable(config) -> null
+            roleId == AriaRoleId.Slider && !disabled &&
+                config.contains(SemanticsActions.SetProgress) -> "0"
+            else -> "-1"
+        }
+        if (tabIndex == null) {
             htmlNode.removeAttribute("tabindex")
+        } else if (htmlNode.getAttribute("tabindex") != tabIndex) {
+            htmlNode.setAttribute("tabindex", tabIndex)
         }
 
         if (config.contains(SemanticsProperties.ProgressBarRangeInfo)) {
@@ -719,6 +772,11 @@ internal class ComposeWebSemanticsListener(
 
         webSemanticsRoot.removeEventListener("click", onClick)
         webSemanticsRoot.removeEventListener("keydown", onKeyDown)
+        webSemanticsRoot.removeEventListener("focusin", onFocusIn)
+        webSemanticsRoot.removeEventListener("focusout", clearA11YFocus)
+        document.removeEventListener("focusin", clearA11YFocus, true)
+        document.removeEventListener("focusout", clearA11YFocus)
+        focusedA11YNode = null
         a11YScrollController.clear()
 
         dfsSemanticsNodes.clear()

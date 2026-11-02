@@ -16,7 +16,24 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.isHidden
+
+/** Structural containers must not become focus targets just because they have a DOM element. */
+internal fun SemanticsNode.isA11YFocusable(config: SemanticsConfiguration): Boolean =
+    !isHidden && !isFake && (
+        config.isMergingSemanticsOfDescendants ||
+            config.contains(SemanticsProperties.ContentDescription) ||
+            config.contains(SemanticsProperties.EditableText) ||
+            config.contains(SemanticsProperties.Text) ||
+            config.contains(SemanticsProperties.StateDescription) ||
+            config.contains(SemanticsProperties.ToggleableState) ||
+            config.contains(SemanticsProperties.Selected) ||
+            config.contains(SemanticsProperties.ProgressBarRangeInfo) ||
+            config.contains(SemanticsProperties.LinkTestMarker)
+        )
 
 internal enum class A11YReachability {
     /* The node is not clipped and must be reachable by AT */
