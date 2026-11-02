@@ -19,10 +19,11 @@ hosts=(
   dv-g3b-aaa-noct-emudhra.we-have-a-problem.com
 )
 
-# 0 = connection accepted, 42 = certificate rejected, anything else = error.
-# Expiry, hostname mismatch, and network errors are inconclusive.
+# 0 = accepted, 42 = recognized trust rejection, 43 = Git certificate
+# verification rejected with no specific reason, anything else = error.
+# Network errors remain inconclusive. Git's generic rejection may include expiry.
 certificate_rejected() {
-  grep -Eqi 'CRYPT_E_REVOKED|CERT_E_REVOKED|CERT_E_UNTRUSTEDROOT|CERT_E_CHAINING|certificate (is |has been )?revoked|certificate revoked|CERT_REVOKED|CERT_UNTRUSTED|CERT_REJECTED|UNABLE_TO_GET_ISSUER_CERT|UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|DEPTH_ZERO_SELF_SIGNED_CERT|unable to get (local )?issuer certificate|unable to verify the first certificate|self[- ]signed certificate|issuer.*(unknown|not recognized)|certificate.*not trusted|unknown CA' "$1"
+  grep -Eqi 'CRYPT_E_REVOKED|CERT_E_REVOKED|CERT_E_UNTRUSTEDROOT|CERT_E_CHAINING|certificate (is |has been )?revoked|certificate revoked|CERT_REVOKED|CERT_UNTRUSTED|CERT_REJECTED|UNABLE_TO_GET_ISSUER_CERT|UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|DEPTH_ZERO_SELF_SIGNED_CERT|unable to get (local )?issuer certificate|unable to verify the first certificate|unable to locally verify the issuer.s authority|self[- ]signed certificate|issuer.*(unknown|not recognized)|certificate.*not trusted|unknown CA' "$1"
 }
 
 # A broken installation is unavailable, rather than a certificate-test failure.
@@ -40,7 +41,7 @@ startup_check() {
 }
 
 check() {
-  local name=$1 control=$2 host rc
+  local name=$1 control=$2 host rc reason_unknown=0
   shift 2
   "$@" "$control" >"$tmp/log" 2>&1
   rc=$?
@@ -55,11 +56,16 @@ check() {
     rc=$?
     case $rc in
       42) ;;
+      43) reason_unknown=1 ;;
       0) echo "FAIL $name: accepted $host"; failed=1; return ;;
       *) echo "ERROR $name: inconclusive for $host (exit $rc)"; cat "$tmp/log" >&2; failed=1; return ;;
     esac
   done
-  echo "PASS $name"
+  if [[ $reason_unknown == 1 ]]; then
+    echo "PASS $name: all test certificates rejected (reason unavailable)"
+  else
+    echo "PASS $name"
+  fi
 }
 
 curl_check() {
@@ -97,6 +103,11 @@ git_check() {
   cat "$tmp/git-log" >&2
   if [[ $rc != 0 ]] && certificate_rejected "$tmp/git-log"; then
     return 42
+  fi
+  # GnuTLS-backed Git may omit the reason. Count an explicit verification
+  # rejection as blocking the connection, without claiming the CA was removed.
+  if [[ $rc != 0 ]] && grep -Fqi 'server certificate verification failed' "$tmp/git-log"; then
+    return 43
   fi
   # A final HTTPS response proves TLS completed, even for a non-Git endpoint.
   if [[ $rc == 0 ]] || grep -Eqi '<= Recv header: HTTP/[0-9.]+ [2345][0-9][0-9]' "$tmp/git-log"; then
