@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
 
@@ -9,6 +10,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Resolve native Skiko SDL2 OpenGL addon
 const defaultSkikoNativePath = "/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/native-skiko/build/Release/native_skiko.node";
 const nativeSkikoPath = process.env.SKIKO_NATIVE_GL_ADDON ?? defaultSkikoNativePath;
+
+if (!fs.existsSync(nativeSkikoPath)) {
+    const nativeSkikoDir = path.dirname(path.dirname(nativeSkikoPath));
+    const skiaDir = process.env.SKIA_DIR || (fs.existsSync("/Users/dustin.feucht/projects/skia") ? "/Users/dustin.feucht/projects/skia" : null);
+    if (fs.existsSync(path.join(nativeSkikoDir, "binding.gyp")) && skiaDir) {
+        try {
+            console.log(`Auto-building native Skiko addon at ${nativeSkikoDir}...`);
+            execSync(`SKIA_DIR="${skiaDir}" npx node-gyp rebuild`, {
+                cwd: nativeSkikoDir,
+                stdio: "ignore"
+            });
+        } catch (e) {
+            console.warn(`Auto-building native Skiko addon failed: ${e.message}`);
+        }
+    }
+}
 
 let nativeGL = null;
 if (fs.existsSync(nativeSkikoPath)) {
