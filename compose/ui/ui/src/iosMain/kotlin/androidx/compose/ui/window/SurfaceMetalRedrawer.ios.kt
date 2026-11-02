@@ -178,6 +178,7 @@ internal class SurfaceMetalRedrawer(
         disposeDrawableAssociatedResources(null)
         pictureRecorder.close()
         context?.close()
+        context = null
     }
 
     private fun awaitRenderingQueueTasksCompletion() {
