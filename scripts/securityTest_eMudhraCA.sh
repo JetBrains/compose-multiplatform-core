@@ -67,6 +67,7 @@ curl_check() {
   LC_ALL=C curl --silent --show-error --connect-timeout 10 --max-time 20 \
     --output /dev/null "$1" >"$tmp/curl-log" 2>&1
   rc=$?
+  cat "$tmp/curl-log" >&2
   if [[ $rc == 35 || $rc == 60 ]] && certificate_rejected "$tmp/curl-log"; then
     return 42
   fi
@@ -78,6 +79,7 @@ wget_check() {
   LC_ALL=C wget --tries=1 --timeout=20 --output-document=/dev/null "$1" \
     >"$tmp/wget-log" 2>&1
   rc=$?
+  cat "$tmp/wget-log" >&2
   if [[ $rc == 5 ]] && certificate_rejected "$tmp/wget-log"; then
     return 42
   fi
@@ -92,6 +94,7 @@ git_check() {
     git -c http.lowSpeedLimit=1 -c http.lowSpeedTime=20 \
     ls-remote "$1" >"$tmp/git-log" 2>&1
   rc=$?
+  cat "$tmp/git-log" >&2
   if [[ $rc != 0 ]] && certificate_rejected "$tmp/git-log"; then
     return 42
   fi
@@ -116,6 +119,7 @@ try:
 except request.HTTPError:
     pass  # HTTP errors happen after successful TLS.
 except Exception as error:
+    print('%s: %s' % (type(error).__name__, error), file=sys.stderr)
     reason = getattr(error, 'reason', error)
     if isinstance(reason, ssl.SSLError):
         # OpenSSL: unknown issuer, self-signed, revoked, or untrusted.
@@ -142,9 +146,13 @@ const request = https.get(process.argv[2], response => {
   response.destroy();
   process.exit(0);
 });
-const timer = setTimeout(() => process.exit(1), 20000);
+const timer = setTimeout(() => {
+  console.error('HTTPS request timed out after 20000 ms');
+  process.exit(1);
+}, 20000);
 request.on('error', error => {
   clearTimeout(timer);
+  console.error(error.code ? `${error.code}: ${error.message}` : error.message);
   process.exit(rejected.has(error.code) ? 42 : 1);
 });
 JS
@@ -155,6 +163,7 @@ npm_check() {
   LC_ALL=C npm ping --registry="$1" --fetch-retries=0 --fetch-timeout=20000 \
     >"$tmp/npm-log" 2>&1
   rc=$?
+  cat "$tmp/npm-log" >&2
   if [[ $rc != 0 ]] && certificate_rejected "$tmp/npm-log"; then
     return 42
   fi
@@ -181,6 +190,7 @@ class CheckTLS {
             c.connect();
             c.disconnect();
         } catch (Exception e) {
+            e.printStackTrace(System.err);
             for (Throwable cause = e; cause != null; cause = cause.getCause()) {
                 if (cause instanceof CertPathValidatorException) {
                     CertPathValidatorException.Reason r =
