@@ -10,8 +10,13 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 
 # The image ships only JBR 25; the repository's convention, and CI, is JDK 21.
-JDK_DIR="$HOME/.local/jdk-21"
-JDK_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jdk_x64_linux_hotspot_21.0.5_11.tar.gz"
+JDK_VERSION="21.0.13+9"
+JDK_DIR="$HOME/.local/jdk-$JDK_VERSION"
+JDK_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-${JDK_VERSION/+/%2B}/OpenJDK21U-jdk_x64_linux_hotspot_${JDK_VERSION/+/_}.tar.gz"
+
+NODE_VERSION="24.22.1"
+NODE_DIR="$HOME/.local/node-v$NODE_VERSION-linux-x64"
+NODE_URL="https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz"
 
 SDK_DIR="$HOME/android-sdk"
 # dl.google.com is blocked by the proxy; the JetBrains redirector mirrors it.
@@ -23,18 +28,33 @@ SDK_PACKAGES=(
   'build-tools;36.0.0'
 )
 
+export PATH="$JDK_DIR/bin:$NODE_DIR/bin:$PATH"
+export PATH="$SDK_DIR/cmdline-tools/latest/bin:$SDK_DIR/platform-tools:$SDK_DIR/emulator:$PATH"
+
 log() { printf '[startup] %s\n' "$*"; }
 
 install_jdk() {
   if [ -x "$JDK_DIR/bin/javac" ]; then
-    log "JDK 21 already installed"
+    log "JDK $JDK_VERSION already installed"
     return
   fi
-  log "installing JDK 21"
+  log "installing JDK $JDK_VERSION"
   mkdir -p "$JDK_DIR"
   curl -fL --retry 3 --retry-all-errors -o /tmp/jdk21.tar.gz "$JDK_URL"
   tar xzf /tmp/jdk21.tar.gz -C "$JDK_DIR" --strip-components=1
   rm -f /tmp/jdk21.tar.gz
+}
+
+install_node() {
+  if [ -x "$NODE_DIR/bin/node" ]; then
+    log "Node $NODE_VERSION already installed"
+    return
+  fi
+  log "installing Node $NODE_VERSION"
+  mkdir -p "$(dirname "$NODE_DIR")"
+  curl -fL --retry 3 --retry-all-errors -o /tmp/node.tar.xz "$NODE_URL"
+  python3 -m tarfile -e /tmp/node.tar.xz "$(dirname "$NODE_DIR")" --filter data
+  rm -f /tmp/node.tar.xz
 }
 
 # JAVA_HOME: sdkmanager is a Java program. SDK_TEST_BASE_URL: only way to redirect its downloads.
@@ -101,6 +121,7 @@ EOF
 }
 
 install_jdk
+install_node
 install_sdk
 write_gradle_config
 log "ready"
