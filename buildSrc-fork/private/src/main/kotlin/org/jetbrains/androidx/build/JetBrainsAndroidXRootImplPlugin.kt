@@ -43,9 +43,8 @@ class JetBrainsAndroidXRootImplPlugin @Inject constructor(
             // Apply capability rule to resolve conflicts between org.jetbrains.androidx.* and androidx.*
             subproject.configureJetBrainsCapabilityResolution()
 
-            // Keep each project's Node environment aligned with the root setup tasks.
-            // https://youtrack.jetbrains.com/issue/KT-90732
-            // https://youtrack.jetbrains.com/issue/CMP-11011
+            // Override the node version to fix https://youtrack.jetbrains.com/issue/CMP-11011
+            // Workaround is from https://youtrack.jetbrains.com/issue/KT-90732
             subproject.plugins.withType<NodeJsPlugin>().configureEach {
                 subproject.extensions.getByType(NodeJsEnvSpec::class.java).version
                     .set(subproject.getVersionByName("node"))
