@@ -31,37 +31,32 @@ import androidx.compose.ui.test.postAccessibilityElementFocused
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AccessibilityFrameClockTest {
-    private fun UIKitInstrumentedTest.withChoreographerTicks(block: (TickCounter) -> Unit) {
+    private fun UIKitInstrumentedTest.withChoreographerTicks(
+        block: (FrameChoreographer, TickCounter) -> Unit
+    ) {
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")
 
         val ticks = TickCounter()
         choreographer.addListener(ticks)
         try {
-            block(ticks)
+            block(choreographer, ticks)
         } finally {
             choreographer.removeListener(ticks)
         }
     }
 
-    private fun UIKitInstrumentedTest.assertChoreographerIsIdle(ticks: TickCounter) {
+    private fun UIKitInstrumentedTest.assertChoreographerIsIdle(choreographer: FrameChoreographer) {
         waitForIdle()
-        // The display link pauses two frames after the last frame request.
-        delay(100)
-
-        val ticksBefore = ticks.count
-        // A running display link ticks about three times in this window.
-        delay(50)
-        assertEquals(
-            ticksBefore,
-            ticks.count,
-            "Choreographer should not tick while content is idle"
-        )
+        // The display link pauses itself two frames after the last frame request,
+        // so it never pauses while something keeps requesting frames.
+        waitUntil("Choreographer should pause while content is idle") {
+            choreographer.isDisplayLinkPaused
+        }
     }
 
     @Test
@@ -73,10 +68,10 @@ class AccessibilityFrameClockTest {
             }
         }
 
-        withChoreographerTicks { ticks ->
+        withChoreographerTicks { choreographer, _ ->
             getAccessibilityTree()
 
-            assertChoreographerIsIdle(ticks)
+            assertChoreographerIsIdle(choreographer)
         }
     }
 
@@ -91,9 +86,9 @@ class AccessibilityFrameClockTest {
             }
         }
 
-        withChoreographerTicks { ticks ->
+        withChoreographerTicks { choreographer, ticks ->
             getAccessibilityTree()
-            assertChoreographerIsIdle(ticks)
+            assertChoreographerIsIdle(choreographer)
 
             val ticksBeforeScroll = ticks.count
             postAccessibilityElementFocused(findNodeWithLabel("Row 40").element)
@@ -105,7 +100,7 @@ class AccessibilityFrameClockTest {
                 ticks.count > ticksBeforeScroll,
                 "The scroll should run on choreographer frames"
             )
-            assertChoreographerIsIdle(ticks)
+            assertChoreographerIsIdle(choreographer)
         }
     }
 
@@ -122,7 +117,7 @@ class AccessibilityFrameClockTest {
             }
         }
 
-        withChoreographerTicks { ticks ->
+        withChoreographerTicks { choreographer, _ ->
             getAccessibilityTree()
             waitForIdle()
 
@@ -133,7 +128,7 @@ class AccessibilityFrameClockTest {
 
             stopComposeScene()
 
-            assertChoreographerIsIdle(ticks)
+            assertChoreographerIsIdle(choreographer)
         }
     }
 }
