@@ -241,14 +241,10 @@ private class BasicTextFieldInputDelegate(
     override var selectionTextRange: TextRange = untransformedText.selection
         private set
 
-    override var markedTextRange: TextRange? = transformedState.untransformedComposition
-        private set
-
     fun refreshValue() {
         val untransformedText = untransformedText
         text = untransformedText.toString()
         selectionTextRange = untransformedText.selection
-        markedTextRange = transformedState.untransformedComposition
     }
 
     private inline fun edit(block: () -> Unit) {
@@ -282,25 +278,5 @@ private class BasicTextFieldInputDelegate(
             replace(range.min, range.max, newText)
             setSelectionCoerced(range.min + newText.length)
         }
-    }
-
-    override fun setMarkedText(markedText: String?, selectedRange: TextRange) {
-        if (markedText == null) {
-            unmarkText()
-            return
-        }
-        edit {
-            transformedState.editUntransformedTextAsUser {
-                val marked = composition ?: selection
-                replace(marked.min, marked.max, markedText)
-                setComposition(marked.min, marked.min + markedText.length)
-                val cursor = marked.min + selectedRange.min
-                setSelectionCoerced(cursor, cursor + selectedRange.length)
-            }
-        }
-    }
-
-    override fun unmarkText() = edit {
-        transformedState.editUntransformedTextAsUser { commitComposition() }
     }
 }

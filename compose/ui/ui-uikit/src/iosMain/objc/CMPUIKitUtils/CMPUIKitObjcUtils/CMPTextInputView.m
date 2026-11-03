@@ -217,6 +217,18 @@
     }
 }
 
+- (void)activateSelectionDisplayIfNeeded {
+    if (@available(iOS 17, *)) {
+        for (id<UIInteraction> interaction in self.interactions) {
+            if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
+                // HACK: Show cursor again after updating marked text
+                [((UITextSelectionDisplayInteraction *)interaction) setActivated:YES];
+                return;
+            }
+        }
+    }
+}
+
 - (UIView *)inputView {
     CMP_ABSTRACT_FUNCTION_CALLED;
 }

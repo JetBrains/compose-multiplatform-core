@@ -30,6 +30,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.EditCommand
@@ -196,27 +197,35 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         buffer.setSelectionCoerced(newCursorInBuffer, newCursorInBuffer)
     }
 
-    override fun setComposingRegion(start: Int, end: Int) {
+    override fun setComposingRegion(
+        start: Int,
+        end: Int,
+        annotations: List<AnnotatedString.Annotation>?
+    ) {
         // Sanitize the input: reverse if reversed, clamp into valid range, ignore empty range.
         val clampedStart = start.coerceIn(0, buffer.length)
         val clampedEnd = end.coerceIn(0, buffer.length)
         if (clampedStart == clampedEnd) {
             // do nothing. empty composition range is not allowed.
         } else if (clampedStart < clampedEnd) {
-            buffer.setComposition(clampedStart, clampedEnd)
+            buffer.setComposition(clampedStart, clampedEnd, annotations)
         } else {
-            buffer.setComposition(clampedEnd, clampedStart)
+            buffer.setComposition(clampedEnd, clampedStart, annotations)
         }
     }
 
-    override fun setComposingText(text: CharSequence, newCursorPosition: Int) {
+    override fun setComposingText(
+        text: CharSequence,
+        newCursorPosition: Int,
+        annotations: List<AnnotatedString.Annotation>?
+    ) {
         val replacementRange = buffer.composition ?: buffer.selection
         // API doc says, if there is ongoing composing text, replace it with new text.
         // If there is no composing text, insert composing text into the cursor position with
         // removing selected text if any.
         buffer.replace(replacementRange.min, replacementRange.max, text)
         if (text.isNotEmpty()) {
-            buffer.setComposition(replacementRange.min, replacementRange.min + text.length)
+            buffer.setComposition(replacementRange.min, replacementRange.min + text.length, annotations)
         }
 
         val newCursor = replacementRange.min + text.length
@@ -235,6 +244,18 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
     override fun finishComposingText() {
         buffer.commitComposition()
     }
+}
+
+private fun TextFieldBuffer.setComposition(
+    start: Int,
+    end: Int,
+    annotations: List<AnnotatedString.Annotation>?
+) {
+    setComposition(
+        start = start,
+        end = end,
+        annotations = annotations?.map { AnnotatedString.Range(it, 0, end - start) }
+    )
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

@@ -17,6 +17,7 @@
 package androidx.compose.ui.text.input
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 
 /**
@@ -82,15 +83,24 @@ interface TextEditingScope {
      *
      * @param start The start index of the composing text range.
      * @param end The end index of the composing text range.
+     * @param annotations The annotations to be applied over the composing text
      */
-    fun setComposingRegion(start: Int, end: Int)
+    fun setComposingRegion(
+        start: Int,
+        end: Int,
+        annotations: List<AnnotatedString.Annotation>? = null
+    )
 
     /**
      * Sets the composing text and repositions the cursor.
      *
      * This intends to replicate [SetComposingTextCommand].
      */
-    fun setComposingText(text: CharSequence, newCursorPosition: Int)
+    fun setComposingText(
+        text: CharSequence,
+        newCursorPosition: Int,
+        annotations: List<AnnotatedString.Annotation>? = null
+    )
 
     /**
      * Finishes composing, leaving the text as-is.
