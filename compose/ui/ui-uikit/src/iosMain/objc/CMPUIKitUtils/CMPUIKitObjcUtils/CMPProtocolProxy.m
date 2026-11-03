@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#import "CMPBaseProxy.h"
+#import "CMPProtocolProxy.h"
 #import <objc/runtime.h>
 
-@implementation CMPBaseProxy {
+@implementation CMPProtocolProxy {
     id _object;
     Protocol *_protocol;
 }

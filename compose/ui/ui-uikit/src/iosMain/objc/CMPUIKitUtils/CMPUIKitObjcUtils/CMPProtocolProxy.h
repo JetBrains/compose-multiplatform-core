@@ -19,7 +19,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// A proxy that forwards all messages to the object it was created with.
-@interface CMPBaseProxy : NSProxy
+@interface CMPProtocolProxy : NSProxy
 
 - (instancetype)initWithObject:(nullable id)object protocol:(Protocol *)protocol;
 
