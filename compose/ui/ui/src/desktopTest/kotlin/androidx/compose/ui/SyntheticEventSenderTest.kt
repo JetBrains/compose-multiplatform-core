@@ -38,6 +38,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.to
 
 class SyntheticEventSenderTest {
     @Test
@@ -398,8 +399,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Enter, 1 to touch(10f, 20f, pressed = false)),
-            event(Move, 1 to touch(10f, 20f, pressed = false))
+            mouseEvent(Enter, 10f, 20f, pressed = false),
+            mouseEvent(Move, 10f, 20f, pressed = false)
         )
 
         received.clear()
@@ -409,8 +410,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Move, 1 to touch(5f, 15f, pressed = false)),
-            event(Move, 1 to touch(5f, 15f, pressed = false))
+            mouseEvent(Move, 5f, 15f, pressed = false),
+            mouseEvent(Move, 5f, 15f, pressed = false)
         )
     }
 
@@ -426,9 +427,9 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Enter, 1 to touch(10f, 20f, pressed = false)),
-            event(Press, 1 to touch(10f, 20f, pressed = true)),
-            event(Move, 1 to touch(10f, 20f, pressed = true))
+            mouseEvent(Enter, 10f, 20f, pressed = false),
+            mouseEvent(Press, 10f, 20f, pressed = true),
+            mouseEvent(Move, 10f, 20f, pressed = true)
         )
 
         received.clear()
@@ -438,8 +439,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Move, 1 to touch(5f, 15f, pressed = true)),
-            event(Move, 1 to touch(5f, 15f, pressed = true))
+            mouseEvent(Move, 5f, 15f, pressed = true),
+            mouseEvent(Move, 5f, 15f, pressed = true)
         )
     }
 
