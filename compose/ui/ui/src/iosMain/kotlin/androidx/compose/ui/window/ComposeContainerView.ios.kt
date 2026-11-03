@@ -26,10 +26,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import platform.CoreGraphics.CGPoint
-import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectEqualToRect
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSize
+import platform.QuartzCore.CALayer
 import platform.UIKit.UIColor
 import platform.UIKit.UIEvent
 import platform.UIKit.UIGraphicsImageRenderer
@@ -181,7 +181,17 @@ internal class ComposeContainerView(
         updateLayout()
     }
 
-    override fun drawRect(rect: CValue<CGRect>) {
+    /**
+     * Compose renders with Metal, so this view must not override `drawRect:`: for a view that does,
+     * Core Animation allocates and clears a CPU backing store of the view's size before every call.
+     * UIKit ignores [setNeedsDisplay] on a view without `drawRect:`, so mark the layer directly.
+     * Core Animation then calls [displayLayer] at the same point of the transaction commit.
+     */
+    override fun setNeedsDisplay() {
+        layer.setNeedsDisplay()
+    }
+
+    override fun displayLayer(layer: CALayer) {
         onDraw(needsSynchronousDraw)
 
         needsSynchronousDraw = false
