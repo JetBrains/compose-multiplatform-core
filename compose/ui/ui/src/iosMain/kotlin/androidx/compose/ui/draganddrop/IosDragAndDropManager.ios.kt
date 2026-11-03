@@ -318,9 +318,9 @@ internal class IosDragAndDropManager(
         }
     }
 
-    private val dragInteraction = UIDragInteraction(delegate = dragInteractionProxy)
-
     init {
+        val dragInteraction = UIDragInteraction(delegate = dragInteractionProxy)
+
         view.addInteraction(dragInteraction)
         view.addInteraction(UIDropInteraction(delegate = dropInteractionProxy))
 
