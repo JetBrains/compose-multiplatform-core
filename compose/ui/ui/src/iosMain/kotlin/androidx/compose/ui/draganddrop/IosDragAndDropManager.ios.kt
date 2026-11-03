@@ -319,8 +319,18 @@ internal class IosDragAndDropManager(
     }
 
     init {
-        view.addInteraction(UIDragInteraction(delegate = dragInteractionProxy))
+        val dragInteraction = UIDragInteraction(delegate = dragInteractionProxy)
+
+        view.addInteraction(dragInteraction)
         view.addInteraction(UIDropInteraction(delegate = dropInteractionProxy))
+
+        // UIDragInteraction delays selection events on the [NativeTextInputView]. In order to
+        // prevent it, disable drag interactions when interacting with the view.
+        view.setDragDropGesturesEnabled = { isDragDropEnabled ->
+            if (dragSessionContext == null) {
+                dragInteraction.enabled = UIDragInteraction.enabledByDefault && isDragDropEnabled
+            }
+        }
 
         // UIDragInteraction adds its own gesture recogniser that can cancel the gesture that is
         // responsive to touch handling. Ignore this gesture if the drag session is not started
