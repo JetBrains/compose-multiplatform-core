@@ -32,25 +32,12 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class AccessibilityFrameClockTest {
-    private fun UIKitInstrumentedTest.withChoreographerTicks(
-        block: (FrameChoreographer, TickCounter) -> Unit
-    ) {
-        val choreographer = frameChoreographer
-        assertNotNull(choreographer, "frameChoreographer is null")
+    private val UIKitInstrumentedTest.choreographer: FrameChoreographer
+        get() = assertNotNull(frameChoreographer, "frameChoreographer is null")
 
-        val ticks = TickCounter()
-        choreographer.addListener(ticks)
-        try {
-            block(choreographer, ticks)
-        } finally {
-            choreographer.removeListener(ticks)
-        }
-    }
-
-    private fun UIKitInstrumentedTest.assertChoreographerIsIdle(choreographer: FrameChoreographer) {
+    private fun UIKitInstrumentedTest.assertChoreographerIsIdle() {
         waitForIdle()
         // The display link pauses itself two frames after the last frame request,
         // so it never pauses while something keeps requesting frames.
@@ -68,15 +55,15 @@ class AccessibilityFrameClockTest {
             }
         }
 
-        withChoreographerTicks { choreographer, _ ->
-            getAccessibilityTree()
+        getAccessibilityTree()
 
-            assertChoreographerIsIdle(choreographer)
-        }
+        assertChoreographerIsIdle()
     }
 
     @Test
     fun testScrollToFocusedElementRunsOnChoreographerFrames() = runUIKitInstrumentedTest {
+        // Real speed, so the running scroll is observed before it ends.
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
         val scrollState = ScrollState(initial = 0)
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
@@ -86,22 +73,18 @@ class AccessibilityFrameClockTest {
             }
         }
 
-        withChoreographerTicks { choreographer, ticks ->
-            getAccessibilityTree()
-            assertChoreographerIsIdle(choreographer)
+        getAccessibilityTree()
+        assertChoreographerIsIdle()
 
-            val ticksBeforeScroll = ticks.count
-            postAccessibilityElementFocused(findNodeWithLabel("Row 40").element)
-            waitUntil("The scroll to the focused element does not finish") {
-                scrollState.value > 0 && !scrollState.isScrollInProgress
-            }
-
-            assertTrue(
-                ticks.count > ticksBeforeScroll,
-                "The scroll should run on choreographer frames"
-            )
-            assertChoreographerIsIdle(choreographer)
+        postAccessibilityElementFocused(findNodeWithLabel("Row 40").element)
+        waitUntil("The scroll should run on choreographer frames") {
+            scrollState.isScrollInProgress && !choreographer.isDisplayLinkPaused
         }
+        waitUntil("The scroll to the focused element does not finish") {
+            scrollState.value > 0 && !scrollState.isScrollInProgress
+        }
+
+        assertChoreographerIsIdle()
     }
 
     @Test
@@ -117,27 +100,16 @@ class AccessibilityFrameClockTest {
             }
         }
 
-        withChoreographerTicks { choreographer, _ ->
-            getAccessibilityTree()
-            waitForIdle()
+        getAccessibilityTree()
+        waitForIdle()
 
-            postAccessibilityElementFocused(findNodeWithLabel("Row 40").element)
-            waitUntil("The scroll to the focused element does not start") {
-                scrollState.isScrollInProgress
-            }
-
-            stopComposeScene()
-
-            assertChoreographerIsIdle(choreographer)
+        postAccessibilityElementFocused(findNodeWithLabel("Row 40").element)
+        waitUntil("The scroll to the focused element does not start") {
+            scrollState.isScrollInProgress
         }
-    }
-}
 
-private class TickCounter : FrameChoreographer.Listener {
-    var count = 0
-        private set
+        stopComposeScene()
 
-    override fun onDisplayLinkTick() {
-        count++
+        assertChoreographerIsIdle()
     }
 }
