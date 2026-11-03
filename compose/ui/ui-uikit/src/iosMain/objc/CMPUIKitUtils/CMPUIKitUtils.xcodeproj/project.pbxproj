@@ -10,6 +10,8 @@
 		99009B7A2F322B4700518C1F /* CMPMetalLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 99009B792F322B4700518C1F /* CMPMetalLayer.m */; };
 		99009B7B2F322B4700518C1F /* CMPMetalLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 99009B792F322B4700518C1F /* CMPMetalLayer.m */; };
 		991A97F72E1FB99300B47130 /* CMPScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 991A97F62E1FB99300B47130 /* CMPScrollView.m */; };
+		992014D33099D038000768B7 /* CMPBaseProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BFF9F9B4FE350CC22E12BE5 /* CMPBaseProxy.m */; };
+		992014D43099D038000768B7 /* CMPBaseProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BFF9F9B4FE350CC22E12BE5 /* CMPBaseProxy.m */; };
 		99293FF52F2B8A81001EC2A1 /* CMPDrawable.m in Sources */ = {isa = PBXBuildFile; fileRef = 99293FF32F2B8A81001EC2A1 /* CMPDrawable.m */; };
 		99293FF82F2B8A81001EC2A1 /* CMPDrawable.m in Sources */ = {isa = PBXBuildFile; fileRef = 99293FF32F2B8A81001EC2A1 /* CMPDrawable.m */; };
 		992EDDFB2E55EC8400FB44C5 /* CMPKeyValueObserver.m in Sources */ = {isa = PBXBuildFile; fileRef = 992EDDFA2E55EC8400FB44C5 /* CMPKeyValueObserver.m */; };
@@ -113,6 +115,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3BFF9F9B4FE350CC22E12BE5 /* CMPBaseProxy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPBaseProxy.m; sourceTree = "<group>"; };
+		5D27516AC73752DFD31201F3 /* CMPBaseProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPBaseProxy.h; sourceTree = "<group>"; };
 		99009B782F322B4700518C1F /* CMPMetalLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPMetalLayer.h; sourceTree = "<group>"; };
 		99009B792F322B4700518C1F /* CMPMetalLayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPMetalLayer.m; sourceTree = "<group>"; };
 		991A97F52E1FB99300B47130 /* CMPScrollView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPScrollView.h; sourceTree = "<group>"; };
@@ -242,6 +246,8 @@
 				9967254730010FBC0013BF47 /* CMPContainerView.m */,
 				EADD028E2C9846D9003F66E8 /* CMPDragInteractionProxy.h */,
 				EADD028F2C9846D9003F66E8 /* CMPDragInteractionProxy.m */,
+				5D27516AC73752DFD31201F3 /* CMPBaseProxy.h */,
+				3BFF9F9B4FE350CC22E12BE5 /* CMPBaseProxy.m */,
 				99293FF22F2B8A81001EC2A1 /* CMPDrawable.h */,
 				99293FF32F2B8A81001EC2A1 /* CMPDrawable.m */,
 				EADD02912C98484F003F66E8 /* CMPDropInteractionProxy.h */,
