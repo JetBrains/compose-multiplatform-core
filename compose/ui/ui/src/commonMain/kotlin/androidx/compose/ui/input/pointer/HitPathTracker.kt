@@ -171,7 +171,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                 isInBounds,
             )
         if (!changed) {
-            root.cleanUpHover()
             return false
         }
 
@@ -306,7 +305,6 @@ internal open class NodeParent {
             dispatched = it.dispatchFinalEventPass(internalPointerEvent) || dispatched
         }
         cleanUpHits(internalPointerEvent)
-        cleanUpHover()
         return dispatched
     }
 
@@ -364,12 +362,6 @@ internal open class NodeParent {
             }
         }
     }
-
-    open fun cleanUpHover() {
-        children.forEach {
-            it.cleanUpHover()
-        }
-    }
 }
 
 /**
@@ -384,9 +376,6 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     // a more generic collection such as HashMap or MutableVector.
     val pointerIds = PointerIdArray()
 
-    private var isIn = true
-    private var hasEntered = false
-
     /**
      * Cached properties that will be set before the main event pass, and reset after the final
      * pass. Since we know that these won't change within the entire pass, we don't need to
@@ -399,6 +388,8 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private var coordinates: LayoutCoordinates? = null
     private var pointerEvent: PointerEvent? = null
     private var syntheticHoverEvent: PointerEvent? = null
+    private var isIn = true
+    private var hasEntered = false
 
     override fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
@@ -782,10 +773,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 pointerIds.remove(change.id)
             }
         }
-    }
 
-    override fun cleanUpHover() {
-        super.cleanUpHover()
         isIn = false
     }
 
