@@ -251,6 +251,7 @@ class PopupTest : SkikoComposeTestBase() {
 
         assertThat(onDismissRequestCallCount).isEqualTo(0)
         scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceivedLast(PointerEventType.Press, Offset(10f, 10f))
         assertThat(onDismissRequestCallCount).isEqualTo(1)
     }
@@ -284,6 +285,7 @@ class PopupTest : SkikoComposeTestBase() {
 
         assertThat(onDismissRequestCallCount).isEqualTo(0)
         scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceivedLast(PointerEventType.Press, Offset(10f, 10f))
         assertThat(onDismissRequestCallCount).isEqualTo(2)
     }
@@ -403,6 +405,7 @@ class PopupTest : SkikoComposeTestBase() {
 
         assertThat(onDismissRequestCallCount).isEqualTo(0)
         scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceivedLast(PointerEventType.Press, Offset(10f, 10f))
         assertThat(onDismissRequestCallCount).isEqualTo(0)
     }
@@ -448,8 +451,9 @@ class PopupTest : SkikoComposeTestBase() {
 
         scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
         scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f))
+        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceived(PointerEventType.Press, Offset(10f, 10f))
-        background.events.assertReceived(PointerEventType.Release, Offset(10f, 10f))
+        background.events.assertReceivedLast(PointerEventType.Release, Offset(10f, 10f))
     }
 
     @Suppress("DEPRECATION")
@@ -488,6 +492,7 @@ class PopupTest : SkikoComposeTestBase() {
         }
 
         scene.sendPointerEvent(PointerEventType.Scroll, Offset(10f, 10f))
+        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceivedLast(PointerEventType.Scroll, Offset(10f, 10f))
     }
 
@@ -549,9 +554,9 @@ class PopupTest : SkikoComposeTestBase() {
         )
         onNodeWithTag(popup.tag).assertIsDisplayed()
 
+        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceived(PointerEventType.Press, Offset(10f, 10f))
         background.events.assertReceived(PointerEventType.Release, Offset(10f, 10f))
-        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceivedLast(PointerEventType.Exit, Offset(10f, 10f))
     }
 
