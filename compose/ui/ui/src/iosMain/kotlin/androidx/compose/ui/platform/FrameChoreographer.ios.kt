@@ -298,6 +298,9 @@ internal class FrameChoreographer private constructor(
     val preferredFramesPerSecond: NSInteger get() = displayLink.preferredFramesPerSecond
 
     @VisibleForTesting
+    val isDisplayLinkPaused: Boolean get() = displayLink.paused
+
+    @VisibleForTesting
     val currentTargetFrameDuration: NSTimeInterval
         get() = displayLink.targetTimestamp - displayLink.timestamp
 
