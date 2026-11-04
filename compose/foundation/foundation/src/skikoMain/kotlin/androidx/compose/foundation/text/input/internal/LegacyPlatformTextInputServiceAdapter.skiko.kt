@@ -23,7 +23,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.CommitTextCommand
@@ -174,11 +173,7 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
         )
     }
 
-    override fun setComposingRegion(
-        start: Int,
-        end: Int,
-        annotations: List<AnnotatedString.Annotation>?
-    ) {
+    override fun setComposingRegion(start: Int, end: Int) {
         commands.add(
             SetComposingRegionCommand(start, end)
         )
@@ -186,19 +181,10 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
 
     override fun setComposingText(
         text: CharSequence,
-        newCursorPosition: Int,
-        annotations: List<AnnotatedString.Annotation>?
+        newCursorPosition: Int
     ) {
-        val annotatedText = if (annotations.isNullOrEmpty()) {
-            AnnotatedString(text.toString())
-        } else {
-            AnnotatedString(
-                text = text.toString(),
-                annotations = annotations.map { AnnotatedString.Range(it, 0, text.length) },
-            )
-        }
         commands.add(
-            SetComposingTextCommand(annotatedText, newCursorPosition)
+            SetComposingTextCommand(text.toString(), newCursorPosition)
         )
     }
 

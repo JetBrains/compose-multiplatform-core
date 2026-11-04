@@ -31,9 +31,7 @@ import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.platform.isValidIn
 import androidx.compose.ui.platform.movePositionByGraphemes
 import androidx.compose.ui.scene.ComposeSceneFocusManager
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -415,8 +413,8 @@ internal abstract class TextInputConnection(
 
     override fun replaceRange(range: TextRange, text: String) {
         edit {
-            setComposingRegion(range.start, range.end, COMPOSING_TEXT_ATTRIBUTES)
-            setComposingText(text, 1, COMPOSING_TEXT_ATTRIBUTES)
+            setComposingRegion(range.start, range.end)
+            setComposingText(text, 1)
             finishComposingText()
         }
     }
@@ -425,7 +423,7 @@ internal abstract class TextInputConnection(
         markedText ?: return
         val range = currentTextFieldValue?.composition ?: currentTextFieldValue?.selection ?: return
         edit {
-            setComposingText(markedText, 1, COMPOSING_TEXT_ATTRIBUTES)
+            setComposingText(markedText, 1)
             val newSelection = TextRange(start = range.start + selectedRange.start, end = range.start + selectedRange.end)
             setSelection(newSelection.start, newSelection.end)
         }
@@ -488,13 +486,6 @@ internal abstract class TextInputConnection(
          * Must be at least 1.dp to make caret interactable
          */
         internal val CURSOR_THICKNESS = 2.dp
-
-        /**
-         * The annotation applied to composing (marked) text.
-         */
-        private val COMPOSING_TEXT_ATTRIBUTES = listOf(
-            SpanStyle(textDecoration = TextDecoration.Underline)
-        )
     }
 }
 
