@@ -35,8 +35,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -59,7 +61,7 @@ class MouseInputTest {
 
     // Verify that only move events are consumed during drag
     @Test
-    fun scrollDuringDragIsNotConsumed() = androidx.compose.ui.test.v2.runComposeUiTest {
+    fun scrollDuringDragIsNotConsumed() = runComposeUiTest {
         var scrollEventReceived = false
         setContent {
             Box(
@@ -83,10 +85,42 @@ class MouseInputTest {
         assertTrue(scrollEventReceived)
     }
 
+    @Test
+    fun enterIsSentBeforeFirstPress() = runComposeUiTest {
+        val eventTypes = mutableListOf<PointerEventType>()
+        setContent {
+            Box(
+                modifier = Modifier
+                    .testTag("box")
+                    .size(100.dp)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                eventTypes += awaitPointerEvent().type
+                            }
+                        }
+                    }
+            )
+        }
+
+        onNodeWithTag("box").performMouseInput {
+            click()
+        }
+
+        assertContentEquals(
+            expected = listOf(
+                PointerEventType.Enter,
+                PointerEventType.Press,
+                PointerEventType.Release,
+            ),
+            actual = eventTypes
+        )
+    }
+
     // Verify that moving the underlying element during a drag gesture causes a drag event to be
     // detected.
     @Test
-    fun dragCalledWhenElementIsMoved() = androidx.compose.ui.test.v2.runComposeUiTest {
+    fun dragCalledWhenElementIsMoved() = runComposeUiTest {
         var pointerPosition = Offset.Unspecified
         val scrollState = ScrollState(0)
         setContent {
@@ -126,7 +160,7 @@ class MouseInputTest {
     // See https://youtrack.jetbrains.com/issue/CMP-10994
     @OptIn(ExperimentalComposeUiApi::class)
     @Test
-    fun clickDoesNotTriggerDrag() = androidx.compose.ui.test.v2.runComposeUiTest {
+    fun clickDoesNotTriggerDrag() = runComposeUiTest {
         var dragDetected = false
         var state by mutableIntStateOf(0)
         setContent {

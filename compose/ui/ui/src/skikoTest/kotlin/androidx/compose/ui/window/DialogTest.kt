@@ -114,9 +114,9 @@ class DialogTest {
         scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), button = PointerButton.Primary)
         onNodeWithTag(dialog.tag).assertIsDisplayed()
 
+        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceived(PointerEventType.Press, Offset(10f, 10f))
         background.events.assertReceived(PointerEventType.Release, Offset(10f, 10f))
-        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceivedLast(PointerEventType.Exit, Offset(10f, 10f))
     }
 
