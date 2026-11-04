@@ -1140,9 +1140,11 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
     } as? UITextInputProtocol
 }
 
-internal fun UIKitInstrumentedTest.focusedUITextInput(): UITextInputProtocol =
-    findFocusedUITextInput() ?: error("No focused text input view")
-
+internal fun UIKitInstrumentedTest.focusedUITextInput(): UITextInputProtocol {
+    val textInput = findFocusedUITextInput()
+    assertNotNull(textInput, "No focused text input view")
+    return textInput
+}
 
 internal fun UIKitInstrumentedTest.findAllUITextInputViews(): List<UIView> {
     val windowScene = viewController.view.window?.windowScene ?: return emptyList()

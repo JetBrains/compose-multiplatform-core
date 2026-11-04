@@ -359,18 +359,16 @@ class TextFieldTransformationTest {
 
         var actualStart = caretCenter(selectedRange.start)
         var actualEnd = caretCenter(selectedRange.end)
-        if (textInput is NativeTextInputView) {
-            val rects = textInput.selectionRectsForRange(selectedRange).map {
-                view.convertRect((it as UITextSelectionRect).rect, toView = null).toDpRect()
-            }
-            if (transformedRange.collapsed) {
-                assertTrue(rects.isEmpty(), "No selection rects expected for $transformedRange, got $rects")
-            } else {
-                val rect = rects.singleOrNull()
-                    ?: error("Single selection rect expected for $transformedRange, got $rects")
-                actualStart = rect.leftCenter()
-                actualEnd = rect.rightCenter()
-            }
+        val rects = textInput.selectionRectsForRange(selectedRange).map {
+            view.convertRect((it as UITextSelectionRect).rect, toView = null).toDpRect()
+        }
+        if (transformedRange.collapsed) {
+            assertTrue(rects.isEmpty(), "No selection rects expected for $transformedRange, got $rects")
+        } else {
+            val rect = rects.singleOrNull()
+                ?: error("Single selection rect expected for $transformedRange, got $rects")
+            actualStart = rect.leftCenter()
+            actualEnd = rect.rightCenter()
         }
 
         val (layout, layoutPositionInWindow) = focusedTextLayout()
