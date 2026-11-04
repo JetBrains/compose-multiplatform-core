@@ -666,13 +666,6 @@ internal class NativeTextInputView(
         }
     }
 
-    private fun reloadVisibleEditMenu() {
-        if (!available(OS.Ios to OSVersion(major = 16))) return
-        for (interaction in interactions) {
-            (interaction as? UIEditMenuInteraction)?.reloadVisibleMenu()
-        }
-    }
-
     override fun editMenuForTextRange(textRange: UITextRange, suggestedActions: List<*>): UIMenu? {
         isEditMenuRequested = true
         val customMenuElements = makeCustomMenuElements()
