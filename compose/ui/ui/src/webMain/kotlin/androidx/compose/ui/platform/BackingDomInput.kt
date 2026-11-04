@@ -74,7 +74,11 @@ internal class BackingDomInput(
             // The pause will be reset by the subsequent updateState() call's rAF callback,
             // or by the rAF below if updateState() doesn't run.
             inputStrategy.pauseSelectionChangeListener = true
-            backingElement.focus()
+        }
+
+        backingElement.focus()
+
+        if (inputStrategy.pauseSelectionChangeListener) {
             // Safari has now reset the DOM selection to (0,0). Restore the correct selection
             // from the last known Compose state so that when the pause is lifted the DOM
             // selection matches Compose and no stale SetSelectionCommand is sent.

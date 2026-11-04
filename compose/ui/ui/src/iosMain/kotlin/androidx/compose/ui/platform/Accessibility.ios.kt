@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.collection.MutableIntSet
 import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.ui.animation.durationScale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -61,7 +62,6 @@ import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
-import androidx.compose.ui.window.DisplayLinkListener
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 import kotlin.math.min
@@ -1168,8 +1168,6 @@ internal class AccessibilityMediator(
         return rectInWindow.toDpRect().toRect(view.density)
     }
 
-    private var displayLinkListener: DisplayLinkListener? = null
-
     private var scrollJob: Job? = null
 
     private val focusObserver = AccessibilityFocusedElementObserver { focusedElement ->
@@ -1183,7 +1181,7 @@ internal class AccessibilityMediator(
     }
 
     private fun scrollToAccessibilityElement(element: NSObject) {
-        val listener = displayLinkListener ?: return
+        if (!isAccessibilityActive) return
 
         val scrollableContainer = findFirstAccessibilityElementInHierarchy(element) {
             it.node.semanticsNode.canScroll
@@ -1198,7 +1196,9 @@ internal class AccessibilityMediator(
                     element.accessibilityFrame.toDpRect()
                         .toRect(scrollableContainer.node.semanticsNode.layoutNode.density)
             }
-            scrollJob = CoroutineScope(coroutineContext + listener.frameClock).launch {
+            val frameClock = scrollableContainer.node.semanticsNode.layoutNode.owner
+                ?.coroutineContext?.get(MonotonicFrameClock) ?: return
+            scrollJob = CoroutineScope(coroutineContext + frameClock).launch {
                 scrollableContainer.node.semanticsNode.scrollToCenterRectIfNeeded(
                     targetRect = rect,
                     safeAreaRectInWindow = safeAreaRectInWindow
@@ -1414,9 +1414,6 @@ internal class AccessibilityMediator(
     }
 
     private fun cleanUp() {
-        displayLinkListener?.invalidate()
-        displayLinkListener = null
-
         disableAccessibilityJob = null
         isAccessibilityActive = false
 
@@ -1698,11 +1695,6 @@ internal class AccessibilityMediator(
 
         val (element, focusedElementKey, liveRegionAnnouncement) = traverseSemanticsTree(rootSemanticsNode)
         root.element = element
-
-        if (displayLinkListener == null) {
-            displayLinkListener = DisplayLinkListener()
-            displayLinkListener?.start()
-        }
 
         accessibilityDebugLogger?.let {
             debugTraverse(it, view)
