@@ -17,6 +17,8 @@
 package androidx.compose.ui.animation
 
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.MotionDurationScale
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
@@ -52,4 +54,8 @@ internal suspend fun withAnimationProgress(
             update(progress)
         }
     }
+}
+
+internal fun CoroutineContext.durationScale(): Float {
+    return this[MotionDurationScale]?.scaleFactor ?: 1f
 }

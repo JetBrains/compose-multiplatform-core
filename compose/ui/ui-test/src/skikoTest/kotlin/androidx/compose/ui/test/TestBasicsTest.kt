@@ -37,15 +37,18 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Suppress("DEPRECATION")
 @OptIn(ExperimentalTestApi::class)
@@ -185,6 +188,25 @@ abstract class AbstractTestBasicsTest(
         assertEquals(1, value)
         mainClock.advanceTimeBy(2000, ignoreFrameDuration = true)
         assertEquals(3, value)
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-10875
+    @Test
+    fun timeoutInLaunchedEffectIsExecutedAfterAdvancingClock() = runUiTest {
+        var timedOut = false
+        mainClock.autoAdvance = false
+        setContent {
+            LaunchedEffect(Unit) {
+                withTimeoutOrNull(100_000.milliseconds) { awaitCancellation() }
+                timedOut = true
+            }
+        }
+
+        assertFalse(timedOut, "Timeout fired immediately")
+        mainClock.advanceTimeBy(99999, ignoreFrameDuration = true)
+        assertFalse(timedOut, "Timeout fired before its deadline")
+        mainClock.advanceTimeBy(2, ignoreFrameDuration = true)
+        assertTrue(timedOut, "Timeout did not fire after its deadline")
     }
 
     @Test

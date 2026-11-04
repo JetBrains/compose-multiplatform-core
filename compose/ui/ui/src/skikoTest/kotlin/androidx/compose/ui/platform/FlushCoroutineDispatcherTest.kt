@@ -18,16 +18,24 @@ package androidx.compose.ui.platform
 
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.yield
 
 class FlushCoroutineDispatcherTest {
 
@@ -126,6 +134,56 @@ class FlushCoroutineDispatcherTest {
         assertFalse(
             actual = dispatcher.hasDelayedTasks(),
             message = "FlushCoroutineDispatcher has a delayed task that has been cancelled"
+        )
+    }
+
+    @Test
+    fun timeout_follows_scope_dispatcher_time() = runTest {
+        val dispatcher = FlushCoroutineDispatcher(this)
+        var timedOut = false
+        launch(dispatcher) {
+            withTimeoutOrNull(100_000.milliseconds) { awaitCancellation() }
+            timedOut = true
+        }
+
+        assertFalse(timedOut, "Timeout fired immediately")
+        testScheduler.advanceTimeBy(99_999.milliseconds)
+        testScheduler.runCurrent()
+        assertFalse(timedOut, "Timeout fired before its deadline")
+        testScheduler.advanceTimeBy(2.milliseconds)
+        testScheduler.runCurrent()
+        assertTrue(timedOut, "Timeout didn't fire after its deadline")
+    }
+
+    @Test
+    fun timeout_tasks_are_cancelled() = runTest {
+        val coroutineScope = CoroutineScope(Dispatchers.Unconfined)
+        val dispatcher = FlushCoroutineDispatcher(coroutineScope)
+        val job = launch(dispatcher) {
+            withTimeout(1.days) { awaitCancellation() }
+        }
+        assertTrue(dispatcher.hasDelayedTasks())
+        job.cancel()
+        assertFalse(
+            dispatcher.hasDelayedTasks(),
+            "FlushCoroutineDispatcher has a timeout task that has been cancelled"
+        )
+    }
+
+    @Test
+    fun timeout_tasks_are_removed_when_block_completes() = runTest {
+        val coroutineScope = CoroutineScope(Dispatchers.Unconfined)
+        val dispatcher = FlushCoroutineDispatcher(coroutineScope)
+        val channel = Channel<Unit>(capacity = 1)
+        val job = launch(dispatcher) {
+            withTimeout(1.days) { channel.receive() }
+        }
+        assertTrue(dispatcher.hasDelayedTasks())
+        channel.trySend(Unit)
+        job.join()
+        assertFalse(
+            dispatcher.hasDelayedTasks(),
+            "FlushCoroutineDispatcher has a timeout task whose block has completed"
         )
     }
 
