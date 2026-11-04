@@ -78,7 +78,7 @@ internal abstract class TextInputConnection(
     protected var currentTextFieldValue: TextFieldValue? = null
         private set
 
-    protected val textLayoutResult get() = currentRequest?.textLayoutResult()
+    protected val transformedTextLayoutResult get() = currentRequest?.textLayoutResult()
 
     protected val offsetMapping: TextEditorOffsetMapping
         get() = currentRequest?.offsetMapping ?: TextEditorOffsetMapping.Identity
@@ -324,7 +324,7 @@ internal abstract class TextInputConnection(
 
     override fun updateFloatingCursor(offset: DpOffset) {
         val translation = floatingCursorTranslation ?: return
-        val layout = textLayoutResult ?: return
+        val layout = transformedTextLayoutResult ?: return
 
         val fingerPx = offset.toOffset(rootView.density)
         val virtualCursorPx = fingerPx + translation
@@ -359,7 +359,7 @@ internal abstract class TextInputConnection(
     override fun beginFloatingCursor(offset: DpOffset) {
         val start = currentTextFieldValue?.selection?.start ?: return
         val cursorRect =
-            textLayoutResult?.getCursorRect(offsetMapping.mapToTransformed(start)) ?: return
+            transformedTextLayoutResult?.getCursorRect(offsetMapping.mapToTransformed(start)) ?: return
         floatingCursorTranslation = cursorRect.center - offset.toOffset(rootView.density)
     }
 
@@ -451,7 +451,7 @@ internal abstract class TextInputConnection(
 
     override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? {
         val text = currentTextFieldValue?.text ?: return null
-        val layoutResult = textLayoutResult ?: return null
+        val layoutResult = transformedTextLayoutResult ?: return null
 
         // Lines are measured in the transformed text.
         val mapping = offsetMapping
