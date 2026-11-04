@@ -10,8 +10,9 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 
 # The image ships only JBR 25; the repository's convention, and CI, is JDK 21.
-JDK_DIR="$HOME/.local/jdk-21"
-JDK_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jdk_x64_linux_hotspot_21.0.5_11.tar.gz"
+JDK_VERSION="21.0.13+9"
+JDK_DIR="$HOME/.local/jdk-$JDK_VERSION"
+JDK_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-${JDK_VERSION/+/%2B}/OpenJDK21U-jdk_x64_linux_hotspot_${JDK_VERSION/+/_}.tar.gz"
 
 SDK_DIR="$HOME/android-sdk"
 # dl.google.com is blocked by the proxy; the JetBrains redirector mirrors it.
@@ -25,12 +26,16 @@ SDK_PACKAGES=(
 
 log() { printf '[startup] %s\n' "$*"; }
 
+cleanup_old_installations() {
+  rm -rf "$HOME/.local/jdk-21"
+}
+
 install_jdk() {
   if [ -x "$JDK_DIR/bin/javac" ]; then
-    log "JDK 21 already installed"
+    log "JDK $JDK_VERSION already installed"
     return
   fi
-  log "installing JDK 21"
+  log "installing JDK $JDK_VERSION"
   mkdir -p "$JDK_DIR"
   curl -fL --retry 3 --retry-all-errors -o /tmp/jdk21.tar.gz "$JDK_URL"
   tar xzf /tmp/jdk21.tar.gz -C "$JDK_DIR" --strip-components=1
@@ -100,6 +105,7 @@ EOF
   log "wrote Gradle, Yarn, and local.properties configuration"
 }
 
+cleanup_old_installations
 install_jdk
 install_sdk
 write_gradle_config
