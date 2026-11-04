@@ -142,28 +142,28 @@ public class BottomSheetNavigator(internal val sheetState: ModalBottomSheetState
         // While the back stack is updated immediately, we might still be hiding the sheet, so
         // we keep the entry around until the sheet is hidden
         val retainedEntry by
-        produceState<NavBackStackEntry?>(initialValue = null, key1 = backStack) {
-            backStack
-                .transform { backStackEntries ->
-                    // Always hide the sheet when the back stack is updated
-                    // Regardless of whether we're popping or pushing, we always want to hide
-                    // the sheet first before deciding whether to re-show it or keep it hidden
-                    try {
-                        sheetState.hide()
-                    } catch (_: CancellationException) {
-                        // We catch but ignore possible cancellation exceptions as we don't want
-                        // them to bubble up and cancel the whole produceState coroutine
-                    } finally {
-                        emit(backStackEntries.lastOrNull())
+            produceState<NavBackStackEntry?>(initialValue = null, key1 = backStack) {
+                backStack
+                    .transform { backStackEntries ->
+                        // Always hide the sheet when the back stack is updated
+                        // Regardless of whether we're popping or pushing, we always want to hide
+                        // the sheet first before deciding whether to re-show it or keep it hidden
+                        try {
+                            sheetState.hide()
+                        } catch (_: CancellationException) {
+                            // We catch but ignore possible cancellation exceptions as we don't want
+                            // them to bubble up and cancel the whole produceState coroutine
+                        } finally {
+                            emit(backStackEntries.lastOrNull())
+                        }
                     }
-                }
-                .collect { value = it }
-        }
+                    .collect { value = it }
+            }
 
         if (retainedEntry != null) {
             LaunchedEffect(retainedEntry) { sheetState.show() }
 
-             BackHandler { state.popWithTransition(popUpTo = retainedEntry!!, saveState = false) }
+            BackHandler { state.popWithTransition(popUpTo = retainedEntry!!, saveState = false) }
         }
 
         SheetContentHost(

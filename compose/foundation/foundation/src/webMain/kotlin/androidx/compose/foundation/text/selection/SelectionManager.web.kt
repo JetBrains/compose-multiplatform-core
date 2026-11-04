@@ -82,6 +82,3 @@ internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
         separator()
     }
 }
-
-internal actual val SelectionManager.skipCopyKeyEvent: Boolean
-    get() = true
