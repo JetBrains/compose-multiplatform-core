@@ -683,12 +683,6 @@ internal class UIKitInstrumentedTest(
         return tap(frame.center())
     }
 
-    fun AccessibilityTestNode.focusThenDoubleTap(delayMillis: Long = 500L) {
-        tap()
-        delay(delayMillis)
-        doubleTap()
-    }
-
     /**
      * Simulates a touch-down event at the center of a given AccessibilityTestNode.
      */
@@ -707,11 +701,9 @@ internal class UIKitInstrumentedTest(
     }
 
     fun AccessibilityTestNode.openToolbarForLeadingWord(
-        doubleTapPreparationDelay: Long,
         manualDoubleTapIntervalDelay: Long
     ) {
         tap()
-        delay(doubleTapPreparationDelay)
         val tapPoint = pointInNode(xFraction = 0.1f, yFraction = 0.5f)
         tap(tapPoint)
         delay(manualDoubleTapIntervalDelay)
@@ -1225,7 +1217,10 @@ internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
 internal fun UIKitInstrumentedTest.waitForContextMenu() {
     waitForIdle()
     waitUntil("Waiting for context menu to appear") { isContextMenuVisible }
-    delay(200) // wait for toolbar animation
+    if (!available(OS.Ios to OSVersion(16))) {
+        // The idleness does not track the UIMenuController animation
+        delay(200)
+    }
     waitForIdle()
 }
 

@@ -45,7 +45,6 @@ import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import platform.UIKit.UIView
 import platform.UIKit.reloadInputViews
@@ -59,7 +58,12 @@ internal abstract class TextInputConnection(
 
     private var textInputServiceInvalidationsCount = 0
     val hasInvalidations: Boolean
-        get() = textInputServiceInvalidationsCount > 0
+        get() = textInputServiceInvalidationsCount > 0 || isTextMenuTransitioning
+
+    /**
+     * Whether the text menu is scheduled to appear, or its appearance or disappearance is animating.
+     */
+    protected open val isTextMenuTransitioning: Boolean get() = false
 
     /**
      * When `true`, [onTextFieldValueUpdated] callbacks coming back through the state snapshot flow
@@ -458,15 +462,6 @@ internal abstract class TextInputConnection(
                     lineStart, min(offsetInLine, targetLineEnd - lineStart)
                 )
             }
-        }
-    }
-
-    protected fun textMenuAppearanceChanged() {
-        textInputServiceInvalidationsCount++
-        coroutineScope.launch {
-            // Time to show, hide or update state of context menu
-            delay(500.milliseconds)
-            textInputServiceInvalidationsCount--
         }
     }
 

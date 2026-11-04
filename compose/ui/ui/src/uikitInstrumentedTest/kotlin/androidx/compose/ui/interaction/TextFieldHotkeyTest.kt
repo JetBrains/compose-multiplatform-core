@@ -108,8 +108,6 @@ class TextFieldHotkeyTest {
         initialText = "Hello-LongLongLongLongLongLong-text",
         actions = {
             // Select a word and bring up the edit menu via double-tap.
-            findNodeWithTag("TextField").tap()
-            delay(500)
             findNodeWithTag("TextField").doubleTap()
             waitForContextMenu()
 

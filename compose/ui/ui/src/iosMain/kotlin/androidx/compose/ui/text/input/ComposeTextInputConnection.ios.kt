@@ -233,6 +233,9 @@ internal open class ComposeTextInputConnection(
         )
     }
 
+    override val isTextMenuTransitioning: Boolean
+        get() = textInputView.isTextMenuTransitioning()
+
     val toolbarStatus: TextToolbarStatus
         get() = if (textInputView.isTextMenuShown()) {
             TextToolbarStatus.Shown
@@ -262,7 +265,6 @@ internal open class ComposeTextInputConnection(
                 selectAll = onSelectAllRequested,
                 customActions = customActions?.map { CMPEditMenuCustomAction(it.title, it.action) },
             )
-            textMenuAppearanceChanged()
         }
         showMenuOrUpdatePosition()
     }
@@ -270,6 +272,5 @@ internal open class ComposeTextInputConnection(
     fun hideToolbar() {
         showMenuOrUpdatePosition = {}
         textInputView.hideTextMenu()
-        textMenuAppearanceChanged()
     }
 }
