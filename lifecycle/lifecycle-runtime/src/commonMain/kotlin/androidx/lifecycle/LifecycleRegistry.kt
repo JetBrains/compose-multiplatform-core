@@ -140,7 +140,7 @@ private constructor(provider: LifecycleOwner, private val enforceMainThread: Boo
             moveToState(state)
         }
 
-    private val _currentStateFlow = MutableStateFlow(internalState)
+    private val _currentStateFlow = MutableStateFlow(state)
     override val currentStateFlow: StateFlow<State> by
         lazy(LazyThreadSafetyMode.NONE) { _currentStateFlow.asStateFlow() }
 
