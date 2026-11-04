@@ -42,20 +42,6 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSMakeRange
 import platform.UIKit.UITextInputProtocol
 
-/**
- * Checks that marked (composing) text driven through the `UITextInput` contract — `setMarkedText`,
- * `markedTextRange` and `unmarkText`, called the way the system input calls them — is correctly
- * reflected in the focused Compose text field: the inserted text, the composing region reported
- * back to UIKit, the composition in the Compose value, and the IME selection inside the marked
- * text.
- *
- * Note: the marked text *style* is intentionally not asserted. On iOS the system underlines marked
- * text by setting `UITextInput.markedTextStyle` on the text input, but both input views
- * (`NativeTextInputView` and `ComposeTextInputView`) currently discard it — `setMarkedTextStyle`
- * is a no-op and `markedTextStyle()` returns null — and the Compose text pipeline applies no
- * styling to the composition range. The underscore attribute is therefore not observable through
- * any API available to this test.
- */
 class TextFieldMarkedTextTest {
 
     @Test fun setMarkedText_btf1() = runUIKitInstrumentedTest { checkMarkedText(BasicTextFieldType.V1, nativeInput = false) }
@@ -72,9 +58,6 @@ private fun UIKitInstrumentedTest.setUpMarkedTextField(
     nativeInput: Boolean,
 ): () -> TextFieldValue {
     val ime = KeyboardOptions(
-        // Disable autocorrect/spell-check so the native iOS suggestion machinery does not
-        // interfere with the marked text driven by the test.
-        autoCorrectEnabled = false,
         platformImeOptions = PlatformImeOptions { usingNativeTextInput(nativeInput) }
     )
     val focusRequester = FocusRequester()
