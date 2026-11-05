@@ -25,10 +25,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.node.NodeCoordinator
+import androidx.compose.ui.platform.accessibility.unclippedBoundsInWindowForWeb
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
@@ -38,6 +43,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.get
 
@@ -82,16 +88,43 @@ class A11yTraversalOrderTest : OnCanvasTests {
 
     @Test
     fun rtlSiblingsAreSortedRightToLeft() = runApplicationTest {
+        val nodes = mutableMapOf<String, SemanticsNode>()
+        fun Modifier.recordNode(tag: String) = onGloballyPositioned {
+            nodes[tag] = SemanticsNode((it as NodeCoordinator).layoutNode, false)
+        }
         createComposeWindow {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                Box(Modifier.fillMaxSize().testTag("parent")) {
-                    Box(Modifier.absoluteOffset(0.dp, 0.dp).size(20.dp).testTag("left"))
-                    Box(Modifier.absoluteOffset(100.dp, 0.dp).size(20.dp).testTag("right"))
+                // Absolute offsets need a physical left origin; TopStart would align these
+                // children to the right in RTL and push the offset child outside the viewport.
+                Box(
+                    Modifier.fillMaxSize().testTag("parent").recordNode("parent"),
+                    contentAlignment = AbsoluteAlignment.TopLeft,
+                ) {
+                    Box(Modifier.absoluteOffset(0.dp, 0.dp).size(20.dp).testTag("left").recordNode("left"))
+                    Box(Modifier.absoluteOffset(100.dp, 0.dp).size(20.dp).testTag("right").recordNode("right"))
                 }
             }
         }
         awaitA11YChanges()
 
+        val parentBounds = nodes.getValue("parent").boundsInWindow
+        listOf("left", "right").forEach { tag ->
+            val node = nodes.getValue(tag)
+            val bounds = node.boundsInWindow
+            assertTrue(bounds.width > 0f && bounds.height > 0f, "$tag must have nonempty bounds")
+            assertEquals(node.unclippedBoundsInWindowForWeb(), bounds, "$tag must not be clipped")
+            assertTrue(
+                bounds.left >= parentBounds.left && bounds.right <= parentBounds.right &&
+                    bounds.top >= parentBounds.top && bounds.bottom <= parentBounds.bottom,
+                "$tag must be inside the parent: $bounds, parent=$parentBounds",
+            )
+            assertTrue(!element(tag).hasAttribute("inert"), "$tag must be accessibility reachable")
+        }
+        val leftBounds = nodes.getValue("left").boundsInWindow
+        val rightBounds = nodes.getValue("right").boundsInWindow
+        assertTrue(leftBounds.right <= rightBounds.left, "The left child must be physically left")
+        assertEquals(leftBounds.top, rightBounds.top, "Both children must occupy the same row")
+        assertEquals(leftBounds.bottom, rightBounds.bottom)
         assertChildOrder("parent", "right", "left")
     }
 

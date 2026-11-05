@@ -46,7 +46,11 @@ import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.node.NodeCoordinator
+import androidx.compose.ui.platform.accessibility.unclippedBoundsInWindowForWeb
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
@@ -354,92 +358,129 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test // [A, C, B], and C moves to another parent, leaving [A, B].
     fun reparentedNodeRetainsItsElement() = runApplicationTest {
-        var moveToSecondParent by mutableStateOf(false)
-        val buttonInMovableContent = movableContentOf {
-            Button(modifier = Modifier.testTag("movableButton"), onClick = {}) {
-                Text("Movable")
-            }
-        }
-
-        createComposeWindow {
-            Column {
-                Column(modifier = Modifier.size(200.dp).testTag("parent1")) {
-                    Button(modifier = Modifier.testTag("button1"), onClick = {}) {
-                        Text("Button1")
-                    }
-                    if (!moveToSecondParent) buttonInMovableContent()
-                    Button(modifier = Modifier.testTag("button2"), onClick = {}) {
-                        Text("Button2")
-                    }
-                }
-                Box(modifier = Modifier.size(200.dp).testTag("parent2")) {
-                    if (moveToSecondParent) buttonInMovableContent()
-                }
-            }
-        }
-
-        awaitA11YChanges()
-        val a11yContainer = assertNotNull(getA11YContainer())
-        val parent1 = assertNotNull(getShadowRoot().getElementById("parent1") as? HTMLElement)
-        val parent2 = assertNotNull(getShadowRoot().getElementById("parent2") as? HTMLElement)
-
-        val movableButton = assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
-        val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
-        val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
-
-        fun assertParentOrder() {
-            val descendants = a11yContainer.querySelectorAll("[id]")
-            assertEquals(
-                listOf("parent2", "parent1"),
-                (0 until descendants.length)
-                    .mapNotNull { (descendants[it] as? HTMLElement)?.id }
-                    .filter { it == "parent1" || it == "parent2" },
-            )
-        }
-
-        assertParentOrder()
-        assertEquals(
-            listOf("button1", "movableButton", "button2"),
-            (0 until parent1.children.length).map { parent1.children[it]?.id },
-        )
-        assertEquals(0, parent2.children.length)
-
-        var unaffectedNodeWasRemoved = false
-        val observer = createMutationObserver { removedNode ->
-            if (removedNode === parent1 || removedNode === parent2 ||
-                removedNode === button1 || removedNode === button2 ||
-                (removedNode as? HTMLElement)?.contains(button1) == true ||
-                (removedNode as? HTMLElement)?.contains(button2) == true
-            ) {
-                unaffectedNodeWasRemoved = true
-            }
-        }
-        observeChildListMutations(observer, assertNotNull(getA11YContainer()))
-
+        val container = getContainer() as HTMLElement
+        val originalStyle = container.getAttribute("style")
         try {
-            moveToSecondParent = true
-            awaitA11YChanges()
-            awaitAnimationFrame()
+            // Both 200 dp parents must fit. The default test viewport can constrain the
+            // second parent to zero height, making its geometry sort before the first parent.
+            container.style.width = "300px"
+            container.style.height = "460px"
+            val nodes = mutableMapOf<String, SemanticsNode>()
+            fun Modifier.recordNode(tag: String) = onGloballyPositioned {
+                nodes[tag] = SemanticsNode((it as NodeCoordinator).layoutNode, false)
+            }
+            var moveToSecondParent by mutableStateOf(false)
+            val buttonInMovableContent = movableContentOf {
+                Button(modifier = Modifier.testTag("movableButton"), onClick = {}) {
+                    Text("Movable")
+                }
+            }
 
-            assertSame(movableButton, getShadowRoot().getElementById("movableButton"))
-            assertSame(parent2, movableButton.parentElement)
-            assertTrue(movableButton.isConnected)
-            assertSame(parent1, getShadowRoot().getElementById("parent1"))
-            assertSame(parent2, getShadowRoot().getElementById("parent2"))
-            assertSame(button1, getShadowRoot().getElementById("button1"))
-            assertSame(button2, getShadowRoot().getElementById("button2"))
+            createComposeWindow {
+                Column {
+                    Column(modifier = Modifier.size(200.dp).testTag("parent1").recordNode("parent1")) {
+                        Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                            Text("Button1")
+                        }
+                        if (!moveToSecondParent) buttonInMovableContent()
+                        Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                            Text("Button2")
+                        }
+                    }
+                    Box(modifier = Modifier.size(200.dp).testTag("parent2").recordNode("parent2")) {
+                        if (moveToSecondParent) buttonInMovableContent()
+                    }
+                }
+            }
+
+            awaitA11YChanges()
+            val a11yContainer = assertNotNull(getA11YContainer())
+            val parent1 = assertNotNull(getShadowRoot().getElementById("parent1") as? HTMLElement)
+            val parent2 = assertNotNull(getShadowRoot().getElementById("parent2") as? HTMLElement)
+
+            val movableButton = assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
+            val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+            val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+
+            fun parentBounds() = listOf("parent1", "parent2").associateWith { tag ->
+                val node = nodes.getValue(tag)
+                val bounds = node.boundsInWindow
+                val element = if (tag == "parent1") parent1 else parent2
+                val domBounds = element.getBoundingClientRect()
+                assertEquals(200.0, domBounds.width, "$tag must retain its requested width")
+                assertEquals(200.0, domBounds.height, "$tag must retain its requested height")
+                assertTrue(bounds.width > 0f && bounds.height > 0f, "$tag must have nonempty bounds")
+                assertEquals(node.unclippedBoundsInWindowForWeb(), bounds, "$tag must not be clipped")
+                assertFalse(element.hasAttribute("inert"), "$tag must remain accessibility reachable")
+                bounds
+            }
+            val initialBounds = parentBounds()
+            assertTrue(
+                initialBounds.getValue("parent1").bottom <= initialBounds.getValue("parent2").top,
+                "The second parent must be below the first",
+            )
+
+            fun assertParentOrder() {
+                val descendants = a11yContainer.querySelectorAll("[id]")
+                assertEquals(
+                    listOf("parent1", "parent2"),
+                    (0 until descendants.length)
+                        .mapNotNull { (descendants[it] as? HTMLElement)?.id }
+                        .filter { it == "parent1" || it == "parent2" },
+                )
+            }
+
             assertParentOrder()
             assertEquals(
-                listOf("button1", "button2"),
+                listOf("button1", "movableButton", "button2"),
                 (0 until parent1.children.length).map { parent1.children[it]?.id },
             )
-            assertEquals(
-                listOf("movableButton"),
-                (0 until parent2.children.length).map { parent2.children[it]?.id },
-            )
-            assertFalse(unaffectedNodeWasRemoved, "Unaffected nodes must not be removed")
+            assertEquals(0, parent2.children.length)
+
+            var unaffectedNodeWasRemoved = false
+            val observer = createMutationObserver { removedNode ->
+                if (removedNode === parent1 || removedNode === parent2 ||
+                    removedNode === button1 || removedNode === button2 ||
+                    (removedNode as? HTMLElement)?.contains(button1) == true ||
+                    (removedNode as? HTMLElement)?.contains(button2) == true
+                ) {
+                    unaffectedNodeWasRemoved = true
+                }
+            }
+            observeChildListMutations(observer, assertNotNull(getA11YContainer()))
+
+            try {
+                moveToSecondParent = true
+                awaitA11YChanges()
+                awaitAnimationFrame()
+
+                assertSame(movableButton, getShadowRoot().getElementById("movableButton"))
+                assertSame(parent2, movableButton.parentElement)
+                assertTrue(movableButton.isConnected)
+                assertSame(parent1, getShadowRoot().getElementById("parent1"))
+                assertSame(parent2, getShadowRoot().getElementById("parent2"))
+                assertSame(button1, getShadowRoot().getElementById("button1"))
+                assertSame(button2, getShadowRoot().getElementById("button2"))
+                assertEquals(initialBounds, parentBounds(), "Reparenting must not move or resize the parents")
+                assertParentOrder()
+                assertEquals(
+                    listOf("button1", "button2"),
+                    (0 until parent1.children.length).map { parent1.children[it]?.id },
+                )
+                assertEquals(
+                    listOf("movableButton"),
+                    (0 until parent2.children.length).map { parent2.children[it]?.id },
+                )
+                assertFalse(unaffectedNodeWasRemoved, "Unaffected nodes must not be removed")
+            } finally {
+                disconnectMutationObserver(observer)
+            }
         } finally {
-            disconnectMutationObserver(observer)
+            if (originalStyle == null) {
+                container.removeAttribute("style")
+            } else {
+                container.setAttribute("style", originalStyle)
+            }
         }
     }
 
