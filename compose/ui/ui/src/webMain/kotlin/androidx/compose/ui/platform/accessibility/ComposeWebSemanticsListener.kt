@@ -303,7 +303,7 @@ internal class ComposeWebSemanticsListener(
 
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
-            val children = node.replacedChildren
+            val children = node.placedA11YChildren()
             val nodeReachability = node.a11yReachability(parentReachability)
             val isA11YReachable = nodeReachability.isReachable()
 
@@ -329,6 +329,14 @@ internal class ComposeWebSemanticsListener(
             targetChildToParent[htmlNode] = htmlParent
         }
     }
+
+    private fun SemanticsNode.placedA11YChildren(): List<SemanticsNode> =
+        replacedChildren.filter { child ->
+            // Prefetched lazy items may be attached and measured while retaining a reused slot's
+            // old position. They must not participate in geometry sorting or DOM synchronization.
+            // Fake semantics nodes have no attached layout node and use their parent's geometry.
+            child.isFake || child.layoutNode.let { it.isAttached && it.isPlaced }
+        }
 
     /**
      * @param children - the nodes to be added for traversal during the sync
@@ -648,7 +656,7 @@ internal class ComposeWebSemanticsListener(
                 targetTextAndLinks.add(textParts[linkIndex])
             }
 
-            val linkChildren = child.replacedChildren
+            val linkChildren = child.placedA11YChildren()
             val linkHtmlNode = syncNode(
                 semanticsNode = child,
                 config = childConfig,
