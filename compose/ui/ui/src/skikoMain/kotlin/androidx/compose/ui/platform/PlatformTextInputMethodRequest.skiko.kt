@@ -17,7 +17,6 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.text.TextLayoutResult
@@ -56,6 +55,14 @@ actual interface PlatformTextInputMethodRequest {
      */
     @ExperimentalComposeUiApi
     val textLayoutResult: () -> TextLayoutResult?
+
+    /**
+     * Maps ranges between the [state] text and the text laid out in [textLayoutResult]. They
+     * differ if the text is transformed, e.g. by a visual or an output transformation.
+     */
+    @ExperimentalComposeUiApi
+    val offsetMapping: TextEditorOffsetMapping
+        get() = TextEditorOffsetMapping.Identity
 
     /**
      * Returns the snapshot rectangle (relative to root) of the area where the actual editing

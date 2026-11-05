@@ -28,6 +28,8 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.platform.toUIColor
 import androidx.compose.ui.platform.detachedCopy
+import androidx.compose.ui.platform.mapFromTransformed
+import androidx.compose.ui.platform.mapToTransformed
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -131,9 +133,9 @@ internal class NativeTextInputConnection(
         // field with the IntermediateTextScrollView (which contains IntermediateUITextView)
         // to ensure native iOS text input controls
         // align correctly with the rendered text.
-        val layoutResult = textLayoutResult ?: return
+        val transformedTextLayoutResult = transformedTextLayoutResult ?: return
 
-        val contentBounds = calculateContentBounds(layoutResult, rect, offset)
+        val contentBounds = calculateContentBounds(transformedTextLayoutResult, rect, offset)
         currentContentBounds = contentBounds
         val contentInsets = calculateContentInsets(rect, contentBounds)
         currentContentInsets = contentInsets
@@ -174,11 +176,12 @@ internal class NativeTextInputConnection(
         if (position < 0 || position > text.length) {
             return null
         }
-        val currentTextLayoutResult = textLayoutResult ?: return null
-        if (position > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+        val transformedTextLayoutResult = transformedTextLayoutResult ?: return null
+        val transformedPosition = offsetMapping.mapToTransformed(position)
+        if (transformedPosition > transformedTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
             return null
         }
-        val rect = currentTextLayoutResult.getCursorRect(position)
+        val rect = transformedTextLayoutResult.getCursorRect(transformedPosition)
         return rect.toDpRect(rootView.density).let {
             val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
@@ -192,17 +195,23 @@ internal class NativeTextInputConnection(
         if (range.collapsed || isIncorrect(range)) {
             return emptyList()
         }
-        val currentTextLayoutResult = textLayoutResult ?: return emptyList()
+        val transformedRange = offsetMapping.mapToTransformed(range)
+        if (transformedRange.collapsed) {
+            return emptyList()
+        }
+        val transformedTextLayoutResult = transformedTextLayoutResult ?: return emptyList()
 
         // Layout in native text input mode may be outdated, so not checking this may cause OOB error
         // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
-        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return emptyList()
+        if (transformedRange.end > transformedTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+            return emptyList()
+        }
 
-        val startSelectionHandleRect = currentTextLayoutResult.getCursorRect(range.start)
-        val endSelectionHandleRect = currentTextLayoutResult.getCursorRect(range.end)
+        val startSelectionHandleRect = transformedTextLayoutResult.getCursorRect(transformedRange.start)
+        val endSelectionHandleRect = transformedTextLayoutResult.getCursorRect(transformedRange.end)
 
-        val firstLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
-        val lastLineNumber = currentTextLayoutResult.getLineForOffset(range.end)
+        val firstLineNumber = transformedTextLayoutResult.getLineForOffset(transformedRange.start)
+        val lastLineNumber = transformedTextLayoutResult.getLineForOffset(transformedRange.end)
 
         return if (firstLineNumber == lastLineNumber) {
             listOf(
@@ -258,8 +267,8 @@ internal class NativeTextInputConnection(
                 isVertical = false
             )
 
-            val lastLineStartRect = currentTextLayoutResult.getCursorRect(
-                currentTextLayoutResult.getLineStart(lastLineNumber)
+            val lastLineStartRect = transformedTextLayoutResult.getCursorRect(
+                transformedTextLayoutResult.getLineStart(lastLineNumber)
             )
             val lastLineRect = TextInputSelectionRect(
                 dpRect = Rect(
@@ -284,25 +293,30 @@ internal class NativeTextInputConnection(
         if (range.collapsed || isIncorrect(range)) {
             return null
         }
-        val currentTextLayoutResult = textLayoutResult ?: return null
+        val transformedRange = offsetMapping.mapToTransformed(range)
+        if (transformedRange.collapsed) {
+            return null
+        }
+        val transformedTextLayoutResult = transformedTextLayoutResult ?: return null
 
         // Layout in native text input mode may be outdated, so not checking this may cause OOB error
         // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
-        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return null
+        if (transformedRange.end > transformedTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+            return null
+        }
 
-        val startHandleLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
-        val endHandleLineNumber = currentTextLayoutResult.getLineForOffset(range.end)
-
-        val startHandleRect = currentTextLayoutResult.getCursorRect(range.start)
+        val startHandleLineNumber = transformedTextLayoutResult.getLineForOffset(transformedRange.start)
+        val endHandleLineNumber = transformedTextLayoutResult.getLineForOffset(transformedRange.end)
+        val startHandleRect = transformedTextLayoutResult.getCursorRect(transformedRange.start)
 
         return if (startHandleLineNumber == endHandleLineNumber) {
             Rect(
                 topLeft = startHandleRect.topLeft,
-                bottomRight = currentTextLayoutResult.getCursorRect(range.end).bottomRight
+                bottomRight = transformedTextLayoutResult.getCursorRect(transformedRange.end).bottomRight
             ).toDpRect(rootView.density)
         } else {
-            val startLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
-            val startLineRight = currentTextLayoutResult.getLineRight(startLineNumber)
+            val startLineNumber = transformedTextLayoutResult.getLineForOffset(transformedRange.start)
+            val startLineRight = transformedTextLayoutResult.getLineRight(startLineNumber)
             Rect(
                 startHandleRect.left,
                 startHandleRect.top,
@@ -313,21 +327,24 @@ internal class NativeTextInputConnection(
     }
 
     override fun closestPositionToPoint(point: DpOffset): Int? {
-        return textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
+        return transformedTextLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
+            ?.let { offsetMapping.mapFromTransformed(it) }
     }
 
     override fun closestPositionToPoint(point: DpOffset, withinRange: TextRange): Int? {
-        val pointOffset =
-            textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
-                ?: return null
-        return pointOffset.coerceIn(withinRange.start, withinRange.end)
+        val transformedTextLayoutResult = transformedTextLayoutResult ?: return null
+        val transformedTextOffset =
+            transformedTextLayoutResult.getOffsetForPosition(point.toOffset(rootView.density))
+        return offsetMapping.mapFromTransformed(transformedTextOffset)
+            .coerceIn(withinRange.start, withinRange.end)
     }
 
     override fun characterRangeAtPoint(point: DpOffset): TextRange? {
-        val pointOffset =
-            textLayoutResult?.getOffsetForPosition(point.toOffset(rootView.density))
-                ?: return null
-        return textLayoutResult?.getWordBoundary(pointOffset)
+        val transformedTextLayoutResult = transformedTextLayoutResult ?: return null
+        val transformedPointOffset =
+            transformedTextLayoutResult.getOffsetForPosition(point.toOffset(rootView.density))
+        val wordBoundary = transformedTextLayoutResult.getWordBoundary(transformedPointOffset)
+        return offsetMapping.mapFromTransformed(wordBoundary)
     }
 
     override fun positionWithinRange(
@@ -339,27 +356,46 @@ internal class NativeTextInputConnection(
             TextLayoutDirection.Up -> range.start
             TextLayoutDirection.Down -> range.end
             else -> {
-                val layout = textLayoutResult ?: return null
-                val startLine = layout.getLineForOffset(range.start)
-                val endLine = layout.getLineForOffset(range.end)
+                val transformedTextLayoutResult = transformedTextLayoutResult ?: return null
+                val mapping = offsetMapping
+                val transformedRange = mapping.mapToTransformed(range)
+                val startLine = transformedTextLayoutResult.getLineForOffset(transformedRange.start)
+                val endLine = transformedTextLayoutResult.getLineForOffset(transformedRange.end)
 
                 val candidateOffsets = buildSet {
-                    add(range.start)
-                    add(range.end)
+                    add(transformedRange.start)
+                    add(transformedRange.end)
 
                     for (line in startLine..endLine) {
-                        add(max(range.start, layout.getLineStart(line)))
-                        add(min(range.end, layout.getLineEnd(line)))
+                        add(
+                            max(
+                                transformedRange.start,
+                                transformedTextLayoutResult.getLineStart(line)
+                            )
+                        )
+                        add(min(transformedRange.end, transformedTextLayoutResult.getLineEnd(line)))
                     }
                 }
 
                 when (farthestInDirection) {
                     TextLayoutDirection.Left ->
-                        candidateOffsets.minByOrNull { layout.getHorizontalPosition(it, true) }
+                        candidateOffsets.minByOrNull {
+                            transformedTextLayoutResult.getHorizontalPosition(
+                                it,
+                                true
+                            )
+                        }
+
                     TextLayoutDirection.Right ->
-                        candidateOffsets.maxByOrNull { layout.getHorizontalPosition(it, true) }
+                        candidateOffsets.maxByOrNull {
+                            transformedTextLayoutResult.getHorizontalPosition(
+                                it,
+                                true
+                            )
+                        }
+
                     else -> null
-                }
+                }?.let { mapping.mapFromTransformed(it) }
             }
         }
     }

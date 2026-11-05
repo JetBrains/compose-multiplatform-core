@@ -59,6 +59,7 @@ import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.BasicTextFieldType
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.isLoupeView
+import androidx.compose.ui.test.utils.runTextFieldTest
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.waitForContextMenu
 import androidx.compose.ui.text.TextRange
@@ -708,42 +709,6 @@ class TextFieldEditMenuTest {
         ComposeFoundationFlags.isNewContextMenuEnabled = newContextMenuEnabled
         try {
             testBlock()
-        } finally {
-            ComposeFoundationFlags.isNewContextMenuEnabled = oldValue
-        }
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    private fun runTextFieldTest(
-        newContextMenuEnabled: Boolean? = null,
-        usingNativeTextInput: Boolean? = null,
-        textFieldType: BasicTextFieldType? = null,
-        testBlock: UIKitInstrumentedTest.(
-            newContextMenuEnabled: Boolean,
-            usingNativeTextInput: Boolean,
-            textFieldType: BasicTextFieldType
-        ) -> Unit
-    ) {
-        val oldValue = ComposeFoundationFlags.isNewContextMenuEnabled
-
-        val newContextMenus = newContextMenuEnabled?.let(::listOf) ?: listOf(false, true)
-        val nativeTextInputs = usingNativeTextInput?.let(::listOf) ?: listOf(false, true)
-        val types = textFieldType?.let(::listOf) ?: BasicTextFieldType.entries
-
-        val variations = newContextMenus.flatMap { menu ->
-            nativeTextInputs.flatMap { native ->
-                types.map { type -> Triple(menu, native, type) }
-            }
-        }
-
-        try {
-            for ((newContextMenuEnabled, usingNativeTextInput, type) in variations) {
-                ComposeFoundationFlags.isNewContextMenuEnabled = newContextMenuEnabled
-                println("Debug: newContextMenuEnabled=$newContextMenuEnabled, usingNativeTextInput=$usingNativeTextInput, textFieldType=$type")
-                runUIKitInstrumentedTest {
-                    testBlock(newContextMenuEnabled, usingNativeTextInput, type)
-                }
-            }
         } finally {
             ComposeFoundationFlags.isNewContextMenuEnabled = oldValue
         }
