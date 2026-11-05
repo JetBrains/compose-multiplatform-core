@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform.a11y
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
@@ -59,6 +63,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.get
 
 /**
  * Tests for scrolling initiated by assistive technologies (VoiceOver & co).
@@ -103,6 +108,187 @@ class A11yScrollTest : OnCanvasTests {
             getShadowRoot().getElementById(tag) as? HTMLElement,
             "Scrollable node must be present in the a11y tree"
         )
+
+    private enum class ListScrollPosition {
+        Start,
+        Middle,
+        End,
+    }
+
+    private fun clippedListItemsKeepTraversalOrder(position: ListScrollPosition) = runApplicationTest {
+        val scrollState = ScrollState(0)
+        val itemCount = 20
+        var a11ySyncMarker by mutableStateOf("initial")
+
+        createComposeWindow {
+            Column {
+                Spacer(Modifier.height(30.dp))
+                Column(
+                    modifier = Modifier
+                        .testTag("scrollable")
+                        .size(160.dp, 100.dp)
+                        .verticalScroll(scrollState)
+                        .semantics { contentDescription = a11ySyncMarker }
+                ) {
+                    repeat(itemCount) { index ->
+                        Box(
+                            Modifier
+                                .size(160.dp, 40.dp)
+                                .clickable {}
+                                .testTag("scrollItem$index")
+                        ) {
+                            Text("Item $index")
+                        }
+                    }
+                }
+            }
+        }
+
+        awaitCondition("the scrollable list items must be present in the a11y tree") {
+            getShadowRoot().getElementById("scrollable") != null &&
+                (0 until itemCount).all { index ->
+                    getShadowRoot().getElementById("scrollItem$index") != null
+                }
+        }
+
+        val scrollable = getScrollableElement()
+        assertTrue(
+            scrollable.getBoundingClientRect().top > 0.0,
+            "Scroll viewport must have a nonzero window offset",
+        )
+        val items = (0 until itemCount).map { index ->
+            assertNotNull(
+                getShadowRoot().getElementById("scrollItem$index") as? HTMLElement,
+                "Scrollable item $index must be present in the a11y tree",
+            )
+        }
+        val firstItemTopBeforeScroll = items.first().getBoundingClientRect().top
+        items.forEachIndexed { index, item ->
+            assertFalse(item.hasAttribute("inert"), "Scrollable item $index must remain reachable")
+        }
+
+        val targetScrollPx = when (position) {
+            ListScrollPosition.Start -> 0
+            ListScrollPosition.Middle -> (400f * density).toInt()
+            ListScrollPosition.End -> scrollState.maxValue
+        }
+        if (targetScrollPx != 0) {
+            launch { scrollState.scrollTo(targetScrollPx) }
+        }
+        val expectedDomOffset = targetScrollPx.toDouble() / density.toDouble()
+        awaitCondition("Compose and DOM scroll offsets must reach $position") {
+            !scrollState.isScrollInProgress &&
+                abs(scrollState.value - targetScrollPx) <= 1 &&
+                abs(scrollable.scrollTop - expectedDomOffset) <= 1.0 &&
+                abs(
+                    items.first().getBoundingClientRect().top -
+                        (firstItemTopBeforeScroll - expectedDomOffset)
+                ) <= 1.0
+        }
+
+        val expectedA11ySyncMarker = "scroll-position-${position.name.lowercase()}"
+        a11ySyncMarker = expectedA11ySyncMarker
+        awaitCondition("accessibility tree to sync marker '$expectedA11ySyncMarker'") {
+            scrollable.getAttribute("aria-label") == expectedA11ySyncMarker
+        }
+
+        val actualOrder = scrollable.querySelectorAll("[id^='scrollItem']").let { elements ->
+            (0 until elements.length).mapNotNull { (elements[it] as? HTMLElement)?.id }
+        }
+        items.forEachIndexed { index, item ->
+            assertFalse(item.hasAttribute("inert"), "Scrolled item $index must remain reachable")
+            assertSame(
+                item,
+                assertNotNull(getShadowRoot().getElementById("scrollItem$index") as? HTMLElement),
+            )
+        }
+        assertEquals((0 until itemCount).map { "scrollItem$it" }, actualOrder)
+    }
+
+    @Test
+    fun clippedListItemsKeepTraversalOrderAtStart() =
+        clippedListItemsKeepTraversalOrder(ListScrollPosition.Start)
+
+    @Test
+    fun clippedListItemsKeepTraversalOrderInMiddle() =
+        clippedListItemsKeepTraversalOrder(ListScrollPosition.Middle)
+
+    @Test
+    fun clippedListItemsKeepTraversalOrderAtEnd() =
+        clippedListItemsKeepTraversalOrder(ListScrollPosition.End)
+
+    @Test
+    fun clippedGridItemsKeepGeometryOrderAndTraversalIndex() = runApplicationTest {
+        val scrollState = ScrollState(0)
+        var a11ySyncMarker by mutableStateOf("initial")
+
+        createComposeWindow {
+            Column {
+                Spacer(Modifier.height(30.dp))
+                Column(
+                    modifier = Modifier
+                        .testTag("gridScrollable")
+                        .size(160.dp, 100.dp)
+                        .verticalScroll(scrollState)
+                        .semantics { contentDescription = a11ySyncMarker }
+                ) {
+                    repeat(3) { row ->
+                        Row {
+                            repeat(2) { column ->
+                                val index = row * 2 + column
+                                Box(
+                                    Modifier
+                                        .size(80.dp, 60.dp)
+                                        .clickable {}
+                                        .then(
+                                            if (index == 5) {
+                                                Modifier.semantics { traversalIndex = -1f }
+                                            } else {
+                                                Modifier
+                                            }
+                                        )
+                                        .testTag("gridItem$index")
+                                ) {
+                                    Text("Grid item $index")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        awaitCondition("all grid items must be present in the a11y tree") {
+            getShadowRoot().getElementById("gridScrollable") != null &&
+                (0 until 6).all { index ->
+                    getShadowRoot().getElementById("gridItem$index") != null
+                }
+        }
+
+        val scrollable = getScrollableElement("gridScrollable")
+        val targetScrollPx = (60f * density).toInt()
+        launch { scrollState.scrollTo(targetScrollPx) }
+        val expectedDomOffset = targetScrollPx.toDouble() / density.toDouble()
+        awaitCondition("the grid must reach its scrolled position") {
+            !scrollState.isScrollInProgress &&
+                abs(scrollState.value - targetScrollPx) <= 1 &&
+                abs(scrollable.scrollTop - expectedDomOffset) <= 1.0
+        }
+
+        val expectedA11ySyncMarker = "scrolled-grid"
+        a11ySyncMarker = expectedA11ySyncMarker
+        awaitCondition("accessibility tree to sync marker '$expectedA11ySyncMarker'") {
+            scrollable.getAttribute("aria-label") == expectedA11ySyncMarker
+        }
+
+        val actualOrder = scrollable.querySelectorAll("[id^='gridItem']").let { elements ->
+            (0 until elements.length).mapNotNull { (elements[it] as? HTMLElement)?.id }
+        }
+        assertEquals(
+            listOf("gridItem5", "gridItem0", "gridItem1", "gridItem2", "gridItem3", "gridItem4"),
+            actualOrder,
+        )
+    }
 
     @Test
     fun verticalScrollableBecomesScrollContainer() = runApplicationTest {

@@ -363,7 +363,7 @@ class CfWA11YTest : OnCanvasTests {
 
         createComposeWindow {
             Column {
-                Box(modifier = Modifier.testTag("parent1")) {
+                Column(modifier = Modifier.size(200.dp).testTag("parent1")) {
                     Button(modifier = Modifier.testTag("button1"), onClick = {}) {
                         Text("Button1")
                     }
@@ -372,19 +372,37 @@ class CfWA11YTest : OnCanvasTests {
                         Text("Button2")
                     }
                 }
-                Box(modifier = Modifier.testTag("parent2")) {
+                Box(modifier = Modifier.size(200.dp).testTag("parent2")) {
                     if (moveToSecondParent) buttonInMovableContent()
                 }
             }
         }
 
         awaitA11YChanges()
+        val a11yContainer = assertNotNull(getA11YContainer())
         val parent1 = assertNotNull(getShadowRoot().getElementById("parent1") as? HTMLElement)
         val parent2 = assertNotNull(getShadowRoot().getElementById("parent2") as? HTMLElement)
 
         val movableButton = assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
         val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
         val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+
+        fun assertParentOrder() {
+            val descendants = a11yContainer.querySelectorAll("[id]")
+            assertEquals(
+                listOf("parent2", "parent1"),
+                (0 until descendants.length)
+                    .mapNotNull { (descendants[it] as? HTMLElement)?.id }
+                    .filter { it == "parent1" || it == "parent2" },
+            )
+        }
+
+        assertParentOrder()
+        assertEquals(
+            listOf("button1", "movableButton", "button2"),
+            (0 until parent1.children.length).map { parent1.children[it]?.id },
+        )
+        assertEquals(0, parent2.children.length)
 
         var unaffectedNodeWasRemoved = false
         val observer = createMutationObserver { removedNode ->
@@ -410,9 +428,14 @@ class CfWA11YTest : OnCanvasTests {
             assertSame(parent2, getShadowRoot().getElementById("parent2"))
             assertSame(button1, getShadowRoot().getElementById("button1"))
             assertSame(button2, getShadowRoot().getElementById("button2"))
+            assertParentOrder()
             assertEquals(
                 listOf("button1", "button2"),
                 (0 until parent1.children.length).map { parent1.children[it]?.id },
+            )
+            assertEquals(
+                listOf("movableButton"),
+                (0 until parent2.children.length).map { parent2.children[it]?.id },
             )
             assertFalse(unaffectedNodeWasRemoved, "Unaffected nodes must not be removed")
         } finally {

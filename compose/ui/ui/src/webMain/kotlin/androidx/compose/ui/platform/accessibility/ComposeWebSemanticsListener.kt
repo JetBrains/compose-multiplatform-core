@@ -22,6 +22,7 @@ import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -321,7 +322,7 @@ internal class ComposeWebSemanticsListener(
                 // It handles its link children itself:
                 syncTextContentAndChildren(node, config, children, htmlNode, rootPosition, nodeReachability)
             } else {
-                pushNodesForTraversal(children, htmlNode, nodeReachability)
+                pushNodesForTraversal(node, children, htmlNode, nodeReachability)
             }
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
             targetParentToChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
@@ -334,11 +335,19 @@ internal class ComposeWebSemanticsListener(
      * @param htmlParent - the a11y (dom) parent element to contain the children a11y elements
      */
     private fun pushNodesForTraversal(
+        parent: SemanticsNode,
         children: List<SemanticsNode>,
         htmlParent: HTMLElement,
         parentA11YExposure: A11YReachability,
     ) {
-        val reversedChildren = children.asReversed()
+        val boundsProvider: (SemanticsNode) -> Rect =
+            if (parentA11YExposure == A11YReachability.ReachableByScroll) {
+                { it.unclippedBoundsInWindowForWeb() }
+            } else {
+                { it.boundsInWindow }
+            }
+        val reversedChildren =
+            parent.sortByGeometryGroupingsForWeb(children, boundsProvider).asReversed()
         dfsSemanticsNodes.addAll(reversedChildren)
         repeat(reversedChildren.size) {
             dfsA11YParents.addLast(htmlParent)
@@ -651,7 +660,7 @@ internal class ComposeWebSemanticsListener(
             targetParentToChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
             targetChildToParent[linkHtmlNode] = htmlNode
             // A link node is expected to be a leaf, but don't rely on it.
-            pushNodesForTraversal(linkChildren, linkHtmlNode, a11YReachability)
+            pushNodesForTraversal(child, linkChildren, linkHtmlNode, a11YReachability)
 
             linkIndex++
         }
@@ -661,7 +670,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         updateTextAndLinks(htmlNode, targetTextAndLinks, a11YScrollController.getScrollSizer(node))
-        deferredChildren?.let { pushNodesForTraversal(it, htmlNode, a11YReachability) }
+        deferredChildren?.let { pushNodesForTraversal(node, it, htmlNode, a11YReachability) }
     }
 
     /** Updates the text fragments and semantic link elements after the optional scroll sizer. */
