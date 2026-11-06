@@ -46,8 +46,9 @@ internal class FlushCoroutineDispatcher(
     private val immediateTasksLock = makeSynchronizedObject()
     private val delayedTasksLock = makeSynchronizedObject()
     private var immediateTasksSwap = ArrayDeque<Runnable>()
+    /** Nesting depth of [performRun]; mutated only under [runLock]. */
     @Volatile
-    private var isPerformingRun = false
+    private var performRunDepth = 0
     private val runLock = makeSynchronizedObject()
 
     override fun isDispatchNeeded(context: CoroutineContext): Boolean {
@@ -74,7 +75,7 @@ internal class FlushCoroutineDispatcher(
     /**
      * Whether the dispatcher has immediate tasks pending.
      */
-    fun hasImmediateTasks() = isPerformingRun ||
+    fun hasImmediateTasks() = performRunDepth > 0 ||
         synchronized(immediateTasksLock) { immediateTasks.isNotEmpty() }
 
     /**
@@ -85,8 +86,14 @@ internal class FlushCoroutineDispatcher(
     /**
      * Perform all scheduled tasks and wait for the tasks which are already
      * performing in the [scope].
+     *
+     * A nested call from a running task is a no-op, so tasks never run inside another task.
+     * Pending tasks are run by the outer [flush].
      */
     fun flush() = performRun {
+        // Called from a task that is already running: skip, the outer run executes pending tasks
+        if (performRunDepth > 1) return@performRun
+
         // Run tasks until they're empty in order to executed even ones that are added by the tasks
         // pending at the start
         while (true) {
@@ -106,11 +113,11 @@ internal class FlushCoroutineDispatcher(
 
     // the lock is needed to be certain that all tasks will be completed after `flush` method
     private fun performRun(body: () -> Unit) = synchronized(runLock) {
+        performRunDepth++
         try {
-            isPerformingRun = true
             body()
         } finally {
-            isPerformingRun = false
+            performRunDepth--
         }
     }
 
