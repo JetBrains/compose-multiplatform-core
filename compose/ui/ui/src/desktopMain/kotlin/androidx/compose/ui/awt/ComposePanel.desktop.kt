@@ -345,11 +345,12 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     override fun addNotify() {
         super.addNotify()
 
+        windowParent = SwingUtilities.getWindowAncestor(this)
+
         // After [super.addNotify] is called, we can safely initialize the bridge and composable
         // content.
         val composeContainer = _composeContainer ?: createComposeContainer().also {
             _composeContainer = it
-            windowParent = SwingUtilities.getWindowAncestor(this)
             it.redispatchUnconsumedMouseWheelEvents = redispatchUnconsumedMouseWheelEvents
             it.showLayoutBounds = showLayoutBounds
             val composeContent = _composeContent
