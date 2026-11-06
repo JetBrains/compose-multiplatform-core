@@ -65,6 +65,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldBuffer
+import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
@@ -3881,31 +3882,34 @@ private fun TimePickerTextField(
                         0.90f to Color.Transparent,
                         1.00f to Color.Transparent,
                     ),
-                decorator = { innerTextField ->
-                    OutlinedTextFieldDefaults.DecorationBox(
-                        value = textFieldState.text.toString(),
-                        visualTransformation = VisualTransformation.None,
-                        innerTextField = innerTextField,
-                        isError = !isValid,
-                        singleLine = true,
-                        colors = textFieldColors,
-                        enabled = true,
-                        interactionSource = interactionSource,
-                        contentPadding = PaddingValues(0.dp),
-                        container = {
-                            OutlinedTextFieldDefaults.Container(
-                                enabled = true,
-                                isError = !isValid,
-                                interactionSource = interactionSource,
-                                colors = textFieldColors,
-                                shape =
-                                    shapes?.timeFieldShape
-                                        ?: TimeInputTokens.TimeFieldContainerShape.value,
-                                focusedBorderThickness = 2.dp,
-                                unfocusedBorderThickness = 1.dp,
-                            )
-                        },
-                    )
+                decorator = object : TextFieldDecorator {
+                    @Composable
+                    override fun Decoration(innerTextField: @Composable (() -> Unit)) {
+                        OutlinedTextFieldDefaults.DecorationBox(
+                            value = textFieldState.text.toString(),
+                            visualTransformation = VisualTransformation.None,
+                            innerTextField = innerTextField,
+                            isError = !isValid,
+                            singleLine = true,
+                            colors = textFieldColors,
+                            enabled = true,
+                            interactionSource = interactionSource,
+                            contentPadding = PaddingValues(0.dp),
+                            container = {
+                                OutlinedTextFieldDefaults.Container(
+                                    enabled = true,
+                                    isError = !isValid,
+                                    interactionSource = interactionSource,
+                                    colors = textFieldColors,
+                                    shape =
+                                        shapes?.timeFieldShape
+                                            ?: TimeInputTokens.TimeFieldContainerShape.value,
+                                    focusedBorderThickness = 2.dp,
+                                    unfocusedBorderThickness = 1.dp,
+                                )
+                            },
+                        )
+                    }
                 },
             )
         }

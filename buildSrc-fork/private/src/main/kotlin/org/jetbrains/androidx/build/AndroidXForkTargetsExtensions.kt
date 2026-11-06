@@ -18,6 +18,7 @@ package org.jetbrains.androidx.build
 
 import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.PlatformIdentifier
+import androidx.build.configureNode
 import androidx.build.configurePinnedKotlinLibraries
 import androidx.build.getVersionByName
 import androidx.build.multiplatformExtension
@@ -82,6 +83,9 @@ fun <T: KotlinTarget> AndroidXMultiplatformExtension.configureForkWebTarget(
                     }
                 }
             }
+            // Test tasks use the project-level Node.js env spec, so configure it here as well
+            // as in the root project. Otherwise, KGP's default Node.js version is used.
+            project.configureNode()
         }
 
         val mainCompilation = target.compilations.findByName("main")!!

@@ -3987,6 +3987,11 @@ public final class androidx/compose/ui/platform/SynchronizationKt {
 	public static final fun synchronized (Landroidx/compose/ui/platform/SynchronizedObject;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 }
 
+public final class androidx/compose/ui/platform/SynchronizedObject {
+	public static final field $stable I
+	public fun <init> ()V
+}
+
 public abstract interface class androidx/compose/ui/platform/TaskDispatchers {
 	public abstract fun getDefault ()Lkotlinx/coroutines/CoroutineDispatcher;
 	public abstract fun getIO ()Lkotlinx/coroutines/CoroutineDispatcher;
@@ -4654,6 +4659,7 @@ public final class androidx/compose/ui/window/DialogState_desktopKt {
 
 public abstract interface class androidx/compose/ui/window/DialogWindowScope : androidx/compose/ui/window/WindowScope {
 	public abstract fun getWindow ()Landroidx/compose/ui/awt/ComposeDialog;
+	public synthetic fun getWindow ()Ljava/awt/Window;
 }
 
 public final class androidx/compose/ui/window/Dialog_desktopKt {
@@ -4670,6 +4676,7 @@ public final class androidx/compose/ui/window/Dialog_skikoKt {
 
 public abstract interface class androidx/compose/ui/window/FrameWindowScope : androidx/compose/ui/window/WindowScope {
 	public abstract fun getWindow ()Landroidx/compose/ui/awt/ComposeWindow;
+	public synthetic fun getWindow ()Ljava/awt/Window;
 }
 
 public final class androidx/compose/ui/window/MenuBarScope {
