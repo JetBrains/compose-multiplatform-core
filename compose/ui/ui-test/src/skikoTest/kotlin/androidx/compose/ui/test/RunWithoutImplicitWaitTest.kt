@@ -37,7 +37,6 @@ import kotlin.test.Test
 
 // Copied from androidDeviceTest
 class RunWithoutImplicitWaitTest {
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun triggeredAnimationAndCaptureMotionValues() = runComposeUiTest {
         var size by mutableStateOf(64.dp)

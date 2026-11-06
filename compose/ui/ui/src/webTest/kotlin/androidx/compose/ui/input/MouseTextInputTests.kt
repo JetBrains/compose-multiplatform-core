@@ -19,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -84,7 +85,7 @@ class MouseTextInputTests: OnCanvasTests {
         // So it will be the first to process all the point inputs
         assertEquals(canvas, elementsAtPos, "First element under mouse supposed to be canvas")
         withContext(Dispatchers.Default) {
-            delay(250) // to separate the mouse events
+            delay(250.milliseconds) // to separate the mouse events
         }
 
 

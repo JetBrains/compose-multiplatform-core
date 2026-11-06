@@ -34,10 +34,12 @@ import platform.UIKit.UIViewController
 import platform.UIKit.addChildViewController
 import platform.UIKit.didMoveToParentViewController
 
+@Suppress("unused")
 internal class NonFullscreenContainerSwipeBackInHostingViewTest : NonFullscreenContainerSwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
 )
 
+@Suppress("unused")
 internal class NonFullscreenContainerSwipeBackInHostingViewControllerTest :
     NonFullscreenContainerSwipeBackTest(
         runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }

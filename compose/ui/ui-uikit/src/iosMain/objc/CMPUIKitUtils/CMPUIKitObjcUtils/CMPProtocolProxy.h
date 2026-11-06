@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.text.selection
+#import <Foundation/Foundation.h>
 
-internal actual val SelectionManager.skipCopyKeyEvent: Boolean
-    get() = false
+NS_ASSUME_NONNULL_BEGIN
+
+/// A proxy that forwards all messages to the object it was created with.
+@interface CMPProtocolProxy : NSProxy
+
+- (instancetype)initWithObject:(nullable id)object protocol:(Protocol *)protocol;
+
+@end
+
+NS_ASSUME_NONNULL_END

@@ -712,6 +712,7 @@ internal class FakeClipboard(private var clipEntry: ClipEntry?) : Clipboard {
         this@FakeClipboard.clipEntry = clipEntry
     }
 
+    @Deprecated("Use platform-specific extension to get platform reference")
     override val nativeClipboard: NativeClipboard
         get() {
             throw UnsupportedOperationException("Native Clipboard isn't needed in tests")

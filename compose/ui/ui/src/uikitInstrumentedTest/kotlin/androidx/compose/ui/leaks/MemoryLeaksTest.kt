@@ -141,6 +141,7 @@ class MemoryLeaksTest {
                 enforceStrictPlistSanityCheck = false
             }) {
                 val focusRequester = FocusRequester()
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -175,6 +176,7 @@ class MemoryLeaksTest {
                     enforceStrictPlistSanityCheck = false
                 }) {
                     val focusRequester = FocusRequester()
+                    @Suppress("DEPRECATION")
                     TextField(
                         value = "",
                         onValueChange = {},
@@ -227,6 +229,7 @@ class MemoryLeaksTest {
                     enforceStrictPlistSanityCheck = false
                 }) {
                     val focusRequester = FocusRequester()
+                    @Suppress("DEPRECATION")
                     TextField(
                         value = "",
                         onValueChange = {},
@@ -348,6 +351,7 @@ class MemoryLeaksTest {
                 enforceStrictPlistSanityCheck = false
             }) {
                 val focusRequester = FocusRequester()
+                @Suppress("DEPRECATION")
                 TextField(
                     value = "",
                     onValueChange = {},
@@ -383,6 +387,7 @@ class MemoryLeaksTest {
                     enforceStrictPlistSanityCheck = false
                 }) {
                     val focusRequester = FocusRequester()
+                    @Suppress("DEPRECATION")
                     TextField(
                         value = "",
                         onValueChange = {},

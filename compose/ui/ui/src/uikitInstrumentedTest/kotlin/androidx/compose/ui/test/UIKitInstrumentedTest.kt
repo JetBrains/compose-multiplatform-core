@@ -18,7 +18,6 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
@@ -224,10 +223,11 @@ internal fun runUIKitInstrumentedTest(
  * Constructor properties are initialized with the attributes of the main screen and a mock delegate to simulate
  * the application setup.
  */
-@OptIn(ExperimentalForeignApi::class, InternalComposeUiApi::class)
+@OptIn(ExperimentalForeignApi::class)
 internal class UIKitInstrumentedTest(
     val useHostingView: Boolean
 ) {
+    @Suppress("ConstPropertyName")
     companion object {
         /**
          * The factor by which animations are sped up in instrumented tests.
@@ -268,6 +268,7 @@ internal class UIKitInstrumentedTest(
         ) {
             val runLoop = NSRunLoop.currentRunLoop()
             val endTime = TimeSource.Monotonic.markNow() + timeoutMillis.milliseconds
+            runLoop.runUntilDate(NSDate())
             while (!condition()) {
                 if (TimeSource.Monotonic.markNow() > endTime) {
                     throw AssertionError(conditionDescription ?: "Timeout ${timeoutMillis}ms reached.")
@@ -400,7 +401,7 @@ internal class UIKitInstrumentedTest(
         content: @Composable () -> Unit
     ): ComposeHostingView {
         val configuration = ComposeUIViewConfiguration()
-            .apply({ enforceStrictPlistSanityCheck = false })
+            .apply { enforceStrictPlistSanityCheck = false }
             .apply(configure)
 
         return ComposeHostingView(
@@ -421,7 +422,7 @@ internal class UIKitInstrumentedTest(
         content: @Composable () -> Unit
     ): ComposeHostingViewController {
         val configuration = ComposeUIViewControllerConfiguration()
-            .apply({ enforceStrictPlistSanityCheck = false })
+            .apply { enforceStrictPlistSanityCheck = false }
             .apply(configure)
 
         return ComposeHostingViewController(
@@ -440,6 +441,13 @@ internal class UIKitInstrumentedTest(
         attachedViewController?.view?.endEditing(force = true)
         try {
             waitForIdle()
+            if (attachedViewController != null) {
+                // The loupe is hosted by a window that outlives the test, so it must be hidden
+                // before the next test starts looking for it.
+                waitUntil("Selection loupe should hide before the next test") {
+                    findFirstDescendant { it.isLoupeView } == null
+                }
+            }
         } finally {
             AccessibilityNotification.onNotificationPostedForTests = null
             appDelegate.cleanUp()
@@ -476,6 +484,9 @@ internal class UIKitInstrumentedTest(
             timeoutMillis = timeoutMillis
         ) {
             clearComposeContainerReferencesIfDetached()
+            // Apply pending UIKit layout, e.g., after interop view frame changes. It may update
+            // Compose state (insets, sizes) and schedule more work.
+            appDelegate.window?.layoutIfNeeded()
             isIdle
         }
     }
@@ -889,7 +900,7 @@ internal class UIKitInstrumentedTest(
             delay(stepInterval.inWholeMilliseconds)
             val progress = (i + 1).toFloat() / steps.toFloat()
             val scale = 1.0 + (finalScale - 1.0) * progress
-            pinchEvent.pinchBy(scale.toDouble(), targetWindow)
+            pinchEvent.pinchBy(scale, targetWindow)
         }
 
         delay(stepInterval.inWholeMilliseconds)
@@ -973,8 +984,6 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             )
         }
 
-        // Must be applied before the Compose container is attached to the window: it picks the
-        // window layer speed up in `onDidMoveToWindow` to derive its `MotionDurationScale`.
         startObservingWindowVisibility()
         applyAnimationSpeed()
 
@@ -1048,6 +1057,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     private fun UIWindow.applyAnimationSpeed() {
         layer.speed = animationSpeed
+        FrameChoreographer.updateMotionSpeedForWindow(this)
     }
 
     /**
@@ -1130,6 +1140,12 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
     } as? UITextInputProtocol
 }
 
+internal fun UIKitInstrumentedTest.focusedUITextInput(): UITextInputProtocol {
+    val textInput = findFocusedUITextInput()
+    assertNotNull(textInput, "No focused text input view")
+    return textInput
+}
+
 internal fun UIKitInstrumentedTest.findAllUITextInputViews(): List<UIView> {
     val windowScene = viewController.view.window?.windowScene ?: return emptyList()
 
@@ -1150,7 +1166,6 @@ internal fun UIKitInstrumentedTest.findAllUITextInputViews(): List<UIView> {
  * Implements the `PlatformContext.RootForTestListener` interface to manage the lifecycle
  * of roots being created and disposed.
  */
-@OptIn(InternalComposeUiApi::class)
 internal class RootForTestRegistry : PlatformContext.RootForTestListener {
     private val trackedRoots = mutableSetOf<PlatformRootForTest>()
 
@@ -1165,7 +1180,6 @@ internal class RootForTestRegistry : PlatformContext.RootForTestListener {
     }
 }
 
-@OptIn(InternalComposeUiApi::class)
 internal fun UIKitInstrumentedTest.allSemanticsNodes(): List<SemanticsNode> =
     rootForTestRegistry.roots.flatMap {
         it.semanticsOwner.getAllSemanticsNodes(mergingEnabled = false)
@@ -1201,7 +1215,7 @@ internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
     UIGraphicsGetCurrentContext() ?: return null
 
     val scene = appDelegate.window()?.windowScene ?: return null
-    scene.windows.mapNotNull { it as? UIWindow }
+    scene.windows.filterIsInstance<UIWindow>()
         .filter { !it.hidden && it.alpha > 0.0 }
         .sortedBy { it.windowLevel }
         .forEach { window ->

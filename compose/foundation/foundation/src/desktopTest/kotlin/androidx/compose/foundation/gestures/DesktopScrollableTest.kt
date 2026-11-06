@@ -383,14 +383,14 @@ class DesktopScrollableTest {
             .performMouseInput {
                 scroll(10f)
             }
-            .assertTopPositionInRootIsEqualTo(-10.dp)
+            .assertTopPositionInRootIsEqualTo((-10).dp)
 
         isEnabled = false
         onNodeWithTag("box")
             .performMouseInput {
                 scroll(10f)
             }
-            .assertTopPositionInRootIsEqualTo(-10.dp)
+            .assertTopPositionInRootIsEqualTo((-10).dp)
     }
 
     private class TestColumn {

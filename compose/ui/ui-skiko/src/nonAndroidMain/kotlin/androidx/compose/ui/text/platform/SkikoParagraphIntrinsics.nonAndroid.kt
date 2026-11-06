@@ -17,7 +17,6 @@
  */
 package androidx.compose.ui.text.platform
 
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -47,17 +46,17 @@ internal class SkikoParagraphIntrinsics(
     private val fontFamilyResolver: FontFamily.Resolver,
     private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
-    private var resolvedTypefaces: TypefaceDirtyTrackerLinkedList? = null
+    private val fontResolutions = ParagraphFontResolutions(fontFamilyResolver)
 
     val textDirection =
         resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
 
     // we need to track it reactively to invalidate the UI
-    // Async typeface updates are tracked separately via [resolvedTypefaces].
+    // Async typeface updates are tracked separately via [fontResolutions].
     private var hasUnresolvedFontStale by mutableStateOf(false)
 
     override val hasStaleResolvedFonts: Boolean
-        get() = hasUnresolvedFontStale || (resolvedTypefaces?.isStaleResolvedFont ?: false)
+        get() = hasUnresolvedFontStale || fontResolutions.hasStaleResolvedFonts
 
     private var layouter: ParagraphLayouter? = newLayouter()
 
@@ -77,10 +76,8 @@ internal class SkikoParagraphIntrinsics(
             density = density,
             fontFamilyResolver = fontFamilyResolver,
             onFontStale = { hasUnresolvedFontStale = true },
-        onFontResolved = { state ->
-            resolvedTypefaces = TypefaceDirtyTrackerLinkedList(state, resolvedTypefaces)
-        },
-    )
+            fontResolutions = fontResolutions,
+        )
 
     override var minIntrinsicWidth = 0f
         private set
@@ -98,16 +95,6 @@ internal class SkikoParagraphIntrinsics(
         minIntrinsicWidth = ceil(para.minIntrinsicWidth + indent)
         maxIntrinsicWidth = ceil(para.maxIntrinsicWidth + indent)
     }
-}
-
-private class TypefaceDirtyTrackerLinkedList(
-    private val resolveResult: State<Any>,
-    private val next: TypefaceDirtyTrackerLinkedList? = null,
-) {
-    private val initial = resolveResult.value
-
-    val isStaleResolvedFont: Boolean
-        get() = resolveResult.value !== initial || (next?.isStaleResolvedFont == true)
 }
 
 internal fun resolveTextDirection(

@@ -17,7 +17,6 @@
 package androidx.compose.ui.text.platform
 
 import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.runtime.State
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.BlendMode
@@ -73,7 +72,7 @@ internal class ParagraphLayouter(
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
     private val onFontStale: () -> Unit,
-    onFontResolved: ((State<Any>) -> Unit)? = null,
+    fontResolutions: ParagraphFontResolutions,
 ) {
     private val builder = ParagraphBuilder(
         fontFamilyResolver = fontFamilyResolver,
@@ -83,7 +82,7 @@ internal class ParagraphLayouter(
         placeholders = placeholders,
         density = density,
         textDirection = textDirection,
-        onFontResolved = onFontResolved,
+        fontResolutions = fontResolutions,
     )
     private var paragraphCache: SkParagraph? = null
     private var updateForeground = false

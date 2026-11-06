@@ -28,7 +28,6 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.handwriting.stylusHandwriting
@@ -36,7 +35,6 @@ import androidx.compose.foundation.text.input.internal.CoreTextFieldSemanticsMod
 import androidx.compose.foundation.text.input.internal.HeightForSingleLineFieldProvider
 import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextInputServiceAdapter
 import androidx.compose.foundation.text.input.internal.legacyTextInputAdapter
-import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextInputServiceAdapter
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.OffsetProvider
 import androidx.compose.foundation.text.selection.SelectedTextType

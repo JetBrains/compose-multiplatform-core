@@ -88,7 +88,7 @@ class SkikoScrollableTest {
             }
         }
 
-        runOnIdle { assertTrue(state.firstVisibleItemIndex == 0) }
+        runOnIdle { assertEquals(0, state.firstVisibleItemIndex) }
 
         onNodeWithTag("list").performMouseInput {
             scroll(1000f, ScrollWheel.Vertical)
@@ -96,7 +96,7 @@ class SkikoScrollableTest {
         runOnIdle { assertTrue(state.firstVisibleItemIndex > 0) }
 
         state = LazyListState()
-        runOnIdle { assertTrue(state.firstVisibleItemIndex == 0) }
+        runOnIdle { assertEquals(0, state.firstVisibleItemIndex) }
 
         onNodeWithTag("list").performMouseInput {
             scroll(1000f, ScrollWheel.Vertical)
@@ -117,7 +117,7 @@ class SkikoScrollableTest {
             }
         }
 
-        runOnIdle { assertTrue(state.firstVisibleItemIndex == 0) }
+        runOnIdle { assertEquals(0, state.firstVisibleItemIndex) }
 
         onNodeWithTag("list").performTouchInput {
             swipe(Offset(30f, 90f), Offset(30f, 10f))
@@ -125,7 +125,7 @@ class SkikoScrollableTest {
         runOnIdle { assertTrue(state.firstVisibleItemIndex > 0) }
 
         state = LazyListState()
-        runOnIdle { assertTrue(state.firstVisibleItemIndex == 0) }
+        runOnIdle { assertEquals(0, state.firstVisibleItemIndex) }
 
         onNodeWithTag("list").performTouchInput {
             swipe(Offset(30f, 90f), Offset(30f, 10f))

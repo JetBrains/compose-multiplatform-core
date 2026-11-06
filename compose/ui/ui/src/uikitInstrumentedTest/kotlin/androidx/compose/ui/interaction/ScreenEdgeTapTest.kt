@@ -44,10 +44,12 @@ import kotlin.test.assertTrue
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 
+@Suppress("unused")
 internal class ScreenEdgeTapInHostingViewTest : ScreenEdgeTapTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
 )
 
+@Suppress("unused")
 internal class ScreenEdgeTapInHostingViewControllerTest : ScreenEdgeTapTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
 )

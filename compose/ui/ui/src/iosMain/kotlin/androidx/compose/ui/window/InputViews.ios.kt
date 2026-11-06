@@ -727,7 +727,7 @@ internal class OverlayInputView(
     /**
      * See [androidx.compose.ui.draganddrop.IosDragAndDropManager] for more context
      */
-    var onTouchHitTest: (isNativeTextInputHit: Boolean) -> Unit = {}
+    var setDragDropGesturesEnabled: (isDragDropEnabled: Boolean) -> Unit = {}
 
     var isInterceptingOutsideEvents: Boolean = false
     var onOutsidePointerEvent: (PointerEventType) -> Unit = {}
@@ -860,7 +860,6 @@ internal class OverlayInputView(
                 it.hitTest(inputPoint, withEvent)
             }
         }
-        onTouchHitTest(nativeTextInputViewHitTest != null)
         if (nativeTextInputViewHitTest != null) {
             return nativeTextInputViewHitTest
         }
@@ -910,7 +909,6 @@ internal class OverlayInputView(
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         canIgnoreDragGesture = { false }
-        onTouchHitTest = {}
         onKeyboardPresses = {}
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _, _ -> PointerEventResult() }

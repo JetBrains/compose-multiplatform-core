@@ -63,6 +63,7 @@ import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionNatural
 import platform.UIKit.UIAction
 import platform.UIKit.UIColor
+import platform.UIKit.UIEditMenuInteraction
 import platform.UIKit.UIEdgeInsetsMake
 import platform.UIKit.UIEvent
 import platform.UIKit.UIGestureRecognizer
@@ -80,6 +81,7 @@ import platform.UIKit.UITextInputDelegateProtocol
 import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UITextInputTokenizerProtocol
 import platform.UIKit.UITextInteraction
+import platform.UIKit.UITextInteractionDelegateProtocol
 import platform.UIKit.UITextInteractionMode
 import platform.UIKit.UITextLayoutDirection
 import platform.UIKit.UITextLayoutDirectionDown
@@ -95,12 +97,16 @@ import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
 import platform.UIKit.addInteraction
+import platform.UIKit.interactions
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
 
 internal class NativeTextInputView(
     initialInput: NativeTextEditingDelegate,
-) : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
+) : CMPTextInputView(frame = CGRectZero.readValue()),
+    UIKeyInputProtocol,
+    UITextInputProtocol,
+    UITextInteractionDelegateProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
@@ -130,8 +136,21 @@ internal class NativeTextInputView(
         UITextInteraction.textInteractionForMode(UITextInteractionMode.UITextInteractionModeEditable)
             .also {
                 it.setTextInput(this)
+                it.setDelegate(this)
             }
     private var selectionInteractionAttached: Boolean = false
+
+    /** Whether a [selectionInteraction] gesture (e.g. the loupe) is tracking a touch. */
+    private var isSelectionInteractionActive = false
+
+    /**
+     * Whether the edit menu was visible when the first [selectionInteraction] gesture of the
+     * current touch began.
+     */
+    private var wasEditMenuVisibleOnTouchStart = false
+
+    /** Temporary flag to check whether the edit menu is visible */
+    private var isEditMenuRequested = false
 
     override fun didMoveToWindow() {
         super.didMoveToWindow()
@@ -550,6 +569,7 @@ internal class NativeTextInputView(
     override fun autocorrectionType(): UITextAutocorrectionType = input.inputTraits.autocorrectionType()
     override fun spellCheckingType(): UITextSpellCheckingType = input.inputTraits.spellCheckingType()
     override fun writingToolsBehavior(): UIWritingToolsBehavior = input.inputTraits.writingToolsBehavior()
+    override fun isEditable(): Boolean = input.isEditable
 
     /**
      * Call when something changes in text data
@@ -619,6 +639,7 @@ internal class NativeTextInputView(
             "cut:" -> onCut != null
             "selectAll:" -> showSelectAndSelectAllMenus
             "select:" -> showSelectAndSelectAllMenus
+            "replace:" -> input.isEditable && input.isInteractive
             else -> super.canPerformAction(action, withSender)
         }
 
@@ -637,6 +658,7 @@ internal class NativeTextInputView(
     }
 
     override fun editMenuForTextRange(textRange: UITextRange, suggestedActions: List<*>): UIMenu? {
+        isEditMenuRequested = true
         val customMenuElements = makeCustomMenuElements()
         if (customMenuElements.isEmpty()) return null // The default menu would be returned
 
@@ -644,6 +666,37 @@ internal class NativeTextInputView(
         val suggestedActionsElements = suggestedActions as List<UIMenuElement>
 
         return UIMenu.menuWithTitle("", children = customMenuElements + suggestedActionsElements)
+    }
+
+    /**
+     * A press on the caret starts the loupe almost immediately and, if released before the tap
+     * timeout, is also recognized as a tap. The loupe shows the edit menu when it ends without
+     * moving the caret, and the tap then toggles the menu off, so such presses never showed the
+     * menu. Native text fields toggle the menu relative to its state before the press.
+     */
+    override fun interactionShouldBegin(
+        interaction: UITextInteraction,
+        atPoint: CValue<CGPoint>
+    ): Boolean {
+        if (!isSelectionInteractionActive) {
+            isEditMenuRequested = false
+            // HACK: Check if edit menu visible. The `reloadVisibleMenu` will trigger the
+            // `editMenuForTextRange` in this case.
+            for (interaction in interactions) {
+                (interaction as? UIEditMenuInteraction)?.reloadVisibleMenu()
+            }
+            wasEditMenuVisibleOnTouchStart = isEditMenuRequested
+            return true
+        }
+        return wasEditMenuVisibleOnTouchStart
+    }
+
+    override fun interactionWillBegin(interaction: UITextInteraction) {
+        isSelectionInteractionActive = true
+    }
+
+    override fun interactionDidEnd(interaction: UITextInteraction) {
+        isSelectionInteractionActive = false
     }
 
     private fun makeCustomMenuElements(): List<UIMenuElement> {

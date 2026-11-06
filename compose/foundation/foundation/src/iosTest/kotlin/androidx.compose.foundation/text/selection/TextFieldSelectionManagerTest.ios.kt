@@ -18,12 +18,10 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import kotlin.experimental.ExperimentalNativeApi
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@OptIn(ExperimentalNativeApi::class)
 class TextFieldSelectionManagerTest {
     @Test
     fun isSelectionHandleIsVisible_ltr_text() {

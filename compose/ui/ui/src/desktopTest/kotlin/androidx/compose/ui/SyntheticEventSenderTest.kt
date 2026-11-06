@@ -17,6 +17,7 @@
 package androidx.compose.ui
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Enter
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Exit
@@ -37,8 +38,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.to
 
-@OptIn(ExperimentalComposeUiApi::class)
 class SyntheticEventSenderTest {
     @Test
     fun `mouse, shouldn't generate new events if order is correct`() {
@@ -398,8 +399,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Enter, 1 to touch(10f, 20f, pressed = false)),
-            event(Move, 1 to touch(10f, 20f, pressed = false))
+            mouseEvent(Enter, 10f, 20f, pressed = false),
+            mouseEvent(Move, 10f, 20f, pressed = false)
         )
 
         received.clear()
@@ -409,8 +410,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Move, 1 to touch(5f, 15f, pressed = false)),
-            event(Move, 1 to touch(5f, 15f, pressed = false))
+            mouseEvent(Move, 5f, 15f, pressed = false),
+            mouseEvent(Move, 5f, 15f, pressed = false)
         )
     }
 
@@ -426,8 +427,9 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Press, 1 to touch(10f, 20f, pressed = true)),
-            event(Move, 1 to touch(10f, 20f, pressed = true))
+            mouseEvent(Enter, 10f, 20f, pressed = false),
+            mouseEvent(Press, 10f, 20f, pressed = true),
+            mouseEvent(Move, 10f, 20f, pressed = true)
         )
 
         received.clear()
@@ -437,8 +439,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Move, 1 to touch(5f, 15f, pressed = true)),
-            event(Move, 1 to touch(5f, 15f, pressed = true))
+            mouseEvent(Move, 5f, 15f, pressed = true),
+            mouseEvent(Move, 5f, 15f, pressed = true)
         )
     }
 
@@ -504,7 +506,7 @@ class SyntheticEventSenderTest {
         )
         sender.send(mouseEvent(Press, 10f, 30f, pressed = true))
 
-        assertEquals(3, received.size)
+        assertEquals(4, received.size)
         val totalScroll = received.fold(Offset.Zero) { acc, event ->
             acc + event.pointers.fold(Offset.Zero) { a, p -> a + p.scrollDelta }
         }
@@ -514,7 +516,7 @@ class SyntheticEventSenderTest {
     @Test
     fun `synthetic events should not duplicate panGestureOffset`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSenderConsumingAllMovements {
+        val sender = SyntheticEventSenderConsumingAllMovementsIgnoringEnterExit {
             received.add(it)
         }
 
@@ -539,7 +541,7 @@ class SyntheticEventSenderTest {
     @Test
     fun `synthetic events should not duplicate scaleGestureFactor`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSenderConsumingAllMovements {
+        val sender = SyntheticEventSenderConsumingAllMovementsIgnoringEnterExit {
             received.add(it)
         }
 
@@ -569,6 +571,7 @@ class SyntheticEventSenderTest {
             mouseEvent(ScaleChange, 10f, 20f, pressed = false),
             mouseEvent(ScaleEnd, 10f, 20f, pressed = false),
         ) positionAndDownShouldEqual listOf(
+            mouseEvent(Enter, 10f, 20f, pressed = false),
             mouseEvent(ScaleStart, 10f, 20f, pressed = false),
             mouseEvent(ScaleChange, 10f, 20f, pressed = false),
             mouseEvent(ScaleChange, 10f, 20f, pressed = false),
@@ -578,7 +581,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `scale, should generate synthetic start before ScaleChange if missing`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(ScaleChange, 10f, 20f, pressed = false),
         ) positionAndDownShouldEqual listOf(
             mouseEvent(ScaleStart, 10f, 20f, pressed = false),
@@ -588,7 +591,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `scale, should generate synthetic start before ScaleEnd if missing`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(ScaleEnd, 10f, 20f, pressed = false),
         ) positionAndDownShouldEqual listOf(
             mouseEvent(ScaleStart, 10f, 20f, pressed = false),
@@ -598,7 +601,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `scale, should generate synthetic end before new ScaleStart if in progress`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(ScaleStart, 10f, 20f, pressed = false),
             mouseEvent(ScaleStart, 10f, 20f, pressed = false),
         ) positionAndDownShouldEqual listOf(
@@ -610,7 +613,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `scale, should generate only one synthetic start for multiple ScaleChanges`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(ScaleChange, 10f, 20f, pressed = false),
             mouseEvent(ScaleChange, 10f, 20f, pressed = false),
             mouseEvent(ScaleChange, 10f, 20f, pressed = false),
@@ -624,7 +627,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `scale, should handle ScaleStart after proper ScaleEnd without extra events`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(ScaleStart, 10f, 20f, pressed = false),
             mouseEvent(ScaleChange, 10f, 20f, pressed = false),
             mouseEvent(ScaleEnd, 10f, 20f, pressed = false),
@@ -639,7 +642,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `pan, shouldn't generate new events if order is correct`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(PanStart, 10f, 20f, pressed = false),
             mouseEvent(PanMove, 10f, 20f, pressed = false),
             mouseEvent(PanMove, 10f, 20f, pressed = false),
@@ -654,7 +657,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `pan, should generate synthetic start before PanMove if missing`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(PanMove, 10f, 20f, pressed = false),
         ) positionAndDownShouldEqual listOf(
             mouseEvent(PanStart, 10f, 20f, pressed = false),
@@ -664,7 +667,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `pan, should generate synthetic start before PanEnd if missing`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(PanEnd, 10f, 20f, pressed = false),
         ) positionAndDownShouldEqual listOf(
             mouseEvent(PanStart, 10f, 20f, pressed = false),
@@ -674,7 +677,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `pan, should generate synthetic end before new PanStart if in progress`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(PanStart, 10f, 20f, pressed = false),
             mouseEvent(PanStart, 10f, 20f, pressed = false),
         ) positionAndDownShouldEqual listOf(
@@ -686,7 +689,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `pan, should generate only one synthetic start for multiple PanMoves`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(PanMove, 10f, 20f, pressed = false),
             mouseEvent(PanMove, 10f, 20f, pressed = false),
             mouseEvent(PanMove, 10f, 20f, pressed = false),
@@ -700,7 +703,7 @@ class SyntheticEventSenderTest {
 
     @Test
     fun `pan, should handle PanStart after proper PanEnd without extra events`() {
-        eventsSentBy(
+        eventsSentByIgnoringEnterExit(
             mouseEvent(PanStart, 10f, 20f, pressed = false),
             mouseEvent(PanMove, 10f, 20f, pressed = false),
             mouseEvent(PanEnd, 10f, 20f, pressed = false),
@@ -716,7 +719,7 @@ class SyntheticEventSenderTest {
     @Test
     fun `scale synthetic events should not duplicate scaleGestureFactor`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSenderConsumingAllMovements {
+        val sender = SyntheticEventSenderConsumingAllMovementsIgnoringEnterExit {
             received.add(it)
         }
 
@@ -734,7 +737,7 @@ class SyntheticEventSenderTest {
     @Test
     fun `pan synthetic events should not duplicate panGestureOffset`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSenderConsumingAllMovements {
+        val sender = SyntheticEventSenderConsumingAllMovementsIgnoringEnterExit {
             received.add(it)
         }
 
@@ -809,6 +812,74 @@ class SyntheticEventSenderTest {
         assertEquals(PointerEventType.Unknown, received.last { it.nativeEvent != null }.eventType)
     }
 
+    @Test
+    fun `should generate synthetic enter before first press`() {
+        eventsSentBy(
+            mouseEvent(Press, 10f, 20f, pressed = true),
+            mouseEvent(Release, 10f, 20f, pressed = false),
+            mouseEvent(Press, 10f, 20f, pressed = true),
+        ) positionAndDownShouldEqual listOf(
+            mouseEvent(Enter, 10f, 20f, pressed = false),
+            mouseEvent(Press, 10f, 20f, pressed = true),
+            mouseEvent(Release, 10f, 20f, pressed = false),
+            mouseEvent(Press, 10f, 20f, pressed = true),
+        )
+    }
+
+    @Test
+    fun `should generate synthetic enter before first scroll`() {
+        eventsSentBy(
+            mouseEvent(Scroll, 10f, 20f, pressed = false),
+        ) positionAndDownShouldEqual listOf(
+            mouseEvent(Enter, 10f, 20f, pressed = false),
+            mouseEvent(Scroll, 10f, 20f, pressed = false),
+        )
+    }
+
+    @Test
+    fun `synthetic enter should have no pressed buttons`() {
+        val received = eventsSentBy(
+            mouseEvent(Press, 10f, 20f, pressed = true).copy(
+                buttons = PointerButtons(isPrimaryPressed = true)
+            ),
+        )
+        assertEquals(PointerButtons(), received.first().buttons)
+    }
+
+    @Test
+    fun `should generate synthetic enter when dragging out and back`() {
+        eventsSentBy(
+            mouseEvent(Move, 10f, 20f, pressed = false),
+            mouseEvent(Press, 10f, 20f, pressed = true),
+            mouseEvent(Exit, -1f, -1f, pressed = true),
+            mouseEvent(Move, 10f, 20f, pressed = true),
+            mouseEvent(Release, 10f, 20f, pressed = false),
+        ) positionAndDownShouldEqual listOf(
+            mouseEvent(Move, 10f, 20f, pressed = false),
+            mouseEvent(Press, 10f, 20f, pressed = true),
+            mouseEvent(Exit, -1f, -1f, pressed = true),
+            mouseEvent(Move, 10f, 20f, pressed = true),
+            mouseEvent(Release, 10f, 20f, pressed = false),
+        )
+    }
+
+    @Test
+    fun `should generate synthetic enter for press after reset`() {
+        val received = mutableListOf<PointerInputEvent>()
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
+        }
+        sender.send(mouseEvent(Move, 10f, 20f, pressed = false))
+        sender.reset()
+        sender.send(mouseEvent(Press, 10f, 20f, pressed = true))
+
+        received positionAndDownShouldEqual listOf(
+            mouseEvent(Move, 10f, 20f, pressed = false),
+            mouseEvent(Enter, 10f, 20f, pressed = false),
+            mouseEvent(Press, 10f, 20f, pressed = true),
+        )
+    }
+
     private fun SyntheticEventSenderConsumingAllMovements(send: (PointerInputEvent) -> Unit) =
         SyntheticEventSender {
             send(it)
@@ -818,11 +889,21 @@ class SyntheticEventSenderTest {
             )
         }
 
+    private fun SyntheticEventSenderConsumingAllMovementsIgnoringEnterExit(send: (PointerInputEvent) -> Unit) =
+        SyntheticEventSenderConsumingAllMovements {
+            if (it.eventType == Enter || it.eventType == Exit) {
+                return@SyntheticEventSenderConsumingAllMovements
+            }
+            send(it)
+        }
+
     private fun eventsSentBy(
+        ignored: Set<PointerEventType>,
         vararg inputEvents: PointerInputEvent
     ): List<PointerInputEvent> {
         val received = mutableListOf<PointerInputEvent>()
         val sender = SyntheticEventSender {
+            if (it.eventType in ignored) return@SyntheticEventSender PointerEventResult()
             PointerEventResult(received.add(it))
         }
         for (inputEvent in inputEvents) {
@@ -830,4 +911,18 @@ class SyntheticEventSenderTest {
         }
         return received
     }
+
+    private fun eventsSentBy(
+        vararg inputEvents: PointerInputEvent
+    ) = eventsSentBy(
+        ignored = emptySet(),
+        inputEvents = inputEvents
+    )
+
+    private fun eventsSentByIgnoringEnterExit(
+        vararg inputEvents: PointerInputEvent
+    ) = eventsSentBy(
+        ignored = setOf(Enter, Exit),
+        inputEvents = inputEvents
+    )
 }

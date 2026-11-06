@@ -17,7 +17,6 @@
 package androidx.compose.ui.interaction
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.text.BasicTextField
@@ -37,11 +36,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIKeyModifierCommand
 import platform.UIKit.UIPasteboard
 
-@OptIn(ExperimentalForeignApi::class)
 class TextFieldHotkeyTest {
 
     @Test
@@ -141,6 +138,7 @@ class TextFieldHotkeyTest {
             setContent {
                 LaunchedEffect(Unit) { requester.requestFocus() }
                 Column(modifier = Modifier.safeDrawingPadding().padding(30.dp)) {
+                    @Suppress("DEPRECATION")
                     BasicTextField(
                         value = valueState.value,
                         onValueChange = { valueState.value = it },

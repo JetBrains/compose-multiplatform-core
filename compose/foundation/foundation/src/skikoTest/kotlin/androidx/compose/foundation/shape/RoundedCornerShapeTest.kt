@@ -199,7 +199,6 @@ class RoundedCornerShapeTest : SkikoComposeTestBase() {
 
     @Test
     fun notEqualsToCutCornersWithTheSameSizes() {
-        @Suppress("ReplaceCallWithBinaryOperator")
         assertThat(
             RoundedCornerShape(
                 topStart = CornerSize(4.0f),

@@ -17,6 +17,7 @@
 package androidx.compose.ui.node
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.lazy.layout.LazyLayoutPinnableItem
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -27,7 +28,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
-
 
 /**
  * Tests related to [OwnerSnapshotObserver].

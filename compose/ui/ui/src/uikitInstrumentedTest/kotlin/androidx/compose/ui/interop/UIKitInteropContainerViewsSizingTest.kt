@@ -34,7 +34,6 @@ import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.measureFittingSize
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.NSLayoutConstraint
 import platform.UIKit.UIColor
 import platform.UIKit.UILabel
@@ -42,7 +41,6 @@ import platform.UIKit.UILayoutConstraintAxisVertical
 import platform.UIKit.UIStackView
 import platform.UIKit.UIView
 
-@OptIn(ExperimentalForeignApi::class)
 class UIKitInteropContainerViewsSizingTest {
 
     @Test
@@ -123,7 +121,7 @@ class UIKitInteropContainerViewsSizingTest {
     }
 
     @Test
-    fun testAspectRatioRectangleFixedHeight() = runUIKitInstrumentedTestWithInterop { overlay ->
+    fun testAspectRatioRectangleFixedHeight() = runUIKitInstrumentedTestWithInterop {
         var composeSize = DpSize.Zero
         val boxSize = DpSize(300.dp, 300.dp)
         val fixedHeight = 120.dp

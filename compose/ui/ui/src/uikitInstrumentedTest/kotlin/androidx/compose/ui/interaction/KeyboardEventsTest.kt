@@ -189,6 +189,7 @@ class KeyboardEventsTest {
             LaunchedEffect(Unit) {
                 requester.requestFocus()
             }
+            @Suppress("DEPRECATION")
             BasicTextField(
                 value = value,
                 onValueChange = { value = it },
@@ -222,6 +223,7 @@ class KeyboardEventsTest {
                     }
             ) {
                 if (isTextFieldPresent) {
+                    @Suppress("DEPRECATION")
                     BasicTextField(
                         value = "",
                         onValueChange = {},
@@ -243,7 +245,8 @@ class KeyboardEventsTest {
         isTextFieldPresent = false
         waitForIdle()
 
-        // Key up must be received when focus is removed (press is cancelled by UIKit)
+        // Key up must be received when focus is removed (press is cancelled by UIKit, asynchronously)
+        waitUntil("Key up should be received after focus removal") { keyEvents.isNotEmpty() }
         assertEquals(listOf(KeyEventType.KeyUp to Key.X), keyEvents)
         keyEvents.clear()
 

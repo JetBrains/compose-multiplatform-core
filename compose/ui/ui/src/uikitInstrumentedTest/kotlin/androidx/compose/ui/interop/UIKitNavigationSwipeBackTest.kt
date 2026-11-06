@@ -44,14 +44,12 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlinx.cinterop.ExperimentalForeignApi
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
-@OptIn(ExperimentalForeignApi::class)
 internal abstract class UIKitNavigationSwipeBackTest(
     private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
 ) {
@@ -273,10 +271,12 @@ private fun TestContent(
     }
 }
 
+@Suppress("unused")
 internal class UIKitNavigationSwipeBackInHostingViewTest : UIKitNavigationSwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
 )
 
+@Suppress("unused")
 internal class UIKitNavigationSwipeBackInHostingViewControllerTest : UIKitNavigationSwipeBackTest(
    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
 )
