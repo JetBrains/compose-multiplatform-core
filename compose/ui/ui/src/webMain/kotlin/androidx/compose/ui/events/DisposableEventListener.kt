@@ -31,12 +31,18 @@ private external class AbortController {
 private fun withSignal(signal: AbortSignal): AddEventListenerOptions = js("({signal: signal})")
 private fun withSignalAndPassive(signal: AbortSignal, passive: Boolean): AddEventListenerOptions =
     js("({signal: signal, passive: passive})")
+private fun withSignalAndCapture(signal: AbortSignal): AddEventListenerOptions =
+    js("({signal: signal, capture: true})")
 
 internal class EventTargetListener(private val eventTarget: EventTarget) {
     private val abortController = AbortController()
 
     fun addDisposableEvent(eventName: String, handler: (Event) -> Unit) {
         eventTarget.addEventListener(eventName, handler, withSignal(abortController.signal))
+    }
+
+    fun addDisposableCaptureEvent(eventName: String, handler: (Event) -> Unit) {
+        eventTarget.addEventListener(eventName, handler, withSignalAndCapture(abortController.signal))
     }
 
     fun addDisposableEvent(
