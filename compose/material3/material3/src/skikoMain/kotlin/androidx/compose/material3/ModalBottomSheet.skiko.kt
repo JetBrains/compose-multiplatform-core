@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
@@ -60,6 +61,7 @@ internal actual fun ModalBottomSheetDialog(
     onDismissRequest: () -> Unit,
     contentColor: Color, // TODO: https://youtrack.jetbrains.com/issue/CMP-7147
     properties: ModalBottomSheetProperties,
+    blurBehindRadius: Dp,
     content: @Composable () -> Unit
 ) {
     Dialog(
@@ -72,6 +74,7 @@ internal actual fun ModalBottomSheetDialog(
             useSoftwareKeyboardInset = false,
             scrimColor = Color.Transparent,
             animateTransition = false,
+            blurBehindRadius = blurBehindRadius,
         ),
         content = content
     )

@@ -21,7 +21,9 @@ import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
@@ -177,6 +179,21 @@ internal class ComposeLayersViewController(
         this.view.addSubview(composeContainerView)
     }
 
+    /**
+     * The largest [IosComposeSceneLayer.backdropBlurRadius] of the attached layers. The hosting
+     * container blurs its own content by it, because the layers are drawn in a separate view.
+     */
+    var backdropBlurRadius: Dp = 0.dp
+        private set
+
+    fun updateBackdropBlurRadius() {
+        invalidateLayerStackDraw()
+        val radius = layers.maxOfOrNull { it.backdropBlurRadius } ?: 0.dp
+        if (backdropBlurRadius == radius) return
+        backdropBlurRadius = radius
+        hostingComposeView.setNeedsDisplay()
+    }
+
     val hasInvalidations: Boolean
         get() =
             composeContainerView.hasInvalidations || needsLayerStackDraw ||
@@ -270,6 +287,7 @@ internal class ComposeLayersViewController(
         }
 
         this.layers.remove(layer)
+        updateBackdropBlurRadius()
 
         // Intercept the actions InteropTransaction from the layer
         val transaction = layer.retrieveInteropTransaction()

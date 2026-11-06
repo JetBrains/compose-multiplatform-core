@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
@@ -329,7 +330,11 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     override fun doDraw(canvas: Canvas) {
-        forEachOwner { it.draw(canvas) }
+        mainOwner.draw(canvas)
+        forEachLayer {
+            canvas.blurBackdrop(it.backdropBlurRadius, it.density)
+            it.owner.draw(canvas)
+        }
     }
 
     override var showLayoutBounds: Boolean = false
@@ -605,7 +610,7 @@ private class CanvasLayersComposeSceneImpl(
         focusable: Boolean,
         override var consumePointerInputOutside: Boolean,
         val isOverlay: Boolean = false,
-    ) : ComposeSceneLayer {
+    ) : BackdropBlurComposeSceneLayer {
         val owner = RootNodeOwner(
             density = density,
             layoutDirection = layoutDirection,
@@ -650,6 +655,13 @@ private class CanvasLayersComposeSceneImpl(
         override var compositionLocalContext: CompositionLocalContext? = null
 
         override var scrimColor: Color? by mutableStateOf(null)
+        override var backdropBlurRadius: Dp = 0.dp
+            set(value) {
+                if (field != value) {
+                    field = value
+                    invokeInvalidationCallbacks(forceDraw = true)
+                }
+            }
         override var focusable: Boolean = focusable
             set(value) {
                 field = value
