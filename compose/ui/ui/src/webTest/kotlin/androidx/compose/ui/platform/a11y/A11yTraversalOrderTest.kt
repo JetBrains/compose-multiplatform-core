@@ -16,10 +16,12 @@
 
 package androidx.compose.ui.platform.a11y
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,11 +29,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
@@ -51,7 +55,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
     @Test
     fun siblingsAreSortedByGeometry() = runApplicationTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(Modifier.absoluteOffset(100.dp, 0.dp).size(20.dp).testTag("right"))
                 Box(Modifier.absoluteOffset(0.dp, 0.dp).size(20.dp).testTag("left"))
                 Box(Modifier.absoluteOffset(0.dp, 40.dp).size(20.dp).testTag("bottom"))
@@ -65,7 +69,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
     @Test
     fun traversalIndexOverridesGeometry() = runApplicationTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(0.dp, 0.dp)
                         .size(20.dp)
@@ -96,7 +100,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
                 // Absolute offsets need a physical left origin; TopStart would align these
                 // children to the right in RTL and push the offset child outside the viewport.
                 Box(
-                    Modifier.fillMaxSize().testTag("parent"),
+                    Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent"),
                     contentAlignment = AbsoluteAlignment.TopLeft,
                 ) {
                     Box(Modifier.absoluteOffset(0.dp, 0.dp).size(20.dp).testTag("left").recordCoordinates("left"))
@@ -123,7 +127,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
     @Test
     fun traversalGroupsKeepTheirChildrenTogetherAndSortWithinEachGroup() = runApplicationTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(100.dp, 0.dp)
                         .size(100.dp)
@@ -152,10 +156,142 @@ class A11yTraversalOrderTest : OnCanvasTests {
     }
 
     @Test
+    fun traversalGroupsKeepTwoColumnsTogether() = runApplicationTest {
+        createComposeWindow {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
+                Box(
+                    Modifier.absoluteOffset(0.dp, 0.dp)
+                        .size(100.dp, 100.dp)
+                        .semantics { isTraversalGroup = true }
+                ) {
+                    Text("Left top", Modifier.testTag("leftTop"))
+                    Text("Left bottom", Modifier.absoluteOffset(0.dp, 40.dp).testTag("leftBottom"))
+                }
+                Box(
+                    Modifier.absoluteOffset(100.dp, 0.dp)
+                        .size(100.dp, 100.dp)
+                        .semantics { isTraversalGroup = true }
+                ) {
+                    Text("Right top", Modifier.testTag("rightTop"))
+                    Text("Right bottom", Modifier.absoluteOffset(0.dp, 40.dp).testTag("rightBottom"))
+                }
+            }
+        }
+        awaitA11YChanges()
+
+        assertDescendantOrder("parent", "leftTop", "leftBottom", "rightTop", "rightBottom")
+    }
+
+    @Test
+    fun nonTraversalGroupsInterleaveTwoColumnsByRow() = interleaveTwoColumnsByRow(withBackground = false)
+
+    @Test
+    fun nonTraversalGroupsWithBackgroundInterleaveTwoColumnsByRow() = interleaveTwoColumnsByRow(withBackground = true)
+
+    private fun interleaveTwoColumnsByRow(withBackground: Boolean) = runApplicationTest {
+        var grouped by mutableStateOf(false)
+        createComposeWindow {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
+                // Tags identify wrappers without making them implicit traversal groups.
+                listOf("left" to 0.dp, "right" to 100.dp).forEach { (side, x) ->
+                    Box(
+                        Modifier.absoluteOffset(x, 0.dp).size(100.dp)
+                            .semantics { isTraversalGroup = grouped }
+                            // Like the demo, background adds Shape and BackgroundColor semantics.
+                            .then(if (withBackground) Modifier.background(Color.LightGray) else Modifier)
+                            .testTag("${side}Column")
+                    ) {
+                        Text("$side top", Modifier.testTag("${side}Top"))
+                        Text("$side bottom", Modifier.absoluteOffset(0.dp, 40.dp).testTag("${side}Bottom"))
+                    }
+                }
+            }
+        }
+        awaitA11YChanges()
+
+        assertDescendantOrder("parent", "leftTop", "rightTop", "leftBottom", "rightBottom")
+        val leftTop = element("leftTop")
+        val rightTop = element("rightTop")
+        assertEquals(0, element("leftColumn").children.length)
+        assertEquals(0, element("rightColumn").children.length)
+
+        grouped = true
+        awaitA11YChanges()
+
+        assertDescendantOrder("parent", "leftTop", "leftBottom", "rightTop", "rightBottom")
+        assertChildOrder("leftColumn", "leftTop", "leftBottom")
+        assertChildOrder("rightColumn", "rightTop", "rightBottom")
+        assertSame(leftTop, element("leftTop"))
+        assertSame(rightTop, element("rightTop"))
+
+        grouped = false
+        awaitA11YChanges()
+
+        assertDescendantOrder("parent", "leftTop", "rightTop", "leftBottom", "rightBottom")
+        assertSame(leftTop, element("leftTop"))
+        assertSame(rightTop, element("rightTop"))
+    }
+
+    @Test
+    fun nestedGroupsExpandAtTheirTraversalIndex() = runApplicationTest {
+        createComposeWindow {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
+                Text("Outside", Modifier.testTag("outside"))
+                // Neither group has its own accessible content or test tag. Both must be
+                // replaced by their children, with indices scoped to the containing group.
+                Box(
+                    Modifier.absoluteOffset(100.dp, 0.dp).size(100.dp)
+                        .semantics { isTraversalGroup = true; traversalIndex = -1f }
+                ) {
+                    Text("Last in group", Modifier.semantics { traversalIndex = 1f }.testTag("last"))
+                    Box(Modifier.semantics { isTraversalGroup = false }) {
+                        Box(
+                            Modifier.absoluteOffset(0.dp, 40.dp).size(100.dp, 40.dp)
+                                .semantics { isTraversalGroup = true }
+                        ) {
+                            Text("Right", Modifier.absoluteOffset(40.dp, 0.dp).testTag("right"))
+                            Text("Left", Modifier.testTag("left"))
+                        }
+                    }
+                }
+            }
+        }
+        awaitA11YChanges()
+
+        assertChildOrder("parent", "left", "right", "last", "outside")
+    }
+
+    @Test
+    fun nonTraversalGroupsWithOwnSemanticsKeepTheirChildren() = runApplicationTest {
+        createComposeWindow {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
+                listOf("left" to 0.dp, "right" to 100.dp).forEach { (side, x) ->
+                    Box(
+                        Modifier.absoluteOffset(x, 0.dp).size(100.dp)
+                            .semantics {
+                                isTraversalGroup = false
+                                contentDescription = "$side column"
+                            }
+                            .testTag("${side}Column")
+                    ) {
+                        Text("$side top", Modifier.testTag("${side}Top"))
+                        Text("$side bottom", Modifier.absoluteOffset(0.dp, 40.dp).testTag("${side}Bottom"))
+                    }
+                }
+            }
+        }
+        awaitA11YChanges()
+
+        assertChildOrder("parent", "leftColumn", "rightColumn")
+        assertChildOrder("leftColumn", "leftTop", "leftBottom")
+        assertChildOrder("rightColumn", "rightTop", "rightBottom")
+    }
+
+    @Test
     fun geometryChangesReorderChildrenWithoutReplacingTheirElements() = runApplicationTest {
         var swapped by mutableStateOf(false)
         createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(if (swapped) 100.dp else 0.dp, 0.dp)
                         .size(20.dp)
@@ -187,6 +323,17 @@ class A11yTraversalOrderTest : OnCanvasTests {
         assertEquals(
             childTags.toList(),
             (0 until parent.children.length).mapNotNull { parent.children[it]?.id },
+        )
+    }
+
+    private fun assertDescendantOrder(parentTag: String, vararg childTags: String) {
+        val expectedTags = childTags.toSet()
+        val descendants = element(parentTag).querySelectorAll("[id]")
+        assertEquals(
+            childTags.toList(),
+            (0 until descendants.length).mapNotNull { index ->
+                (descendants[index] as? HTMLElement)?.id?.takeIf { it in expectedTags }
+            },
         )
     }
 
