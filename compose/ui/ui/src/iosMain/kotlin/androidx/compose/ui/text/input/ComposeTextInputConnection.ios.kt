@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.detachedCopy
+import androidx.compose.ui.platform.mapToTransformed
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.ResolvedTextDirection
@@ -133,15 +134,16 @@ internal open class ComposeTextInputConnection(
     override fun caretDpRectForPosition(position: Int): DpRect? {
         val offset = textOffsetInView ?: return null
         val text = currentTextFieldValue?.text ?: return null
-        val currentTextLayoutResult = textLayoutResult ?: return null
+        val currentTextLayoutResult = transformedTextLayoutResult ?: return null
 
         if (position < 0 || position > text.length) {
             return null
         }
-        if (position > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+        val transformedPosition = offsetMapping.mapToTransformed(position)
+        if (transformedPosition > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
             return null
         }
-        val rect = currentTextLayoutResult.getCursorRect(position).translate(offset)
+        val rect = currentTextLayoutResult.getCursorRect(transformedPosition).translate(offset)
         return rect.toDpRect(rootView.density).let {
             val halfWidth = CURSOR_THICKNESS / 2
             val center = (it.left + it.right) / 2
@@ -174,23 +176,27 @@ internal open class ComposeTextInputConnection(
         if (range.collapsed || isIncorrect(range)) {
             return emptySequence()
         }
+        val transformedRange = offsetMapping.mapToTransformed(range)
+        if (transformedRange.collapsed) {
+            return emptySequence()
+        }
         val offset = textOffsetInView ?: return emptySequence()
-        val currentTextLayoutResult = textLayoutResult ?: return emptySequence()
-        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
+        val transformedTextLayoutResult = transformedTextLayoutResult ?: return emptySequence()
+        if (transformedRange.end > transformedTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) {
             return emptySequence()
         }
 
-        val firstLine = currentTextLayoutResult.getLineForOffset(range.start)
-        val lastLine = currentTextLayoutResult.getLineForOffset(range.end)
-        val startX = currentTextLayoutResult.getCursorRect(range.start).left
-        val endX = currentTextLayoutResult.getCursorRect(range.end).left
+        val firstLine = transformedTextLayoutResult.getLineForOffset(transformedRange.start)
+        val lastLine = transformedTextLayoutResult.getLineForOffset(transformedRange.end)
+        val startX = transformedTextLayoutResult.getCursorRect(transformedRange.start).left
+        val endX = transformedTextLayoutResult.getCursorRect(transformedRange.end).left
         val density = rootView.density
 
         return (firstLine..lastLine).asSequence().mapNotNull { line ->
-            val lineLeft = currentTextLayoutResult.getLineLeft(line)
-            val lineRight = currentTextLayoutResult.getLineRight(line)
-            val isRtl = currentTextLayoutResult.getParagraphDirection(
-                currentTextLayoutResult.getLineStart(line)
+            val lineLeft = transformedTextLayoutResult.getLineLeft(line)
+            val lineRight = transformedTextLayoutResult.getLineRight(line)
+            val isRtl = transformedTextLayoutResult.getParagraphDirection(
+                transformedTextLayoutResult.getLineStart(line)
             ) == ResolvedTextDirection.Rtl
 
             val lineStartX = if (isRtl) lineRight else lineLeft
@@ -203,9 +209,9 @@ internal open class ComposeTextInputConnection(
             }
             Rect(
                 left = min(from, to),
-                top = currentTextLayoutResult.getLineTop(line),
+                top = transformedTextLayoutResult.getLineTop(line),
                 right = max(from, to),
-                bottom = currentTextLayoutResult.getLineBottom(line)
+                bottom = transformedTextLayoutResult.getLineBottom(line)
             ).translate(offset).toDpRect(density)
         }
     }

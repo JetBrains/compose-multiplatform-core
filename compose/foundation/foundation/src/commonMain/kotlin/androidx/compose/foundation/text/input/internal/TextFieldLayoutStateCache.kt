@@ -416,6 +416,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                 "fontScale=$fontScale, " +
                 "layoutDirection=$layoutDirection, " +
                 "fontFamilyResolver=$fontFamilyResolver, " +
+                "defaultLocaleList=$defaultLocaleList, " +
                 "constraints=$constraints, " +
                 "layoutResult=$layoutResult" +
                 ")"

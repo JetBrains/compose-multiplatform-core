@@ -81,7 +81,7 @@ public expect open class NavDestination(navigatorName: String) {
          */
         public fun hasMatchingArgs(arguments: SavedState?): Boolean
 
-        public override fun compareTo(other: DeepLinkMatch): Int
+        override fun compareTo(other: DeepLinkMatch): Int
     }
 
     /**

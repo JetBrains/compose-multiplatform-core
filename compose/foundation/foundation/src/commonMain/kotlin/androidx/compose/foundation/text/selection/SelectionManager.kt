@@ -1796,6 +1796,3 @@ private fun LayoutCoordinates.nearestPointTo(point: Offset): Offset {
         y = point.y.coerceIn(0f, size.height.toFloat()),
     )
 }
-
-// We skip `isCopyKeyEvent(it)` on web, because should handle browser 'copy' event
-internal expect val SelectionManager.skipCopyKeyEvent: Boolean

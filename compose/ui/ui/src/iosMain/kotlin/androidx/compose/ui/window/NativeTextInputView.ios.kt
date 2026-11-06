@@ -660,6 +660,7 @@ internal class NativeTextInputView(
             "cut:" -> onCut != null
             "selectAll:" -> showSelectAndSelectAllMenus
             "select:" -> showSelectAndSelectAllMenus
+            "replace:" -> input.isEditable && input.isInteractive
             else -> super.canPerformAction(action, withSender)
         }
 
