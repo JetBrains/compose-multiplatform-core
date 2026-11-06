@@ -16,16 +16,73 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.MutableIntObjectMap
 import androidx.collection.IntObjectMap
 import androidx.collection.intObjectMapOf
+import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.util.fastForEach
 import kotlin.math.max
 import kotlin.math.min
+
+/**
+ * Web port of traversal preparation in `SemanticsSort.kt`. Non-group descendants participate in
+ * the surrounding geometry sort; traversal groups are sorted recursively and expanded afterwards.
+ * [childrenOf] lets the DOM adapter preserve ownership scopes such as scroll containers and text
+ * with links. [boundsOf] must use the same coordinate system throughout the traversal.
+ * Visibility does not prune this traversal: the DOM adapter keeps unreachable nodes inert.
+ */
+internal fun SemanticsNode.subtreeSortedByGeometryGroupingForWeb(
+    isFocusableContainer: (SemanticsNode) -> Boolean,
+    listToSort: List<SemanticsNode>,
+    boundsOf: (SemanticsNode) -> Rect,
+    childrenOf: (SemanticsNode) -> List<SemanticsNode> = { it.children },
+): List<SemanticsNode> {
+    val containerMapToChildren = mutableIntObjectMapOf<List<SemanticsNode>>()
+    val geometryList = ArrayList<SemanticsNode>()
+    listToSort.fastForEach { node ->
+        node.geometryDepthFirstSearchForWeb(
+            geometryList,
+            isFocusableContainer,
+            containerMapToChildren,
+            boundsOf,
+            childrenOf,
+        )
+    }
+    return sortByGeometryGroupingsForWeb(
+        geometryList, isFocusableContainer, containerMapToChildren, boundsOf
+    )
+}
+
+private fun SemanticsNode.geometryDepthFirstSearchForWeb(
+    geometryList: ArrayList<SemanticsNode>,
+    isFocusableContainer: (SemanticsNode) -> Boolean,
+    containerMapToChildren: MutableIntObjectMap<List<SemanticsNode>>,
+    boundsOf: (SemanticsNode) -> Rect,
+    childrenOf: (SemanticsNode) -> List<SemanticsNode>,
+) {
+    val isTraversalGroup = unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false }
+    if (isTraversalGroup || isFocusableContainer(this)) {
+        geometryList.add(this)
+    }
+    if (isTraversalGroup) {
+        containerMapToChildren[id] = subtreeSortedByGeometryGroupingForWeb(
+            isFocusableContainer, childrenOf(this), boundsOf, childrenOf
+        )
+    } else {
+        childrenOf(this).fastForEach { child ->
+            child.geometryDepthFirstSearchForWeb(
+                geometryList, isFocusableContainer, containerMapToChildren,
+                boundsOf, childrenOf,
+            )
+        }
+    }
+}
 
 /**
  * Web port of `SemanticsNode.sortByGeometryGroupings` from

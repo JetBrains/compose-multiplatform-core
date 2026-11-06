@@ -33,15 +33,88 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.accessibility.sortByGeometryGroupingsForWeb
+import androidx.compose.ui.platform.accessibility.subtreeSortedByGeometryGroupingForWeb
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.sortByGeometryGroupings
+import androidx.compose.ui.semantics.subtreeSortedByGeometryGrouping
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class WebSemanticsSortTest : OnCanvasTests {
+
+    @Test
+    fun subtreePreparationMatchesOriginalForNestedGroups() = runApplicationTest {
+        val nodes = mutableMapOf<String, SemanticsNode>()
+        fun Modifier.record(tag: String) = testTag(tag).onGloballyPositioned {
+            nodes[tag] = SemanticsNode((it as NodeCoordinator).layoutNode, false)
+        }
+        var direction by mutableStateOf(LayoutDirection.Ltr)
+        createComposeWindow {
+            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                Box(Modifier.fillMaxSize().record("parent"), contentAlignment = AbsoluteAlignment.TopLeft) {
+                    Box(
+                        Modifier.size(80.dp, 100.dp).semantics { isTraversalGroup = false }.record("wrapper"),
+                        contentAlignment = AbsoluteAlignment.TopLeft,
+                    ) {
+                        Box(Modifier.size(20.dp).record("first"))
+                        Box(Modifier.absoluteOffset(0.dp, 40.dp).size(20.dp).record("second"))
+                    }
+                    Box(
+                        Modifier.absoluteOffset(100.dp, 0.dp).size(100.dp)
+                            .semantics { isTraversalGroup = true; traversalIndex = -1f }
+                            .record("group"),
+                        contentAlignment = AbsoluteAlignment.TopLeft,
+                    ) {
+                        Box(Modifier.size(20.dp).semantics { traversalIndex = 1f }.record("last"))
+                        Box(
+                            Modifier.absoluteOffset(0.dp, 40.dp).size(80.dp, 40.dp)
+                                .semantics { isTraversalGroup = true }.record("nested"),
+                            contentAlignment = AbsoluteAlignment.TopLeft,
+                        ) {
+                            Box(Modifier.size(20.dp).record("left"))
+                            Box(Modifier.absoluteOffset(40.dp, 0.dp).size(20.dp).record("right"))
+                        }
+                    }
+                }
+            }
+        }
+        awaitA11YChanges()
+
+        val leafIds = listOf("first", "second", "last", "left", "right")
+            .map { nodes.getValue(it).id }.toSet()
+        val groupIds = listOf("group", "nested").map { nodes.getValue(it).id }.toSet()
+        for (layoutDirection in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            direction = layoutDirection
+            awaitIdle()
+            awaitAnimationFrame()
+            val parent = nodes.getValue("parent")
+            assertEquals(layoutDirection, parent.layoutInfo.layoutDirection)
+            // Exercise group retention and removal. Web retains unreachable nodes as inert DOM
+            // nodes, so compare against the original without visibility pruning.
+            for (retainGroups in listOf(false, true)) {
+                val isFocusable: (SemanticsNode) -> Boolean = {
+                    it.id in leafIds || (retainGroups && it.id in groupIds)
+                }
+                val original = parent.subtreeSortedByGeometryGrouping(
+                    isVisible = { true },
+                    isFocusableContainer = isFocusable,
+                    listToSort = parent.children,
+                )
+                val ported = parent.subtreeSortedByGeometryGroupingForWeb(
+                    isFocusable, parent.children, boundsOf = { it.boundsInWindow }
+                )
+                assertTrue(original.isNotEmpty())
+                assertEquals(original.map { it.id }, ported.map { it.id })
+            }
+        }
+    }
 
     @Test
     fun customBoundsAreUsedForRowsAndWithinRowsAndGroupExpansion() = runApplicationTest {
