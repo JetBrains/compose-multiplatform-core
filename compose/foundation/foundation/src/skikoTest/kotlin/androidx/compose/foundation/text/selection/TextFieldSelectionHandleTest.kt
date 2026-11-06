@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.CoreTextField
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +38,19 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.SkikoComposeUiTest
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasSetTextAction
@@ -184,6 +198,91 @@ class BasicTextFieldSelectionHandleTest {
                 isStartHandler = false
             )
         )
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun selectionHandlesFollowLazyItemScrolledOutAndBack_btf1() = runSkikoComposeUiTest {
+        setContent {
+            SetInitialTouchInputMode()
+            LazyColumn(Modifier.fillMaxSize()) {
+                items(40) { index ->
+                    var value by remember { mutableStateOf("${index}1234") }
+                    Row(Modifier.padding(16.dp).height(IntrinsicSize.Min)) {
+                        BasicTextField(
+                            value = value,
+                            onValueChange = { value = it },
+                            maxLines = 1,
+                            textStyle = TextStyle(fontSize = 22.sp),
+                            modifier = Modifier.alignByBaseline(),
+                        )
+                    }
+                }
+            }
+        }
+
+        fun handleOffsetsFromField(): List<Offset> {
+            val field = onNodeWithText("21234").fetchSemanticsNode().boundsInWindow
+            return onAllNodes(SemanticsMatcher.keyIsDefined(SelectionHandleInfoKey))
+                .fetchSemanticsNodes()
+                .map { it.boundsInWindow.topLeft - field.topLeft }
+        }
+
+        onNodeWithText("21234").performTouchInput { longClick(Offset(10f, height / 2f)) }
+        val selected = handleOffsetsFromField()
+        assertEquals(2, selected.size)
+
+        val list = onNode(hasScrollAction().and(SemanticsMatcher("is not a text field") { it.config.getOrNull(SemanticsActions.SetText) == null }))
+        list.performTouchInput {
+            swipe(Offset(30f, bottom - 10f), Offset(30f, bottom - 210f), durationMillis = 30)
+        }
+        list.performTouchInput {
+            swipe(Offset(30f, top + 10f), Offset(30f, top + 210f), durationMillis = 30)
+        }
+
+        assertEquals(selected, handleOffsetsFromField())
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun selectionHandlesFollowLazyItemScrolledOutAndBack_btf2() = runSkikoComposeUiTest {
+        setContent {
+            SetInitialTouchInputMode()
+            LazyColumn(Modifier.fillMaxSize()) {
+                items(40) { index ->
+                    val state = remember { TextFieldState("${index}1234") }
+                    Row(Modifier.padding(16.dp).height(IntrinsicSize.Min)) {
+                        BasicTextField(
+                            state = state,
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            textStyle = TextStyle(fontSize = 22.sp),
+                            modifier = Modifier.alignByBaseline(),
+                        )
+                    }
+                }
+            }
+        }
+
+        fun handleOffsetsFromField(): List<Offset> {
+            val field = onNodeWithText("21234").fetchSemanticsNode().boundsInWindow
+            return onAllNodes(SemanticsMatcher.keyIsDefined(SelectionHandleInfoKey))
+                .fetchSemanticsNodes()
+                .map { it.boundsInWindow.topLeft - field.topLeft }
+        }
+
+        onNodeWithText("21234").performTouchInput { longClick(Offset(10f, height / 2f)) }
+        val selected = handleOffsetsFromField()
+        assertEquals(2, selected.size)
+
+        val list = onNode(hasScrollAction().and(SemanticsMatcher("is not a text field") { it.config.getOrNull(SemanticsActions.SetText) == null }))
+        list.performTouchInput {
+            swipe(Offset(30f, bottom - 10f), Offset(30f, bottom - 210f), durationMillis = 30)
+        }
+        list.performTouchInput {
+            swipe(Offset(30f, top + 10f), Offset(30f, top + 210f), durationMillis = 30)
+        }
+
+        assertEquals(selected, handleOffsetsFromField())
     }
 
     @Composable
