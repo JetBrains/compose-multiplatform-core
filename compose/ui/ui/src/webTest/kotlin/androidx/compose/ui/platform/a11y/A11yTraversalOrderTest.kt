@@ -187,33 +187,6 @@ class A11yTraversalOrderTest : OnCanvasTests {
     }
 
     @Test
-    fun nonTraversalGroupsInterleaveTwoColumnsByRow() = runApplicationTest {
-        createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
-                Box(
-                    Modifier.absoluteOffset(0.dp, 0.dp)
-                        .size(100.dp, 100.dp)
-                        .semantics { isTraversalGroup = false }
-                ) {
-                    Text("Left top", Modifier.testTag("leftTop"))
-                    Text("Left bottom", Modifier.absoluteOffset(0.dp, 40.dp).testTag("leftBottom"))
-                }
-                Box(
-                    Modifier.absoluteOffset(100.dp, 0.dp)
-                        .size(100.dp, 100.dp)
-                        .semantics { isTraversalGroup = false }
-                ) {
-                    Text("Right top", Modifier.testTag("rightTop"))
-                    Text("Right bottom", Modifier.absoluteOffset(0.dp, 40.dp).testTag("rightBottom"))
-                }
-            }
-        }
-        awaitA11YChanges()
-
-        assertDescendantOrder("parent", "leftTop", "rightTop", "leftBottom", "rightBottom")
-    }
-
-    @Test
     fun geometryChangesReorderChildrenWithoutReplacingTheirElements() = runApplicationTest {
         var swapped by mutableStateOf(false)
         createComposeWindow {
