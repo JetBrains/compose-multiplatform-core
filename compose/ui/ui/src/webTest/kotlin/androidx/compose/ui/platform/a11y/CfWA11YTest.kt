@@ -53,6 +53,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -310,7 +312,7 @@ class CfWA11YTest : OnCanvasTests {
         var order by mutableStateOf(listOf(1, 2, 3))
 
         createComposeWindow {
-            Column(modifier = Modifier.testTag("parent")) {
+            Column(modifier = Modifier.semantics { isTraversalGroup = true }.testTag("parent")) {
                 order.forEach { item ->
                     key(item) {
                         Button(modifier = Modifier.testTag("button$item"), onClick = {}) {
@@ -378,7 +380,7 @@ class CfWA11YTest : OnCanvasTests {
 
             createComposeWindow {
                 Column {
-                    Column(modifier = Modifier.size(200.dp).testTag("parent1").recordNode("parent1")) {
+                    Column(modifier = Modifier.size(200.dp).semantics { isTraversalGroup = true }.testTag("parent1").recordNode("parent1")) {
                         Button(modifier = Modifier.testTag("button1"), onClick = {}) {
                             Text("Button1")
                         }
@@ -387,7 +389,7 @@ class CfWA11YTest : OnCanvasTests {
                             Text("Button2")
                         }
                     }
-                    Box(modifier = Modifier.size(200.dp).testTag("parent2").recordNode("parent2")) {
+                    Box(modifier = Modifier.size(200.dp).semantics { isTraversalGroup = true }.testTag("parent2").recordNode("parent2")) {
                         if (moveToSecondParent) buttonInMovableContent()
                     }
                 }
@@ -865,7 +867,7 @@ class CfWA11YTest : OnCanvasTests {
 
         val rangeSlider = getShadowRoot().getElementById("rangeSlider") as? HTMLElement
         assertNotNull(rangeSlider)
-        val sliders = rangeSlider.querySelectorAll("[role=slider]")
+        val sliders = getShadowRoot().querySelectorAll("[role=slider]")
         assertEquals(2, sliders.length)
         assertEquals(0.25f, (sliders[0] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
         assertEquals(0.75f, (sliders[1] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
@@ -1209,10 +1211,9 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test // Reproduces the user-reported scenario from CMP-10226
     fun spacerReappearsAfterGraphicsLayerClipToggle() = runApplicationTest {
-        // graphicsLayer sets Shape semantics ONLY when clip=true
-        // When the clip modifier is conditionally applied, the Spacer's only semantic property
-        // (Shape) appears and disappears, causing the Spacer to enter/leave the semantic tree
-        // while keeping the same LayoutNode and semanticsId.
+        // A clipping layer contributes Shape semantics. Add accessible content to the same
+        // modifier chain so the Spacer enters/leaves the DOM as well as the semantics tree,
+        // while keeping the same LayoutNode and semanticsId. Shape alone is not exposed.
         var enableClip by mutableStateOf(true)
 
         createComposeWindow {
@@ -1221,6 +1222,7 @@ class CfWA11YTest : OnCanvasTests {
             Spacer(
                 modifier = if (enableClip)
                     Modifier.graphicsLayer(clip = true, shape = RectangleShape)
+                        .semantics { contentDescription = "Clipped spacer" }
                 else Modifier
             )
             Text("Sibling")
@@ -1228,16 +1230,21 @@ class CfWA11YTest : OnCanvasTests {
 
         awaitA11YChanges()
         val a11yContainer = getA11YContainer()!!
+        fun spacer() = a11yContainer.querySelector("[aria-label='Clipped spacer']")
+        val initialSpacer = assertNotNull(spacer())
         assertTrue(a11yContainer.innerHTML.contains("Sibling"))
 
-        // Remove clip modifier: Spacer loses Shape semantic → leaves the semantic tree
+        // Removing the modifier chain removes both Shape and the accessible content.
         enableClip = false
         awaitA11YChanges()
+        assertNull(spacer())
+        assertFalse(initialSpacer.isConnected)
 
-        // Re-add clip modifier: same LayoutNode, same semanticsId reappears with Shape semantic.
+        // Re-add the modifiers: the same LayoutNode and semanticsId become accessible again.
         // Without proper cleanup of tracking maps, this would crash with "Node $id not found".
         enableClip = true
         awaitA11YChanges()
+        assertNotNull(spacer())
         assertTrue(a11yContainer.innerHTML.contains("Sibling"))
     }
 }

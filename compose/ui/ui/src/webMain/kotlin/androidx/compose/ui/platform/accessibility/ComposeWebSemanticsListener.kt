@@ -22,7 +22,6 @@ import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -170,10 +169,11 @@ internal class ComposeWebSemanticsListener(
         invalidationChannel.trySend(Unit)
     }
 
-    // Three array deques for dfs traversal / tree sync:
+    // Parallel stacks for depth-first traversal / tree sync:
     private val dfsSemanticsNodes = ArrayDeque<SemanticsNode>()
     private val dfsA11YParents = ArrayDeque<HTMLElement>()
     private val dfsA11YReachabilities = ArrayDeque<A11YReachability>()
+    private val dfsA11YContainers = ArrayDeque<Boolean>()
 
     // Lookup maps between semantics nodes and corresponding A11Y DOM elements:
     private val idToA11YNode = MutableIntObjectMap<HTMLElement>()
@@ -288,9 +288,11 @@ internal class ComposeWebSemanticsListener(
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
         dfsA11YReachabilities.clear()
+        dfsA11YContainers.clear()
         dfsSemanticsNodes.addLast(root)
         dfsA11YParents.addLast(webSemanticsRoot)
         dfsA11YReachabilities.addLast(A11YReachability.DirectlyReachable)
+        dfsA11YContainers.addLast(true)
 
         val rootPosition = webSemanticsRoot.getBoundingClientRect().let {
             Offset(it.left.toFloat(), it.top.toFloat())
@@ -300,10 +302,11 @@ internal class ComposeWebSemanticsListener(
             val node = dfsSemanticsNodes.removeLast()
             val htmlParent = dfsA11YParents.removeLast()
             val parentReachability = dfsA11YReachabilities.removeLast()
+            val isContainer = dfsA11YContainers.removeLast()
 
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
-            val children = node.placedA11YChildren()
+            val children = if (isContainer) node.placedA11YChildren() else emptyList()
             val nodeReachability = node.a11yReachability(parentReachability)
             val isA11YReachable = nodeReachability.isReachable()
 
@@ -321,7 +324,7 @@ internal class ComposeWebSemanticsListener(
                 // That's why a text node doesn't push its children to the traversal queue.
                 // It handles its link children itself:
                 syncTextContentAndChildren(node, config, children, htmlNode, rootPosition, nodeReachability)
-            } else {
+            } else if (isContainer) {
                 pushNodesForTraversal(node, children, htmlNode, nodeReachability)
             }
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
@@ -329,14 +332,6 @@ internal class ComposeWebSemanticsListener(
             targetChildToParent[htmlNode] = htmlParent
         }
     }
-
-    private fun SemanticsNode.placedA11YChildren(): List<SemanticsNode> =
-        replacedChildren.filter { child ->
-            // Prefetched lazy items may be attached and measured while retaining a reused slot's
-            // old position. They must not participate in geometry sorting or DOM synchronization.
-            // Fake semantics nodes have no attached layout node and use their parent's geometry.
-            child.isFake || child.layoutNode.let { it.isAttached && it.isPlaced }
-        }
 
     /**
      * @param children - the nodes to be added for traversal during the sync
@@ -348,18 +343,13 @@ internal class ComposeWebSemanticsListener(
         htmlParent: HTMLElement,
         parentA11YExposure: A11YReachability,
     ) {
-        val boundsProvider: (SemanticsNode) -> Rect =
-            if (parentA11YExposure == A11YReachability.ReachableByScroll) {
-                { it.unclippedBoundsInWindowForWeb() }
-            } else {
-                { it.boundsInWindow }
-            }
-        val reversedChildren =
-            parent.sortByGeometryGroupingsForWeb(children, boundsProvider).asReversed()
-        dfsSemanticsNodes.addAll(reversedChildren)
-        repeat(reversedChildren.size) {
+        parent.forEachA11YChildInReverseTraversalOrder(
+            children, parentA11YExposure
+        ) { child, parentReachability, isContainer ->
+            dfsSemanticsNodes.addLast(child)
             dfsA11YParents.addLast(htmlParent)
-            dfsA11YReachabilities.addLast(parentA11YExposure)
+            dfsA11YReachabilities.addLast(parentReachability)
+            dfsA11YContainers.addLast(isContainer)
         }
     }
 
@@ -741,6 +731,7 @@ internal class ComposeWebSemanticsListener(
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
         dfsA11YReachabilities.clear()
+        dfsA11YContainers.clear()
         idToA11YNode.clear()
         a11yNodeToSemanticsNode.clear()
         targetParentToChildren.clear()

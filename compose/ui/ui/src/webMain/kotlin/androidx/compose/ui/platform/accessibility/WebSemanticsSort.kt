@@ -16,22 +16,83 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.IntObjectMap
+import androidx.collection.MutableIntObjectMap
+import androidx.collection.intObjectMapOf
+import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.util.fastForEach
 import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Web copy of `SemanticsNode.sortByGeometryGroupings` that allows the caller to choose the bounds
- * used throughout grouping and comparison. Keep the ordering logic aligned with
+ * Web port of traversal preparation in `SemanticsSort.kt`. Non-group descendants participate in
+ * the surrounding geometry sort; traversal groups are sorted recursively and expanded afterwards.
+ * [childrenOf] lets the DOM adapter preserve ownership scopes such as scroll containers and text
+ * with links. [boundsOf] must use the same coordinate system throughout the traversal.
+ * Visibility does not prune this traversal: the DOM adapter keeps unreachable nodes inert.
+ */
+internal fun SemanticsNode.subtreeSortedByGeometryGroupingForWeb(
+    isFocusableContainer: (SemanticsNode) -> Boolean,
+    listToSort: List<SemanticsNode>,
+    boundsOf: (SemanticsNode) -> Rect,
+    childrenOf: (SemanticsNode) -> List<SemanticsNode> = { it.children },
+): List<SemanticsNode> {
+    val containerMapToChildren = mutableIntObjectMapOf<List<SemanticsNode>>()
+    val geometryList = ArrayList<SemanticsNode>()
+    listToSort.fastForEach { node ->
+        node.geometryDepthFirstSearchForWeb(
+            geometryList,
+            isFocusableContainer,
+            containerMapToChildren,
+            boundsOf,
+            childrenOf,
+        )
+    }
+    return sortByGeometryGroupingsForWeb(
+        geometryList, isFocusableContainer, containerMapToChildren, boundsOf
+    )
+}
+
+private fun SemanticsNode.geometryDepthFirstSearchForWeb(
+    geometryList: ArrayList<SemanticsNode>,
+    isFocusableContainer: (SemanticsNode) -> Boolean,
+    containerMapToChildren: MutableIntObjectMap<List<SemanticsNode>>,
+    boundsOf: (SemanticsNode) -> Rect,
+    childrenOf: (SemanticsNode) -> List<SemanticsNode>,
+) {
+    val isTraversalGroup = unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false }
+    if (isTraversalGroup || isFocusableContainer(this)) {
+        geometryList.add(this)
+    }
+    if (isTraversalGroup) {
+        containerMapToChildren[id] = subtreeSortedByGeometryGroupingForWeb(
+            isFocusableContainer, childrenOf(this), boundsOf, childrenOf
+        )
+    } else {
+        childrenOf(this).fastForEach { child ->
+            child.geometryDepthFirstSearchForWeb(
+                geometryList, isFocusableContainer, containerMapToChildren,
+                boundsOf, childrenOf,
+            )
+        }
+    }
+}
+
+/**
+ * Web port of `SemanticsNode.sortByGeometryGroupings`, including traversal-group expansion, with
+ * caller-selected bounds throughout grouping and comparison. Keep the ordering logic aligned with
  * `compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsSort.kt`.
  */
 internal fun SemanticsNode.sortByGeometryGroupingsForWeb(
     parentListToSort: List<SemanticsNode>,
+    isFocusableContainer: (SemanticsNode) -> Boolean = { false },
+    containerChildrenMapping: IntObjectMap<List<SemanticsNode>> = intObjectMapOf(),
     boundsOf: (SemanticsNode) -> Rect,
 ): List<SemanticsNode> {
     val layoutIsRtl = layoutInfo.layoutDirection == LayoutDirection.Rtl
@@ -57,6 +118,22 @@ internal fun SemanticsNode.sortByGeometryGroupingsForWeb(
         a.unmergedConfig
             .getOrElse(SemanticsProperties.TraversalIndex) { 0f }
             .compareTo(b.unmergedConfig.getOrElse(SemanticsProperties.TraversalIndex) { 0f })
+    }
+
+    var i = 0
+    while (i <= returnList.lastIndex) {
+        val containerChildren = containerChildrenMapping[returnList[i].id]
+        if (containerChildren != null) {
+            if (!isFocusableContainer(returnList[i])) {
+                returnList.removeAt(i)
+            } else {
+                i += 1
+            }
+            returnList.addAll(i, containerChildren)
+            i += containerChildren.size
+        } else {
+            i += 1
+        }
     }
     return returnList
 }
