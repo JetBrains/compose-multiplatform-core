@@ -48,7 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.hasScrollAction
-import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.SkikoComposeUiTest
@@ -226,9 +226,10 @@ class BasicTextFieldSelectionHandleTest {
             return onAllNodes(SemanticsMatcher.keyIsDefined(SelectionHandleInfoKey))
                 .fetchSemanticsNodes()
                 .map { it.boundsInWindow.topLeft - field.topLeft }
+                .sortedWith(compareBy({ it.x }, { it.y }))
         }
 
-        onNodeWithText("21234").performTouchInput { longClick(Offset(10f, height / 2f)) }
+        onNodeWithText("21234").performTouchInput { doubleClick(Offset(10f, height / 2f)) }
         val selected = handleOffsetsFromField()
         assertEquals(2, selected.size)
 
@@ -268,9 +269,10 @@ class BasicTextFieldSelectionHandleTest {
             return onAllNodes(SemanticsMatcher.keyIsDefined(SelectionHandleInfoKey))
                 .fetchSemanticsNodes()
                 .map { it.boundsInWindow.topLeft - field.topLeft }
+                .sortedWith(compareBy({ it.x }, { it.y }))
         }
 
-        onNodeWithText("21234").performTouchInput { longClick(Offset(10f, height / 2f)) }
+        onNodeWithText("21234").performTouchInput { doubleClick(Offset(10f, height / 2f)) }
         val selected = handleOffsetsFromField()
         assertEquals(2, selected.size)
 
