@@ -173,6 +173,27 @@ internal interface OnCanvasTests {
         }
     }
 
+    suspend fun awaitCondition(
+        message: String,
+        timeout: Duration = 5.seconds,
+        condition: () -> Boolean
+    ) {
+        val startTime = currentTimeMillis()
+        suspendCancellableCoroutine { continuation ->
+            fun check() {
+                when {
+                    condition() -> continuation.resumeWith(Result.success(Unit))
+                    currentTimeMillis() - startTime > timeout.inWholeMilliseconds ->
+                        continuation.resumeWith(
+                            Result.failure(AssertionError("Timed out waiting for: $message"))
+                        )
+                    else -> window.requestAnimationFrame { check() }
+                }
+            }
+            check()
+        }
+    }
+
     suspend fun awaitA11YChanges(timeout: Duration = 5.seconds) {
         val a11yContainer = getA11YContainer() ?: return
         val startTime = currentTimeMillis()
