@@ -222,4 +222,54 @@ class FlushCoroutineDispatcherTest {
         channel.trySend(Unit)
         assertTrue(dispatcher.hasImmediateTasks())
     }
+
+    @Test
+    fun reentrant_flush_does_not_run_tasks_twice() = runTest {
+        val dispatcher = FlushCoroutineDispatcher(CoroutineScope(IgnoringCoroutineDispatcher()))
+
+        val executed = mutableListOf<String>()
+        var reentered = false
+        // Models the iOS text-input path: a task synchronously dispatches new work and re-enters
+        // flush() (updateView -> performFrame -> performTrampolineDispatch -> flush).
+        dispatcher.dispatch(EmptyCoroutineContext, Runnable {
+            executed.add("a")
+            if (!reentered) {
+                reentered = true
+                dispatcher.dispatch(EmptyCoroutineContext, Runnable { executed.add("c") })
+                dispatcher.flush()
+            }
+        })
+        dispatcher.dispatch(EmptyCoroutineContext, Runnable { executed.add("b") })
+
+        dispatcher.flush()
+
+        assertEquals(listOf("a", "b", "c"), executed)
+    }
+
+    @Test
+    fun reentrant_flush_does_not_run_tasks_inside_running_task() = runTest {
+        val dispatcher = FlushCoroutineDispatcher(CoroutineScope(IgnoringCoroutineDispatcher()))
+
+        val executed = mutableListOf<String>()
+        dispatcher.dispatch(EmptyCoroutineContext, Runnable {
+            executed.add("a:start")
+            dispatcher.dispatch(EmptyCoroutineContext, Runnable { executed.add("b") })
+            dispatcher.flush()
+            assertTrue(dispatcher.hasImmediateTasks())
+            executed.add("a:end")
+        })
+
+        dispatcher.flush()
+
+        assertEquals(listOf("a:start", "a:end", "b"), executed)
+        assertFalse(dispatcher.hasImmediateTasks())
+    }
+
+    /**
+     * Never runs the dispatched blocks, so [FlushCoroutineDispatcher] tasks run only via
+     * [FlushCoroutineDispatcher.flush].
+     */
+    private class IgnoringCoroutineDispatcher : CoroutineDispatcher() {
+        override fun dispatch(context: CoroutineContext, block: Runnable) = Unit
+    }
 }
