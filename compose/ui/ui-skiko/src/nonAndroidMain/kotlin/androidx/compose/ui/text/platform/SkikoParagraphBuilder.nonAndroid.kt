@@ -83,6 +83,7 @@ import org.jetbrains.skia.paragraph.Shadow as SkShadow
 import org.jetbrains.skia.paragraph.TextBox
 import org.jetbrains.skia.paragraph.TextIndent as SkTextIndent
 import org.jetbrains.skia.paragraph.TextStyle as SkTextStyle
+import kotlin.math.round
 
 private fun FontSmoothing.toSkFontEdging(): SkFontEdging = when (this) {
     FontSmoothing.None -> SkFontEdging.ALIAS
@@ -703,12 +704,13 @@ internal class ParagraphBuilder(
         val lineHeight = defaultStyle.lineHeight
         if (lineHeight != null) {
             val topRatio = defaultStyle.topRatio
+            val intrinsicHeight = round(descent - ascent + metrics.leading)
             if (topRatio in 0.0f..1.0f) {
-                val extraLeading = lineHeight - defaultStyle.fontSize
+                val extraLeading = lineHeight - intrinsicHeight
                 ascent -= extraLeading * topRatio
                 descent += extraLeading * (1.0f - topRatio)
             } else {
-                val multiplier = lineHeight / defaultStyle.fontSize
+                val multiplier = lineHeight / intrinsicHeight
                 ascent *= multiplier
                 descent *= multiplier
             }
