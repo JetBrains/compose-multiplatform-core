@@ -419,8 +419,7 @@ internal abstract class TextInputConnection(
         }
     }
 
-    override fun setMarkedText(markedText: String?, selectedRange: TextRange) {
-        markedText ?: return
+    override fun setMarkedText(markedText: String, selectedRange: TextRange) {
         val range = currentTextFieldValue?.composition ?: currentTextFieldValue?.selection ?: return
         edit {
             setComposingText(markedText, 1)

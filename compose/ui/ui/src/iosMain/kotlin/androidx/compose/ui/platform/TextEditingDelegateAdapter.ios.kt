@@ -62,7 +62,7 @@ internal class InactiveTextInputAdapter(
 
     override fun replaceRange(range: TextRange, text: String) = delegate.replaceRange(range, text)
 
-    override fun setMarkedText(markedText: String?, selectedRange: TextRange) {}
+    override fun setMarkedText(markedText: String, selectedRange: TextRange) {}
 
     override fun markedTextRange(): TextRange? = null
 
