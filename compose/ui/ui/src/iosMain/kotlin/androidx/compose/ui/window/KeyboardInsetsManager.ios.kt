@@ -218,10 +218,13 @@ internal class KeyboardInsetsManager(
         duration: Double,
         animationOptions: UIViewAnimationOptions
     ) {
+        // A willHide notification can interrupt an animation to the docked keyboard shortcut bar.
+        // Continue from the visible animation position instead of its previous target.
+        val currentKeyboardTop = activeAnimation?.keyboardTop() ?: previousKeyboardTop
         cancelActiveAnimation()
 
         val viewBounds = view.bounds
-        if (previousKeyboardTop == targetKeyboardTop) {
+        if (currentKeyboardTop == targetKeyboardTop) {
             val overlap =
                 (CGRectGetMaxY(viewBounds) - targetKeyboardTop).coerceIn(
                     0.0,
@@ -236,7 +239,7 @@ internal class KeyboardInsetsManager(
         val animation =
             KeyboardAnimation(
                 view = animationView,
-                previousKeyboardTop = previousKeyboardTop,
+                previousKeyboardTop = currentKeyboardTop,
                 targetKeyboardTop = targetKeyboardTop,
                 viewBounds = viewBounds,
             )
@@ -264,12 +267,15 @@ internal class KeyboardInsetsManager(
     }
 
     private fun KeyboardAnimation.keyboardOverlapHeight(progress: Double = progress()): Dp {
-        val keyboardTop = previousKeyboardTop + (targetKeyboardTop - previousKeyboardTop) * progress
+        val keyboardTop = keyboardTop(progress)
         // Clamp after interpolation so the inset stays zero until the keyboard reaches the view.
         return (CGRectGetMaxY(viewBounds) - keyboardTop)
             .coerceIn(0.0, viewBounds.useContents { size.height })
             .dp
     }
+
+    private fun KeyboardAnimation.keyboardTop(progress: Double = progress()): Double =
+        previousKeyboardTop + (targetKeyboardTop - previousKeyboardTop) * progress
 
     private fun finishAnimation(animation: KeyboardAnimation) {
         if (activeAnimation !== animation) {

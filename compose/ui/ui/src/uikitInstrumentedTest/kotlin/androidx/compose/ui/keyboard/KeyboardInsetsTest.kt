@@ -250,16 +250,6 @@ internal abstract class KeyboardInsetsTest(
         val floatingKeyboardWidth = 334.0
         val floatingKeyboardHeight = 289.5
         val floatingKeyboardTopOffsetFromScreenBottom = 500.0
-        fun postKeyboardFrame(frame: CValue<CGRect>) {
-            NSNotificationCenter.defaultCenter.postNotificationName(
-                aName = UIKeyboardWillChangeFrameNotification,
-                `object` = null,
-                userInfo = mapOf(
-                    UIKeyboardFrameEndUserInfoKey to NSValue.valueWithCGRect(frame),
-                    UIKeyboardAnimationDurationUserInfoKey to 0.0,
-                ),
-            )
-        }
 
         try {
             postKeyboardFrame(
@@ -290,6 +280,65 @@ internal abstract class KeyboardInsetsTest(
                 aName = UIKeyboardWillHideNotification,
                 `object` = null,
             )
+            waitForIdle()
+        }
+    }
+
+    @Test
+    fun testImePaddingKeepsAnimatingWhenKeyboardHidesAfterFrameChange() = runUIKitInstrumentedTest {
+        var bottomContentRect: DpRect? = null
+
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+
+        setContent {
+            Column(Modifier.fillMaxSize().imePadding()) {
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "bottom content",
+                    modifier = Modifier.onGloballyPositioned {
+                        bottomContentRect = it.boundsInWindow().toDpRect(density)
+                    },
+                )
+            }
+        }
+
+        val screenWidth = screenSize.width.value.toDouble()
+        val screenHeight = screenSize.height.value.toDouble()
+        val keyboardHeight = 400.0
+        val shortcutBarHeight = 70.0
+        val animationDuration = 2.0
+        val keyboardBottom = screenSize.height - keyboardHeight.dp
+        val shortcutBarBottom = screenSize.height - shortcutBarHeight.dp
+
+        try {
+            postKeyboardFrame(
+                frame = CGRectMake(0.0, screenHeight - keyboardHeight, screenWidth, keyboardHeight),
+            )
+            waitUntil("Keyboard must move the bottom content above it") {
+                bottomContentRect?.bottom == keyboardBottom
+            }
+
+            postKeyboardFrame(
+                frame = CGRectMake(0.0, screenHeight - shortcutBarHeight, screenWidth, shortcutBarHeight),
+                duration = animationDuration,
+            )
+            waitUntil("Content must start following the keyboard to the shortcut bar") {
+                bottomContentRect?.bottom?.let {
+                    it > keyboardBottom + 20.dp && it < shortcutBarBottom - 20.dp
+                } == true
+            }
+            val bottomBeforeHide = checkNotNull(bottomContentRect).bottom
+
+            postKeyboardWillHide(duration = animationDuration)
+            waitUntil("Content must continue moving after the keyboard starts hiding") {
+                bottomContentRect?.bottom != bottomBeforeHide
+            }
+            assertTrue(
+                actual = checkNotNull(bottomContentRect).bottom < shortcutBarBottom - 20.dp,
+                message = "Content must not jump to the shortcut bar position when the hide animation starts",
+            )
+        } finally {
+            postKeyboardWillHide()
             waitForIdle()
         }
     }
@@ -385,6 +434,25 @@ internal abstract class KeyboardInsetsTest(
                 "Content size must increase on every frame"
             )
         }
+    }
+
+    private fun postKeyboardFrame(frame: CValue<CGRect>, duration: Double = 0.0) {
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            aName = UIKeyboardWillChangeFrameNotification,
+            `object` = null,
+            userInfo = mapOf(
+                UIKeyboardFrameEndUserInfoKey to NSValue.valueWithCGRect(frame),
+                UIKeyboardAnimationDurationUserInfoKey to duration,
+            ),
+        )
+    }
+
+    private fun postKeyboardWillHide(duration: Double = 0.0) {
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            aName = UIKeyboardWillHideNotification,
+            `object` = null,
+            userInfo = mapOf(UIKeyboardAnimationDurationUserInfoKey to duration),
+        )
     }
 
     @Test
