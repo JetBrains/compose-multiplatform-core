@@ -49,6 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -203,19 +206,39 @@ private fun LegacyNativeEditMenuArea(
     items: () -> ContextMenuItems,
     content: @Composable () -> Unit
 ) {
-    LaunchedEffect(holder, items) {
-        snapshotFlow { holder() to items() }.collect { (holder, items) ->
-            holder?.updateNativeTextInputEditMenuState(
-                copy = items.copy,
-                cut = items.cut,
-                paste = items.paste,
-                selectAll = items.selectAll,
-                customActions = items.customActions
-            )
+    Box(
+        modifier = Modifier.nativeGesturesGate(holder),
+        propagateMinConstraints = true
+    ) {
+        LaunchedEffect(holder, items) {
+            snapshotFlow { holder() to items() }.collect { (holder, items) ->
+                holder?.updateNativeTextInputEditMenuState(
+                    copy = items.copy,
+                    cut = items.cut,
+                    paste = items.paste,
+                    selectAll = items.selectAll,
+                    customActions = items.customActions
+                )
+            }
+        }
+        content()
+    }
+}
+
+private fun Modifier.nativeGesturesGate(holder: () -> TextInputContainer.Holder?) =
+    pointerInput(holder) {
+        awaitPointerEventScope {
+            while (true) {
+                val initialEvent = awaitPointerEvent(PointerEventPass.Initial)
+                if (initialEvent.changes.none { it.changedToDown() }) continue
+                holder()?.setNativeGesturesEnabled(false)
+                val mainEvent = awaitPointerEvent(PointerEventPass.Main)
+                if (mainEvent.changes.any { it.changedToDown() }) {
+                    holder()?.setNativeGesturesEnabled(true)
+                }
+            }
         }
     }
-    content()
-}
 
 private data class NativeEditMenuElement(
     private val holder: () -> TextInputContainer.Holder?,

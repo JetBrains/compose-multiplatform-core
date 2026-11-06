@@ -200,6 +200,10 @@ private class TouchesGestureRecognizer(
             return
         }
 
+        if (touches.any { trackedTouches[it].isNativeTextInputWithDisabledGestures() }) {
+            beginGesture()
+        }
+
         fun processGesture() {
             if (trackedTouches.isEmpty()) {
                 return
@@ -256,10 +260,14 @@ private class TouchesGestureRecognizer(
         if (state.isOngoing) {
             endTouchesEvent()
         } else {
-            val hasHitTestResult = touches.firstNotNullOfOrNull { trackedTouches[it] } != null
-            if (hasHitTestResult) {
+            val touchHitTest = touches.firstNotNullOfOrNull { trackedTouches[it] }
+            val nativeTextInput = touchHitTest.asNativeTextInput()
+            if (touchHitTest != null && nativeTextInput == null) {
                 cancelAllTrackedTouches()
             } else {
+                if (nativeTextInput?.nativeGesturesEnabled == false) {
+                    beginGesture()
+                }
                 endTouchesEvent()
             }
         }
@@ -300,7 +308,10 @@ private class TouchesGestureRecognizer(
     override fun canBePreventedByGestureRecognizer(
         preventingGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return if (preventingGestureRecognizer is BackGestureRecognizer) {
+        val nativeTextInput = preventingGestureRecognizer.view.asNativeTextInput()
+        return if (nativeTextInput != null) {
+            nativeTextInput.nativeGesturesEnabled
+        } else if (preventingGestureRecognizer is BackGestureRecognizer) {
             cancelAllTrackedTouches()
             true
         } else if (canIgnoreDragGesture(preventingGestureRecognizer)) {
@@ -331,7 +342,10 @@ private class TouchesGestureRecognizer(
     override fun canPreventGestureRecognizer(
         preventedGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return if (isInChildHierarchy(preventedGestureRecognizer.view)) {
+        val nativeTextInput = preventedGestureRecognizer.view.asNativeTextInput()
+        return if (nativeTextInput != null) {
+            !nativeTextInput.nativeGesturesEnabled
+        } else if (isInChildHierarchy(preventedGestureRecognizer.view)) {
             super.canPreventGestureRecognizer(preventedGestureRecognizer)
         } else if (preventedGestureRecognizer is UIScreenEdgePanGestureRecognizer) {
             preventedGestureRecognizer.isUINavigationControllerContentSwipeGestureRecognizer()
@@ -846,7 +860,6 @@ internal class OverlayInputView(
                 it.hitTest(inputPoint, withEvent)
             }
         }
-        setDragDropGesturesEnabled(nativeTextInputViewHitTest == null)
         if (nativeTextInputViewHitTest != null) {
             return nativeTextInputViewHitTest
         }
@@ -896,7 +909,6 @@ internal class OverlayInputView(
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         canIgnoreDragGesture = { false }
-        setDragDropGesturesEnabled = {}
         onKeyboardPresses = {}
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _, _ -> PointerEventResult() }
@@ -1016,6 +1028,15 @@ private fun UIView.findAncestorInteractionMode(touch: UITouch): UIKitInteropInte
 private fun Double.equalWithinPixelTolerance(other: Double): Boolean {
     return abs(other - this) < 0.1 // Any number smaller than a pixel size is sufficient here
 }
+
+private fun UIView?.asNativeTextInput(): NativeTextInputScrollView? = when (this) {
+    is NativeTextInputScrollView -> this
+    is NativeTextInputView -> superview as? NativeTextInputScrollView
+    else -> null
+}
+
+private fun UIView?.isNativeTextInputWithDisabledGestures(): Boolean =
+    asNativeTextInput()?.nativeGesturesEnabled == false
 
 private fun UIView?.hasTrackingUIScrollView(): Boolean {
     var view: UIView? = this
