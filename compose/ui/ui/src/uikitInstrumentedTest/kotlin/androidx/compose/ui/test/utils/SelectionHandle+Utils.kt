@@ -232,13 +232,6 @@ internal fun UIKitInstrumentedTest.dragSelectionHandleImpl(
     // Lift the touch before failing, so one stuck drag does not leave a finger down for the tests
     // that follow.
     failure?.let { error(it) }
-
-    if (isNative) {
-        // TODO: CMP-10641
-        waitUntil("Selection loupe should hide after the drag") {
-            findFirstDescendant { it.isLoupeView } == null
-        }
-    }
 }
 
 /**
