@@ -146,8 +146,6 @@ private class SelectionContainerInputDelegate(
 
     override val imeOptions: ImeOptions = ImeOptions.Default
 
-    override val markedTextRange: TextRange? = null
-
     override val text: String
         get() = contextTextAndSelection?.first?.text.orEmpty()
 
@@ -161,10 +159,6 @@ private class SelectionContainerInputDelegate(
     override fun deleteBackward() = Unit
 
     override fun setSelectedText(range: TextRange?) = Unit
-
-    override fun setMarkedText(markedText: String?, selectedRange: TextRange) = Unit
-
-    override fun unmarkText() = Unit
 }
 
 private fun SelectionManager.contextTextAndSelection(): Pair<AnnotatedString, TextRange>? {

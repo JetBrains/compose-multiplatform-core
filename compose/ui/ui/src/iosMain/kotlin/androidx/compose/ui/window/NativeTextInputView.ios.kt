@@ -97,9 +97,12 @@ import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
 import platform.UIKit.addInteraction
+import platform.UIKit.removeInteraction
 import platform.UIKit.interactions
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 
 internal class NativeTextInputView(
     initialInput: NativeTextEditingDelegate,
@@ -159,6 +162,22 @@ internal class NativeTextInputView(
             // handles can be created and shown when needed.
             this.addInteraction(selectionInteraction)
             selectionInteractionAttached = true
+        }
+    }
+
+    /**
+     * HACK: UIKit hides the caret whenever the marked text range of a UITextInput changes.
+     * Removing the editable text interaction and adding it back, then re-activating the selection
+     * display, brings the caret back.
+     */
+    private fun didUpdateMarkedRange() {
+        dispatch_async(dispatch_get_main_queue()) {
+            if (!isFirstResponder() || selectionInteraction.view != this) {
+                return@dispatch_async
+            }
+            removeInteraction(selectionInteraction)
+            addInteraction(selectionInteraction)
+            activateSelectionDisplayIfNeeded()
         }
     }
 
@@ -334,7 +353,8 @@ internal class NativeTextInputView(
             TextRange(loc, loc + length.toInt())
         }
 
-        input.setMarkedText(markedText, relativeTextRange)
+        input.setMarkedText(markedText ?: "", relativeTextRange)
+        didUpdateMarkedRange()
     }
 
     /**
@@ -344,6 +364,7 @@ internal class NativeTextInputView(
      */
     override fun unmarkText() {
         input.unmarkText()
+        didUpdateMarkedRange()
     }
 
     override fun beginningOfDocument(): UITextPosition {
