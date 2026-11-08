@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.platform.PlatformRenderEffect
 import androidx.compose.ui.graphics.shadow.SkikoBlurFilter
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Canvas as SkCanvas
-import org.jetbrains.skia.Color4f
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorFilter as SkColorFilter
 import org.jetbrains.skia.ColorInfo
@@ -35,12 +34,12 @@ import org.jetbrains.skia.ColorMatrix as SkColorMatrix
 import org.jetbrains.skia.ColorSpace as SkColorSpace
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.FilterBlurMode
-import org.jetbrains.skia.Gradient
+import org.jetbrains.skia.FilterTileMode
+import org.jetbrains.skia.Gradient.Interpolation
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageFilter
 import org.jetbrains.skia.ImageInfo
 import org.jetbrains.skia.MaskFilter
-import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.PathEffect as SkPathEffect
 import org.jetbrains.skia.Shader as SkShader
 
@@ -58,7 +57,7 @@ internal object SkikoGraphics : PlatformGraphics {
         return SkCanvas(skiaBitmap).asComposeCanvas()
     }
 
-    override fun createPaint(): Paint = SkPaint().asComposePaint()
+    override fun createPaint(): Paint = SkiaBackedPaint()
 
     // Skia supports all Compose blend and tile modes.
     override fun isBlendModeSupported(blendMode: BlendMode): Boolean = true
@@ -104,16 +103,16 @@ internal object SkikoGraphics : PlatformGraphics {
         colorStops: List<Float>?,
         tileMode: TileMode,
     ): androidx.compose.ui.graphics.Shader {
-        validateColorStops(colors, colorStops)
+        validateColorsLength(colors, colorStops)
         return SkShader.makeLinearGradient(
             from.x,
             from.y,
             to.x,
             to.y,
-            colors.toSkiaGradient(
-                colorStops = colorStops,
-                tileMode = tileMode,
-            ),
+            colors.flattenArray(),
+            tileMode.toSkiaTileMode(),
+            colorStops?.toFloatArray(),
+            inPremul = Interpolation.InPremul.YES
         ).asComposeShader()
     }
 
@@ -124,15 +123,14 @@ internal object SkikoGraphics : PlatformGraphics {
         colorStops: List<Float>?,
         tileMode: TileMode,
     ): androidx.compose.ui.graphics.Shader {
-        validateColorStops(colors, colorStops)
+        validateColorsLength(colors, colorStops)
         return SkShader.makeRadialGradient(
             center.x,
             center.y,
             radius,
-            colors.toSkiaGradient(
-                colorStops = colorStops,
-                tileMode = tileMode,
-            ),
+            colors.flattenArray(),
+            tileMode.toSkiaTileMode(),
+            colorStops?.toFloatArray(),
         ).asComposeShader()
     }
 
@@ -141,11 +139,14 @@ internal object SkikoGraphics : PlatformGraphics {
         colors: List<Color>,
         colorStops: List<Float>?,
     ): androidx.compose.ui.graphics.Shader {
-        validateColorStops(colors, colorStops)
+        validateColorsLength(colors, colorStops)
         return SkShader.makeSweepGradient(
             center.x,
             center.y,
-            colors.toSkiaGradient(colorStops = colorStops),
+            colors.flattenArray(),
+            FilterTileMode.CLAMP,
+            colorStops?.toFloatArray(),
+            inPremul = Interpolation.InPremul.YES
         ).asComposeShader()
     }
 
@@ -176,21 +177,12 @@ internal object SkikoGraphics : PlatformGraphics {
         edgeTreatment: TileMode,
     ): PlatformRenderEffect =
         SkikoRenderEffect(
-            if (renderEffect == null) {
-                ImageFilter.makeBlur(
-                    BlurEffect.convertRadiusToSigma(radiusX),
-                    BlurEffect.convertRadiusToSigma(radiusY),
-                    edgeTreatment.toSkiaTileMode(),
-                )
-            } else {
-                ImageFilter.makeBlur(
-                    BlurEffect.convertRadiusToSigma(radiusX),
-                    BlurEffect.convertRadiusToSigma(radiusY),
-                    edgeTreatment.toSkiaTileMode(),
-                    renderEffect.skiaImageFilter,
-                    null,
-                )
-            }
+            ImageFilter.makeBlur(
+                BlurEffect.convertRadiusToSigma(radiusX),
+                BlurEffect.convertRadiusToSigma(radiusY),
+                edgeTreatment.toSkiaTileMode(),
+                renderEffect?.skiaImageFilter,
+            )
         )
 
     override fun createOffsetRenderEffect(
@@ -278,42 +270,34 @@ private fun ColorSpace.toSkiaColorSpace(): SkColorSpace = when (this) {
     else -> SkColorSpace.sRGB
 }
 
-private fun List<Color>.toSkiaGradient(
-    colorStops: List<Float>?,
-    tileMode: TileMode = TileMode.Clamp,
-): Gradient = Gradient(
-    colors = Gradient.Colors(
-        colors = toColor4fArray(),
-        positions = colorStops?.toFloatArray(),
-        tileMode = tileMode.toSkiaTileMode(),
-    ),
-    interpolation = Gradient.Interpolation(
-        inPremul = Gradient.Interpolation.InPremul.YES,
-    ),
-)
-
 /**
  * This overload avoids iterator allocation in comparison with its stdlib counterpart
  */
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun List<Float>.toFloatArray(): FloatArray = FloatArray(size) { i -> this[i] }
 
-private fun List<Color>.toColor4fArray(): Array<Color4f> =
-    Array(size) { i ->
-        val color = this[i]
-        Color4f(color.red, color.green, color.blue, color.alpha)
+@Suppress("NOTHING_TO_INLINE")
+private inline fun List<Color>.flattenArray(): FloatArray {
+    val arr = FloatArray(size * 4)
+    for (i in indices) {
+        val startIndex = i * 4
+        val color =  this[i]
+        arr[startIndex] = color.red
+        arr[startIndex + 1] = color.green
+        arr[startIndex + 2] = color.blue
+        arr[startIndex + 3] = color.alpha
     }
+    return arr
+}
 
-private fun validateColorStops(colors: List<Color>, colorStops: List<Float>?) {
+@Suppress("NOTHING_TO_INLINE")
+private inline fun validateColorsLength(colors: List<Color>, colorStops: List<Float>?) {
     if (colorStops == null) {
         require(colors.size >= 2) {
             "colors must have length of at least 2 if colorStops is omitted."
         }
-    } else {
-        require(colors.size == colorStops.size) {
-            "colors and colorStops arguments must have equal length."
-        }
     }
+    // No need for an else branch to validate colors and positions length since it is done on Skiko called overloads
 }
 
 /** Passes every channel through unchanged. */
