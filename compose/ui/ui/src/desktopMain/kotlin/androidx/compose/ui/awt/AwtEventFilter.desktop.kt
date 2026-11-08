@@ -59,16 +59,17 @@ internal open class AwtEventFilter : AwtEventListener {
  * See https://github.com/JetBrains/compose-multiplatform/issues/2850 for more details.
 */
 internal object OnlyValidPrimaryMouseButtonFilter : AwtEventFilter() {
-    private var isPrimaryButtonPressed = false
+    var isPrimaryButtonPressed = false
+        private set
 
     override fun shouldSendMouseEvent(event: MouseEvent): Boolean {
-        // Touchscreen scroll can arrive as MOUSE_WHEEL with BUTTON1_DOWN_MASK while the
-        // finger is touching the screen. Wheel events are not button state transitions.
+        // See https://github.com/JetBrains/JetBrainsRuntime/issues/666
         if (event.id == MouseEvent.MOUSE_WHEEL) {
             return true
         }
         val eventReportsPrimaryButtonPressed =
-            (event.modifiersEx and MouseEvent.BUTTON1_DOWN_MASK) != 0
+            (event.modifiersEx and MouseEvent.BUTTON1_DOWN_MASK) != 0 &&
+                event.id != MouseEvent.MOUSE_RELEASED
         if ((event.button == MouseEvent.BUTTON1) &&
             ((event.id == MouseEvent.MOUSE_PRESSED) ||
                 (event.id == MouseEvent.MOUSE_RELEASED))) {

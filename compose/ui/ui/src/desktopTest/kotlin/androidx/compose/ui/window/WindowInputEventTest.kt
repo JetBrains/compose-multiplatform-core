@@ -52,7 +52,6 @@ import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
 import androidx.compose.ui.sendMouseRelease
 import androidx.compose.ui.sendMouseWheelEvent
-import androidx.compose.ui.sendMouseWheelEventToFocusOwner
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import java.awt.Dimension
@@ -386,6 +385,7 @@ class WindowInputEventTest {
             window.sendMousePress(BUTTON1, 100, 50)
             awaitIdle()
 
+            // See https://github.com/JetBrains/JetBrainsRuntime/issues/666
             window.sendMouseRelease(BUTTON1, 100, 50, modifiers = BUTTON1_DOWN_MASK)
             awaitIdle()
 
@@ -493,10 +493,11 @@ class WindowInputEventTest {
     }
 
     @Test
-    fun `catch mouse scroll dispatched to focus owner`() = runApplicationTest {
+    fun `mouse scroll with pressed button is received`() = runApplicationTest {
         lateinit var window: ComposeWindow
 
         val deltas = mutableListOf<Offset>()
+        var clicks = 0
 
         launchTestApplication {
             Window(
@@ -508,6 +509,7 @@ class WindowInputEventTest {
                 Box(
                     Modifier
                         .fillMaxSize()
+                        .clickable { clicks++ }
                         .onPointerEvent(PointerEventType.Scroll) {
                             deltas.add(it.changes.first().scrollDelta)
                         }
@@ -518,16 +520,19 @@ class WindowInputEventTest {
         awaitIdle()
         assertThat(deltas.size).isEqualTo(0)
 
-        window.sendMouseWheelEventToFocusOwner(
+        // See https://github.com/JetBrains/JetBrainsRuntime/issues/666
+        window.sendMouseWheelEvent(
             100,
             50,
             WHEEL_UNIT_SCROLL,
             wheelRotation = 1.0,
             modifiers = BUTTON1_DOWN_MASK,
         )
+        window.sendMouseEvent(MOUSE_MOVED, 100, 50)
         awaitIdle()
         assertThat(deltas.size).isEqualTo(1)
         assertThat(deltas.last()).isEqualTo(Offset(0f, 1f))
+        assertThat(clicks).isEqualTo(0)
     }
 
     @Test

@@ -240,34 +240,6 @@ fun Container.sendMouseWheelEvent(
     return event.isConsumed
 }
 
-fun Window.sendMouseWheelEventToFocusOwner(
-    x: Int = width / 2,
-    y: Int = height / 2,
-    scrollType: Int = MouseWheelEvent.WHEEL_UNIT_SCROLL,
-    wheelRotation: Double = 0.0,
-    modifiers: Int = 0,
-): Boolean {
-    val component = mostRecentFocusOwner!!
-    val event = MouseWheelEvent(
-        component,
-        MouseWheelEvent.MOUSE_WHEEL,
-        0,
-        modifiers,
-        x,
-        y,
-        x,
-        y,
-        1,
-        false,
-        scrollType,
-        1,
-        wheelRotation.toInt(),
-        wheelRotation
-    )
-    component.dispatchEvent(event)
-    return event.isConsumed
-}
-
 private val EventComponent = object : Component() {}
 
 internal fun awtWheelEvent(isScrollByPages: Boolean = false) = MouseWheelEvent(

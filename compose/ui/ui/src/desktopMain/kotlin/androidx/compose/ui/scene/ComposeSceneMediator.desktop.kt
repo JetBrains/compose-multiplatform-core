@@ -987,22 +987,17 @@ private val MouseEvent.buttons get() = PointerButtons(
 )
 
 /**
- * Returns whether AWT reports [button] as currently pressed, with one correction for release events.
+ * Returns whether AWT reports [button] as currently pressed.
  *
- * In normal mouse input, `modifiersEx` carries `BUTTON*_DOWN_MASK` while the button is down, so
- * press, drag, move with a pressed button, and wheel while the button is held all return `true`.
- * A release of a different button also keeps returning `true` for [button] if its mask is still set.
- *
- * Some AWT paths, including touchscreen taps on X11/JBR, can send `MOUSE_RELEASED` for [button]
- * while still leaving that button's down mask in `modifiersEx`. For that event, the release itself
- * is the more specific state transition, so this helper treats [button] as no longer pressed.
- *
- * This helper intentionally does not repair the opposite case where `MOUSE_PRESSED` has no down
- * mask; callers handle that by also checking `id == MOUSE_PRESSED && button == ...`.
+ * Workaround for https://github.com/JetBrains/JetBrainsRuntime/issues/666, where X11 touchscreen
+ * events in JBR still have `BUTTON1_DOWN_MASK` set on `MOUSE_RELEASED` and `MOUSE_WHEEL`.
  */
 private fun MouseEvent.isButtonDown(button: Int): Boolean =
     (modifiersEx and MouseEvent.getMaskForButton(button)) != 0 &&
-        !(id == MouseEvent.MOUSE_RELEASED && this.button == button)
+        !(id == MouseEvent.MOUSE_RELEASED && this.button == button) &&
+        !(id == MouseEvent.MOUSE_WHEEL &&
+            button == MouseEvent.BUTTON1 &&
+            !OnlyValidPrimaryMouseButtonFilter.isPrimaryButtonPressed)
 
 private val MouseEvent.keyboardModifiers get() = PointerKeyboardModifiers(
     isCtrlPressed = (modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0,
