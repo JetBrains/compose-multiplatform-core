@@ -16,4 +16,29 @@
 
 package androidx.compose.ui.graphics
 
-internal actual fun MeshGradientRenderer(): MeshGradientRenderer = DefaultMeshGradientRenderer()
+internal actual fun MeshGradientRenderer(): MeshGradientRenderer = OptimizedDefaultMeshGradientRenderer()
+
+internal class OptimizedDefaultMeshGradientRenderer : BaseMeshGradientRenderer() {
+    private val paint = Paint()
+
+    override fun drawTriangles(
+        canvas: Canvas,
+        surfacePositions: FloatArray,
+        surfaceColors: IntArray,
+        indices: ShortArray,
+        vertexCount: Int,
+    ) {
+        canvas.drawVertices(
+            vertices =
+                Vertices(
+                    vertexMode = VertexMode.Triangles,
+                    positions = surfacePositions,
+                    textureCoordinates = surfacePositions,
+                    colors = surfaceColors,
+                    indices = indices,
+                ),
+            blendMode = BlendMode.Dst,
+            paint = paint,
+        )
+    }
+}
