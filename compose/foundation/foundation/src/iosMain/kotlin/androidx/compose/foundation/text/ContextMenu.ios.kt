@@ -91,7 +91,8 @@ internal actual fun ContextMenuArea(
             holder = holder,
             selection = remember(manager) { { manager.value.selection } },
             menuDelay = 100.milliseconds,
-            modifier = manager.contextMenuAreaModifier,
+            modifier = manager.contextMenuAreaModifier
+                .then(Modifier.nativeGesturesGate(holder)),
             content = content
         )
     } else {
@@ -128,7 +129,7 @@ internal actual fun ContextMenuArea(
                 )
             } else {
                 Modifier
-            },
+            }.then(Modifier.nativeGesturesGate(holder)),
             content = content
         )
     } else {

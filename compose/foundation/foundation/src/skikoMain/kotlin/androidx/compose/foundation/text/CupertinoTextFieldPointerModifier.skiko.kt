@@ -40,9 +40,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 
-
-// BTF 1
-
 internal fun Modifier.cupertinoTextFieldPointer(
     manager: TextFieldSelectionManager,
     enabled: Boolean,

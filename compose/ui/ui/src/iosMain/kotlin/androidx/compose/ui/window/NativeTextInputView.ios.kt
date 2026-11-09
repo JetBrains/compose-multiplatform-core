@@ -752,6 +752,8 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         setClipsToBounds(true)
     }
 
+    // Set at the beginning of every touch and serve as switch between the native text selection
+    // gestures and the own text field decorative box nodes.
     var nativeGesturesEnabled = true
 
     var textView: NativeTextInputView? = null
