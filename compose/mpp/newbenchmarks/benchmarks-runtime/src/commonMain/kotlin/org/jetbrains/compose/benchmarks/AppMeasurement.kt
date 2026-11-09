@@ -25,7 +25,7 @@ import androidx.compose.runtime.withFrameNanos
 import kotlin.time.Duration
 import kotlin.time.TimeSource.Monotonic
 
-data class StartupResult(
+internal data class StartupResult(
     val timeOfFirstFrame: Monotonic.ValueTimeMark,
     val timeOfNthFrame: Monotonic.ValueTimeMark,
 )
@@ -50,7 +50,7 @@ internal fun MeasureStartup(
     }
 }
 
-data class RealFramesResult(
+internal data class RealFramesResult(
     val frameTimes: List<Duration>,
     val totalDuration: Duration,
 )
