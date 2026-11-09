@@ -714,26 +714,23 @@ internal class ComposeSceneMediator(
     var isInterceptingOutsideEvents: Boolean by _overlayView::isInterceptingOutsideEvents
     var interactionBounds = IntRect.Zero
 
+    private var setContent: (() -> Unit)? = null
+
     fun setContent(
         parentCompositionContext: CompositionContext,
         content: @Composable () -> Unit
     ) {
-        val listener = object : FrameChoreographer.Listener {
-            override fun onDisplayLinkTick() {
-                frameChoreographer.removeListener(this)
-
-                scene.setContent(parentCompositionContext) {
-                    ProvideComposeSceneMediatorCompositionLocals {
-                        FocusAboveKeyboardIfNeeded {
-                            interopContainer.TrackInteropPlacementContainer(content = content)
-                        }
+        setContent = {
+            setContent = null
+            updateLayout()
+            scene.setContent(parentCompositionContext) {
+                ProvideComposeSceneMediatorCompositionLocals {
+                    FocusAboveKeyboardIfNeeded {
+                        interopContainer.TrackInteropPlacementContainer(content = content)
                     }
                 }
             }
         }
-
-        frameChoreographer.requestFrame()
-        frameChoreographer.addListener(listener)
     }
 
     private var isLayoutTransitionAnimating = false
@@ -765,6 +762,7 @@ internal class ComposeSceneMediator(
 
     fun requestMeasureAndLayout(completion: () -> Unit = {}) {
         frameChoreographer.performOutsideRecomposerFrame {
+            setContent?.invoke()
             scene.measureAndLayout()
             completion()
         }

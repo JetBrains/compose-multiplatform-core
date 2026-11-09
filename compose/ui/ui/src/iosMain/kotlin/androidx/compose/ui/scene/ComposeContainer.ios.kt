@@ -547,6 +547,7 @@ internal class LayoutInvalidationHandler(
         coroutineContext.job.invokeOnCompletion {
             doInvalidateLayout = {}
         }
+        doInvalidateLayout()
     }
 
     fun invalidateLayoutIfNeeded() {
