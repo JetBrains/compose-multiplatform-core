@@ -31,9 +31,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.captureScreenshot
+import androidx.compose.ui.test.findLayersViewController
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.forEachPixel
 import androidx.compose.ui.test.utils.forEachPixelInRect
+import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -41,12 +43,16 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.roundToIntRect
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import platform.Foundation.NSNotificationCenter
+import platform.UIKit.UIApplicationDidReceiveMemoryWarningNotification
 import platform.UIKit.UIImage
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
@@ -237,6 +243,53 @@ class LayersRenderingTest {
         showRedPopup = false
         waitForIdle()
         assertTrue(screenshotMatches(listOf(bluePopup)))
+    }
+
+    @Test
+    fun testDialogDrawsAfterMemoryWarningReleasedLayersView() = runUIKitInstrumentedTest {
+        var showDialog by mutableStateOf(true)
+
+        setContent {
+            Box(Modifier.fillMaxSize().background(Color.Blue))
+            if (showDialog) {
+                Dialog(
+                    onDismissRequest = {},
+                    properties = DialogProperties(
+                        usePlatformDefaultWidth = false,
+                        usePlatformInsets = false,
+                        scrimColor = Color.Transparent,
+                    )
+                ) {
+                    Box(Modifier.fillMaxSize().background(Color.Red))
+                }
+            }
+        }
+        waitForIdle()
+
+        val metalLayer =
+            appDelegate.findLayersViewController().metalView.view.layer as CMPMetalLayer
+        val drawablesGeneration = metalLayer.drawablesGeneration
+
+        showDialog = false
+        waitUntil("Layers view should drain its drawables") {
+            metalLayer.drawablesGeneration > drawablesGeneration
+        }
+
+        val drainedGeneration = metalLayer.drawablesGeneration
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            UIApplicationDidReceiveMemoryWarningNotification,
+            `object` = null
+        )
+        assertTrue(
+            metalLayer.drawablesGeneration > drainedGeneration,
+            "Layers view should release its rendering resources on a memory warning"
+        )
+
+        showDialog = true
+        waitForIdle()
+        assertNotNull(captureScreenshot()).forEachPixel(step = 4) { _, _, color ->
+            assertEquals(Color.Red, color, "Dialog was not drawn after the memory warning")
+        }
     }
 }
 
