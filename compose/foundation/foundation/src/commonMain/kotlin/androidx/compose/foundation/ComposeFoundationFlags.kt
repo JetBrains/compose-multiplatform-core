@@ -362,6 +362,41 @@ public object ComposeFoundationFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isTextFieldWaitWindowFocusForInputSessionEnabled: Boolean = true
+
+    /**
+     * Controls a fix for using [border] with custom shape implementations that return
+     * [androidx.compose.ui.graphics.Outline.Rounded] where the outline does not start at (0,0). For
+     * most cases, such as when using a high level
+     * [androidx.compose.foundation.shape.RoundedCornerShape], this flag should have no effect.
+     */
+    // TODO: Remove this flag once it has soaked (b/568463028)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isRoundedRectangleBorderRenderingFixEnabled: Boolean = true
+
+    /**
+     * Whether to use an updated implementation to render borders in [border]. If disabled, the old
+     * border implementation will be used instead.
+     */
+    // TODO: Remove this flag once it has soaked (b/569992152)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isNewBorderImplementationEnabled: Boolean = true
+
+    /**
+     * Controls whether the new [border] implementation renders using the bounds of the
+     * [androidx.compose.ui.graphics.Outline] created by the provided shape. Previously, this
+     * behavior was inconsistent and sometimes used the outline bounds, and sometimes used the
+     * Modifier bounds. For most cases, when using high level shapes such as
+     * [androidx.compose.ui.graphics.RectangleShape] and
+     * [androidx.compose.foundation.shape.RoundedCornerShape] this has no effect.
+     *
+     * This flag only takes effect when [isNewBorderImplementationEnabled] is enabled.
+     */
+    // TODO: Remove this flag once it has soaked (b/546074983)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBorderMatchesOutlineBoundsFixEnabled: Boolean = true
 }
 
 /** The initial value of [ComposeFoundationFlags.isNewContextMenuEnabled] */
