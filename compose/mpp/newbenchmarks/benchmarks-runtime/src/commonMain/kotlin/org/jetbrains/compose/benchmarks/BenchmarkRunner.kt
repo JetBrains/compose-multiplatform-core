@@ -27,6 +27,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.benchmarks.report.AverageFrameReport
+import org.jetbrains.compose.benchmarks.report.FpsReport
+import org.jetbrains.compose.benchmarks.report.FrameInfo
 import org.jetbrains.compose.benchmarks.report.RealFramesReport
 import org.jetbrains.compose.benchmarks.report.StartupReport
 
@@ -100,4 +103,74 @@ fun MeasureApplicationRealFrames(
         onComplete = onComplete,
         content = content,
     )
+}
+
+fun MeasureRenderAverageFrame(
+    id: String,
+    reportApiUrl: String,
+    width: Int,
+    height: Int,
+    targetFps: Int,
+    warmupCount: Int,
+    frameCount: Int,
+    content: @Composable () -> Unit
+) {
+    val measurement = ContentMeasurement(width, height, targetFps, warmupCount, content)
+
+    ReportingScope.launch {
+        val result = measurement.measureAverageFrame(frameCount)
+        val report = AverageFrameReport(
+            id = id,
+            width = width,
+            height = height,
+            targetFps = targetFps,
+            warmupCount = warmupCount,
+            frameCount = frameCount,
+            averageFrameInfo = result,
+        )
+        val client = createHttpClient()
+        try {
+            client.post(reportApiUrl) {
+                contentType(ContentType.Application.Json)
+                setBody(report)
+            }
+        } finally {
+            client.close()
+        }
+    }
+}
+
+fun MeasureRenderFps(
+    id: String,
+    reportApiUrl: String,
+    width: Int,
+    height: Int,
+    targetFps: Int,
+    warmupCount: Int,
+    frameCount: Int,
+    content: @Composable () -> Unit
+) {
+    val measurement = ContentMeasurement(width, height, targetFps, warmupCount, content)
+
+    ReportingScope.launch {
+        val result = measurement.measureRenderFps(frameCount)
+        val report = FpsReport(
+            id = id,
+            width = width,
+            height = height,
+            targetFps = targetFps,
+            warmupCount = warmupCount,
+            frameCount = frameCount,
+            frames = result,
+        )
+        val client = createHttpClient()
+        try {
+            client.post(reportApiUrl) {
+                contentType(ContentType.Application.Json)
+                setBody(report)
+            }
+        } finally {
+            client.close()
+        }
+    }
 }
