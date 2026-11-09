@@ -45,7 +45,6 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
-import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSStringFromClass
@@ -920,31 +919,12 @@ internal class BackgroundInputView(
     onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     isHigherPriorityGestureTrackingTouches: () -> Boolean,
 ) : UIView(CGRectZero.readValue()) {
-
-    private var onAppeared: (() -> Unit)? = null
-
-    fun runOnceOnAppeared(block: () -> Unit) {
-        onAppeared = {
-            onAppeared = null
-            block()
-        }
-
-        runOnAppearedIfEligible()
-    }
-
-    private fun runOnAppearedIfEligible() {
-        if (window != null && !CGRectIsEmpty(frame)) {
-            onAppeared?.invoke()
-        }
-    }
-
     override fun canBecomeFocused(): Boolean = false
 
     override fun layoutSubviews() {
         super.layoutSubviews()
 
         onLayoutSubviews()
-        runOnAppearedIfEligible()
     }
 
     override fun didMoveToWindow() {
@@ -989,8 +969,6 @@ internal class BackgroundInputView(
 
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
-        onLayoutSubviews = {}
-        onAppeared = null
     }
 }
 
