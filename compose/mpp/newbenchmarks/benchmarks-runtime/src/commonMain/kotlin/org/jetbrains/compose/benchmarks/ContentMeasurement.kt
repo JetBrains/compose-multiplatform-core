@@ -30,7 +30,7 @@ import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect
 import org.jetbrains.skia.Surface
 
-class ContentMeasurement(
+internal class ContentMeasurement(
     private val width: Int,
     private val height: Int,
     private val targetFps: Int,
