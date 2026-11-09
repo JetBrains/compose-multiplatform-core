@@ -2778,10 +2778,20 @@ private fun snapValueToTick(
     minPx: Float,
     maxPx: Float,
 ): Float {
-    // target is a closest anchor to the `current`, if exists
-    return tickFractions
-        .minByOrNull { abs(lerp(minPx, maxPx, it) - current) }
-        ?.run { lerp(minPx, maxPx, this) } ?: current
+    if (tickFractions.isEmpty()) return current
+    val totalSteps = tickFractions.size - 1
+    var closestValue = current
+    var minDistance = Float.POSITIVE_INFINITY
+    for (i in tickFractions.indices) {
+        val tickValue =
+            (minPx.toDouble() + (maxPx.toDouble() - minPx.toDouble()) * i / totalSteps).toFloat()
+        val distance = abs(tickValue - current)
+        if (distance < minDistance) {
+            minDistance = distance
+            closestValue = tickValue
+        }
+    }
+    return closestValue
 }
 
 private suspend fun AwaitPointerEventScope.awaitSlop(
@@ -2804,25 +2814,6 @@ private fun stepsToTickFractions(steps: Int): FloatArray {
 // Scale x1 from a1..b1 range to a2..b2 range
 private fun scale(a1: Float, b1: Float, x1: Float, a2: Float, b2: Float) =
     lerp(a2, b2, calcFraction(a1, b1, x1))
-
-// Scale x.start, x.endInclusive from a1..b1 range to a2..b2 range
-private fun scale(
-    isStart: Boolean,
-    a1: Float,
-    b1: Float,
-    x: SliderRange,
-    a2: Float,
-    b2: Float,
-): SliderRange {
-    val start = scale(a1, b1, x.start, a2, b2)
-    val end = scale(a1, b1, x.endInclusive, a2, b2)
-
-    return if (isStart) {
-        SliderRange(start.coerceAtMost(end), end)
-    } else {
-        SliderRange(start, end.coerceAtLeast(start))
-    }
-}
 
 // Calculate the 0..1 fraction that `pos` value represents between `a` and `b`
 private fun calcFraction(a: Float, b: Float, pos: Float) =
@@ -3071,6 +3062,7 @@ private fun Modifier.rangeSliderPressDragModifier(
 
                 try {
                     val down = awaitFirstDown(requireUnconsumed = false)
+                    state.updateMinMaxPx()
 
                     val posX =
                         if (state.isRtl) state.totalWidth - down.position.x else down.position.x
@@ -3098,6 +3090,10 @@ private fun Modifier.rangeSliderPressDragModifier(
                     )
 
                     if (drag != null && abs(overSlop.x) > abs(overSlop.y)) {
+                        // Consume the change that crossed the slop so that parent containers
+                        // (e.g. a horizontalScroll) do not also pick up this gesture as a scroll.
+                        drag.consume()
+
                         // The press is converted to a drag, so we cancel the press interaction
                         press?.let {
                             launch { interactionSource.emit(PressInteraction.Cancel(it)) }
@@ -3105,9 +3101,19 @@ private fun Modifier.rangeSliderPressDragModifier(
 
                         press = null
 
+                        val shouldUpdateCapturedThumb =
+                            abs(state.rawOffsetEnd - posX) < pointerSlop &&
+                                abs(state.rawOffsetStart - posX) < pointerSlop
+                        if (shouldUpdateCapturedThumb) {
+                            val dir = overSlop.x
+                            draggingStart = if (state.isRtl) dir >= 0f else dir < 0f
+                        }
+
+                        val dragInteractionSource =
+                            rangeSliderLogic.activeInteraction(draggingStart)
                         val interaction = DragInteraction.Start()
                         activeDragInteraction = interaction
-                        launch { interactionSource.emit(interaction) }
+                        launch { dragInteractionSource.emit(interaction) }
 
                         // Apply the slop from the initial drag detection
                         val initialOffset =
@@ -3138,7 +3144,7 @@ private fun Modifier.rangeSliderPressDragModifier(
                                 DragInteraction.Cancel(interaction)
                             }
                         currentOnValueChangeFinished.value?.invoke()
-                        launch { interactionSource.emit(finishInteraction) }
+                        launch { dragInteractionSource.emit(finishInteraction) }
                         activeDragInteraction = null
                     } else if (drag?.pressed == false) {
                         // The press is completed, so emit a release.
@@ -3479,8 +3485,8 @@ public constructor(
         }
         rawOffset = (rawOffset + delta + pressOffset)
         pressOffset = 0f
-        val offsetInTrack = snapValueToTick(rawOffset, tickFractions, minPx, maxPx)
-        val scaledUserValue = scaleToUserValue(minPx, maxPx, offsetInTrack)
+        val offsetInTrack = rawOffset.coerceIn(minPx, maxPx)
+        val scaledUserValue = calculateSnappedValue(scaleToUserValue(minPx, maxPx, offsetInTrack))
         if (scaledUserValue != this.value) {
             if (onValueChange != null) {
                 onValueChange(scaledUserValue)
@@ -3703,23 +3709,34 @@ public constructor(
         offset: Float,
         onValueChange: ((SliderRange) -> Unit)? = null,
     ) {
-        val offsetRange =
+        val scaledUserValue =
             if (isStart) {
                 rawOffsetStart = (rawOffsetStart + offset)
                 rawOffsetEnd = scaleToOffset(minPx, maxPx, endValue)
                 val offsetEnd = rawOffsetEnd
-                var offsetStart = rawOffsetStart.coerceIn(minPx, offsetEnd)
-                offsetStart = snapValueToTick(offsetStart, tickFractions, minPx, maxPx)
-                SliderRange(offsetStart.coerceAtMost(offsetEnd), offsetEnd)
+                val offsetStart = rawOffsetStart.coerceIn(minPx, offsetEnd)
+                val userStart =
+                    snapValueToTick(
+                        scaleToUserValue(minPx, maxPx, offsetStart),
+                        tickFractions,
+                        trackRange.start,
+                        trackRange.endInclusive,
+                    )
+                SliderRange(userStart.coerceAtMost(endValue), endValue)
             } else {
                 rawOffsetEnd = (rawOffsetEnd + offset)
                 rawOffsetStart = scaleToOffset(minPx, maxPx, startValue)
                 val offsetStart = rawOffsetStart
-                var offsetEnd = rawOffsetEnd.coerceIn(offsetStart, maxPx)
-                offsetEnd = snapValueToTick(offsetEnd, tickFractions, minPx, maxPx)
-                SliderRange(offsetStart, offsetEnd.coerceAtLeast(offsetStart))
+                val offsetEnd = rawOffsetEnd.coerceIn(offsetStart, maxPx)
+                val userEnd =
+                    snapValueToTick(
+                        scaleToUserValue(minPx, maxPx, offsetEnd),
+                        tickFractions,
+                        trackRange.start,
+                        trackRange.endInclusive,
+                    )
+                SliderRange(startValue, userEnd.coerceAtLeast(startValue))
             }
-        val scaledUserValue = scaleToUserValue(isStart, minPx, maxPx, offsetRange)
         if (scaledUserValue != SliderRange(startValue, endValue)) {
             if (onValueChange != null) {
                 onValueChange(scaledUserValue)
@@ -3742,13 +3759,9 @@ public constructor(
     internal val endSteps
         get() = floor(steps * (1f - coercedStartValueAsFraction)).toInt()
 
-    // scales range offset from within minPx..maxPx to within trackRange.start..trackRange.end
-    private fun scaleToUserValue(
-        isStart: Boolean,
-        minPx: Float,
-        maxPx: Float,
-        offset: SliderRange,
-    ) = scale(isStart, minPx, maxPx, offset, trackRange.start, trackRange.endInclusive)
+    // scales offset from within minPx..maxPx to within trackRange.start..trackRange.end
+    private fun scaleToUserValue(minPx: Float, maxPx: Float, offset: Float) =
+        scale(minPx, maxPx, offset, trackRange.start, trackRange.endInclusive)
 
     // scales float userValue within trackRange.start..trackRange.end to within minPx..maxPx
     private fun scaleToOffset(minPx: Float, maxPx: Float, userValue: Float) =
@@ -3757,7 +3770,7 @@ public constructor(
     internal fun updateMinMaxPx() {
         val newMaxPx = max(totalWidth - endThumbWidth / 2, 0f)
         val newMinPx = min(startThumbWidth / 2, newMaxPx)
-        if (!isDragging && (minPx != newMinPx || maxPx != newMaxPx || startValue != endValue)) {
+        if (!isDragging) {
             minPx = newMinPx
             maxPx = newMaxPx
             rawOffsetStart = scaleToOffset(minPx, maxPx, startValue)
