@@ -990,14 +990,11 @@ private val MouseEvent.buttons get() = PointerButtons(
  * Returns whether AWT reports [button] as currently pressed.
  *
  * Workaround for https://github.com/JetBrains/JetBrainsRuntime/issues/666, where X11 touchscreen
- * events in JBR still have `BUTTON1_DOWN_MASK` set on `MOUSE_RELEASED` and `MOUSE_WHEEL`.
+ * events in JBR still have `BUTTON1_DOWN_MASK` set on `MOUSE_RELEASED`.
  */
 private fun MouseEvent.isButtonDown(button: Int): Boolean =
     (modifiersEx and MouseEvent.getMaskForButton(button)) != 0 &&
-        !(id == MouseEvent.MOUSE_RELEASED && this.button == button) &&
-        !(id == MouseEvent.MOUSE_WHEEL &&
-            button == MouseEvent.BUTTON1 &&
-            !OnlyValidPrimaryMouseButtonFilter.isPrimaryButtonPressed)
+        !(id == MouseEvent.MOUSE_RELEASED && this.button == button)
 
 private val MouseEvent.keyboardModifiers get() = PointerKeyboardModifiers(
     isCtrlPressed = (modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0,

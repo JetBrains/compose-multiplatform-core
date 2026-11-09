@@ -497,7 +497,6 @@ class WindowInputEventTest {
         lateinit var window: ComposeWindow
 
         val deltas = mutableListOf<Offset>()
-        var clicks = 0
 
         launchTestApplication {
             Window(
@@ -509,7 +508,6 @@ class WindowInputEventTest {
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .clickable { clicks++ }
                         .onPointerEvent(PointerEventType.Scroll) {
                             deltas.add(it.changes.first().scrollDelta)
                         }
@@ -528,11 +526,9 @@ class WindowInputEventTest {
             wheelRotation = 1.0,
             modifiers = BUTTON1_DOWN_MASK,
         )
-        window.sendMouseEvent(MOUSE_MOVED, 100, 50)
         awaitIdle()
         assertThat(deltas.size).isEqualTo(1)
         assertThat(deltas.last()).isEqualTo(Offset(0f, 1f))
-        assertThat(clicks).isEqualTo(0)
     }
 
     @Test

@@ -59,8 +59,7 @@ internal open class AwtEventFilter : AwtEventListener {
  * See https://github.com/JetBrains/compose-multiplatform/issues/2850 for more details.
 */
 internal object OnlyValidPrimaryMouseButtonFilter : AwtEventFilter() {
-    var isPrimaryButtonPressed = false
-        private set
+    private var isPrimaryButtonPressed = false
 
     override fun shouldSendMouseEvent(event: MouseEvent): Boolean {
         // See https://github.com/JetBrains/JetBrainsRuntime/issues/666
@@ -69,7 +68,8 @@ internal object OnlyValidPrimaryMouseButtonFilter : AwtEventFilter() {
         }
         val eventReportsPrimaryButtonPressed =
             (event.modifiersEx and MouseEvent.BUTTON1_DOWN_MASK) != 0 &&
-                event.id != MouseEvent.MOUSE_RELEASED
+                // See https://github.com/JetBrains/JetBrainsRuntime/issues/666
+                !(event.id == MouseEvent.MOUSE_RELEASED && event.button == MouseEvent.BUTTON1)
         if ((event.button == MouseEvent.BUTTON1) &&
             ((event.id == MouseEvent.MOUSE_PRESSED) ||
                 (event.id == MouseEvent.MOUSE_RELEASED))) {
