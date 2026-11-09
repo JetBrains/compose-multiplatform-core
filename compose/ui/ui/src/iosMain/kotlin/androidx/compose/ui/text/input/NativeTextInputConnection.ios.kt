@@ -60,6 +60,8 @@ internal class NativeTextInputConnection(
 ), NativeTextEditingDelegate {
     override val isInteractive: Boolean = true
 
+    override val isEditable: Boolean = true
+
     private val scrollView by lazy { NativeTextInputScrollView() }
 
     override val textInputView = NativeTextInputView(initialInput = inactiveTextInputDelegate).also {

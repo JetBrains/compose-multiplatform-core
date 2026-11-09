@@ -18,11 +18,13 @@ package androidx.compose.ui.window
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
@@ -82,6 +84,21 @@ class FrameChoreographerTest {
         } finally {
             anotherChoreographer.dispose()
         }
+    }
+
+    @Test
+    fun testCompositionEffectsUseWindowMotionDurationScale() = runUIKitInstrumentedTest {
+        var scaleFactor: Float? = null
+        setContent {
+            LaunchedEffect(Unit) {
+                scaleFactor = coroutineContext[MotionDurationScale]?.scaleFactor
+            }
+        }
+        waitForIdle()
+
+        val effectScaleFactor =
+            assertNotNull(scaleFactor, "MotionDurationScale is missing in the effect context")
+        assertEquals(1f / UIKitInstrumentedTest.TestsAnimationSpeed, effectScaleFactor, 1e-6f)
     }
 
     @Test
