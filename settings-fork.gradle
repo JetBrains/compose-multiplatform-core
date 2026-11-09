@@ -340,6 +340,7 @@ includeProject(":compose:desktop:desktop:desktop-samples", "compose/desktop/desk
 includeProject(":compose:mpp:benchmarks")
 includeProject(":compose:mpp")
 includeProject(":compose:mpp:newbenchmarks:benchmarks-runtime")
+includeProject(":compose:mpp:newbenchmarks:benchmarks-report")
 includeProject(":compose:mpp:demo")
 includeProject(":compose:mpp:demo-swiftui")
 includeProject(":compose:foundation:foundation")

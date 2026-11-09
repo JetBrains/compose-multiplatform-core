@@ -38,7 +38,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":compose:ui:ui"))
+            compileOnly(project(":compose:ui:ui"))
+            implementation(project(":compose:mpp:newbenchmarks:benchmarks-report"))
+            implementation("io.ktor:ktor-client-core:3.6.1")
+            implementation("io.ktor:ktor-client-content-negotiation:3.6.1")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.6.1")
         }
     }
 }
