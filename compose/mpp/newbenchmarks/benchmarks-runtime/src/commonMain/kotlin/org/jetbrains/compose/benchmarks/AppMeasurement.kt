@@ -57,19 +57,24 @@ internal data class RealFramesResult(
 
 @Composable
 internal fun MeasureRealFrames(
+    warmupCount: Int,
     frameCount: Int,
     onComplete: (RealFramesResult) -> Unit,
     content: @Composable () -> Unit,
 ) {
     require(frameCount > 0) { "frameCount must be positive" }
+    require(warmupCount >= 0) { "warmupCount must not be negative" }
     val currentOnComplete by rememberUpdatedState(onComplete)
     val frames = remember(frameCount) { arrayOfNulls<Duration>(frameCount) }
 
     content()
 
-    LaunchedEffect(frameCount) {
+    LaunchedEffect(frameCount, warmupCount) {
         // Skip the initial partial frame interval.
         withFrameNanos { }
+
+        repeat(warmupCount) { withFrameNanos { } }
+
         val start = Monotonic.markNow()
         repeat(frameCount) { index ->
             val frameStart = Monotonic.markNow()

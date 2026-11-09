@@ -69,6 +69,7 @@ fun MeasureApplicationStartup(
 fun MeasureApplicationRealFrames(
     id: String,
     reportApiUrl: String,
+    warmupCount: Int,
     frameCount: Int,
     content: @Composable () -> Unit,
 ) {
@@ -76,6 +77,7 @@ fun MeasureApplicationRealFrames(
         ReportingScope.launch {
             val report = RealFramesReport(
                 id = id,
+                warmupCount = warmupCount,
                 frameCount = frameCount,
                 frameTimes = result.frameTimes,
                 totalDuration = result.totalDuration,
@@ -92,5 +94,10 @@ fun MeasureApplicationRealFrames(
         }
     }
 
-    MeasureRealFrames(frameCount, onComplete, content)
+    MeasureRealFrames(
+        warmupCount = warmupCount,
+        frameCount = frameCount,
+        onComplete = onComplete,
+        content = content,
+    )
 }

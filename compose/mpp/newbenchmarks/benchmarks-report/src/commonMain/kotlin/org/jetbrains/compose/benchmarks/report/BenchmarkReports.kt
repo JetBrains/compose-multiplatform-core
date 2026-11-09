@@ -31,6 +31,7 @@ data class StartupReport(
 @Serializable
 data class RealFramesReport(
     val id: String,
+    val warmupCount: Int,
     val frameCount: Int,
     val frameTimes: List<Duration>,
     val totalDuration: Duration,
