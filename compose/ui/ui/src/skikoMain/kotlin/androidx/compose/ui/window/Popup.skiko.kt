@@ -584,12 +584,12 @@ private fun rememberPopupMeasurePolicy(
         platformInsets = platformInsets,
         usePlatformDefaultWidth = properties.usePlatformDefaultWidth
     ) { contentSize ->
-        val parentRectInWindow = parentBoundsInWindow.value ?: IntRect(IntOffset.Zero, contentSize)
-//        if (parentRectInWindow == null) {
-//            // Keep an unanchored layer out of the visible window until its content is measured.
-//            layer.boundsInWindow = IntRect.Zero
-//            return@ComposeSceneLayerMeasurePolicy IntOffset.Zero
-//        }
+        val parentRectInWindow = parentBoundsInWindow.value
+        if (parentRectInWindow == null) {
+            // Keep an unanchored layer out of the visible window until its content is measured.
+            layer.boundsInWindow = IntRect.Zero
+            return@ComposeSceneLayerMeasurePolicy IntOffset.Zero
+        }
         val positionWithInsets =
             positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
                 // Position provider works in coordinates without insets.
