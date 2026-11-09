@@ -348,6 +348,7 @@ internal class ComposeContainer(
             )
             view.embedSubview(mediator.overlayView)
 
+            layoutInvalidationHandler.invalidateLayoutIfNeeded()
             mediator.setContent(parentCompositionContext = view.findParentCompositionContext()) {
                 ProvideContainerCompositionLocals(content)
             }
@@ -547,7 +548,6 @@ internal class LayoutInvalidationHandler(
         coroutineContext.job.invokeOnCompletion {
             doInvalidateLayout = {}
         }
-        doInvalidateLayout()
     }
 
     fun invalidateLayoutIfNeeded() {
