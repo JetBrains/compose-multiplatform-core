@@ -84,6 +84,7 @@ internal actual fun ContextMenuArea(
     val holder = remember(manager) { { manager.state?.holder } }
 
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+        LaunchedEffect(manager) { manager.updateClipboardEntry() }
         // The first time the menu is called up, the menu item provider contains a non-final set of
         // menu items, which causes the context menu callout to blink.
         // Adding a small delay resolves this issue.
@@ -118,6 +119,7 @@ internal actual fun ContextMenuArea(
     val holder = remember(selectionState) { { selectionState.textFieldState.holder } }
 
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+        LaunchedEffect(selectionState) { selectionState.updateClipboardEntry() }
         ProvideNewContextMenuDefaultProviders(
             holder = holder,
             selection = remember(selectionState) {
