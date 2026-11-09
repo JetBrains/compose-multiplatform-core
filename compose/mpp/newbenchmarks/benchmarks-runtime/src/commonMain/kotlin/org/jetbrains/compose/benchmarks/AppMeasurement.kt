@@ -63,7 +63,7 @@ internal fun MeasureRealFrames(
 ) {
     require(frameCount > 0) { "frameCount must be positive" }
     val currentOnComplete by rememberUpdatedState(onComplete)
-    val frames = remember { arrayOfNulls<Duration>(frameCount) }
+    val frames = remember(frameCount) { arrayOfNulls<Duration>(frameCount) }
 
     content()
 

@@ -27,3 +27,11 @@ data class StartupReport(
     val timeToFirstFrame: Duration,
     val timeToNthFrame: Duration,
 )
+
+@Serializable
+data class RealFramesReport(
+    val id: String,
+    val frameCount: Int,
+    val frameTimes: List<Duration>,
+    val totalDuration: Duration,
+)
