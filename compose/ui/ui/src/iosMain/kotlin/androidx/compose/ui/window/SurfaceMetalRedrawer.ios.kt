@@ -78,6 +78,9 @@ internal class SurfaceMetalRedrawer(
     // A guard flag to have proper assertion when draw() method is called recursively.
     private var isDrawRecursiveCall = false
 
+    private var latestFrame = 0
+    private var latestPresentedFrame = 0
+
     /**
      * Important! Thread safety instructions.
      *
@@ -99,6 +102,9 @@ internal class SurfaceMetalRedrawer(
     // https://youtrack.jetbrains.com/issue/CMP-9722
     // Left here for compatibility reasons. Does not make any effect and must be removed.
     override var isForcedToPresentWithTransactionEveryFrame: Boolean = false
+
+    override val hasInvalidations: Boolean
+        get() = latestPresentedFrame < latestFrame
 
     /**
      * True if Metal layer can be opaque. In this case if no interop views are present, Metal
@@ -223,10 +229,14 @@ internal class SurfaceMetalRedrawer(
                 val transaction = retrieveInteropTransaction()
                 isInteropActive = transaction.isInteropActive
                 val index = transactionQueue.scheduleTransaction(transaction)
+                val frameId = ++latestFrame
 
                 val frame = Frame(
                     picture = picture,
-                    onDisplay = { transactionQueue.performScheduledTransactions(index) },
+                    onDisplay = {
+                        transactionQueue.performScheduledTransactions(index)
+                        latestPresentedFrame = maxOf(latestPresentedFrame, frameId)
+                    },
                     waitUntilCompletion = waitUntilCompletion
                 )
 

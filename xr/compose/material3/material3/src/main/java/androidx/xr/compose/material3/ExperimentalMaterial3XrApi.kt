@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+<<<<<<<< HEAD:xr/compose/material3/material3/src/main/java/androidx/xr/compose/material3/ExperimentalMaterial3XrApi.kt
 package androidx.xr.compose.material3
 
 @RequiresOptIn(
@@ -21,3 +22,8 @@ package androidx.xr.compose.material3
 )
 @Retention(AnnotationRetention.BINARY)
 public annotation class ExperimentalMaterial3XrApi
+========
+package androidx.compose.foundation.border
+
+internal actual fun shouldUseGraphicsLayerForGenericBorder(): Boolean = false
+>>>>>>>> origin/release/1.13:compose/foundation/foundation/src/skikoMain/kotlin/androidx/compose/foundation/border/BorderLogic.skiko.kt

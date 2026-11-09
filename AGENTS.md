@@ -1,46 +1,62 @@
-# AndroidX Agent Guide
+# Repository guidance
 
-This is the AndroidX (Jetpack) source tree, `frameworks/support`, checked out through the
-AOSP `repo` tool. Libraries live in top-level directories (`activity`, `appcompat`,
-`compose`, `core`, …), build logic is in `buildSrc/`, and documentation is in `docs/`. This
-guide targets the **AOSP Gerrit / Googler** path — the `repo` tool, Gerrit code review, and
-Treehugger presubmit. (The GitHub pull-request flow in `CONTRIBUTING.md` is a separate path
-and out of scope here.) All build output is written **two levels above** the source root, in
-`../../out`.
+This is a fork of androidx monorepo dedicated for Compose Multiplatform (CMP) work.
+The purpose of the fork is to provide missing Kotlin targets for modules registered in `JetBrainsPublication.kt` (mainly Compose-related).
+Generally we add support for iOS, Web and Desktop. and we do not validate, build and test Android. The full list of which targets are not maintained is defined in the associated `build-fork.gradle`, in the `redirect` block.
 
-Module-specific guidance lives in per-directory `AGENTS.md` files (e.g.
-[`camera/AGENTS.md`](camera/AGENTS.md)) — read the one nearest your change. Deeper,
-task-specific workflows live in **skills**; see [Skills](#skills) below.
+The primary focus of Compose Multiplatform is the `./compose` directory.
+Most often, we work in `./compose/ui/ui` and `./compose/foundation/foundation`.
+Also, we publish klibs for some other libraries: `./navigation`, `./navigation3`.
 
-## Canonical commands
+The repo contains both the original AOSP code and additional fork-only code.
 
-Replace `<project>` with the module's Gradle project path. Paths are declared in
-[`settings.gradle`](settings.gradle) and *often* mirror the directory (e.g.
-`appcompat/appcompat-resources/` → `:appcompat:appcompat-resources`), but many projects point
-at a different directory, so don't assume — look up the exact path by grepping `settings.gradle`
-(e.g. `grep appcompat-resources settings.gradle`), which is instant. Avoid `./gradlew projects`;
-it configures the whole build and is slow.
+The repo supports two modes: 
+- The original AOSP mode (`aospComposeProject.sh`), with the original set of modules, and fork mode, with a much smaller set of modules and its own build infrastructure. 
+- Fork mode is the primary mode and is used by default; AOSP mode is rarely needed.
 
-**Scope work to a module.** Configuring the whole repo is slow, so narrow it. Target a
-`<project>` instead of a bare task, and cap which projects Gradle configures with the
-**`PROJECT_PREFIX`** env var — a comma-separated list of project-path prefixes matched against
-the project name: `PROJECT_PREFIX=:compose: ./gradlew <task>` configures only `:compose:*`
-projects; `PROJECT_PREFIX=:core,:appcompat` limits to those groups. In Studio,
-`./studiow :core:,:work:` scopes to a subset.
+- Common code, used by both modes:
+  - `commonMain`, `commonTest`, and other source sets defined both in `build.gradle` and `build-fork.gradle` files
+  - Received from the upstream AOSP repo
+- Fork-only code:
+  - Independent build infrastructure: `settings-fork.gradle`, `buildSrc-fork`, `build-fork.gradle`, and `./gradle/libs-fork.versions.toml`
+  - if modules exists only in `settings-fork.gradle`, but not in `settings.gradle`, it may just contain `build.gradle` without `build-fork.gradle`
+  - iOS, desktop, JS, and WasmJS source sets, their combinations, and their corresponding test source sets
+- AOSP-only code:
+  - Independent build infrastructure: `settings.gradle`, `buildSrc`, `build.gradle`, and `./gradle/libs.versions.toml`
+  - `androidMain` and its corresponding test source sets
+  - `*StubsMain` source sets - created in the upstream AOSP repo to ensure `commonMain` compilation on the all Kotlin targets
+  - iOS, desktop, JS, and WasmJS source sets for libraries and targets developed in AOSP
 
-**Tests** (full details in the [`run_tests`](.agents/skills/run_tests/SKILL.md) skill).
-**Read it before you test code.**
+## Instruction files
 
-## Committing & uploading
+A session may not automatically load instructions in descendant directories.
+Read these files when working in the corresponding project parts:
+- `./compose/AGENTS.md`
+- `./compose/material3/material3/AGENTS.md`
 
-The canonical workflow — branching (`repo start <branch> .`), formatting, `updateApi`, the
-commit-message stanzas (`Test:` required, `Bug:`/`Fixes:`, `Relnote:`, `Change-Id:`), and
-`repo upload --cbr .` → Treehugger presubmit → amend-the-same-commit to iterate — lives in
-the [`manage_commits`](.agents/skills/manage_commits/SKILL.md) skill. **Read it before you
-commit or upload.**
+When delegating, refer the subagent to those files too.
+Note: Since this a fork, new instruction files might get merged from the upstream. Ignore AOSP-specific instructions / gradle tasks / checks / verifications (majority of them are about Android)
 
-## Skills
+## General instructions
 
-Repo-wide and module-scoped agent skills are indexed, with one-line "use when" descriptions, in
-[`.agents/README.md`](.agents/README.md) — load a skill's `SKILL.md` when its description
-matches your task.
+### Git
+- Do not create git commits unless explicitly requested.
+
+### Gradle
+- Running Gradle tasks:
+  - The output is usually very large and most of it is irrelevant. Unless it's necessary, avoid reading a full output by using `grep`, `tail`, etc.
+  - Also, use `--console=plain`
+  - When investigating a build failure, save the build output to a temporary file and then use `grep`.
+
+### Introducing new changes
+- In this fork we avoid introducing code changes in the common code (see above). Before changing any code in them, notify and request an approval when such a change is necessary.
+- API: Unless a feature is intended for GA, avoid introduction of public API changes.
+
+### Changes Verification
+- Running the tests every time might take too long. Compile the tests before running. Choose the relevant task: `compileTestKotlinIosArm64`, `compileTestDevelopmentExecutableKotlinJs`, `compileTestDevelopmentExecutableKotlinWasmJs`, `desktopTestClasses`
+- When to run the tests: when working on the tests, or fixing the implementation, or when asked explicitly.
+- Which tests to run: for platform-specific changes run only platform tests. Otherwise, run the tests for all affected platforms.
+
+### Testing
+- We do not add tests in the `commonTest` folder. When it's possible, we add multiplatform tests to `skikoTest`.  Platform-specific tests should be added in the corresponding folder: `webTest`, `desktopTest`, `jvmTest`, `iosTest`, `iosInstrumentedTest`.
+- When applicable, use platform-specific gradle tasks to run the tests: `desktopTest`,  `iosSimulatorArm64Test`, `wasmJsBrowserTest`, `jsBrowserTest`. Also clean the tests results before running. Example: `./gradlew :compose:ui:ui:cleanAllTests :compose:ui:ui:desktopTest --no-build-cache | tail -n 10`. Allow a reasonable timeout (at least 5 minutes).

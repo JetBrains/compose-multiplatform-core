@@ -144,7 +144,12 @@ private def configureObjcUtils(target, xcodeProjectDir, sdkName, destination, ar
             args(xcodeArchiveArgs(libraryName, buildDir, sdkName, destination, architecture))
         }
 
-        tasks[compileTaskProvider.name].dependsOn(libTask)
+        compileTaskProvider.configure {
+            dependsOn(libTask)
+            inputs.file(libraryPath)
+                    .withPropertyName("${libraryName}-${sdkName}-archive")
+                    .withPathSensitivity(PathSensitivity.NONE)
+        }
 
         // Generate ObjC bindings from the checked-in headers and package the static archive into the klib.
         cinterops {
@@ -218,7 +223,12 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
             ))
         }
 
-        tasks[compileTaskProvider.name].dependsOn(libTask)
+        compileTaskProvider.configure {
+            dependsOn(libTask)
+            inputs.file(libraryPath)
+                    .withPropertyName("${libraryName}-${sdkName}-archive")
+                    .withPathSensitivity(PathSensitivity.NONE)
+        }
 
         // Generate Kotlin bindings from the installed Swift ObjC header. The consuming iOS build
         // supplies the compatibility-library search path.

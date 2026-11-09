@@ -53,6 +53,8 @@ androidXMultiplatform {
             api("org.jetbrains.compose.runtime:runtime:1.10.0")
             api("org.jetbrains.compose.ui:ui:1.10.0")
             api("org.jetbrains.compose.ui:ui-unit:1.10.0")
+            // Older versions of lifecycle-runtime lint checks use a deleted lint API
+            implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
         }
 
         commonTest.dependencies {

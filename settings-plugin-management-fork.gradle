@@ -1,7 +1,9 @@
 ext.configureForkPluginManagement = { PluginManagementSpec pluginManagement ->
     pluginManagement.with {
         repositories {
-            mavenCentral()
+            mavenCentral {
+                url = "https://cache-redirector.jetbrains.com/maven-central"
+            }
             google()
             maven {
                 url = "https://plugins.gradle.org/m2/"

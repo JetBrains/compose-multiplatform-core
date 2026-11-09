@@ -71,7 +71,8 @@ internal class ParagraphLayouter(
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
-    private val onFontStale: () -> Unit
+    private val onFontStale: () -> Unit,
+    fontResolutions: ParagraphFontResolutions,
 ) {
     private val builder = ParagraphBuilder(
         fontFamilyResolver = fontFamilyResolver,
@@ -80,7 +81,8 @@ internal class ParagraphLayouter(
         annotations = annotations,
         placeholders = placeholders,
         density = density,
-        textDirection = textDirection
+        textDirection = textDirection,
+        fontResolutions = fontResolutions,
     )
     private var paragraphCache: SkParagraph? = null
     private var updateForeground = false
@@ -112,6 +114,9 @@ internal class ParagraphLayouter(
 
     val defaultFont get() = builder.defaultFont
     val textStyle get() = builder.textStyle
+    val bullets get() = builder.bullets
+    val density get() = builder.density
+    val firstLineIndentPx get() = builder.firstLineIndentPx
 
     private fun invalidateParagraph(onlyForeground: Boolean = false) {
         // skia's updateForegroundPaint applies the same style to every span,

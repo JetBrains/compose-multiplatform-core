@@ -40,18 +40,23 @@ import kotlin.math.ceil
 internal class SkikoParagraphIntrinsics(
     val text: String,
     private val style: TextStyle,
-    private val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    private val annotations: List<Range<out AnnotatedString.Annotation>>,
     private val placeholders: List<Range<Placeholder>>,
     private val density: Density,
     private val fontFamilyResolver: FontFamily.Resolver,
     private val defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
+    private val fontResolutions = ParagraphFontResolutions(fontFamilyResolver)
+
     val textDirection =
         resolveTextDirection(text, style.textDirection, style.localeList ?: defaultLocaleList)
 
     // we need to track it reactively to invalidate the UI
-    override var hasStaleResolvedFonts: Boolean by mutableStateOf(false)
-        private set
+    // Async typeface updates are tracked separately via [fontResolutions].
+    private var hasUnresolvedFontStale by mutableStateOf(false)
+
+    override val hasStaleResolvedFonts: Boolean
+        get() = hasUnresolvedFontStale || fontResolutions.hasStaleResolvedFonts
 
     private var layouter: ParagraphLayouter? = newLayouter()
 
@@ -70,7 +75,8 @@ internal class SkikoParagraphIntrinsics(
             placeholders = placeholders,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
-            onFontStale = { hasStaleResolvedFonts = true },
+            onFontStale = { hasUnresolvedFontStale = true },
+            fontResolutions = fontResolutions,
         )
 
     override var minIntrinsicWidth = 0f
@@ -80,9 +86,14 @@ internal class SkikoParagraphIntrinsics(
         private set
 
     init {
-        val para = layouter!!.layoutParagraph(Float.POSITIVE_INFINITY)
-        minIntrinsicWidth = ceil(para.minIntrinsicWidth)
-        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth)
+        val layouter = layouter!!
+        val para = layouter.layoutParagraph(Float.POSITIVE_INFINITY)
+
+        // Skia excludes the indentation from the intrinsic widths, so text laid out at that width
+        // breaks a line early.
+        val indent = layouter.firstLineIndentPx
+        minIntrinsicWidth = ceil(para.minIntrinsicWidth + indent)
+        maxIntrinsicWidth = ceil(para.maxIntrinsicWidth + indent)
     }
 }
 

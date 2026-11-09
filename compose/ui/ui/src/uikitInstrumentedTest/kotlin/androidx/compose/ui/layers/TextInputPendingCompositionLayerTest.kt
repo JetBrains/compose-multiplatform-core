@@ -21,17 +21,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findFocusedUITextInput
@@ -87,6 +90,74 @@ class TextInputPendingCompositionLayerTest {
                         )
                     }
                 }
+            }
+        }
+
+        findNodeWithTag(TextFieldTag).tap()
+        waitForIdle()
+        textInput = setPendingTextComposition()
+
+        findNodeWithTag(OpenDialogButtonTag).tap()
+        waitForIdle()
+
+        assertNotNull(findNodeWithTagOrNull(DialogTag), "Dialog content should be visible")
+    }
+
+    @Test
+    fun dialogCanOpenWhenPendingTextIsCommittedDuringMeasureAndLayout() = runUIKitInstrumentedTest {
+        var text by mutableStateOf("")
+        var showDialog by mutableStateOf(false)
+        var textInput: UITextInputProtocol? = null
+        var didCommitPendingText = false
+
+        val content: @Composable (Boolean) -> Unit = { dialogVisible ->
+            Column {
+                TextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.testTag(TextFieldTag)
+                )
+                Button(
+                    onClick = { showDialog = true },
+                    modifier = Modifier.testTag(OpenDialogButtonTag)
+                ) {
+                    Text("Open dialog")
+                }
+            }
+
+            if (dialogVisible) {
+                Dialog(onDismissRequest = { showDialog = false }) {
+                    SideEffect {
+                        if (!didCommitPendingText) {
+                            didCommitPendingText = true
+                            // UIKit commits pending input while the dialog layer is being applied.
+                            textInput?.unmarkText()
+                        }
+                    }
+                    Surface(Modifier.testTag(DialogTag)) {
+                        Text(
+                            text = "Dialog content",
+                            modifier = Modifier.padding(24.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        setContent {
+            val dialogVisible = showDialog
+            Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+                // Compose the dialog within an outer measure pass.
+                SubcomposeLayout(Modifier.weight(1f)) { constraints ->
+                    val placeables = subcompose(Unit) { content(dialogVisible) }
+                        .map { it.measure(constraints) }
+
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        placeables.forEach { it.place(0, 0) }
+                    }
+                }
+                // Change another layout value in the same frame as the dialog opens.
+                Box(Modifier.size(if (dialogVisible) 40.dp else 20.dp))
             }
         }
 

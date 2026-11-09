@@ -221,5 +221,5 @@ private val Dependency.associatedProjectPath
     get() = when (this) {
         is Dependency.Artifact -> projectPathForCoordinates(group, module)
         is Dependency.Project -> path
-        is Dependency.LibsReference -> null
+        is Dependency.Arbitrary -> null
     }

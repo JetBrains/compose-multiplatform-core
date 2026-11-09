@@ -24,12 +24,15 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.uikit.utils.CMPInteropHostView
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectZero
 import platform.UIKit.NSLayoutConstraint
+import platform.UIKit.UIEdgeInsetsEqualToEdgeInsets
+import platform.UIKit.UIEdgeInsetsZero
 import platform.UIKit.UILayoutFittingCompressedSize
 import platform.UIKit.UILayoutPriorityRequired
 import platform.UIKit.UIView
@@ -57,18 +60,24 @@ import platform.UIKit.UIView
  * @param userComponent actual UIKit interop view being embedded
  */
 internal class InteropElementLayout(
-    private val group: InteropViewGroup,
+    private val group: InteropWrappingView,
     private val userComponent: UIView,
 ) {
     /**
      * Frame-driven container that defines the "unclipped content bounds".
      * The [userComponent] is constrained to fill this host using Auto Layout.
      */
-    private val userComponentHostView = UIView(frame = CGRectZero.readValue())
+    private val userComponentHostView = CMPInteropHostView(frame = CGRectZero.readValue())
         .also {
             it.translatesAutoresizingMaskIntoConstraints = true
             it.backgroundColor = null
         }
+    private var userComponentHostSafeAreaInsets: UserComponentHostSafeAreaInsets? = null
+
+    init {
+        group.onDidMoveToWindow = { userComponentHostSafeAreaInsets?.update() }
+        group.onSafeAreaInsetsChanged = { userComponentHostSafeAreaInsets?.update() }
+    }
 
     val measurePolicy = object : MeasurePolicy {
         override fun MeasureScope.measure(
@@ -127,20 +136,76 @@ internal class InteropElementLayout(
         )
     }
 
-    /**
-     * Sets the frame of the clipping viewport ([group]) in its superview coordinate space (managed by [IosInteropContainer]).
-     * This rect corresponds to the clipped visible bounds of the element in Compose.
-     */
-    fun updateGroupFrame(rect: CValue<CGRect>) {
-        group.setFrame(rect)
+    fun updateFrames(
+        groupFrame: CValue<CGRect>?,
+        userComponentFrame: CValue<CGRect>?,
+    ) {
+        groupFrame?.let(group::setFrame)
+        userComponentFrame?.let(userComponentHostView::setFrame)
+        userComponentHostSafeAreaInsets?.update()
     }
 
-    /**
-     * Sets the frame of the unclipped content host inside [group]'s coordinate space.
-     * The origin is typically negative when the element is partially clipped.
-     */
-    fun updateUserComponentFrame(rect: CValue<CGRect>) {
-        userComponentHostView.setFrame(rect)
+    fun updateSafeAreaInsetsPolicy(policy: UIKitInteropSafeAreaInsetsPolicy) {
+        val currentSafeAreaInsets = userComponentHostSafeAreaInsets
+        if (currentSafeAreaInsets == null) {
+            userComponentHostSafeAreaInsets = UserComponentHostSafeAreaInsets(
+                userComponentHostView = userComponentHostView,
+                userComponent = userComponent,
+                policy = policy,
+            )
+        } else {
+            currentSafeAreaInsets.updatePolicy(policy)
+        }
+    }
+}
+
+private class UserComponentHostSafeAreaInsets(
+    private val userComponentHostView: CMPInteropHostView,
+    private val userComponent: UIView,
+    private var policy: UIKitInteropSafeAreaInsetsPolicy,
+) {
+    init {
+        update()
+    }
+
+    fun updatePolicy(policy: UIKitInteropSafeAreaInsetsPolicy) {
+        this.policy = policy
+        update()
+    }
+
+    fun update() {
+        val safeAreaInsetsOverride = policy.safeAreaInsetsOverride()
+        if (
+            UIEdgeInsetsEqualToEdgeInsets(
+                userComponentHostView.safeAreaInsetsOverride,
+                safeAreaInsetsOverride,
+            )
+        ) return
+
+        userComponentHostView.safeAreaInsetsOverride = safeAreaInsetsOverride
+        userComponent.setNeedsLayout()
+    }
+
+    private fun UIKitInteropSafeAreaInsetsPolicy.safeAreaInsetsOverride() = when (this) {
+        UIKitInteropSafeAreaInsetsPolicy.Inherit -> userComponentHostView.superSafeAreaInsets()
+        UIKitInteropSafeAreaInsetsPolicy.Ignore -> UIEdgeInsetsZero.readValue()
+        UIKitInteropSafeAreaInsetsPolicy.Automatic -> {
+            if (userComponentHostView.overlapsSuperSafeArea()) {
+                UIEdgeInsetsZero.readValue()
+            } else {
+                userComponentHostView.superSafeAreaInsets()
+            }
+        }
+    }
+
+    private fun CMPInteropHostView.overlapsSuperSafeArea(): Boolean {
+        // A nonzero value means Compose positions or clips the host under the safe area. Report zero
+        // insets to its UIKit child to prevent controls such as UIStepper from applying their own
+        // safe-area avoidance offset.
+        return !UIEdgeInsetsEqualToEdgeInsets(
+            superSafeAreaInsets(),
+            UIEdgeInsetsZero.readValue(),
+        )
     }
 }
 

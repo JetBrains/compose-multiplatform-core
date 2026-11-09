@@ -26,14 +26,16 @@ import org.jetbrains.skiko.loadBytesFromPath
  * Idea and some implementation details are adapted from
  * https://github.com/flutter/flutter/blob/master/engine/src/flutter/lib/web_ui/lib/src/engine/font_fallbacks.dart
  */
-internal class NotoFontDownloader : FallbackFontDownloader {
+internal class NotoFontDownloader(
+    val fontFallbackUrl: String = FONT_FALLBACK_BASE_URL,
+) : FallbackFontDownloader {
     private val codePointsWithNoKnownFont = mutableSetOf<Int>()
     private val codePointToComponents by lazy { UnicodePropertyLookup.create() }
 
     override suspend fun downloadFallbackFont(codepoints: Set<Int>): List<FontFamily> {
         val fontsToDownload = getFontsToDownload(codepoints)
         val fonts = fontsToDownload.map { font ->
-            val fontUrl = FONT_FALLBACK_BASE_URL + font.font.url
+            val fontUrl = fontFallbackUrl + font.font.url
             try {
                 val bytes = loadBytesFromPath(fontUrl)
                 FontFamily(Font(font.font.name, bytes))
@@ -282,7 +284,7 @@ private fun NotoFont.isNotoSansKR(): Boolean = name.startsWith("Noto Sans KR")
 private fun NotoFont.isNotoColorEmoji(): Boolean = name.startsWith("Noto Color Emoji")
 private fun NotoFont.isNotoSansSymbols(): Boolean = name.startsWith("Noto Sans Symbols")
 
-private const val FONT_FALLBACK_BASE_URL = "https://fonts.gstatic.com/s/"
+internal const val FONT_FALLBACK_BASE_URL = "https://fonts.gstatic.com/s/"
 private const val PREFIX_DIGIT_0 = 48
 private const val PREFIX_RADIX = 10
 private const val FONT_INDEX_DIGIT_0 = 97

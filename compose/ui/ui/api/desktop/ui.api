@@ -204,10 +204,6 @@ public final class androidx/compose/ui/ImageComposeScene_skikoMainKt {
 	public static final fun use (Landroidx/compose/ui/ImageComposeScene;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
-public final class androidx/compose/ui/InteractionBarrierKt {
-	public static final fun interactionBarrier (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
-}
-
 public final class androidx/compose/ui/KeepScreenOnKt {
 	public static final fun keepScreenOn (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
 }

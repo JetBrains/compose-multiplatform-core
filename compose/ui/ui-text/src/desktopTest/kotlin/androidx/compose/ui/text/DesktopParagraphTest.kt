@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.LineHeightStyle.Trim
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
@@ -712,24 +713,100 @@ class DesktopParagraphTest : SkikoComposeTestBase() {
         assertThat(measureLines(TextAlign.Justify, TextDirection.Rtl)).isEqualTo(listOf(1830, 1950, 1900, 1980))
     }
 
+    @Test
+    fun isLineEllipsized_singleLine() {
+        val paragraph =
+            simpleParagraph(
+                text = "123".repeat(20),
+                style = TextStyle(fontSize = 16.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                width = 100f,
+            )
+
+        assertThat(paragraph.isLineEllipsized(0)).isTrue()
+    }
+
+    @Test
+    fun isLineEllipsized_multipleLines() {
+        val paragraph =
+            simpleParagraph(
+                text = "aaaaabbbbbccccc",
+                style = TextStyle(fontSize = 10.sp),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                width = 50f,
+            )
+
+        assertThat(paragraph.lineCount).isEqualTo(2)
+        assertThat(paragraph.isLineEllipsized(0)).isFalse()
+        assertThat(paragraph.isLineEllipsized(1)).isTrue()
+    }
+
+    @Test
+    fun isLineEllipsized_fittingText() {
+        val paragraph =
+            simpleParagraph(
+                text = "abc",
+                style = TextStyle(fontSize = 10.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                width = 100f,
+            )
+
+        assertThat(paragraph.isLineEllipsized(0)).isFalse()
+    }
+
+    @Test
+    fun isLineEllipsized_clippedText() {
+        val paragraph =
+            simpleParagraph(
+                text = "abc".repeat(20),
+                style = TextStyle(fontSize = 10.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+                width = 100f,
+            )
+
+        assertThat(paragraph.didExceedMaxLines).isTrue()
+        assertThat(paragraph.isLineEllipsized(0)).isFalse()
+    }
+
+    @Test
+    fun isLineEllipsized_heightLimited() {
+        val paragraph =
+            simpleParagraph(
+                text = "abc\ndef\nghi",
+                style = TextStyle(fontSize = 10.sp),
+                overflow = TextOverflow.Ellipsis,
+                width = 100f,
+                height = 20f,
+            )
+
+        assertThat(paragraph.lineCount).isEqualTo(2)
+        assertThat(paragraph.isLineEllipsized(0)).isFalse()
+        assertThat(paragraph.isLineEllipsized(1)).isTrue()
+    }
+
     private fun simpleParagraph(
         text: String = "",
         style: TextStyle? = null,
         maxLines: Int = Int.MAX_VALUE,
         spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf(),
         density: Density? = null,
-        width: Float = 2000f
+        width: Float = 2000f,
+        overflow: TextOverflow = TextOverflow.Clip,
+        height: Float = Float.MAX_VALUE,
     ): Paragraph {
         return Paragraph(
             text = text,
             spanStyles = spanStyles,
-            style = TextStyle(
-                fontFamily = fontFamilyMeasureFont
-            ).merge(style),
+            style = TextStyle(fontFamily = fontFamilyMeasureFont).merge(style),
             maxLines = maxLines,
-            constraints = Constraints(maxWidth = width.ceilToInt()),
+            overflow = overflow,
+            constraints = Constraints(maxWidth = width.ceilToInt(), maxHeight = height.ceilToInt()),
             density = density ?: defaultDensity,
-            fontFamilyResolver = fontFamilyResolver
+            fontFamilyResolver = fontFamilyResolver,
         )
     }
 

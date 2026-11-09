@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.FontHinting
 import androidx.compose.ui.text.FontRasterizationSettings
@@ -57,9 +58,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
-import kotlin.jvm.JvmName
 import org.jetbrains.skia.Font as SkFont
 import org.jetbrains.skia.FontEdging as SkFontEdging
 import org.jetbrains.skia.FontFeature
@@ -161,7 +162,7 @@ private sealed interface ComputedStyle {
             return paint
         }
 
-        fun toSkTextStyle(fontFamilyResolver: FontFamily.Resolver): SkTextStyle {
+        fun toSkTextStyle(resolvedFont: FontLoadResult?): SkTextStyle {
             val res = SkTextStyle()
             if (textForegroundStyle.color.isSpecified) {
                 res.color = textForegroundStyle.color.toArgb()
@@ -203,15 +204,9 @@ private sealed interface ComputedStyle {
             res.subpixel = fontRasterizationSettings.subpixelPositioning
 
             res.fontSize = fontSize
-            fontFamily?.let {
-                val resolved = fontFamilyResolver.resolve(
-                    it,
-                    fontWeight ?: FontWeight.Normal,
-                    fontStyle ?: FontStyle.Normal,
-                    fontSynthesis ?: FontSynthesis.None
-                ).value as FontLoadResult
-                res.fontFamilies = resolved.aliases.toTypedArray()
-                res.typeface = resolved.typeface
+            resolvedFont?.let {
+                res.fontFamilies = it.aliases.toTypedArray()
+                res.typeface = it.typeface
             }
 
             baselineShift?.let {
@@ -369,7 +364,9 @@ private fun ComputedStyle(
 // Building of SkTextStyle is a relatively expensive operation. We enable simple caching by
 // mapping SpanStyle to SkTextStyle. To increase the efficiency of this mapping we are making
 // most of the computations before converting Compose paragraph styles to Skia paragraph
-private val skTextStylesCache = WeakKeysCache<ComputedStyle.Immutable, SkTextStyle>()
+private val skTextStylesCache = WeakKeysCache<ComputedStyle.Immutable, CachedSkTextStyle>()
+
+private class CachedSkTextStyle(var font: FontLoadResult?, var style: SkTextStyle)
 
 internal class ParagraphBuilder(
     val fontFamilyResolver: FontFamily.Resolver,
@@ -383,11 +380,15 @@ internal class ParagraphBuilder(
     val density: Density,
     val textDirection: ResolvedTextDirection,
     var drawStyle: DrawStyle? = null,
-    var blendMode: BlendMode = DrawScope.DefaultBlendMode
+    var blendMode: BlendMode = DrawScope.DefaultBlendMode,
+    val fontResolutions: ParagraphFontResolutions,
 ) {
     private var defaultStyle = ComputedStyle.Immutable()
     private lateinit var initialStyle: SpanStyle
     private lateinit var ops: List<Op>
+
+    /** [Bullet]s to be painted next to the paragraphs they are attached to. */
+    val bullets: List<AnnotatedString.Range<Bullet>> = annotations.filterBullets()
 
     private fun prepareDefaultStyle() {
         initialStyle = textStyle.toSpanStyle().copyWithDefaultFontSize(
@@ -448,14 +449,6 @@ internal class ParagraphBuilder(
 
             when (op) {
                 is Op.StyleAdd -> {
-                    // FontLoader may have changed, so ensure that Font resolution is still valid
-                    fontFamilyResolver.resolve(
-                        op.style.fontFamily,
-                        op.style.fontWeight ?: FontWeight.Normal,
-                        op.style.fontStyle ?: FontStyle.Normal,
-                        op.style.fontSynthesis ?: FontSynthesis.All
-                    )
-
                     // It's always mutable at this point, so we can safely cast
                     val style = (op.style as ComputedStyle.Mutable).toImmutable()
                     // Store immutable reference because it's used as a weak reference key
@@ -542,7 +535,7 @@ internal class ParagraphBuilder(
     ): List<Op> {
         val cuts = mutableListOf<Cut>()
         annotations.fastForEach { annotation ->
-            // TODO https://youtrack.jetbrains.com/issue/CMP-7151
+            // Only [SpanStyle] is turned into a skia style span.
             val spanStyle = annotation.item as? SpanStyle ?: return@fastForEach
 
             cuts.add(Cut.StyleAdd(annotation.start, spanStyle))
@@ -657,7 +650,7 @@ internal class ParagraphBuilder(
         pStyle.direction = textDirection.toSkDirection()
         textStyle.textIndent?.run {
             pStyle.textIndent = SkTextIndent(
-                firstLine.toPx(density, computedStyle.fontSize),
+                firstLineIndentPx,
                 restLine.toPx(density, computedStyle.fontSize)
             )
         }
@@ -665,15 +658,41 @@ internal class ParagraphBuilder(
     }
 
     private fun makeSkTextStyle(style: ComputedStyle.Immutable): SkTextStyle {
-        return skTextStylesCache.getOrPut(style) {
-            it.toSkTextStyle(fontFamilyResolver)
+        // Resolve even on cache hits so these intrinsics observe their own font dependencies.
+        val font = style.fontFamily?.let {
+            fontResolutions.resolve(
+                it,
+                style.fontWeight ?: FontWeight.Normal,
+                style.fontStyle ?: FontStyle.Normal,
+                style.fontSynthesis ?: FontSynthesis.All,
+            )
         }
+        val cached = skTextStylesCache.getOrPut(style) {
+            CachedSkTextStyle(font, it.toSkTextStyle(font))
+        }
+        // Equal styles can belong to different intrinsics, created before and after an async load.
+        if (cached.font !== font) {
+            cached.font = font
+            cached.style = style.toSkTextStyle(font)
+        }
+        return cached.style
     }
 
     internal val defaultFont by lazy {
-        val loadResult = textStyle.resolveFontFamily(fontFamilyResolver)
+        val loadResult = textStyle.resolveFontFamily(fontResolutions)
         SkFont(loadResult?.typeface, defaultStyle.fontSize)
     }
+
+    /**
+     * Indentation of the paragraph's first line in pixels, as passed to skia in [SkTextIndent].
+     * Skia leaves the indentation out of the paragraph's intrinsic widths, so
+     * [SkikoParagraphIntrinsics] adds this value back on top of them.
+     *
+     * A font size relative unit resolves against the default font size, which is known only once
+     * [build] has run, so before that this returns [Float.NaN].
+     */
+    internal val firstLineIndentPx: Float
+        get() = textStyle.textIndent?.firstLine?.toPx(density, defaultStyle.fontSize) ?: 0f
 
     // workaround for https://bugs.chromium.org/p/skia/issues/detail?id=11321 :(
     internal fun emptyLineMetrics(paragraph: SkParagraph): Array<LineMetrics> {
@@ -721,6 +740,19 @@ private fun TextUnit.orDefaultFontSize() = when {
     else -> this
 }
 
+private fun List<AnnotatedString.Range<out AnnotatedString.Annotation>>.filterBullets():
+    List<AnnotatedString.Range<Bullet>> {
+    if (!fastAny { it.item is Bullet }) return emptyList()
+    val bullets = mutableListOf<AnnotatedString.Range<Bullet>>()
+    fastForEach { annotation ->
+        val item = annotation.item
+        if (item is Bullet) {
+            bullets.add(AnnotatedString.Range(item, annotation.start, annotation.end))
+        }
+    }
+    return bullets
+}
+
 private fun TextUnit.toPx(density: Density, fontSize: TextUnit): Float =
     toPx(density, with(density) { fontSize.toPx() })
 
@@ -740,14 +772,14 @@ private fun LineHeightStyle.Trim.toHeightMode(): HeightMode = when(this) {
 }
 
 private fun TextStyle.resolveFontFamily(
-    fontFamilyResolver: FontFamily.Resolver
+    fontResolutions: ParagraphFontResolutions
 ) = fontFamily?.let {
-    fontFamilyResolver.resolve(
+    fontResolutions.resolve(
         fontFamily = it,
         fontWeight = fontWeight ?: FontWeight.Normal,
         fontStyle = fontStyle ?: FontStyle.Normal,
         fontSynthesis = fontSynthesis ?: FontSynthesis.All
-    ).value as FontLoadResult
+    )
 }
 
 private fun SpanStyle.copyWithDefaultFontSize(drawStyle: DrawStyle? = null): SpanStyle {

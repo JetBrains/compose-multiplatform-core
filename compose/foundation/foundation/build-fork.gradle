@@ -68,8 +68,6 @@ androidXMultiplatform {
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
-            implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
         }
 
         // TODO: Align naming: nonAndroidMain
@@ -101,6 +99,8 @@ androidXMultiplatform {
             dependsOn(skikoTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))
+                implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+                implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
                 implementation(libs.truth)
                 implementation(libs.junit)
                 implementation(libs.skikoAwtRuntime)
