@@ -19,12 +19,15 @@ package org.jetbrains.compose.benchmarks
 import androidx.compose.runtime.Composable
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlin.time.Duration
 import kotlin.time.TimeSource.Monotonic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.benchmarks.report.RealFramesReport
 import org.jetbrains.compose.benchmarks.report.StartupReport
 
 private val ReportingScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -48,10 +51,46 @@ fun MeasureApplicationStartup(
                 timeToNthFrame = result.timeOfNthFrame - mainMark,
             )
             val client = createHttpClient()
-            client.post(reportApiUrl) { setBody(report) }
-            client.close()
+            try {
+                client.post(reportApiUrl) {
+                    contentType(ContentType.Application.Json)
+                    setBody(report)
+                }
+            } finally {
+                client.close()
+            }
         }
     }
 
     MeasureStartup(frameCount, onComplete, content)
+}
+
+@Composable
+fun MeasureApplicationRealFrames(
+    id: String,
+    reportApiUrl: String,
+    frameCount: Int,
+    content: @Composable () -> Unit,
+) {
+    val onComplete: (RealFramesResult) -> Unit = { result ->
+        ReportingScope.launch {
+            val report = RealFramesReport(
+                id = id,
+                frameCount = frameCount,
+                frameTimes = result.frameTimes,
+                totalDuration = result.totalDuration,
+            )
+            val client = createHttpClient()
+            try {
+                client.post(reportApiUrl) {
+                    contentType(ContentType.Application.Json)
+                    setBody(report)
+                }
+            } finally {
+                client.close()
+            }
+        }
+    }
+
+    MeasureRealFrames(frameCount, onComplete, content)
 }
