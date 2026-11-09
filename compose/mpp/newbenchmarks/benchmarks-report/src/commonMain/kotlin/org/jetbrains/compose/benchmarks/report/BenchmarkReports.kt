@@ -36,3 +36,32 @@ data class RealFramesReport(
     val frameTimes: List<Duration>,
     val totalDuration: Duration,
 )
+
+@Serializable
+data class FrameInfo(
+    val cpu: Duration,
+    val gpu: Duration,
+    val fps: Double,
+)
+
+@Serializable
+data class AverageFrameReport(
+    val id: String,
+    val width: Int,
+    val height: Int,
+    val targetFps: Int,
+    val warmupCount: Int,
+    val frameCount: Int,
+    val averageFrameInfo: FrameInfo,
+)
+
+@Serializable
+data class FpsReport(
+    val id: String,
+    val width: Int,
+    val height: Int,
+    val targetFps: Int,
+    val warmupCount: Int,
+    val frameCount: Int,
+    val frames: List<FrameInfo>,
+)
