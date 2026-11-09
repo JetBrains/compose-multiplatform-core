@@ -22,6 +22,7 @@ import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -302,7 +303,7 @@ internal class ComposeWebSemanticsListener(
 
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
-            val children = node.replacedChildren
+            val children = node.placedA11YChildren()
             val nodeReachability = node.a11yReachability(parentReachability)
             val isA11YReachable = nodeReachability.isReachable()
 
@@ -321,7 +322,7 @@ internal class ComposeWebSemanticsListener(
                 // It handles its link children itself:
                 syncTextContentAndChildren(node, config, children, htmlNode, rootPosition, nodeReachability)
             } else {
-                pushNodesForTraversal(children, htmlNode, nodeReachability)
+                pushNodesForTraversal(node, children, htmlNode, nodeReachability)
             }
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
             targetParentToChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
@@ -334,11 +335,30 @@ internal class ComposeWebSemanticsListener(
      * @param htmlParent - the a11y (dom) parent element to contain the children a11y elements
      */
     private fun pushNodesForTraversal(
+        parent: SemanticsNode,
         children: List<SemanticsNode>,
         htmlParent: HTMLElement,
         parentA11YExposure: A11YReachability,
     ) {
-        val reversedChildren = children.asReversed()
+        if (children.isEmpty()) return
+
+        // Prepare the children bounds to avoid recomputing them during grouping and comparison.
+        val bounds = MutableIntObjectMap<Rect>(children.size)
+        children.fastForEach { child ->
+            // Scroll-reachable children remain accessible offscreen, where clipped bounds may be empty,
+            // so use unclipped bounds.
+            bounds[child.id] = if (parentA11YExposure == A11YReachability.ReachableByScroll) {
+                child.unclippedBoundsInWindowForWeb()
+            } else {
+                child.boundsInWindow
+            }
+        }
+
+        val reversedChildren = parent.sortByGeometryGroupingsForWeb(
+            parentListToSort = children,
+            boundsOf = { checkNotNull(bounds[it.id]) }
+        ).asReversed()
+
         dfsSemanticsNodes.addAll(reversedChildren)
         repeat(reversedChildren.size) {
             dfsA11YParents.addLast(htmlParent)
@@ -639,7 +659,7 @@ internal class ComposeWebSemanticsListener(
                 targetTextAndLinks.add(textParts[linkIndex])
             }
 
-            val linkChildren = child.replacedChildren
+            val linkChildren = child.placedA11YChildren()
             val linkHtmlNode = syncNode(
                 semanticsNode = child,
                 config = childConfig,
@@ -651,7 +671,7 @@ internal class ComposeWebSemanticsListener(
             targetParentToChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
             targetChildToParent[linkHtmlNode] = htmlNode
             // A link node is expected to be a leaf, but don't rely on it.
-            pushNodesForTraversal(linkChildren, linkHtmlNode, a11YReachability)
+            pushNodesForTraversal(child, linkChildren, linkHtmlNode, a11YReachability)
 
             linkIndex++
         }
@@ -661,7 +681,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         updateTextAndLinks(htmlNode, targetTextAndLinks, a11YScrollController.getScrollSizer(node))
-        deferredChildren?.let { pushNodesForTraversal(it, htmlNode, a11YReachability) }
+        deferredChildren?.let { pushNodesForTraversal(node, it, htmlNode, a11YReachability) }
     }
 
     /** Updates the text fragments and semantic link elements after the optional scroll sizer. */
@@ -737,3 +757,14 @@ internal class ComposeWebSemanticsListener(
         hasStopped = true
     }
 }
+
+private fun SemanticsNode.placedA11YChildren(): List<SemanticsNode> =
+    replacedChildren.filter { child ->
+        // Lazy lists prefetch upcoming items by composing and measuring them before placement.
+        // These items have no position in the list yet, and a reused layout node may still contain
+        // coordinates from its previous item. Exclude them so stale bounds cannot affect the order
+        // or position of elements in the accessibility DOM. Placed offscreen items remain eligible.
+        // Synthetic ("fake") semantics nodes expose a parent's role or content description using
+        // the parent's bounds; their own layout nodes are not attached or placed.
+        child.isFake || child.layoutNode.let { it.isAttached && it.isPlaced }
+    }

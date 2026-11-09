@@ -22,9 +22,9 @@ import kotlinx.coroutines.test.TestResult
  * Invokes [block] as soon as the Skiko (Skia) runtime is initialized and it's safe to call Skia APIs.
  *
  * On most platforms the Skiko binaries are linked/loaded eagerly, so [block] is invoked directly. On
- * the Kotlin/JS target, however, `skiko.wasm` is fetched and instantiated asynchronously, and its
- * native symbols are published to the global scope only when that is done. Any Skia call made before
- * that fails with `ReferenceError: org_jetbrains_skia_... is not defined`, which is why the test
+ * web targets, however, `skiko.wasm` is fetched and instantiated asynchronously. Any Skia call made
+ * before that is done fails (`ReferenceError: org_jetbrains_skia_... is not defined` on JS,
+ * `TypeError: org_jetbrains_skia_... is not a function` on Wasm), which is why the test
  * framework has to wait, the same way `ComposeViewport`/`CanvasBasedWindow` implicitly wait for
  * Skiko before starting an application.
  *
