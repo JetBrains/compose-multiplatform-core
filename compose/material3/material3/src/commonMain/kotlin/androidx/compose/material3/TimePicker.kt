@@ -1465,6 +1465,8 @@ private val VibrantPeriodToggleHeight
     get() = 120.dp
 private val UncontainedTimeFieldHeight
     get() = 136.dp
+private val UncontainedScrollFieldItemHeight
+    get() = 60.dp
 private val UncontainedToggleHeight
     get() = 140.dp
 private val VibrantPeriodToggleHorizontalHeight
@@ -2275,6 +2277,11 @@ private fun TimeScrollImpl(
     val hasSideControlColumn = toggle != null
     val fieldHeight =
         if (hasSideControlColumn) UncontainedTimeFieldHeight else VibrantTimeFieldHeight
+    // The uncontained field is 16dp taller, so its items are 8dp further apart (24dp gap instead of
+    // 16dp). This keeps the neighbors cut off the same as in the contained field.
+    val itemHeight =
+        if (hasSideControlColumn) UncontainedScrollFieldItemHeight
+        else ScrollFieldDefaults.ItemHeight
 
     Row(
         modifier = modifier.semantics { isTraversalGroup = true },
@@ -2307,13 +2314,14 @@ private fun TimeScrollImpl(
             // Always display the time input text field from left to right.
             LocalLayoutDirection provides LayoutDirection.Ltr,
         ) {
-            ScrollField(
+            ScrollFieldImpl(
                 state = hourState,
                 contentDescription = hourSelectionDescription,
                 modifier = Modifier.size(width = 100.dp, height = fieldHeight),
                 fieldAccessibilityDescription = { index ->
                     formatString(hourSuffix, if (state.is24hour) index else index + 1)
                 },
+                itemHeight = itemHeight,
                 field = { index, selected, enabled ->
                     ScrollFieldDefaults.Item(
                         index = if (state.is24hour) index else index + 1,
@@ -2330,11 +2338,12 @@ private fun TimeScrollImpl(
                 )
             )
 
-            ScrollField(
+            ScrollFieldImpl(
                 state = minuteState,
                 contentDescription = minuteSelectionDescription,
                 modifier = Modifier.size(width = 100.dp, height = fieldHeight),
                 fieldAccessibilityDescription = { index -> formatString(minuteSuffix, index) },
+                itemHeight = itemHeight,
             )
         }
 
