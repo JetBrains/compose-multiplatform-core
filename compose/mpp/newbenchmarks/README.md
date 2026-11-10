@@ -9,8 +9,18 @@ The benchmark case is composed only inside the offscreen scene. Both modes use a
 JVM and native macOS runs finish after the report is sent. Browser and iOS runs keep their platform
 application alive without creating a UI host.
 
-Use `realFrames` for measurement in a real UI host. `startup` is not wired into the app yet.
-All launch examples below use `averageFrame`; replace it with `fps` to run the paced render benchmark.
+Use `realFrames` for measurement in a real UI host, or `startup` for its first frame and 30 additional
+frame-clock events without warmup. All launch examples below use `averageFrame`; replace it with
+`fps`, `realFrames`, or `startup` to select another mode.
+
+Startup timings use a monotonic mark captured before arguments and UI are processed. On iOS, the
+mark is captured at the first Kotlin entry from `AppDelegate.init`. `timeToFirstFrame` and
+`timeToNthFrame` are measured from this mark, not from process startup. They observe the Compose
+frame clock, not GPU completion or screen presentation. `timeToMain` measures process-to-entry time:
+JVM uses VM uptime as an approximation, Apple uses the process start timestamp, and browsers use
+the page's navigation start, reconstructed from `performance.now()`. On the web, `timeToMain` therefore
+measures page navigation to Kotlin entry, not browser process startup.
+Restart the application for each cold startup measurement.
 
 Case names are case-sensitive: `AnimatedVisibility`, `LazyGrid`, `LazyGrid-ItemLaunchedEffect`,
 `LazyGrid-SmoothScroll`, `LazyGrid-SmoothScroll-ItemLaunchedEffect`, `VisualEffects`, `LazyList`,

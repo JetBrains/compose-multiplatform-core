@@ -21,6 +21,15 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import platform.UIKit.UIViewController
 
+private var applicationStartupTiming: StartupTiming? = null
+
+// Called from AppDelegate.init, before launch arguments or UI are processed.
+fun initializeStartupTiming() {
+    if (applicationStartupTiming == null) {
+        applicationStartupTiming = captureStartupTiming()
+    }
+}
+
 fun MainViewController(
     benchmarkCollectorUrl: String,
     testName: String,
@@ -28,8 +37,11 @@ fun MainViewController(
 ): UIViewController {
     val type = parseBenchmarkType(benchmarkType)
     require(!type.isRenderBenchmark()) { "Render benchmarks must be launched without UI" }
+    val startupTiming = requireNotNull(applicationStartupTiming) {
+        "Call initializeStartupTiming() at application entry before creating the view controller"
+    }
     return ComposeUIViewController {
-        App(benchmarkCollectorUrl, testName, type)
+        App(benchmarkCollectorUrl, testName, type, startupTiming)
     }
 }
 

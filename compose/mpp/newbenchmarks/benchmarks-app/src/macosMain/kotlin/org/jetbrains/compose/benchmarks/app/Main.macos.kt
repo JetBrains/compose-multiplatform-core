@@ -24,6 +24,7 @@ import platform.AppKit.NSApplicationDelegateProtocol
 import platform.darwin.NSObject
 
 fun main(args: Array<String>) {
+    val startupTiming = captureStartupTiming()
     val (benchmarkCollectorUrl, testName, benchmarkType) = parseArguments(args)
     if (benchmarkType.isRenderBenchmark()) {
         runBlocking {
@@ -39,7 +40,7 @@ fun main(args: Array<String>) {
         }
     }
     Window("Benchmarks") {
-        App(benchmarkCollectorUrl, testName, benchmarkType)
+        App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming)
     }
     application.run()
 }

@@ -22,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
+    val startupTiming = captureStartupTiming()
     val (benchmarkCollectorUrl, testName, benchmarkType) = parseArguments(args)
     if (benchmarkType.isRenderBenchmark()) {
         runBlocking(Dispatchers.Main) {
@@ -31,7 +32,7 @@ fun main(args: Array<String>) {
     }
     application {
         Window(onCloseRequest = ::exitApplication, title = "Benchmarks") {
-            App(benchmarkCollectorUrl, testName, benchmarkType)
+            App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming)
         }
     }
 }

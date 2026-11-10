@@ -30,6 +30,7 @@ import org.w3c.dom.url.URLSearchParams
 
 @OptIn(ExperimentalWasmJsInterop::class)
 fun main() {
+    val startupTiming = captureStartupTiming()
     val parameters = URLSearchParams(window.location.search.toJsString())
     val benchmarkCollectorUrl = requireNotNull(parameters.get("benchmarkCollectorUrl")) { "Missing query parameter: benchmarkCollectorUrl" }
     val testName = requireNotNull(parameters.get("test")) { "Missing query parameter: test" }
@@ -43,7 +44,7 @@ fun main() {
         }
     } else {
         ComposeViewport("root") {
-            App(benchmarkCollectorUrl, testName, benchmarkType)
+            App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming)
         }
     }
 }

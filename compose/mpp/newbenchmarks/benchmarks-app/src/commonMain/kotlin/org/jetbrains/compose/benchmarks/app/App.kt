@@ -18,6 +18,7 @@ package org.jetbrains.compose.benchmarks.app
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.benchmarks.MeasureApplicationRealFrames
+import org.jetbrains.compose.benchmarks.MeasureApplicationStartup
 import org.jetbrains.compose.benchmarks.report.BenchmarkReportType
 
 @Composable
@@ -25,6 +26,7 @@ internal fun App(
     benchmarkCollectorUrl: String,
     testName: String,
     benchmarkType: BenchmarkReportType,
+    startupTiming: StartupTiming,
 ) {
     when (benchmarkType) {
         BenchmarkReportType.REAL_FRAMES -> MeasureApplicationRealFrames(
@@ -34,7 +36,14 @@ internal fun App(
             frameCount = 1000,
             content = benchmarkContent(testName),
         )
-        BenchmarkReportType.STARTUP -> error("Startup measurement is not implemented in the app yet")
+        BenchmarkReportType.STARTUP -> MeasureApplicationStartup(
+            id = testName,
+            mainMark = startupTiming.mainMark,
+            timeToMain = startupTiming.timeToMain,
+            reportApiUrl = benchmarkCollectorUrl,
+            frameCount = 30,
+            content = benchmarkContent(testName),
+        )
         else -> error("Unknown UI benchmark type: $benchmarkType")
     }
 }
