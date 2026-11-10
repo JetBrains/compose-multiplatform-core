@@ -5,6 +5,11 @@ import BenchmarksApp
 class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
+    override init() {
+        super.init()
+        Main_iosKt.initializeStartupTiming()
+    }
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil

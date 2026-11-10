@@ -87,7 +87,7 @@ private fun printReport(report: BenchmarkReport, path: Path) {
         when (report) {
             is StartupReport -> {
                 appendLine("Frames after first: ${report.frameCount}")
-                appendLine("Process to main: ${report.timeToMain}")
+                appendLine("Process to main: ${report.timeToMain ?: "unavailable"}")
                 appendLine("Main to first frame: ${report.timeToFirstFrame}")
                 appendLine("Main to Nth frame: ${report.timeToNthFrame}")
             }

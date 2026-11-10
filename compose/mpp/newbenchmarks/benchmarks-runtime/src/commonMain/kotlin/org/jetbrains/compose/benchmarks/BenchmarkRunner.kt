@@ -39,7 +39,7 @@ private val ReportingScope = CoroutineScope(Dispatchers.Default + SupervisorJob(
 fun MeasureApplicationStartup(
     id: String,
     mainMark: Monotonic.ValueTimeMark,
-    timeToMain: Duration,
+    timeToMain: Duration?,
     reportApiUrl: String,
     frameCount: Int,
     content: @Composable () -> Unit,

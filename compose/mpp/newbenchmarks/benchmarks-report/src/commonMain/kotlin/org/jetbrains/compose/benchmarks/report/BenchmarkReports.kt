@@ -45,7 +45,7 @@ data class StartupReport(
     override val id: String,
     override val type: BenchmarkReportType = BenchmarkReportType.STARTUP,
     val frameCount: Int,
-    val timeToMain: Duration,
+    val timeToMain: Duration? = null,
     val timeToFirstFrame: Duration,
     val timeToNthFrame: Duration,
 ) : BenchmarkReport

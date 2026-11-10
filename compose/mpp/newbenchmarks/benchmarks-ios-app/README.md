@@ -12,10 +12,12 @@ In **Product → Scheme → Edit Scheme → Run → Arguments**, set three launc
 
 1. `benchmarkCollectorUrl`, for example `http://127.0.0.1:8090/reports`.
 2. Test name, for example `LazyGrid`.
-3. Benchmark type: `averageFrame`, `fps`, or `realFrames`. `startup` is not wired into the app yet.
+3. Benchmark type: `averageFrame`, `fps`, `realFrames`, or `startup`.
 
 The shared scheme uses `averageFrame`. The app runs the selected case and sends a report to the collector.
-All three arguments are required.
+All three arguments are required. `AppDelegate.init` calls `initializeStartupTiming()` before launch
+arguments and UI are processed. This captures the Kotlin entry mark and reads the process start time
+for `startup` reports. Launch a new process for each cold startup measurement.
 See the [main README](../README.md) for collector setup and network limits.
 
 ## Build settings
