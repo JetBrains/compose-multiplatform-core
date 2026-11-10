@@ -174,12 +174,13 @@ fun Container.sendMouseRelease(
     button: Int = MouseEvent.BUTTON1,
     x: Int,
     y: Int,
+    modifiers: Int = 0,
 ): Boolean {
     return sendMouseEvent(
         id = MouseEvent.MOUSE_RELEASED,
         x = x,
         y = y,
-        modifiers = 0,
+        modifiers = modifiers,
         button = button
     )
 }
