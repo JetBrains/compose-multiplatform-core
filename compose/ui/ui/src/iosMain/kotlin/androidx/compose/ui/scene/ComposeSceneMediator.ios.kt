@@ -411,7 +411,6 @@ internal class ComposeSceneMediator(
     private fun isPointInsideInteractionBounds(point: CValue<CGPoint>) =
         interactionBounds.contains(point.toDpOffset().toOffset(screenDensity).round())
 
-    @OptIn(InternalComposeUiApi::class)
     var rootForTestListener: PlatformContext.RootForTestListener? by DelegateRootForTestListener()
 
     private val semanticsOwnerListener by lazy {
@@ -788,7 +787,6 @@ internal class ComposeSceneMediator(
     fun retrievePendingViewUpdatesInteropTransaction(): InteropSyncTransaction =
         interopContainer.retrievePendingViewUpdatesTransaction()
 
-    @OptIn(InternalComposeUiApi::class)
     @Composable
     private fun ProvideComposeSceneMediatorCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
