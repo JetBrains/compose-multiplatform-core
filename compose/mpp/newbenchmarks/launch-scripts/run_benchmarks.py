@@ -33,9 +33,7 @@ import tempfile
 import threading
 import time
 import traceback
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 import uuid
 
 
@@ -65,7 +63,7 @@ def parse_args():
     parser.add_argument("--browser", help="Chromium/Firefox executable, command name, or macOS .app")
     parser.add_argument("--browser-kind", choices=("chromium", "firefox"), default="chromium")
     parser.add_argument("--browser-arg", action="append", default=[], help="extra browser flag; use --browser-arg=--flag")
-    parser.add_argument("--web-port", type=int, default=0, help="static/proxy server port (default: automatic)")
+    parser.add_argument("--web-port", type=int, default=0, help="static file server port (default: automatic)")
     parser.add_argument("--simulator", help="iOS Simulator UUID or unique name (default: one booted device)")
     args = parser.parse_args()
     if os.name != "posix":
@@ -221,8 +219,7 @@ def wait_for_collector(process, port):
 
 
 @contextmanager
-def web_server(directory, port, collector_url, log_path):
-    # Proxy reports through the page's origin. The collector needs no CORS changes.
+def web_server(directory, port, log_path):
     with log_path.open("a") as log:
         class Handler(SimpleHTTPRequestHandler):
             extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".wasm": "application/wasm", ".mjs": "text/javascript"}
@@ -230,29 +227,6 @@ def web_server(directory, port, collector_url, log_path):
             def log_message(self, template, *values):
                 log.write((template % values) + "\n")
                 log.flush()
-
-            def do_POST(self):
-                if self.path != "/reports":
-                    self.send_error(404)
-                    return
-                body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-                request = Request(collector_url, data=body, headers={"Content-Type": "application/json"})
-                try:
-                    response = urlopen(request, timeout=10)
-                except HTTPError as error:
-                    response = error
-                except (URLError, TimeoutError):
-                    self.send_error(502, "Collector unavailable")
-                    return
-                with response:
-                    payload = response.read()
-                    try:
-                        self.send_response(response.code)
-                        self.send_header("Content-Length", str(len(payload)))
-                        self.end_headers()
-                        self.wfile.write(payload)
-                    except (BrokenPipeError, ConnectionResetError):
-                        pass  # The launcher may close the browser as soon as the report is saved.
 
         server = ThreadingHTTPServer(("127.0.0.1", port), partial(Handler, directory=str(directory)))
         worker = threading.Thread(target=server.serve_forever, daemon=True)
@@ -283,7 +257,7 @@ def launch_test(args, app, browser, simulator, collector_url, web_url, name, mod
     with ExitStack() as stack:
         if args.target in ("js", "wasmJs"):
             profile = stack.enter_context(tempfile.TemporaryDirectory(prefix="benchmark-browser-"))
-            query = urlencode({"benchmarkCollectorUrl": web_url + "/reports", "test": name, "type": mode, "id": run_id})
+            query = urlencode({"benchmarkCollectorUrl": collector_url, "test": name, "type": mode, "id": run_id})
             url = web_url + "/?" + query
             if args.browser_kind == "chromium":
                 command = [browser, f"--user-data-dir={profile}", "--no-first-run",
@@ -351,7 +325,7 @@ def run_series(args, out, directory, summary):
         wait_for_collector(collector, args.port)
         web_url = None
         if browser:
-            web_url = stack.enter_context(web_server(app, args.web_port, collector_url, logs / "web-server.log"))
+            web_url = stack.enter_context(web_server(app, args.web_port, logs / "web-server.log"))
         total = len(args.tests) * len(args.modes) * args.repeat
         for name in args.tests:
             for mode in args.modes:
