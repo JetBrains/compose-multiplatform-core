@@ -29,6 +29,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.CREATE_NEW
 import java.time.Instant
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
@@ -70,11 +72,55 @@ internal fun Application.collectReports(outputDirectory: Path) {
             }
 
             val fileName = withContext(Dispatchers.IO) {
-                saveReport(outputDirectory, report.type, body)
+                val fileName = saveReport(outputDirectory, report.type, body)
+                printReport(report, outputDirectory.resolve(fileName))
+                fileName
             }
             call.respondText(fileName, status = HttpStatusCode.Created)
         }
     }
+}
+
+private fun printReport(report: BenchmarkReport, path: Path) {
+    println(buildString {
+        appendLine("${report.id} (${report.type})")
+        when (report) {
+            is StartupReport -> {
+                appendLine("Frames after first: ${report.frameCount}")
+                appendLine("Process to main: ${report.timeToMain}")
+                appendLine("Main to first frame: ${report.timeToFirstFrame}")
+                appendLine("Main to Nth frame: ${report.timeToNthFrame}")
+            }
+            is RealFramesReport -> {
+                appendLine("Frames: ${report.frameCount}, warmup: ${report.warmupCount}")
+                appendLine("Total duration: ${report.totalDuration}")
+                if (report.frameCount > 0 && report.totalDuration > Duration.ZERO) {
+                    appendLine("Average frame time: ${report.totalDuration / report.frameCount}")
+                    appendLine("FPS: ${report.frameCount / report.totalDuration.toDouble(DurationUnit.SECONDS)}")
+                }
+            }
+            is AverageFrameReport -> {
+                appendLine("Size: ${report.width}x${report.height}, target FPS: ${report.targetFps}")
+                appendLine("Frames: ${report.frameCount}, warmup: ${report.warmupCount}")
+                appendLine("Average CPU time: ${report.averageFrameInfo.cpu}")
+                appendLine("Average GPU time: ${report.averageFrameInfo.gpu}")
+                appendLine("FPS: ${report.averageFrameInfo.fps}")
+            }
+            is FpsReport -> {
+                appendLine("Size: ${report.width}x${report.height}, target FPS: ${report.targetFps}")
+                appendLine("Frames: ${report.frameCount}, warmup: ${report.warmupCount}")
+                val frames = report.frames
+                if (frames.isNotEmpty()) {
+                    val cpu = frames.fold(Duration.ZERO) { total, frame -> total + frame.cpu }
+                    val gpu = frames.fold(Duration.ZERO) { total, frame -> total + frame.gpu }
+                    appendLine("Average CPU time: ${cpu / frames.size}")
+                    appendLine("Average GPU time: ${gpu / frames.size}")
+                    appendLine("Per-frame render FPS range: ${frames.minOf { it.fps }}..${frames.maxOf { it.fps }}")
+                }
+            }
+        }
+        appendLine("Saved to: $path")
+    })
 }
 
 private object BenchmarkReportSerializer :

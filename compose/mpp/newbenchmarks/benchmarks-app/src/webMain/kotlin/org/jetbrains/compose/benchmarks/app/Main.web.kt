@@ -16,19 +16,42 @@
 
 package org.jetbrains.compose.benchmarks.app
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.toJsString
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.js.asJsException
 import kotlinx.browser.window
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import org.jetbrains.skiko.InternalSkikoApi
+import org.jetbrains.skiko.wasm.awaitSkiko
 import org.w3c.dom.url.URLSearchParams
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class)
 fun main() {
     val parameters = URLSearchParams(window.location.search.toJsString())
-    val bechmarkCollectorUrl = requireNotNull(parameters.get("bechmarkCollectorUrl")) { "Missing query parameter: bechmarkCollectorUrl" }
+    val benchmarkCollectorUrl = requireNotNull(parameters.get("benchmarkCollectorUrl")) { "Missing query parameter: benchmarkCollectorUrl" }
     val testName = requireNotNull(parameters.get("test")) { "Missing query parameter: test" }
-    ComposeViewport("root") {
-        App(bechmarkCollectorUrl, testName)
+    val benchmarkType = parseBenchmarkType(
+        requireNotNull(parameters.get("type")) { "Missing query parameter: type" }
+    )
+    if (benchmarkType.isRenderBenchmark()) {
+        MainScope().launch {
+            suspendAwaitSkiko()
+            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType)
+        }
+    } else {
+        ComposeViewport("root") {
+            App(benchmarkCollectorUrl, testName, benchmarkType)
+        }
     }
+}
+
+@OptIn(InternalSkikoApi::class, ExperimentalWasmJsInterop::class)
+internal suspend fun suspendAwaitSkiko(): JsAny = suspendCancellableCoroutine { cont ->
+    awaitSkiko.then(
+        onFulfilled = { cont.resume(it); null },
+        onRejected = { cont.resumeWithException(it.asJsException()); null },
+    )
 }

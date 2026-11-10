@@ -14,6 +14,7 @@
         <CommandLineArguments>
             <CommandLineArgument argument="http://127.0.0.1:8090/reports" isEnabled="YES"/>
             <CommandLineArgument argument="LazyGrid" isEnabled="YES"/>
+            <CommandLineArgument argument="averageFrame" isEnabled="YES"/>
         </CommandLineArguments>
     </LaunchAction>
     <ProfileAction buildConfiguration="Release" shouldUseLaunchSchemeArgsEnv="YES" savedToolIdentifier="" useCustomWorkingDirectory="NO" debugDocumentVersioning="YES">

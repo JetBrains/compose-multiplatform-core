@@ -1,18 +1,22 @@
 # Benchmarks iOS app
 
 Open `BenchmarksIosApp.xcodeproj` in Xcode and select the shared `BenchmarksIosApp` scheme.
-The project follows the DemoApp setup: SwiftUI hosts the Compose view controller, and a Run Script
-builds the static `BenchmarksApp` framework with `embedAndSignAppleFrameworkForXcode` before Swift compilation.
+A Run Script builds the static `BenchmarksApp` framework with `embedAndSignAppleFrameworkForXcode`
+before Swift compilation, as in DemoApp. A UIKit application delegate selects the launch path:
+`averageFrame` and `fps` run without creating a window or Compose view controller;
+UI benchmarks use a window with the Compose view controller.
 
 ## Parameters
 
-In **Product → Scheme → Edit Scheme → Run → Arguments**, set two launch arguments:
+In **Product → Scheme → Edit Scheme → Run → Arguments**, set three launch arguments:
 
-1. `bechmarkCollectorUrl`, for example `http://127.0.0.1:8090/reports`.
+1. `benchmarkCollectorUrl`, for example `http://127.0.0.1:8090/reports`.
 2. Test name, for example `LazyGrid`.
+3. Benchmark type: `averageFrame`, `fps`, or `realFrames`. `startup` is not wired into the app yet.
 
-The shared scheme includes these example values. Both are displayed by the Compose application;
-no benchmarks or network requests are performed. When launched without arguments, the values are empty.
+The shared scheme uses `averageFrame`. The app runs the selected case and sends a report to the collector.
+All three arguments are required.
+See the [main README](../README.md) for collector setup and network limits.
 
 ## Build settings
 

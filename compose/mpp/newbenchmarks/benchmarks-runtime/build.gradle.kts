@@ -44,5 +44,14 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:3.6.1")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.6.1")
         }
+        jvmMain.dependencies {
+            implementation("io.ktor:ktor-client-cio:3.6.1")
+        }
+        appleMain.dependencies {
+            implementation("io.ktor:ktor-client-darwin:3.6.1")
+        }
+        webMain.dependencies {
+            implementation("io.ktor:ktor-client-js:3.6.1")
+        }
     }
 }

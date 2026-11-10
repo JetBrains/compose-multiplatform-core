@@ -16,21 +16,25 @@
 
 package org.jetbrains.compose.benchmarks.app
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.benchmarks.MeasureApplicationRealFrames
+import org.jetbrains.compose.benchmarks.report.BenchmarkReportType
 
 @Composable
-internal fun App(bechmarkCollectorUrl: String, testName: String) {
-    BasicText(
-        text = "bechmarkCollectorUrl: $bechmarkCollectorUrl\nTest: $testName",
-        modifier = Modifier.padding(16.dp),
-    )
-}
-
-internal fun parseArguments(args: Array<String>): Pair<String, String> {
-    require(args.size == 2) { "Usage: benchmarks-app <bechmarkCollectorUrl> <test-name>" }
-    return args[0] to args[1]
+internal fun App(
+    benchmarkCollectorUrl: String,
+    testName: String,
+    benchmarkType: BenchmarkReportType,
+) {
+    when (benchmarkType) {
+        BenchmarkReportType.REAL_FRAMES -> MeasureApplicationRealFrames(
+            id = testName,
+            reportApiUrl = benchmarkCollectorUrl,
+            warmupCount = 100,
+            frameCount = 1000,
+            content = benchmarkContent(testName),
+        )
+        BenchmarkReportType.STARTUP -> error("Startup measurement is not implemented in the app yet")
+        else -> error("Unknown UI benchmark type: $benchmarkType")
+    }
 }

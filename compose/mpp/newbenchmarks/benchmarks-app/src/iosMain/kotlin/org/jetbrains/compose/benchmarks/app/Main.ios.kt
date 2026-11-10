@@ -17,8 +17,33 @@
 package org.jetbrains.compose.benchmarks.app
 
 import androidx.compose.ui.window.ComposeUIViewController
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import platform.UIKit.UIViewController
 
-fun MainViewController(bechmarkCollectorUrl: String, testName: String): UIViewController = ComposeUIViewController {
-    App(bechmarkCollectorUrl, testName)
+fun MainViewController(
+    benchmarkCollectorUrl: String,
+    testName: String,
+    benchmarkType: String,
+): UIViewController {
+    val type = parseBenchmarkType(benchmarkType)
+    require(!type.isRenderBenchmark()) { "Render benchmarks must be launched without UI" }
+    return ComposeUIViewController {
+        App(benchmarkCollectorUrl, testName, type)
+    }
+}
+
+fun isRenderBenchmark(benchmarkType: String): Boolean =
+    parseBenchmarkType(benchmarkType).isRenderBenchmark()
+
+fun runRenderBenchmark(
+    benchmarkCollectorUrl: String,
+    testName: String,
+    benchmarkType: String,
+) {
+    val type = parseBenchmarkType(benchmarkType)
+    require(type.isRenderBenchmark()) { "Expected averageFrame or fps" }
+    MainScope().launch {
+        runRenderBenchmark(benchmarkCollectorUrl, testName, type)
+    }
 }

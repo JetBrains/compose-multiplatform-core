@@ -17,13 +17,20 @@
 package org.jetbrains.compose.benchmarks.app
 
 import androidx.compose.ui.window.Window
+import kotlinx.coroutines.runBlocking
 import platform.AppKit.NSApplication
 import platform.AppKit.NSApplicationActivationPolicy
 import platform.AppKit.NSApplicationDelegateProtocol
 import platform.darwin.NSObject
 
 fun main(args: Array<String>) {
-    val (bechmarkCollectorUrl, testName) = parseArguments(args)
+    val (benchmarkCollectorUrl, testName, benchmarkType) = parseArguments(args)
+    if (benchmarkType.isRenderBenchmark()) {
+        runBlocking {
+            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType)
+        }
+        return
+    }
     val application = NSApplication.sharedApplication()
     application.setActivationPolicy(NSApplicationActivationPolicy.NSApplicationActivationPolicyRegular)
     application.delegate = object : NSObject(), NSApplicationDelegateProtocol {
@@ -32,7 +39,7 @@ fun main(args: Array<String>) {
         }
     }
     Window("Benchmarks") {
-        App(bechmarkCollectorUrl, testName)
+        App(benchmarkCollectorUrl, testName, benchmarkType)
     }
     application.run()
 }

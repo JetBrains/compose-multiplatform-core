@@ -18,12 +18,20 @@ package org.jetbrains.compose.benchmarks.app
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
-    val (bechmarkCollectorUrl, testName) = parseArguments(args)
+    val (benchmarkCollectorUrl, testName, benchmarkType) = parseArguments(args)
+    if (benchmarkType.isRenderBenchmark()) {
+        runBlocking(Dispatchers.Main) {
+            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType)
+        }
+        return
+    }
     application {
         Window(onCloseRequest = ::exitApplication, title = "Benchmarks") {
-            App(bechmarkCollectorUrl, testName)
+            App(benchmarkCollectorUrl, testName, benchmarkType)
         }
     }
 }
