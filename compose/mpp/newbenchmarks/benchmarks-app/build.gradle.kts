@@ -62,6 +62,11 @@ kotlin {
             implementation(project(":compose:runtime:runtime"))
             implementation(project(":compose:ui:ui"))
             implementation(project(":compose:foundation:foundation"))
+            implementation(project(":compose:material:material"))
+            implementation("org.jetbrains.compose.components:components-resources:1.13.0-beta02") {
+                exclude(group = "org.jetbrains.compose.runtime")
+                exclude(group = "org.jetbrains.compose.ui")
+            }
         }
         jvmMain.dependencies {
             implementation(libs.skikoAwtRuntime)
@@ -73,8 +78,13 @@ kotlin {
     }
 }
 
-compose.desktop {
-    application {
-        mainClass = "org.jetbrains.compose.benchmarks.app.Main_jvmKt"
+compose {
+    resources {
+        packageOfResClass = "compose_benchmarks.benchmarks.generated.resources"
+    }
+    desktop {
+        application {
+            mainClass = "org.jetbrains.compose.benchmarks.app.Main_jvmKt"
+        }
     }
 }
