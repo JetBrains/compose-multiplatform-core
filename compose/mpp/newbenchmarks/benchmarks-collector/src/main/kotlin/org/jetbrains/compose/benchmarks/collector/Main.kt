@@ -24,10 +24,9 @@ import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
-import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardOpenOption.CREATE_NEW
+import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -71,8 +70,13 @@ internal fun Application.collectReports(outputDirectory: Path) {
                 return@post
             }
 
+            if (!report.id.matches(Regex("[A-Za-z0-9_-]{1,128}"))) {
+                call.respondText("Invalid report id", status = HttpStatusCode.BadRequest)
+                return@post
+            }
+
             val fileName = withContext(Dispatchers.IO) {
-                val fileName = saveReport(outputDirectory, report.type, body)
+                val fileName = saveReport(outputDirectory, report.id, report.type, body)
                 printReport(report, outputDirectory.resolve(fileName))
                 fileName
             }
@@ -83,7 +87,7 @@ internal fun Application.collectReports(outputDirectory: Path) {
 
 private fun printReport(report: BenchmarkReport, path: Path) {
     println(buildString {
-        appendLine("${report.id} (${report.type})")
+        appendLine("${report.name} (${report.type}), id: ${report.id}")
         when (report) {
             is StartupReport -> {
                 appendLine("Frames after first: ${report.frameCount}")
@@ -138,16 +142,23 @@ private object BenchmarkReportSerializer :
     }
 }
 
-private fun saveReport(outputDirectory: Path, type: BenchmarkReportType, body: String): String {
+@Synchronized
+private fun saveReport(outputDirectory: Path, id: String, type: BenchmarkReportType, body: String): String {
     val typeName = Json.encodeToJsonElement(
         BenchmarkReportType.serializer(),
         type
     ).jsonPrimitive.content
-    val fileName = "$typeName-${Instant.now()}.json"
-    Files.writeString(
-        outputDirectory.resolve(fileName),
-        body,
-        CREATE_NEW
-    )
-    return fileName
+    var fileName: String
+    do {
+        fileName = "$id-$typeName-${Instant.now()}.json"
+    } while (Files.exists(outputDirectory.resolve(fileName)))
+
+    val temporaryFile = Files.createTempFile(outputDirectory, ".$typeName-", ".tmp")
+    try {
+        Files.writeString(temporaryFile, body)
+        Files.move(temporaryFile, outputDirectory.resolve(fileName), ATOMIC_MOVE)
+        return fileName
+    } finally {
+        Files.deleteIfExists(temporaryFile)
+    }
 }

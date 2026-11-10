@@ -38,6 +38,7 @@ private val ReportingScope = CoroutineScope(Dispatchers.Default + SupervisorJob(
 @Composable
 fun MeasureApplicationStartup(
     id: String,
+    name: String,
     mainMark: Monotonic.ValueTimeMark,
     timeToMain: Duration?,
     reportApiUrl: String,
@@ -48,6 +49,7 @@ fun MeasureApplicationStartup(
         ReportingScope.launch {
             val report = StartupReport(
                 id = id,
+                name = name,
                 frameCount = frameCount,
                 timeToMain = timeToMain,
                 timeToFirstFrame = result.timeOfFirstFrame - mainMark,
@@ -71,6 +73,7 @@ fun MeasureApplicationStartup(
 @Composable
 fun MeasureApplicationRealFrames(
     id: String,
+    name: String,
     reportApiUrl: String,
     warmupCount: Int,
     frameCount: Int,
@@ -80,6 +83,7 @@ fun MeasureApplicationRealFrames(
         ReportingScope.launch {
             val report = RealFramesReport(
                 id = id,
+                name = name,
                 warmupCount = warmupCount,
                 frameCount = frameCount,
                 frameTimes = result.frameTimes,
@@ -107,6 +111,7 @@ fun MeasureApplicationRealFrames(
 
 suspend fun MeasureRenderAverageFrame(
     id: String,
+    name: String,
     reportApiUrl: String,
     width: Int,
     height: Int,
@@ -119,6 +124,7 @@ suspend fun MeasureRenderAverageFrame(
     val result = measurement.measureAverageFrame(frameCount)
     val report = AverageFrameReport(
         id = id,
+        name = name,
         width = width,
         height = height,
         targetFps = targetFps,
@@ -139,6 +145,7 @@ suspend fun MeasureRenderAverageFrame(
 
 suspend fun MeasureRenderFps(
     id: String,
+    name: String,
     reportApiUrl: String,
     width: Int,
     height: Int,
@@ -151,6 +158,7 @@ suspend fun MeasureRenderFps(
     val result = measurement.measureRenderFps(frameCount)
     val report = FpsReport(
         id = id,
+        name = name,
         width = width,
         height = height,
         targetFps = targetFps,

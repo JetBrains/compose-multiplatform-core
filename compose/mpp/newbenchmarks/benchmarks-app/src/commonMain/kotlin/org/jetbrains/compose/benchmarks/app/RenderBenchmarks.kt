@@ -27,11 +27,13 @@ internal suspend fun runRenderBenchmark(
     benchmarkCollectorUrl: String,
     testName: String,
     benchmarkType: BenchmarkReportType,
+    id: String,
 ) {
     val content = benchmarkContent(testName)
     when (benchmarkType) {
         BenchmarkReportType.AVERAGE_FRAME -> MeasureRenderAverageFrame(
-            id = testName,
+            id = id,
+            name = testName,
             reportApiUrl = benchmarkCollectorUrl,
             width = 1920,
             height = 1080,
@@ -41,7 +43,8 @@ internal suspend fun runRenderBenchmark(
             content = content,
         )
         BenchmarkReportType.FPS -> MeasureRenderFps(
-            id = testName,
+            id = id,
+            name = testName,
             reportApiUrl = benchmarkCollectorUrl,
             width = 1920,
             height = 1080,

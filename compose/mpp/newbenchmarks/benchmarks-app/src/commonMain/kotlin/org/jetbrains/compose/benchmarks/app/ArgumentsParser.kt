@@ -36,11 +36,18 @@ internal fun parseBenchmarkType(value: String): BenchmarkReportType = when (valu
     else -> error("Unknown benchmark type: $value")
 }
 
-internal fun parseArguments(args: Array<String>): Triple<String, String, BenchmarkReportType> {
-    require(args.size == 3) {
-        "Usage: benchmarks-app <benchmarkCollectorUrl> <test-name> <benchmark-type>"
+internal data class BenchmarkArguments(
+    val benchmarkCollectorUrl: String,
+    val testName: String,
+    val benchmarkType: BenchmarkReportType,
+    val id: String,
+)
+
+internal fun parseArguments(args: Array<String>): BenchmarkArguments {
+    require(args.size == 4) {
+        "Usage: benchmarks-app <benchmarkCollectorUrl> <test-name> <benchmark-type> <id>"
     }
-    return Triple(args[0], args[1], parseBenchmarkType(args[2]))
+    return BenchmarkArguments(args[0], args[1], parseBenchmarkType(args[2]), args[3])
 }
 
 internal fun benchmarkContent(testName: String): @Composable () -> Unit = when (testName) {
