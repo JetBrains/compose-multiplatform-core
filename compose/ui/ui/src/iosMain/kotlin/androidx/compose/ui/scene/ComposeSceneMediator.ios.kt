@@ -118,6 +118,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import platform.CoreGraphics.CGPoint
+import platform.CoreGraphics.CGRectIsEmpty
 import platform.Foundation.NSTimeInterval
 import platform.QuartzCore.CACurrentMediaTime
 import platform.QuartzCore.CATransaction
@@ -492,7 +493,8 @@ internal class ComposeSceneMediator(
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
             textInputService.hasInvalidations ||
-            interopContainer.hasPendingUpdates
+            interopContainer.hasPendingUpdates ||
+            setContent != null
     }
 
     init {
@@ -721,12 +723,14 @@ internal class ComposeSceneMediator(
         content: @Composable () -> Unit
     ) {
         setContent = {
-            setContent = null
-            updateLayout()
-            scene.setContent(parentCompositionContext) {
-                ProvideComposeSceneMediatorCompositionLocals {
-                    FocusAboveKeyboardIfNeeded {
-                        interopContainer.TrackInteropPlacementContainer(content = content)
+            if (_overlayView.window != null && !CGRectIsEmpty(_overlayView.frame)) {
+                setContent = null
+                updateLayout()
+                scene.setContent(parentCompositionContext) {
+                    ProvideComposeSceneMediatorCompositionLocals {
+                        FocusAboveKeyboardIfNeeded {
+                            interopContainer.TrackInteropPlacementContainer(content = content)
+                        }
                     }
                 }
             }
@@ -819,6 +823,7 @@ internal class ComposeSceneMediator(
     private fun dispose() {
         onPreviewKeyEvent = { false }
         onKeyEvent = { false }
+        setContent = null
 
         frameChoreographer.removeListener(frameChoreographerListener)
         prefetchScheduler.dispose()

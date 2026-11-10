@@ -969,6 +969,7 @@ internal class BackgroundInputView(
 
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
+        onLayoutSubviews = {}
     }
 }
 
