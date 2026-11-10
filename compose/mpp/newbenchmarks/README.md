@@ -3,7 +3,18 @@
 Run all commands from the repository root. Start the collector in one terminal, then start an app
 in another terminal.
 
-The apps currently display the collector URL and test name only. They do not run benchmarks or send reports yet.
+`averageFrame` and `fps` run offscreen without creating an application window or Compose UI host.
+The benchmark case is composed only inside the offscreen scene. Both modes use a 1920×1080 scene,
+120 target FPS, 100 warmup frames, and 1000 measured frames, then send a report to the collector.
+JVM and native macOS runs finish after the report is sent. Browser and iOS runs keep their platform
+application alive without creating a UI host.
+
+Use `realFrames` for measurement in a real UI host. `startup` is not wired into the app yet.
+All launch examples below use `averageFrame`; replace it with `fps` to run the paced render benchmark.
+
+Case names are case-sensitive: `AnimatedVisibility`, `LazyGrid`, `LazyGrid-ItemLaunchedEffect`,
+`LazyGrid-SmoothScroll`, `LazyGrid-SmoothScroll-ItemLaunchedEffect`, `VisualEffects`, `LazyList`,
+`MultipleComponents`, `MultipleComponents-NoVectorGraphics`, `TextLayout`, `CanvasDrawing`, `HeavyShader`.
 
 ## Collector
 
@@ -19,11 +30,11 @@ as `[type]-[UTC ISO time].json` in the output directory. Keep this process runni
 
 ## Desktop (JVM)
 
-Pass `bechmarkCollectorUrl` and the test name as two positional arguments:
+Pass `benchmarkCollectorUrl`, the test name, and the benchmark type as three positional arguments:
 
 ```bash
 ./gradlew :compose:mpp:newbenchmarks:benchmarks-app:run \
-  --args="http://127.0.0.1:8090/reports LazyGrid" --console=plain
+  --args="http://127.0.0.1:8090/reports LazyGrid averageFrame" --console=plain
 ```
 
 ## macOS (native ARM64)
@@ -34,11 +45,11 @@ On an Apple Silicon Mac, build the executable:
 ./gradlew :compose:mpp:newbenchmarks:benchmarks-app:linkDebugExecutableMacosArm64 --console=plain
 ```
 
-Then run it with the same two arguments:
+Then run it with the same three arguments:
 
 ```bash
 ./out/compose-multiplatform-core/compose/mpp/newbenchmarks/benchmarks-app/build/bin/macosArm64/debugExecutable/benchmarks-app.kexe \
-  http://127.0.0.1:8090/reports LazyGrid
+  http://127.0.0.1:8090/reports LazyGrid averageFrame
 ```
 
 This path assumes the default repository `out` directory. Adjust it if using a custom `OUT_DIR`.
@@ -59,14 +70,14 @@ WasmJS:
 ./gradlew :compose:mpp:newbenchmarks:benchmarks-app:wasmJsBrowserDevelopmentRun --console=plain
 ```
 
-Open the address printed by the development server and add the `bechmarkCollectorUrl` and `test` query parameters.
+Open the address printed by the development server and add the `benchmarkCollectorUrl`, `test`, and `type` query parameters.
 For example, if it uses port 8080:
 
 ```text
-http://localhost:8080/?bechmarkCollectorUrl=http%3A%2F%2F127.0.0.1%3A8090%2Freports&test=LazyGrid
+http://localhost:8080/?benchmarkCollectorUrl=http%3A%2F%2F127.0.0.1%3A8090%2Freports&test=LazyGrid&type=averageFrame
 ```
 
-URL-encode both parameter values. If the server opens a page without parameters, add them to the
+URL-encode parameter values. If the server opens a page without parameters, add them to the
 address and reload the page.
 
 ## iOS (ARM64 simulator or device)
@@ -80,9 +91,10 @@ open compose/mpp/newbenchmarks/benchmarks-ios-app/BenchmarksIosApp.xcodeproj
 1. Select the **BenchmarksIosApp** scheme.
 2. Select an ARM64 iOS simulator or a connected iOS device.
 3. Open **Product → Scheme → Edit Scheme → Run → Arguments**.
-4. Add two enabled launch arguments, in this order:
-   - `http://127.0.0.1:8090/reports` (`bechmarkCollectorUrl`)
+4. Add three enabled launch arguments, in this order:
+   - `http://127.0.0.1:8090/reports` (`benchmarkCollectorUrl`)
    - `LazyGrid`
+   - `averageFrame`
 5. Run the app. Xcode builds the `BenchmarksApp` Kotlin framework automatically.
 
 The shared scheme already contains these example arguments. For a physical device, select your
@@ -94,4 +106,4 @@ team under **Signing & Capabilities**. See [iOS app setup](benchmarks-ios-app/RE
   but not from a physical iOS device. Future device reporting will need a reachable host address
   and a collector configured to listen on a network interface.
 - Browser reporting will need CORS support in the collector. It is not configured yet.
-- These limits do not affect the current apps, which only display the input parameters.
+- Without the required network setup, browser and physical-device runs cannot deliver reports.

@@ -105,7 +105,7 @@ fun MeasureApplicationRealFrames(
     )
 }
 
-fun MeasureRenderAverageFrame(
+suspend fun MeasureRenderAverageFrame(
     id: String,
     reportApiUrl: String,
     width: Int,
@@ -116,31 +116,28 @@ fun MeasureRenderAverageFrame(
     content: @Composable () -> Unit
 ) {
     val measurement = ContentMeasurement(width, height, targetFps, warmupCount, content)
-
-    ReportingScope.launch {
-        val result = measurement.measureAverageFrame(frameCount)
-        val report = AverageFrameReport(
-            id = id,
-            width = width,
-            height = height,
-            targetFps = targetFps,
-            warmupCount = warmupCount,
-            frameCount = frameCount,
-            averageFrameInfo = result,
-        )
-        val client = createHttpClient()
-        try {
-            client.post(reportApiUrl) {
-                contentType(ContentType.Application.Json)
-                setBody(report)
-            }
-        } finally {
-            client.close()
+    val result = measurement.measureAverageFrame(frameCount)
+    val report = AverageFrameReport(
+        id = id,
+        width = width,
+        height = height,
+        targetFps = targetFps,
+        warmupCount = warmupCount,
+        frameCount = frameCount,
+        averageFrameInfo = result,
+    )
+    val client = createHttpClient()
+    try {
+        client.post(reportApiUrl) {
+            contentType(ContentType.Application.Json)
+            setBody(report)
         }
+    } finally {
+        client.close()
     }
 }
 
-fun MeasureRenderFps(
+suspend fun MeasureRenderFps(
     id: String,
     reportApiUrl: String,
     width: Int,
@@ -151,26 +148,23 @@ fun MeasureRenderFps(
     content: @Composable () -> Unit
 ) {
     val measurement = ContentMeasurement(width, height, targetFps, warmupCount, content)
-
-    ReportingScope.launch {
-        val result = measurement.measureRenderFps(frameCount)
-        val report = FpsReport(
-            id = id,
-            width = width,
-            height = height,
-            targetFps = targetFps,
-            warmupCount = warmupCount,
-            frameCount = frameCount,
-            frames = result,
-        )
-        val client = createHttpClient()
-        try {
-            client.post(reportApiUrl) {
-                contentType(ContentType.Application.Json)
-                setBody(report)
-            }
-        } finally {
-            client.close()
+    val result = measurement.measureRenderFps(frameCount)
+    val report = FpsReport(
+        id = id,
+        width = width,
+        height = height,
+        targetFps = targetFps,
+        warmupCount = warmupCount,
+        frameCount = frameCount,
+        frames = result,
+    )
+    val client = createHttpClient()
+    try {
+        client.post(reportApiUrl) {
+            contentType(ContentType.Application.Json)
+            setBody(report)
         }
+    } finally {
+        client.close()
     }
 }

@@ -59,6 +59,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":compose:mpp:newbenchmarks:benchmarks-runtime"))
+            implementation(project(":compose:mpp:newbenchmarks:benchmarks-report"))
             implementation(project(":compose:runtime:runtime"))
             implementation(project(":compose:ui:ui"))
             implementation(project(":compose:foundation:foundation"))
