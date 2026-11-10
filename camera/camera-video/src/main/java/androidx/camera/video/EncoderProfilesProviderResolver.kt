@@ -24,6 +24,7 @@ import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.video.internal.BackupHdrProfileEncoderProfilesProvider
 import androidx.camera.video.internal.QualityExploredEncoderProfilesProvider
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
+import androidx.camera.video.internal.compat.quirk.VideoQualityQuirk
 import androidx.camera.video.internal.encoder.VideoEncoderInfo
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider
 import androidx.camera.video.internal.workaround.QualityAddedEncoderProfilesProvider
@@ -52,9 +53,16 @@ internal object EncoderProfilesProviderResolver {
 
         var provider = cameraInfo.encoderProfilesProvider
 
+        val deviceQuirks = DeviceQuirks.getAll()
         if (qualitySource == Quality.QUALITY_SOURCE_HIGH_SPEED) {
             if (!cameraInfo.isHighSpeedSupported) {
                 return EncoderProfilesProvider.EMPTY
+            }
+
+            // Filter for validated qualities (e.g. excluding broken high-speed profiles)
+            if (deviceQuirks.contains(VideoQualityQuirk::class.java)) {
+                provider =
+                    QualityValidatedEncoderProfilesProvider(provider, cameraInfo, deviceQuirks)
             }
 
             // TODO(b/399585664): explore high speed quality when video source is
@@ -75,8 +83,6 @@ internal object EncoderProfilesProviderResolver {
             provider =
                 DefaultEncoderProfilesProvider(cameraInfo, targetQualities, videoEncoderInfoFinder)
         }
-
-        val deviceQuirks = DeviceQuirks.getAll()
 
         // Decorate with extra supported qualities
         provider =
@@ -116,9 +122,9 @@ internal object EncoderProfilesProviderResolver {
 
     /** Extension property to check HLG10 support from supported dynamic ranges. */
     private val CameraInfoInternal.isHlg10Supported: Boolean
-        get() =
-            supportedDynamicRanges.any {
-                it.encoding == DynamicRange.ENCODING_HLG &&
-                    it.bitDepth == DynamicRange.BIT_DEPTH_10_BIT
-            }
+        get() = supportedDynamicRanges.any {
+            (it.encoding == DynamicRange.ENCODING_HLG ||
+                it.encoding == DynamicRange.ENCODING_HLG_SMPTE_2094_50) &&
+                it.bitDepth == DynamicRange.BIT_DEPTH_10_BIT
+        }
 }

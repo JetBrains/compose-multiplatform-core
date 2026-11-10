@@ -32,10 +32,13 @@ import androidx.wear.protolayout.expression.pipeline.StateStore
 import androidx.wear.watchface.complications.data.ComplicationDataEvaluator.Companion.INVALID_DATA
 import com.google.common.truth.Expect
 import com.google.common.truth.Truth.assertThat
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
@@ -247,7 +250,8 @@ class ComplicationDataEvaluatorTest {
                 listOf(
                     mapOf(
                         AppDataKey<DynamicString>("valid") to DynamicDataValue.fromString("Valid"),
-                        AppDataKey<DynamicString>("invalid") to DynamicDataValue.fromString("Valid"),
+                        AppDataKey<DynamicString>("invalid") to
+                            DynamicDataValue.fromString("Valid"),
                     ),
                     mapOf(
                         AppDataKey<DynamicString>("valid") to DynamicDataValue.fromString("Valid")
@@ -300,7 +304,7 @@ class ComplicationDataEvaluatorTest {
         for (scenario in DataWithExpressionScenario.values()) {
             // Defensive copy due to in-place evaluation.
             val expressed = WireComplicationData.Builder(scenario.expressed).build()
-            @Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE")
+            @Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE", "MISSING_DEPENDENCY_CLASS")
             val stateStore = StateStore(mapOf())
             val evaluator = ComplicationDataEvaluator(stateStore)
             val allEvaluations =
@@ -444,6 +448,64 @@ class ComplicationDataEvaluatorTest {
     private fun advanceUntilIdle() {
         @OptIn(ExperimentalCoroutinesApi::class) // StandardTestDispatcher no longer experimental.
         (dispatcher as TestDispatcher).scheduler.advanceUntilIdle()
+    }
+
+    private class CrashingPlatformDataProvider : PlatformDataProvider {
+        override fun setReceiver(
+            executor: java.util.concurrent.Executor,
+            receiver: androidx.wear.protolayout.expression.pipeline.PlatformDataReceiver,
+        ) {
+            throw RuntimeException("Bind-phase provider crash!")
+        }
+
+        override fun clearReceiver() {}
+    }
+
+    @Test
+    fun evaluate_crashingPlatformSource_isInvalidatedSafely() {
+        val badProvider = CrashingPlatformDataProvider()
+        val badKey = PlatformHealthSources.Keys.HEART_RATE_BPM
+        val customEvaluator =
+            ComplicationDataEvaluator(platformDataProviders = mapOf(badProvider to setOf(badKey)))
+
+        val malformedData =
+            WireComplicationData.Builder(TYPE_NO_DATA)
+                .setLongText(WireComplicationText(DynamicFloat.from(badKey).format()))
+                .build()
+
+        // Bind-phase exception is safely caught, emitting null and invalidating the data.
+        val result = runBlocking { customEvaluator.evaluate(malformedData).first() }
+        assertThat(result.type).isEqualTo(TYPE_NO_DATA)
+    }
+
+    private class CancellingPlatformDataProvider : PlatformDataProvider {
+        override fun setReceiver(
+            executor: java.util.concurrent.Executor,
+            receiver: androidx.wear.protolayout.expression.pipeline.PlatformDataReceiver,
+        ) {
+            throw CancellationException("Bind-phase cancellation!")
+        }
+
+        override fun clearReceiver() {}
+    }
+
+    @Test
+    fun evaluate_cancellingPlatformSource_throwsCancellationException() {
+        val cancellingProvider = CancellingPlatformDataProvider()
+        val key = PlatformHealthSources.Keys.HEART_RATE_BPM
+        val customEvaluator =
+            ComplicationDataEvaluator(
+                platformDataProviders = mapOf(cancellingProvider to setOf(key))
+            )
+
+        val data =
+            WireComplicationData.Builder(TYPE_NO_DATA)
+                .setLongText(WireComplicationText(DynamicFloat.from(key).format()))
+                .build()
+
+        assertFailsWith<CancellationException> {
+            runBlocking { customEvaluator.evaluate(data).first() }
+        }
     }
 
     private companion object {

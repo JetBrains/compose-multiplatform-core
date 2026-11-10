@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
-import androidx.xr.glimmer.performIndirectSwipe
+import androidx.xr.glimmer.oneMoveSwipeAlongXAxis
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -184,7 +184,7 @@ class GlimmerLazyListInputInteroperabilityTest(orientation: Orientation) :
         rule.onListItem(0).assertIsFocused()
 
         // Touch scroll to move Item-0 fully out of viewport
-        rule.onNodeWithTag(LIST_TEST_TAG).touchScrollMainAxisBy(51.dp)
+        rule.onNodeWithTag(LIST_TEST_TAG).touchScrollMainAxisBy(52.dp)
         rule.waitForIdle()
 
         // Focus is still on Item-0 but not being displayed.
@@ -223,7 +223,7 @@ class GlimmerLazyListInputInteroperabilityTest(orientation: Orientation) :
 
         // Perform an indirect swipe, shift the list by 3 position. Indirect swipe is expected to
         // start from top to bottom due to how autofocus works.
-        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(rule, swipeDistance)
+        rule.oneMoveSwipeAlongXAxis(swipeDistance)
         rule.waitForIdle()
 
         rule.onListItem(0).assertIsNotDisplayed()
@@ -233,7 +233,7 @@ class GlimmerLazyListInputInteroperabilityTest(orientation: Orientation) :
         rule.onListItem(3).assertIsFocused()
 
         // Perform an indirect swipe, shift the list back to original position.
-        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(rule, -swipeDistance)
+        rule.oneMoveSwipeAlongXAxis(-swipeDistance)
         rule.waitForIdle()
 
         rule.onListItem(0).assertIsFocused()
@@ -249,7 +249,7 @@ class GlimmerLazyListInputInteroperabilityTest(orientation: Orientation) :
 
         // Perform an indirect scroll.
         val swipeDistance = with(rule.density) { 51.dp.toPx() }
-        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(rule, swipeDistance)
+        rule.oneMoveSwipeAlongXAxis(swipeDistance)
         rule.waitForIdle()
 
         // Indirect scroll focuses to the next item.
@@ -282,14 +282,14 @@ class GlimmerLazyListInputInteroperabilityTest(orientation: Orientation) :
         rule.onListItem(0).assertIsFocused()
 
         // Direct scroll Item-0 out of view. Focus remains on Item-0.
-        rule.onNodeWithTag(LIST_TEST_TAG).touchScrollMainAxisBy(51.dp)
+        rule.onNodeWithTag(LIST_TEST_TAG).touchScrollMainAxisBy(52.dp)
         rule.waitForIdle()
         rule.onListItem(0).assertIsFocused()
         rule.onListItem(0).assertIsNotDisplayed()
 
         // Perform an indirect scroll.
         val swipeDistance = with(rule.density) { 51.dp.toPx() }
-        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(rule, swipeDistance)
+        rule.oneMoveSwipeAlongXAxis(swipeDistance)
         rule.waitForIdle()
 
         // Indirect scroll should set the new focus to the item in the middle which is Item-3 and
@@ -307,7 +307,7 @@ class GlimmerLazyListInputInteroperabilityTest(orientation: Orientation) :
 
         // Perform an indirect scroll, focusing Item-1.
         val swipeDistance = with(rule.density) { 51.dp.toPx() }
-        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(rule, swipeDistance)
+        rule.oneMoveSwipeAlongXAxis(swipeDistance)
         rule.waitForIdle()
 
         rule.onListItem(0).assertIsDisplayed()

@@ -27,14 +27,16 @@ dependencies {
 
     api(project(":glance:wear:wear"))
     api(project(":compose:remote:remote-tooling-preview"))
-    api("androidx.compose.ui:ui-tooling:1.12.0-alpha03")
-    api("androidx.compose.ui:ui-tooling-preview:1.12.0-alpha03")
+    api("androidx.compose.ui:ui-tooling:1.12.0")
+    api("androidx.compose.ui:ui-tooling-preview:1.12.0")
     api("androidx.compose.ui:ui:$composeVersion")
     api("androidx.compose.runtime:runtime:$composeVersion")
 
     implementation(project(":compose:remote:remote-player-core"))
     implementation(libs.kotlinCoroutinesAndroid)
     implementation("androidx.compose.foundation:foundation:$composeVersion")
+
+    lintChecks(project(":glance:wear:wear-lint"))
 }
 
 android {

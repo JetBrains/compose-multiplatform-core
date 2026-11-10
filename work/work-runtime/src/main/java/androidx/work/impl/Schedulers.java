@@ -18,20 +18,23 @@ package androidx.work.impl;
 
 import static androidx.work.impl.Scheduler.MAX_GREEDY_SCHEDULER_LIMIT;
 import static androidx.work.impl.WorkManagerImpl.CONTENT_URI_TRIGGER_API_LEVEL;
-import static androidx.work.impl.utils.PackageManagerHelper.setComponentEnabled;
+import static androidx.work.impl.utils.PackageManagerHelper.setServiceEnabled;
 
 import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.RestrictTo;
 import androidx.work.Clock;
 import androidx.work.Configuration;
 import androidx.work.Constraints;
 import androidx.work.Logger;
+import androidx.work.WorkInfo;
 import androidx.work.impl.background.systemjob.SystemJobScheduler;
 import androidx.work.impl.background.systemjob.SystemJobService;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
+import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -53,6 +56,7 @@ import java.util.concurrent.Executor;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Schedulers {
     private static final String TAG = Logger.tagWithPrefix("Schedulers");
+    private static final int MAX_UNSCHEDULED_WORK_TO_LOG = 10;
 
     /**
      * Make sure that once worker has run its dependants are run.
@@ -121,12 +125,24 @@ public class Schedulers {
                 eligibleWorkSpecsForLimitedSlots = workSpecDao.getEligibleWorkForScheduling(
                         configuration.getMaxSchedulerLimit());
             } else {
+                List<WorkSpec> scheduledWork = workSpecDao.getScheduledWork();
+                int runningCount = 0;
+                List<WorkSpec> enqueuedScheduledWork = new ArrayList<>();
+                for (WorkSpec workSpec : scheduledWork) {
+                    if (workSpec.state == WorkInfo.State.RUNNING) {
+                        runningCount++;
+                    } else {
+                        enqueuedScheduledWork.add(workSpec);
+                    }
+                }
 
+                int availableSlots = Math.max(
+                        configuration.getMaxSchedulerLimit() - runningCount, 0);
                 Set<WorkSpec> uniqueConstraintsPrioritySet =
                         getRepresentativeJobsPrioritizedWorkToSchedule(
                                 workSpecDao.getAllUnblockedWork(),
-                                configuration.getMaxSchedulerLimit());
-                for (WorkSpec workSpec : workSpecDao.getScheduledWork()) {
+                                availableSlots);
+                for (WorkSpec workSpec : enqueuedScheduledWork) {
                     // Remove workSpecs that are already scheduled from the priority set.
                     // Collect those that are no longer in the priority set since they should be
                     // unscheduled.
@@ -145,6 +161,8 @@ public class Schedulers {
             if (contentUriWorkSpecs != null) {
                 eligibleWorkSpecsForLimitedSlots.addAll(contentUriWorkSpecs);
             }
+
+            logUnscheduledWork(configuration, workSpecDao, allEligibleWorkSpecs);
 
             workDatabase.setTransactionSuccessful();
         } finally {
@@ -183,6 +201,15 @@ public class Schedulers {
 
     private static void cancelWorkSpecsForLimitedSlots(
             @NonNull List<WorkSpec> workSpecs, @NonNull List<Scheduler> schedulers) {
+        if (workSpecs.isEmpty()) {
+            return;
+        }
+
+        Logger.get().debug(TAG,
+                "Cancelling " + workSpecs.size()
+                        + " workSpecs that are no longer representative: "
+                        + workSpecs);
+
         for (Scheduler scheduler : schedulers) {
             if (!scheduler.hasLimitedSchedulingSlots()) {
                 continue;
@@ -212,6 +239,10 @@ public class Schedulers {
      */
     private static @NonNull Set<WorkSpec> getRepresentativeJobsPrioritizedWorkToSchedule(
             @NonNull List<WorkSpec> allEligibleWorkSpecs, int maxSlots) {
+        if (maxSlots <= 0) {
+            return Collections.emptySet();
+        }
+
         if (allEligibleWorkSpecs.size() <= maxSlots) {
             return new HashSet<>(allEligibleWorkSpecs);
         }
@@ -250,16 +281,43 @@ public class Schedulers {
         return representativeWork;
     }
 
-    static @NonNull Scheduler createBestAvailableBackgroundScheduler(@NonNull Context context,
-            @NonNull WorkDatabase workDatabase, Configuration configuration) {
+    static @NonNull Scheduler createBestAvailableBackgroundScheduler(
+            @NonNull Context context,
+            @NonNull WorkDatabase workDatabase,
+            Configuration configuration,
+            TaskExecutor taskExecutor) {
 
-        Scheduler scheduler = new SystemJobScheduler(context, workDatabase, configuration);
-        setComponentEnabled(context, SystemJobService.class, true);
+        Scheduler scheduler = new SystemJobScheduler(
+                context, workDatabase, configuration, taskExecutor);
+        setServiceEnabled(context, SystemJobService.class, true);
         Logger.get().debug(TAG, "Created SystemJobScheduler and enabled SystemJobService");
         return scheduler;
     }
 
     private Schedulers() {
+    }
+
+    private static void logUnscheduledWork(
+            @NonNull Configuration configuration,
+            @NonNull WorkSpecDao workSpecDao,
+            @NonNull List<WorkSpec> allEligibleWorkSpecs) {
+
+        if (configuration.getMinimumLoggingLevel() > Log.DEBUG) {
+            return;
+        }
+
+        List<String> unscheduledIds =
+                workSpecDao.getLatestUnscheduledWorkIds(MAX_UNSCHEDULED_WORK_TO_LOG);
+        if (unscheduledIds.isEmpty()) {
+            return;
+        }
+
+        Logger.get().debug(TAG, String.format(
+                "OS scheduling limit reached (limit %d, %d eligible). "
+                        + "Most recently enqueued work that is unscheduled: %s",
+                configuration.getMaxSchedulerLimit(),
+                allEligibleWorkSpecs.size(),
+                unscheduledIds));
     }
 
     private static void markScheduled(WorkSpecDao dao, Clock clock, List<WorkSpec> workSpecs) {

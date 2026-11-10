@@ -369,8 +369,17 @@
   <string name="tab_title_grid">Grid Tab with Long Tab Title</string>
   <string name="tab_title_search">Search Tab</string>
   <string name="tab_title_loading">Loading Tab</string>
+  <string name="tab_title_template_style_1">Template Style 1</string>
+  <string name="tab_title_template_style_2">Template Style 2</string>
+  <string name="tab_title_overridden_style">Overridden Style</string>
+  <string name="tab_title_failing_style">Failing Style</string>
   <string name="tab_template_loading_demo_title">Tab Template Loading Demo</string>
   <string name="tab_template_no_tabs_demo_title">Tab Template No Tabs Demo</string>
+  <string name="tab_template_style_demo_title">Tab Template Style Demo</string>
+  <string name="msg_tab_template_style_1_text">Tab Template Style (Tab 1)\nInherits template-level styling</string>
+  <string name="msg_tab_template_style_2_text">Tab Template Style (Tab 2)\nInherits template-level styling</string>
+  <string name="msg_tab_overridden_style_text">Tab Overridden Style\nOverrides template style with custom blue colors</string>
+  <string name="msg_tab_failing_style_text">Tab Failing Style\nRed icon on red background</string>
 
   <!-- ContentProviderIconsDemoScreen -->
   <string name="images_unknown_host_error">Images cannot be displayed for an unknown host</string>
@@ -515,6 +524,9 @@
   <string name="latest_feature_title">Latest Features</string>
   <string name="loading_toggle_enabled">Loading enabled</string>
   <string name="loading_toggle_disabled">Loading disabled</string>
+  <string name="app_theme_title">Use App Theme</string>
+  <string name="app_theme_enabled">App Theme enabled</string>
+  <string name="app_theme_disabled">App Theme disabled</string>
   <string name="loading_screen">Loading screen</string>
   <string name="vector_toggle_details">Toggle to add/remove color</string>
     <string name="map_template_toggle_demo_title">Map Template with Toggles</string>
@@ -526,4 +538,7 @@
   <string name="map_with_content_demo_title">Map With Content Demos</string>
   <string name="map_with_message_demo_title">Map With Message Template Demo</string>
   <string name="map_with_grid_demo_title">Map With Grid Template Demo</string>
+  <string name="map_with_sectioned_items_demo_title">Map with Sectioned Items List</string>
+  <string name="banner_demo_title">Banner Demo</string>
+  <string name="enhanced_header_demo_title">Enhanced Header Demo</string>
 </resources>

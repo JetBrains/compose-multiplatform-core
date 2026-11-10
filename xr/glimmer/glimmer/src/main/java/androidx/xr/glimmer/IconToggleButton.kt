@@ -17,7 +17,6 @@
 package androidx.xr.glimmer
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
+import androidx.xr.glimmer.internal.color.withTone
 
 /**
  * A Jetpack Compose Glimmer icon toggle button that changes its appearance depending on the
@@ -56,7 +56,6 @@ import androidx.compose.ui.semantics.Role
  *   [IconToggleButtonDefaults.shape] for more details.
  * @param colors the [IconToggleButtonColors] providing color variants for all icon toggle button
  *   states.
- * @param border the border to draw around this icon toggle button.
  * @param enabled controls the enabled state of this icon toggle button. When `false`, this button
  *   will not respond to user input.
  * @param contentPadding the spacing values to apply internally between the container and the
@@ -74,29 +73,25 @@ public fun IconToggleButton(
     modifier: Modifier = Modifier,
     shape: Shape = IconToggleButtonDefaults.animatedShape(checked),
     colors: IconToggleButtonColors = IconToggleButtonDefaults.colors(),
-    border: BorderStroke? = SurfaceDefaults.border(),
     enabled: Boolean = true,
     contentPadding: PaddingValues = IconToggleButtonDefaults.contentPadding,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
-    val depthEffect =
-        SurfaceDepthEffect(
-            depthEffect = null,
-            focusedDepthEffect = GlimmerTheme.depthEffectLevels.level1,
-        )
-
     val internalInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
 
+    val color = colors.resolveBackgroundColor(checked)
+    val contentColor = colors.resolveContentColor(checked)
     Box(
         modifier
             .surface(
                 enabled = enabled,
                 shape = shape,
-                color = colors.resolveBackgroundColor(checked),
-                contentColor = colors.resolveContentColor(checked),
-                depthEffect = depthEffect,
-                border = border,
+                color = color,
+                focusedColor = color,
+                contentColor = contentColor,
+                focusedContentColor = contentColor,
+                depthEffect = null,
                 interactionSource = internalInteractionSource,
             )
             .toggleable(
@@ -172,7 +167,7 @@ public object IconToggleButtonDefaults {
     @Composable
     public fun colors(
         backgroundColor: Color = GlimmerTheme.colors.surface,
-        checkedBackgroundColor: Color = GlimmerTheme.colors.outline,
+        checkedBackgroundColor: Color = checkedBackgroundColor(),
         contentColor: Color = calculateContentColor(backgroundColor),
         checkedContentColor: Color = calculateContentColor(checkedBackgroundColor),
     ): IconToggleButtonColors =
@@ -182,6 +177,19 @@ public object IconToggleButtonDefaults {
             contentColor = contentColor,
             checkedContentColor = checkedContentColor,
         )
+
+    /**
+     * Calculates the checked background color for an [IconToggleButton] derived from a primary or
+     * custom [color].
+     *
+     * @param color the primary or custom [Color] to derive the checked background color from
+     * @return the background [Color] for the button when checked
+     */
+    @Composable
+    public fun checkedBackgroundColor(color: Color = GlimmerTheme.colors.primary): Color =
+        color.withTone(newTone = CheckedBackgroundColorTone)
+
+    private const val CheckedBackgroundColorTone = 70f
 }
 
 /**

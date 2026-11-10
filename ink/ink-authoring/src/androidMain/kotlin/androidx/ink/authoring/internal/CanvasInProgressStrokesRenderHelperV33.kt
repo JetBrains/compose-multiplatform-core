@@ -42,15 +42,14 @@ import androidx.core.graphics.withMatrix
 import androidx.graphics.CanvasBufferedRenderer
 import androidx.graphics.surface.SurfaceControlCompat
 import androidx.hardware.SyncFenceCompat
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.InProgressShape
 import androidx.ink.authoring.InProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.geometry.MutableBox
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -73,7 +72,7 @@ import kotlin.math.floor
  */
 @Suppress("ObsoleteSdkInt") // TODO(b/262911421): Should not need to suppress.
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalInkCustomShapeWorkflowApi::class)
 internal class CanvasInProgressStrokesRenderHelperV33<
     ShapeSpecT : Any,
     InProgressShapeT : InProgressShape<ShapeSpecT, CompletedShapeT>,
@@ -86,15 +85,12 @@ internal class CanvasInProgressStrokesRenderHelperV33<
             ScheduledExecutorImpl(looper.thread, Handler(looper))
         },
     private val renderThreadExecutorFactory: () -> ScheduledExecutor = {
-        HandlerThread(CanvasInProgressStrokesRenderHelperV33::class.java.simpleName + "_Render")
-            .let {
-                it.start()
-                ScheduledExecutorImpl(it, Handler(it.looper))
-            }
+        HandlerThread("CanvasInProgressStrokesRenderHelperV33_Render").let {
+            it.start()
+            ScheduledExecutorImpl(it, Handler(it.looper))
+        }
     },
 ) : InProgressStrokesRenderHelper<ShapeSpecT, InProgressShapeT, CompletedShapeT>() {
-
-    private var renderThreadExecutor: ScheduledExecutor = renderThreadExecutorFactory()
 
     override val contentsPreservedBetweenDraws = true
 
@@ -106,7 +102,7 @@ internal class CanvasInProgressStrokesRenderHelperV33<
 
     private val surfaceView =
         SurfaceView(mainView.context).apply {
-            setZOrderOnTop(true)
+            @Suppress("DEPRECATION") setZOrderOnTop(true)
             holder.setFormat(PixelFormat.TRANSLUCENT)
         }
 
@@ -124,18 +120,11 @@ internal class CanvasInProgressStrokesRenderHelperV33<
             @UiThread
             override fun onViewAttachedToWindow(v: View) {
                 addAndInitSurfaceView()
-                // To make the logic simpler, first thread is created on init, even though
-                // recreation
-                // happens on attach.
-                if (renderThreadExecutor.isShutdown) {
-                    renderThreadExecutor = renderThreadExecutorFactory()
-                }
             }
 
             @UiThread
             override fun onViewDetachedFromWindow(v: View) {
                 mainView.removeView(surfaceView)
-                renderThreadExecutor.shutdown()
             }
         }
 
@@ -197,15 +186,17 @@ internal class CanvasInProgressStrokesRenderHelperV33<
 
     @WorkerThread
     override fun assertOnRenderThread() {
-        check(renderThreadExecutor.onThread()) {
-            "Should be running on render thread, but actually running on ${Thread.currentThread()}."
-        }
+        currentViewport?.assertOnRenderThread()
     }
 
+    @VisibleForTesting
     @UiThread
     override fun executeOnRenderThread(runnable: Runnable) {
         assertOnUiThread()
-        renderThreadExecutor.execute(runnable)
+        // Since this function is test-only, hard crash when there's not a currentViewport rather
+        // than
+        // implement some sort of queueing mechanism.
+        checkNotNull(currentViewport).executeOnRenderThread(runnable)
     }
 
     @UiThread
@@ -291,6 +282,8 @@ internal class CanvasInProgressStrokesRenderHelperV33<
 
     private inner class Viewport(val bounds: Bounds) {
 
+        private val renderThreadExecutor: ScheduledExecutor = renderThreadExecutorFactory()
+
         /**
          * When a [Viewport] is no longer valid (e.g. when the [Bounds] change), this will be set to
          * `true`, so that any in-flight callbacks don't execute on this now-invalid object.
@@ -368,7 +361,10 @@ internal class CanvasInProgressStrokesRenderHelperV33<
                         // by setting
                         // buffersState to null. So whichever place gets to that first does the
                         // cleanup.
-                        buffersState.getAndSet(null)?.cleanup()
+                        buffersState.getAndSet(null)?.let {
+                            it.cleanup()
+                            renderThreadExecutor.shutdown()
+                        }
                         return@drawAsync
                     }
                     SurfaceControlCompat.Transaction()
@@ -446,7 +442,7 @@ internal class CanvasInProgressStrokesRenderHelperV33<
         }
 
         private fun createDebugName(bufferNumber: Int) =
-            "$bufferNumber-${CanvasInProgressStrokesRenderHelperV33::class.java.simpleName}"
+            "$bufferNumber-CanvasInProgressStrokesRenderHelperV33"
 
         private fun createRenderNode(name: String): RenderNode =
             RenderNode(name).apply {
@@ -514,6 +510,18 @@ internal class CanvasInProgressStrokesRenderHelperV33<
             apply {
                 bounds.rendererTransform?.let { setBufferTransform(it) }
             }
+
+        fun assertOnRenderThread() {
+            check(renderThreadExecutor.onThread()) {
+                "Should be running on render thread, but actually running on ${Thread.currentThread()}."
+            }
+        }
+
+        @UiThread
+        fun executeOnRenderThread(runnable: Runnable) {
+            assertOnUiThread()
+            renderThreadExecutor.execute(runnable)
+        }
 
         /* Dispatches a draw request to the render thread. */
         @UiThread
@@ -867,6 +875,11 @@ internal class CanvasInProgressStrokesRenderHelperV33<
             assertOnUiThread()
             if (discarded.getAndSet(true)) return
             val state = buffersState.getAndSet(null) ?: return
+            // Don't call state.cleanup() right away, as its layers should be hidden first. And
+            // don't shut
+            // down renderThreadExecutor until the state is cleaned up, otherwise the callback that
+            // cleans
+            // up the state won't be able to run.
             SurfaceControlCompat.Transaction()
                 .unsetAndHide(state.active)
                 .unsetAndHide(state.inactive)
@@ -876,6 +889,7 @@ internal class CanvasInProgressStrokesRenderHelperV33<
                         override fun onTransactionCommitted() {
                             state.cleanup()
                             mainView.postInvalidate()
+                            renderThreadExecutor.shutdown()
                         }
                     },
                 )
@@ -905,7 +919,7 @@ internal class CanvasInProgressStrokesRenderHelperV33<
      * [Bounds] continue to be the same, and discarded when the [Bounds] change.
      */
     @VisibleForTesting
-    internal data class Bounds(
+    internal class Bounds(
         /** The width of [mainView]. */
         val mainViewWidth: Int,
         /** The height of [mainView]. */
@@ -1053,25 +1067,19 @@ internal class CanvasInProgressStrokesRenderHelperV33<
             check(thread != Looper.getMainLooper().thread)
             stopped.getAndSet(true)
             // Quitting the looper will also cause the thread to exit.
-            handler.looper.quit()
+            handler.looper.quitSafely()
         }
 
         override fun onThread() = Thread.currentThread() == thread
 
         override fun execute(command: Runnable) {
-            if (isShutdown) return
-            check(thread.isAlive)
-            if (!handler.post(command)) {
-                throw RejectedExecutionException("$handler is shutting down")
-            }
+            // If the thread is already shut down, we drop the command.
+            handler.post(command)
         }
 
         override fun executeDelayed(command: Runnable, delayTime: Long, delayTimeUnit: TimeUnit) {
-            if (isShutdown) return
-            check(thread.isAlive)
-            if (!handler.postDelayed(command, delayTimeUnit.toMillis(delayTime))) {
-                throw RejectedExecutionException("$handler is shutting down")
-            }
+            // If the thread is already shut down, we drop the command.
+            handler.postDelayed(command, delayTimeUnit.toMillis(delayTime))
         }
     }
 

@@ -20,6 +20,7 @@ import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
@@ -50,33 +51,32 @@ class RotateModifierScreenshotTest {
     private val gridScreenshotUI = GridScreenshotUI()
 
     @Test
-    fun grid() =
-        composeTestRule.runScreenshotTest {
-            val tests =
-                listOf<Pair<String, @RemoteComposable @Composable () -> Unit>>(
-                    "rotate(0f)" to
-                        @Composable @RemoteComposable { Content(RemoteModifier.rotate(0f.rf)) },
-                    "rotate(45f)" to
-                        @Composable @RemoteComposable { Content(RemoteModifier.rotate(45f.rf)) },
-                    "rotate(60f)" to
-                        @Composable @RemoteComposable { Content(RemoteModifier.rotate(60f.rf)) },
-                    "rotate(90f)" to
-                        @Composable @RemoteComposable { Content(RemoteModifier.rotate(90f.rf)) },
-                    "rotate(-45f)" to
-                        @Composable @RemoteComposable { Content(RemoteModifier.rotate((-45f).rf)) },
-                )
+    fun grid() = composeTestRule.runScreenshotTest {
+        val tests =
+            listOf<Pair<String, @RemoteComposable @Composable () -> Unit>>(
+                "rotate(0f)" to
+                    @Composable @RemoteComposable { Content(RemoteModifier.rotate(0f.rf)) },
+                "rotate(45f)" to
+                    @Composable @RemoteComposable { Content(RemoteModifier.rotate(45f.rf)) },
+                "rotate(60f)" to
+                    @Composable @RemoteComposable { Content(RemoteModifier.rotate(60f.rf)) },
+                "rotate(90f)" to
+                    @Composable @RemoteComposable { Content(RemoteModifier.rotate(90f.rf)) },
+                "rotate(-45f)" to
+                    @Composable @RemoteComposable { Content(RemoteModifier.rotate((-45f).rf)) },
+            )
 
-            gridScreenshotUI.GridContent(tests)
-        }
+        gridScreenshotUI.GridContent(tests)
+    }
 
     @Composable
     @RemoteComposable
     private fun Content(testModifier: RemoteModifier) {
         RemoteBox(
-            modifier = RemoteModifier.size(50.rdp).background(Color.Red),
+            modifier = RemoteModifier.size(50.rdp).background(Color.Red.rc),
             contentAlignment = RemoteAlignment.Center,
         ) {
-            RemoteBox(modifier = testModifier.size(20.rdp).background(Color.Blue))
+            RemoteBox(modifier = testModifier.size(20.rdp).background(Color.Blue.rc))
         }
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE")
+@file:Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE", "MISSING_DEPENDENCY_CLASS")
 
 package androidx.wear.watchface.complications.data
 
@@ -40,6 +40,7 @@ import java.util.concurrent.Executor
 import java.util.function.Supplier
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -335,26 +336,37 @@ constructor(
      */
     private fun <T : Any> evaluateDynamicType(
         bindingRequest: (Executor, DynamicTypeValueReceiver<T>) -> DynamicTypeBindingRequest
-    ): Flow<T?> =
-        callbackFlow {
-                // Binding DynamicTypeEvaluator to the provided binding request.
-                val boundDynamicType: BoundDynamicType =
-                    evaluator.bind(
-                        bindingRequest(
-                            currentCoroutineContext().asExecutor(),
-                            // Emitting values to the callbackFlow's channel.
-                            DynamicTypeValueReceiverToChannel(channel),
-                        )
+    ): Flow<T?> = callbackFlow {
+        try {
+            // Binding DynamicTypeEvaluator to the provided binding request.
+            val boundDynamicType: BoundDynamicType =
+                evaluator.bind(
+                    bindingRequest(
+                        currentCoroutineContext().asExecutor(),
+                        // Emitting values to the callbackFlow's channel.
+                        DynamicTypeValueReceiverToChannel(channel),
                     )
-                // Start evaluation.
-                // TODO(b/267599473): Remove dispatches when DynamicTypeEvaluator is thread safe.
-                Dispatchers.Main.immediate { boundDynamicType.startEvaluation() }
-                awaitClose {
-                    // Stop evaluation when the Flow (created by callbackFlow) is closed.
-                    CoroutineScope(Dispatchers.Main.immediate).launch { boundDynamicType.close() }
+                )
+            // Start evaluation.
+            // TODO(b/267599473): Remove dispatches when DynamicTypeEvaluator is thread
+            // safe.
+            Dispatchers.Main.immediate { boundDynamicType.startEvaluation() }
+            awaitClose {
+                // Stop evaluation when the Flow (created by callbackFlow) is closed.
+                CoroutineScope(Dispatchers.Main.immediate).launch {
+                    boundDynamicType.close()
                 }
             }
-            .conflate() // We only care about the latest data for each field.
+        } catch (e: CancellationException) {
+            // Allow CancellationException to propagate.
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed or rejected binding dynamic type for complication", e)
+            channel.trySend(null)
+            channel.close()
+        }
+    }
+        .conflate() // We only care about the latest data for each field.
 
     /**
      * Converts [DynamicTypeValueReceiver] into a [SendChannel] (from a [callbackFlow]).

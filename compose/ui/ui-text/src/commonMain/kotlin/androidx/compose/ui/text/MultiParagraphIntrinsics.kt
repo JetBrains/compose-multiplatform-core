@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.internal.requirePrecondition
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastAny
@@ -39,27 +40,54 @@ import androidx.compose.ui.util.fastMaxBy
  * @param softWrap Whether the text should break at soft line breaks. When the intention is to lay
  *   out text as a single line, setting [softWrap] to false enables optimizations that avoid certain
  *   expensive calculations
+ * @param defaultLocaleList the default locale list to use for formatting.
  * @throws IllegalArgumentException if [ParagraphStyle.textDirection] is not set, or any of the
  *   [placeholders] crosses paragraph boundary.
  * @see MultiParagraph
  * @see Placeholder
  */
-class MultiParagraphIntrinsics(
-    val annotatedString: AnnotatedString,
+public class MultiParagraphIntrinsics(
+    public val annotatedString: AnnotatedString,
     style: TextStyle,
-    val placeholders: List<AnnotatedString.Range<Placeholder>>,
+    public val placeholders: List<AnnotatedString.Range<Placeholder>>,
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
     softWrap: Boolean,
+    defaultLocaleList: LocaleList,
 ) : ParagraphIntrinsics {
 
+    @Suppress("DEPRECATION")
+    @Deprecated(
+        "Use an overload with `defaultLocaleList` instead",
+        ReplaceWith(
+            "MultiParagraphIntrinsics(annotatedString, style, placeholders, density, fontFamilyResolver, softWrap, LocaleList.current)"
+        ),
+    )
+    public constructor(
+        annotatedString: AnnotatedString,
+        style: TextStyle,
+        placeholders: List<AnnotatedString.Range<Placeholder>>,
+        density: Density,
+        fontFamilyResolver: FontFamily.Resolver,
+        softWrap: Boolean,
+    ) : this(
+        annotatedString,
+        style,
+        placeholders,
+        density,
+        fontFamilyResolver,
+        softWrap,
+        LocaleList.current,
+    )
+
+    @Suppress("DEPRECATION")
     @Deprecated(
         "Use an overload with `softWrap` instead",
         ReplaceWith(
             "MultiParagraphIntrinsics(annotatedString, style, placeholders, density, fontFamilyResolver, true)"
         ),
     )
-    constructor(
+    public constructor(
         annotatedString: AnnotatedString,
         style: TextStyle,
         placeholders: List<AnnotatedString.Range<Placeholder>>,
@@ -77,7 +105,7 @@ class MultiParagraphIntrinsics(
                 "androidx.compose.ui.text.font.createFontFamilyResolver",
             ),
     )
-    constructor(
+    public constructor(
         annotatedString: AnnotatedString,
         style: TextStyle,
         placeholders: List<AnnotatedString.Range<Placeholder>>,
@@ -93,13 +121,13 @@ class MultiParagraphIntrinsics(
 
     // NOTE(text-perf-review): why are we using lazy here? Are there cases where these
     // calculations aren't executed?
-    override val minIntrinsicWidth: Float by
+    public override val minIntrinsicWidth: Float by
         lazy(LazyThreadSafetyMode.NONE) {
             infoList.fastMaxBy { it.intrinsics.minIntrinsicWidth }?.intrinsics?.minIntrinsicWidth
                 ?: 0f
         }
 
-    override val maxIntrinsicWidth: Float by
+    public override val maxIntrinsicWidth: Float by
         lazy(LazyThreadSafetyMode.NONE) {
             infoList.fastMaxBy { it.intrinsics.maxIntrinsicWidth }?.intrinsics?.maxIntrinsicWidth
                 ?: 0f
@@ -134,6 +162,7 @@ class MultiParagraphIntrinsics(
                             density = density,
                             fontFamilyResolver = fontFamilyResolver,
                             softWrap = softWrap,
+                            defaultLocaleList = defaultLocaleList,
                         ),
                     startIndex = paragraphStyleItem.start,
                     endIndex = paragraphStyleItem.end,
@@ -141,7 +170,7 @@ class MultiParagraphIntrinsics(
             }
     }
 
-    override val hasStaleResolvedFonts: Boolean
+    public override val hasStaleResolvedFonts: Boolean
         get() = infoList.fastAny { it.intrinsics.hasStaleResolvedFonts }
 
     /**

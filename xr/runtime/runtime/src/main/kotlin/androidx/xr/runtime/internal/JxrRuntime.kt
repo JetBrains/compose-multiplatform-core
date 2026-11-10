@@ -21,8 +21,8 @@ import androidx.xr.runtime.Config
 import kotlin.time.ComparableTimeMark
 
 /**
- * Describes a runtime that has a lifecycle equivalent of a particular [androidx.xr.runtime.Session]
- * and requires lifecycle and state updates. The Session is responsible for owning these objects.
+ * Runtimes with lifecycles equivalent to a [androidx.xr.runtime.Session] that require state
+ * updates. The Session is responsible for owning these objects.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @Suppress("NotCloseable")
@@ -46,11 +46,17 @@ public interface JxrRuntime {
     public fun pause() {}
 
     /**
-     * Sets or changes the configuration to use, which will affect the availability of properties or
-     * features in other managers. It is necessary to have called [initialize] before calling this
-     * method.
+     * Applies the configuration, affecting availability of properties or features. It is necessary
+     * to have called [initialize] before calling this method.
      */
     public fun configure(config: Config) {}
+
+    /**
+     * Called immediately before [update]. Allows [androidx.xr.runtime.Session] to execute logic
+     * necessary for updating the runtime _without_ holding the configuration mutex. This method can
+     * only be called when the runtime is resumed.
+     */
+    public suspend fun prepareForUpdate() {}
 
     /**
      * Updates the state of the system. The call is blocking and will return once the underlying
@@ -58,7 +64,7 @@ public interface JxrRuntime {
      * can only be called when the runtime is resumed.
      *
      * @return the timemark of the latest state. This value is to be used for comparison with other
-     *   timemarks and not to be used for absolute time calculations.
+     *   timemarks and not to be used for absolute time calculations
      */
     public suspend fun update(): ComparableTimeMark? {
         return null

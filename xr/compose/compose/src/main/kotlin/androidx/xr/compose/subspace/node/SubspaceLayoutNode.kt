@@ -25,7 +25,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastMap
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreEntityNode
 import androidx.xr.compose.subspace.layout.LayoutSubspaceMeasureScope
@@ -39,6 +39,7 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.subspace.layout.SubspaceRootMeasurePolicy
 import androidx.xr.compose.subspace.layout.applyCoreEntityNodes
+import androidx.xr.compose.subspace.layout.metersToPx
 import androidx.xr.compose.subspace.layout.requireCoordinator
 import androidx.xr.compose.subspace.semantics.SubspaceSemanticsConfiguration
 import androidx.xr.compose.subspace.semantics.createSubspaceSemanticsPropertyReceiver
@@ -46,6 +47,7 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.Space
 import java.util.concurrent.atomic.AtomicInteger
 
 private var lastIdentifier = AtomicInteger(0)
@@ -241,8 +243,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     /** Removes all children nodes. */
     internal fun removeAll() {
-        children.reversed().fastForEachIndexed { i, child ->
-            onChildRemoved(child, children.size - i - 1)
+        for (i in children.size - 1 downTo 0) {
+            onChildRemoved(children[i], i)
         }
 
         children.clear()
@@ -275,7 +277,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         owner = subspaceOwner
-        depth = ancestors().fold(0) { i, _ -> i + 1 }
+        depth = (parent?.depth ?: -1) + 1
 
         subspaceOwner.onAttach(this)
         syncCoreEntityHierarchy()
@@ -399,6 +401,10 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         /** Unique ID used by semantics libraries. */
         override val semanticsId: Int = generateSemanticsId()
 
+        /** The density of this node. */
+        override val density: Density
+            get() = this@SubspaceLayoutNode.density
+
         /**
          * The tail node of [SubspaceModifierNodeChain].
          *
@@ -418,6 +424,20 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         /** The position of this node relative to the root of this Compose hierarchy, in pixels. */
         override val poseInRoot: Pose
             get() = parentCoordinates?.poseInRoot?.compose(pose) ?: pose
+
+        /** The position of this node relative to ActivitySpace, in pixels. */
+        override val poseInActivitySpace: Pose
+            get() {
+                // Nodes under the subspace root have a parentCoordinates value.
+                parentCoordinates?.let {
+                    return it.poseInActivitySpace.compose(pose)
+                }
+
+                // For the subspace root, return its pose in ActivitySpace.
+                val pixelDensity = coreEntity?.pixelDensity ?: return Pose.Identity
+                return coreEntity?.getPose(Space.ACTIVITY)?.metersToPx(pixelDensity)
+                    ?: Pose.Identity
+            }
 
         /**
          * The coordinates of the immediate parent in the layout hierarchy.
@@ -523,7 +543,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
                 with(measurePolicy) {
                     LayoutSubspaceMeasureScope(this@SubspaceLayoutNode)
                         .measure(
-                            this@SubspaceLayoutNode.children.map { it.measurableLayout }.toList(),
+                            this@SubspaceLayoutNode.children.fastMap { it.measurableLayout },
                             constraints,
                         )
                 }

@@ -18,6 +18,7 @@ package androidx.appfunctions.compiler.core
 
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.MemberName
 
 /** Helper class to introspect AppFunction symbols. */
 object IntrospectionHelper {
@@ -34,6 +35,14 @@ object IntrospectionHelper {
         const val PROPERTY_MESSAGE = "message"
     }
 
+    object OptInAnnotation {
+        val CLASS_NAME = ClassName("kotlin", "OptIn")
+    }
+
+    object ExperimentalAppFunctionsApiAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "ExperimentalAppFunctionsApi")
+    }
+
     object RequiresApiAnnotation {
         val CLASS_NAME = ClassName("androidx.annotation", "RequiresApi")
     }
@@ -44,9 +53,15 @@ object IntrospectionHelper {
     }
 
     object AppFunctionAnnotation {
-        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunction")
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionDeclaration")
         const val PROPERTY_IS_ENABLED = "isEnabled"
         const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKDoc"
+    }
+
+    object AppFunctionAccessLevelAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionAccessLevel")
+        const val PROPERTY_LEVEL = "level"
+        const val PROPERTY_IS_COMPAT_ENFORCEMENT_ENABLED = "isCompatEnforcementEnabled"
     }
 
     object AppFunctionInstructionAnnotation {
@@ -64,6 +79,7 @@ object IntrospectionHelper {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionSignature")
         const val PROPERTY_SCOPE = "scope"
         const val PROPERTY_XML_FILE_NAME = "appFunctionXmlFileName"
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKDoc"
     }
 
     object AppFunctionSchemaDefinitionAnnotation {
@@ -122,6 +138,21 @@ object IntrospectionHelper {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionStringValueConstraint")
 
         const val PROPERTY_ENUM_VALUES = "enumValues"
+        const val PROPERTY_PATTERN_MATCHERS = "patternMatchers"
+        const val PROPERTY_FORMAT = "format"
+    }
+
+    object AppFunctionPatternMatcherAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionPatternMatcher")
+
+        const val PROPERTY_PATTERN = "pattern"
+        const val PROPERTY_TYPE = "type"
+    }
+
+    object AppFunctionUriValueConstraintAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionUriValueConstraint")
+
+        const val PROPERTY_ALLOWED_SCHEMES = "allowedSchemes"
     }
 
     // Classes
@@ -134,8 +165,15 @@ object IntrospectionHelper {
 
     object AppFunctionMetadataClass {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionMetadata")
-        const val SCOPE_GLOBAL = "global"
-        const val SCOPE_ACTIVITY = "activity"
+        const val SCOPE_GLOBAL = 0
+        const val SCOPE_ACTIVITY = 1
+    }
+
+    object AppFunctionAccessLevelClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionAccessLevel")
+        const val SELF = 100
+        const val SYSTEM = 200
+        const val ANDROID_TRUSTED = 300
     }
 
     val APP_FUNCTION_FUNCTION_NOT_FOUND_EXCEPTION_CLASS =
@@ -149,6 +187,27 @@ object IntrospectionHelper {
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionSchemaMetadata")
     val APP_FUNCTION_PARAMETER_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionParameterMetadata")
+
+    object AppFunctionParameterSpecClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AppFunctionParameterSpec")
+        const val PROPERTY_NAME = "name"
+        const val PROPERTY_IS_REQUIRED = "isRequired"
+        const val PROPERTY_TYPE = "type"
+        const val PROPERTY_IS_NULLABLE = "isNullable"
+        const val PROPERTY_OBJECT_QUALIFIED_NAME = "objectQualifiedName"
+        const val PROPERTY_ITEM_TYPE = "itemType"
+        const val PROPERTY_ITEM_QUALIFIED_NAME = "itemQualifiedName"
+    }
+
+    object AppFunctionResponseSpecClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AppFunctionResponseSpec")
+        const val PROPERTY_TYPE = "type"
+        const val PROPERTY_IS_NULLABLE = "isNullable"
+        const val PROPERTY_OBJECT_QUALIFIED_NAME = "objectQualifiedName"
+        const val PROPERTY_ITEM_TYPE = "itemType"
+        const val PROPERTY_ITEM_QUALIFIED_NAME = "itemQualifiedName"
+    }
+
     val APP_FUNCTION_DATA_TYPE_METADATA =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionDataTypeMetadata")
     val APP_FUNCTION_DEPRECATION_METADATA_CLASS =
@@ -171,6 +230,20 @@ object IntrospectionHelper {
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionIntTypeMetadata")
     val APP_FUNCTION_STRING_TYPE_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionStringTypeMetadata")
+
+    object PatternMatcherClass {
+        val CLASS_NAME = ClassName("android.os", "PatternMatcher")
+
+        // Names of the android.os.PatternMatcher type constants.
+        const val PATTERN_LITERAL = "PATTERN_LITERAL"
+        const val PATTERN_PREFIX = "PATTERN_PREFIX"
+        const val PATTERN_SIMPLE_GLOB = "PATTERN_SIMPLE_GLOB"
+        const val PATTERN_ADVANCED_GLOB = "PATTERN_ADVANCED_GLOB"
+        const val PATTERN_SUFFIX = "PATTERN_SUFFIX"
+    }
+
+    val PATTERN_MATCHERS_HELPER_CLASS =
+        ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "PatternMatchers")
     val APP_FUNCTION_PENDING_INTENT_TYPE_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionPendingIntentTypeMetadata")
 
@@ -215,12 +288,54 @@ object IntrospectionHelper {
         }
     }
 
+    object HandleAppFunctionRequestClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "HandleAppFunctionRequest")
+        const val FUNCTION_IDENTIFIER_PROPERTY_NAME = "functionIdentifier"
+        const val APP_FUNCTION_PROPERTY_NAME = "appFunction"
+    }
+
+    object SuspendingAppFunctionClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "SuspendingAppFunction")
+    }
+
+    object HandleAppFunctionRequestAdapterClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "HandleAppFunctionRequestAdapter")
+        const val FUNCTION_IDENTIFIER_PROPERTY_NAME = "functionIdentifier"
+
+        object AdaptMethod {
+            const val METHOD_NAME = "adapt"
+            const val INSTANCE_PARAM_NAME = "instance"
+        }
+
+        object WithExtractedArgumentsMethod {
+            const val METHOD_NAME = "withExtractedArguments"
+            const val REQUEST_PARAM_NAME = "request"
+            const val BLOCK_PARAM_NAME = "block"
+        }
+
+        object ToExecuteAppFunctionResponseMethod {
+            const val METHOD_NAME = "toExecuteAppFunctionResponse"
+            const val RESULT_PARAM_NAME = "result"
+        }
+    }
+
     object AppFunctionServiceClass {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionService")
 
+        object OnCreateMethod {
+            const val METHOD_NAME = "onCreate"
+        }
+
+        object OnDestroyMethod {
+            const val METHOD_NAME = "onDestroy"
+        }
+
         object ExecuteFunctionMethod {
-            const val METHOD_NAME = "executeFunction"
+            const val METHOD_NAME = "onExecuteFunction"
             const val REQUEST_PARAM_NAME = "request"
+            const val METADATA_PARAM_NAME = "metadata"
+            const val CANCELLATION_SIGNAL_PARAM_NAME = "cancellationSignal"
+            const val CALLBACK_PARAM_NAME = "callback"
         }
     }
 
@@ -232,18 +347,38 @@ object IntrospectionHelper {
         val CLASS_NAME =
             ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AppFunctionExecutionDispatcher")
 
-        object ExecuteAppFunctionMethod {
-            const val METHOD_NAME = "executeAppFunction"
+        object DispatchExecuteAppFunctionMethod {
+            const val METHOD_NAME = "dispatchExecuteAppFunction"
         }
     }
 
     object ExecuteAppFunctionRequestClass {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "ExecuteAppFunctionRequest")
+
+        const val PROPERTY_FUNCTION_IDENTIFIER = "functionIdentifier"
+    }
+
+    object DispatchersClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "Dispatchers")
+
+        const val PROPERTY_MAIN = "Main"
     }
 
     object ExecuteAppFunctionResponseClass {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "ExecuteAppFunctionResponse")
         val SUCCESS_CLASS_NAME = CLASS_NAME.nestedClass("Success")
+    }
+
+    object AppFunctionAdapterHelperClass {
+        object UnsafeGetParameterValueMethod {
+            val METHOD_NAME =
+                MemberName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "unsafeGetParameterValue")
+        }
+
+        object UnsafeBuildReturnValueMethod {
+            val METHOD_NAME =
+                MemberName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "unsafeBuildReturnValue")
+        }
     }
 
     object ServiceInternalHelper {
@@ -284,6 +419,7 @@ object IntrospectionHelper {
 
         object ToAppFunctionDataMethod {
             const val METHOD_NAME = "toAppFunctionData"
+            const val APP_FUNCTION_DATA_SPEC_PARAM_NAME = "spec"
             const val APP_FUNCTION_SERIALIZABLE_PARAM_NAME = "appFunctionSerializable"
         }
 
@@ -365,9 +501,33 @@ object IntrospectionHelper {
         }
     }
 
+    object AppFunctionDataSpecClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionDataSpec")
+    }
+
+    object CancellationSignalClass {
+        val CLASS_NAME = ClassName("android.os", "CancellationSignal")
+    }
+
+    object ConsumerClass {
+        val CLASS_NAME = ClassName("java.util.function", "Consumer")
+    }
+
+    object CoroutineScopeClass {
+        val CLASS_NAME = ClassName("kotlinx.coroutines", "CoroutineScope")
+
+        val CANCEL_EXTENSION_METHOD_NAME = MemberName("kotlinx.coroutines", "cancel")
+        val SUPERVISOR_JOB_METHOD_NAME = MemberName("kotlinx.coroutines", "SupervisorJob")
+    }
+
     /** [AnnotationSpec] for @RequiresApi(33) */
     val RESTRICT_API_TO_33_ANNOTATION =
         AnnotationSpec.builder(RequiresApiAnnotation.CLASS_NAME).addMember("%L", 33).build()
 
     val PARCELABLE_CLASS_NAME = ClassName("android.os", "Parcelable")
+
+    object UriClass {
+        val URI_CLASS_NAME = ClassName("android.net", "Uri")
+        const val PROPERTY_URI_NAME = "uri"
+    }
 }

@@ -30,11 +30,21 @@ import androidx.credentials.internal.RequestValidationHelper
  * [here](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#name-error-response)
  * is the error response definition for the OpenID for Verifiable Presentations protocol.
  *
+ * When you make an OpenID4VP request for multiple credentials, you may receive a
+ * [GetCredentialResponse] containing a list of [DigitalCredential]. These credentials may be
+ * aggregated from one or more providers. Because some responses may contain an OpenID4VP error, you
+ * should check each individual [DigitalCredential] to ensure it satisfies your overall request.
+ *
+ * NOTE: For non-protocol errors (system-level infrastructure failures, provider crashes, or generic
+ * CredMan exceptions), the transaction will NOT return any partial credentials at all. Such
+ * failures trigger an immediate transaction abort where zero credentials are yielded.
+ *
  * @property credentialJson the digital credential in the JSON format; the latest format is defined
  *   at https://wicg.github.io/digital-credentials/#the-digitalcredential-interface
  */
 @ExperimentalDigitalCredentialApi
-class DigitalCredential private constructor(val credentialJson: String, data: Bundle) :
+public class DigitalCredential
+private constructor(public val credentialJson: String, data: Bundle) :
     Credential(TYPE_DIGITAL_CREDENTIAL, data) {
 
     init {
@@ -50,12 +60,13 @@ class DigitalCredential private constructor(val credentialJson: String, data: Bu
      *   at https://wicg.github.io/digital-credentials/#the-digitalcredential-interface
      * @throws IllegalArgumentException if the `credentialJson` is not a valid json
      */
-    constructor(credentialJson: String) : this(credentialJson, toBundle(credentialJson))
+    public constructor(credentialJson: String) : this(credentialJson, toBundle(credentialJson))
 
     /** Companion constants / helpers for [DigitalCredential]. */
-    companion object {
+    public companion object {
         /** The type value for public key credential related operations. */
-        const val TYPE_DIGITAL_CREDENTIAL: String = "androidx.credentials.TYPE_DIGITAL_CREDENTIAL"
+        public const val TYPE_DIGITAL_CREDENTIAL: String =
+            "androidx.credentials.TYPE_DIGITAL_CREDENTIAL"
 
         internal const val BUNDLE_KEY_REQUEST_JSON = "androidx.credentials.BUNDLE_KEY_REQUEST_JSON"
 

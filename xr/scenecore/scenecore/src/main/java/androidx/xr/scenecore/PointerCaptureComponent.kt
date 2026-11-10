@@ -62,6 +62,14 @@ private constructor(
              */
             @JvmField public val STOPPED: PointerCaptureState = PointerCaptureState(3)
         }
+
+        override fun toString(): String =
+            when (this) {
+                PAUSED -> "PAUSED"
+                ACTIVE -> "ACTIVE"
+                STOPPED -> "STOPPED"
+                else -> "UNKNOWN ($value)"
+            }
     }
 
     private var attachedEntity: Entity? = null
@@ -69,20 +77,19 @@ private constructor(
         inputEventListener.accept(rtEvent.toInputEvent(entityRegistry))
     }
 
-    private val rtStateListener =
-        RtPointerCaptureComponent.StateListener { pcState: Int ->
-            when (pcState) {
-                RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_PAUSED ->
-                    stateListener.accept(PointerCaptureState.PAUSED)
-                RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_ACTIVE ->
-                    stateListener.accept(PointerCaptureState.ACTIVE)
-                RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_STOPPED ->
-                    stateListener.accept(PointerCaptureState.STOPPED)
-                else -> {
-                    // Unreachable
-                }
+    private val rtStateListener = RtPointerCaptureComponent.StateListener { pcState: Int ->
+        when (pcState) {
+            RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_PAUSED ->
+                stateListener.accept(PointerCaptureState.PAUSED)
+            RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_ACTIVE ->
+                stateListener.accept(PointerCaptureState.ACTIVE)
+            RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_STOPPED ->
+                stateListener.accept(PointerCaptureState.STOPPED)
+            else -> {
+                // Unreachable
             }
         }
+    }
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val rtComponent: RtPointerCaptureComponent by lazy {
         sceneRuntime.createPointerCaptureComponent(executor, rtStateListener, rtInputEventListener)

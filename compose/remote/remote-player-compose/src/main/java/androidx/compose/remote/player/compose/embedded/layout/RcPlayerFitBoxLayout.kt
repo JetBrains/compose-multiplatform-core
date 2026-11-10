@@ -1,0 +1,273 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@file:Suppress("RestrictedApiAndroidX")
+
+package androidx.compose.remote.player.compose.embedded.layout
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
+import androidx.compose.remote.core.RemoteContext
+import androidx.compose.remote.core.operations.layout.Component
+import androidx.compose.remote.core.operations.layout.LayoutComponent
+import androidx.compose.remote.core.operations.layout.managers.CollapsibleColumnLayout
+import androidx.compose.remote.core.operations.layout.managers.CollapsibleRowLayout
+import androidx.compose.remote.core.operations.layout.managers.FitBoxLayout
+import androidx.compose.remote.player.compose.embedded.LocalAnimatedVisibilityScope
+import androidx.compose.remote.player.compose.embedded.LocalRemoteContext
+import androidx.compose.remote.player.compose.embedded.LocalSharedTransitionScope
+import androidx.compose.remote.player.compose.embedded.RcPlayerComponent
+import androidx.compose.remote.player.compose.embedded.horizontalPositioningReflection
+import androidx.compose.remote.player.compose.embedded.verticalPositioningReflection
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMapIndexed
+import androidx.compose.ui.util.fastMaxOfOrNull
+
+/**
+ * Renders a [FitBoxLayout]: its children are *alternatives* and only the first one whose natural
+ * size fits the available space is displayed.
+ *
+ * When available space or layout constraints change, [RcPlayerFitBoxLayout] transitions smoothly
+ * between alternatives using [SharedTransitionLayout] and [AnimatedContent], allowing shared
+ * elements with matching animation IDs to morph across states.
+ *
+ * Uses a two-phase [SubcomposeLayout]:
+ * 1. A probe subcomposition measures all child alternatives with the parent's maximum constraints
+ *    to determine their real Compose sizes, clearing semantics so unselected nodes do not pollute
+ *    accessibility.
+ * 2. A content subcomposition renders the selected alternative with [AnimatedContent] and
+ *    [SharedTransitionLayout], driving shared element animations when constraints change.
+ */
+@Suppress("ComposableLambdaInMeasurePolicy")
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+internal fun RcPlayerFitBoxLayout(layout: FitBoxLayout, modifier: Modifier) {
+    val remoteContext = LocalRemoteContext.current
+    val children = remember(layout) { ArrayList<Component>().apply { layout.getComponents(this) } }
+    if (children.isEmpty()) {
+        Box(modifier = modifier)
+        return
+    }
+
+    val transitionConfig = rememberLayoutTransitionConfig(layout, children)
+    val duration = transitionConfig.duration
+    val easing = transitionConfig.easing
+    val alignment =
+        mapFitBoxAlignment(
+            layout.horizontalPositioningReflection,
+            layout.verticalPositioningReflection,
+        )
+
+    SubcomposeLayout(modifier = modifier) { constraints ->
+        val maxWidth = if (constraints.hasBoundedWidth) constraints.maxWidth else Int.MAX_VALUE
+        val maxHeight = if (constraints.hasBoundedHeight) constraints.maxHeight else Int.MAX_VALUE
+
+        // Phase 1 (Probe): Measure child alternatives using the parent's maximum constraints.
+        // Semantics are cleared on probe nodes so unselected nodes do not pollute accessibility.
+        val probeMeasurables =
+            subcompose(FitBoxSlot.Probe) {
+                children.fastForEach { component ->
+                    Box(modifier = Modifier.clearAndSetSemantics {}) {
+                        RcPlayerComponent(component)
+                    }
+                }
+            }
+
+        // Collapsible candidates require the container bound on their collapse axis so they can
+        // drop low-priority children.
+        val placeables = probeMeasurables.fastMapIndexed { index, measurable ->
+            val probeConstraints =
+                when (children[index]) {
+                    is CollapsibleColumnLayout -> Constraints(maxHeight = maxHeight)
+                    is CollapsibleRowLayout -> Constraints(maxWidth = maxWidth)
+                    else -> Constraints()
+                }
+            measurable.measure(probeConstraints)
+        }
+
+        var chosen = -1
+        for (i in 0 until placeables.size) {
+            val c = children[i]
+            val childMinWidth = candidateMinIntrinsicWidth(c, remoteContext)
+            val childMinHeight = candidateMinIntrinsicHeight(c, remoteContext)
+            if (childMinWidth <= maxWidth && childMinHeight <= maxHeight) {
+                val p = placeables[i]
+                if (p.width <= maxWidth && p.height <= maxHeight) {
+                    chosen = i
+                    break
+                }
+            }
+        }
+        val noFit = chosen < 0
+        if (noFit) {
+            chosen = placeables.indices.minByOrNull { placeables[it].width } ?: 0
+            layout.mVisibility = Component.Visibility.GONE
+            for (i in 0 until children.size) {
+                children[i].mVisibility = Component.Visibility.GONE
+            }
+        } else {
+            layout.mVisibility = Component.Visibility.VISIBLE
+            for (i in 0 until children.size) {
+                val vis =
+                    if (i == chosen) Component.Visibility.VISIBLE else Component.Visibility.GONE
+                children[i].mVisibility = vis
+            }
+        }
+
+        // Phase 2 (Content): Subcompose the chosen alternative. When animation is disabled
+        // (duration <= 0), render a plain Box directly without SharedTransitionLayout or
+        // AnimatedContent overhead.
+        val contentMeasurables =
+            subcompose(FitBoxSlot.Content) {
+                if (duration <= 0) {
+                    Box(contentAlignment = alignment) { RcPlayerComponent(children[chosen]) }
+                } else {
+                    @Composable
+                    fun AnimatedFitBoxContent(sharedTransitionScope: SharedTransitionScope?) {
+                        AnimatedContent(
+                            targetState = chosen,
+                            contentAlignment = alignment,
+                            label = "RcPlayerFitBoxLayout",
+                            transitionSpec = {
+                                (fadeIn(
+                                        animationSpec =
+                                            tween(durationMillis = duration, easing = easing)
+                                    ) togetherWith
+                                        fadeOut(
+                                            animationSpec =
+                                                tween(durationMillis = duration, easing = easing)
+                                        ))
+                                    .using(
+                                        SizeTransform(clip = false) { _, _ ->
+                                            tween(durationMillis = duration, easing = easing)
+                                        }
+                                    )
+                            },
+                        ) { currentIndex ->
+                            CompositionLocalProvider(
+                                LocalSharedTransitionScope provides sharedTransitionScope,
+                                LocalAnimatedVisibilityScope provides this@AnimatedContent,
+                            ) {
+                                Box(contentAlignment = alignment) {
+                                    RcPlayerComponent(children[currentIndex])
+                                }
+                            }
+                        }
+                    }
+
+                    if (transitionConfig.hasSharedElements) {
+                        SharedTransitionLayout {
+                            AnimatedFitBoxContent(
+                                sharedTransitionScope = this@SharedTransitionLayout
+                            )
+                        }
+                    } else {
+                        AnimatedFitBoxContent(sharedTransitionScope = null)
+                    }
+                }
+            }
+
+        val contentConstraints =
+            if (noFit) Constraints() else constraints.copy(minWidth = 0, minHeight = 0)
+        val contentPlaceables = contentMeasurables.fastMap { it.measure(contentConstraints) }
+        val width = constraints.constrainWidth(contentPlaceables.fastMaxOfOrNull { it.width } ?: 0)
+        val height =
+            constraints.constrainHeight(contentPlaceables.fastMaxOfOrNull { it.height } ?: 0)
+
+        layout(width, height) {
+            val containerSize = IntSize(width, height)
+            contentPlaceables.fastForEach { placeable ->
+                val childSize = IntSize(placeable.width, placeable.height)
+                val offset = alignment.align(childSize, containerSize, layoutDirection)
+                placeable.place(offset)
+            }
+        }
+    }
+}
+
+private enum class FitBoxSlot {
+    Probe,
+    Content,
+}
+
+private fun mapFitBoxAlignment(horizontal: Int, vertical: Int): Alignment {
+    return when {
+        horizontal == FitBoxLayout.START && vertical == FitBoxLayout.TOP -> Alignment.TopStart
+        horizontal == FitBoxLayout.START && vertical == FitBoxLayout.BOTTOM -> Alignment.BottomStart
+        horizontal == FitBoxLayout.START -> Alignment.CenterStart
+        horizontal == FitBoxLayout.END && vertical == FitBoxLayout.TOP -> Alignment.TopEnd
+        horizontal == FitBoxLayout.END && vertical == FitBoxLayout.BOTTOM -> Alignment.BottomEnd
+        horizontal == FitBoxLayout.END -> Alignment.CenterEnd
+        vertical == FitBoxLayout.TOP -> Alignment.TopCenter
+        vertical == FitBoxLayout.BOTTOM -> Alignment.BottomCenter
+        else -> Alignment.Center
+    }
+}
+
+/**
+ * Returns the minimum intrinsic width for a FitBoxLayout candidate component.
+ *
+ * If the candidate has an exact width modifier (e.g. `width(380.rdp)`), its minimum required width
+ * is determined by that exact modifier (+ padding) without incorrectly adding child intrinsic
+ * widths (which occurs in CollapsibleColumnLayout / CollapsibleRowLayout minIntrinsicWidth).
+ */
+private fun candidateMinIntrinsicWidth(component: Component, remoteContext: RemoteContext): Float {
+    if (component is LayoutComponent) {
+        val widthMod = component.widthModifier
+        if (widthMod != null && widthMod.isExact) {
+            return component.computeModifierDefinedWidth(remoteContext, true)
+        }
+    }
+    return component.minIntrinsicWidth(remoteContext)
+}
+
+/**
+ * Returns the minimum intrinsic height for a FitBoxLayout candidate component.
+ *
+ * If the candidate has an exact height modifier (e.g. `height(200.rdp)`), its minimum required
+ * height is determined by that exact modifier (+ padding) without incorrectly adding child
+ * intrinsic heights (which occurs in CollapsibleColumnLayout / CollapsibleRowLayout
+ * minIntrinsicHeight).
+ */
+private fun candidateMinIntrinsicHeight(component: Component, remoteContext: RemoteContext): Float {
+    if (component is LayoutComponent) {
+        val heightMod = component.heightModifier
+        if (heightMod != null && heightMod.isExact) {
+            return component.computeModifierDefinedHeight(remoteContext, true)
+        }
+    }
+    return component.minIntrinsicHeight(remoteContext)
+}

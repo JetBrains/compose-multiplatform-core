@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.ui
 
 import android.content.Context.ACCESSIBILITY_SERVICE
@@ -27,6 +29,7 @@ import android.os.Parcelable
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_HOVER_ENTER
+import android.view.MotionEvent.ACTION_HOVER_EXIT
 import android.view.MotionEvent.ACTION_HOVER_MOVE
 import android.view.View
 import android.view.ViewGroup
@@ -40,6 +43,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import android.view.accessibility.AccessibilityManager
+import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_RENDERING_INFO_KEY
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
@@ -195,7 +199,7 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -244,7 +248,6 @@ import java.util.Date
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.After
 import org.junit.Assume
@@ -269,7 +272,7 @@ import org.mockito.kotlin.verify
 @OptIn(ExperimentalMaterialApi::class)
 @RunWith(AndroidJUnit4::class)
 class AndroidAccessibilityTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     private val accessibilityEventLoopIntervalMs = 100L
     private lateinit var androidComposeView: AndroidComposeView
@@ -743,12 +746,19 @@ class AndroidAccessibilityTest {
                         AccessibilityActionCompat(ACTION_FOCUS, null),
                         AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                     )
-                if (Build.VERSION.SDK_INT >= 26) {
+
+                if (Build.VERSION.SDK_INT >= 37) {
                     assertThat(availableExtraData)
                         .containsExactly(
                             "androidx.compose.ui.semantics.id",
-                            // TODO(b/272068594): This looks like a bug. This should be
-                            //  AccessibilityNodeInfoCompat.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
+                            "androidx.compose.ui.semantics.testTag",
+                            EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
+                            EXTRA_DATA_RENDERING_INFO_KEY,
+                        )
+                } else if (Build.VERSION.SDK_INT >= 26) {
+                    assertThat(availableExtraData)
+                        .containsExactly(
+                            "androidx.compose.ui.semantics.id",
                             EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
                             "androidx.compose.ui.semantics.testTag",
                         )
@@ -2217,8 +2227,8 @@ class AndroidAccessibilityTest {
         val colSemanticsNode =
             rule.onNodeWithTag(columnTag).fetchSemanticsNode("can't find node with tag $columnTag")
         val viewHolder =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                    colSemanticsNode.replacedChildren[1].layoutNode]
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder)
         val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
         val lastButtonId = rule.onNodeWithText(lastButtonText).semanticsId()
@@ -2315,8 +2325,8 @@ class AndroidAccessibilityTest {
         val colSemanticsNode =
             rule.onNodeWithTag(columnTag).fetchSemanticsNode("can't find node with tag $columnTag")
         val viewHolder =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                    colSemanticsNode.replacedChildren[1].layoutNode]
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder) // Check that the View exists
         val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
         val thirdButtonId = rule.onNodeWithText(thirdButtonText).semanticsId()
@@ -2544,8 +2554,9 @@ class AndroidAccessibilityTest {
         val toggleableNodeId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
-        val actionPerformed =
-            rule.runOnUiThread { provider.performAction(toggleableNodeId, ACTION_CLICK, null) }
+        val actionPerformed = rule.runOnUiThread {
+            provider.performAction(toggleableNodeId, ACTION_CLICK, null)
+        }
 
         // Assert.
         rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
@@ -2571,8 +2582,9 @@ class AndroidAccessibilityTest {
         val toggleableId = rule.onNodeWithTag(tag).assertIsDisplayed().assertIsOn().semanticsId()
 
         // Act.
-        val actionPerformed =
-            rule.runOnUiThread { provider.performAction(toggleableId, ACTION_CLICK, null) }
+        val actionPerformed = rule.runOnUiThread {
+            provider.performAction(toggleableId, ACTION_CLICK, null)
+        }
 
         // Assert.
         rule.onNodeWithTag(tag).assertIsOn()
@@ -2624,8 +2636,9 @@ class AndroidAccessibilityTest {
         val textFieldNodeId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId()
 
         // Act.
-        val actionPerformed =
-            rule.runOnUiThread { provider.performAction(textFieldNodeId, ACTION_CLICK, null) }
+        val actionPerformed = rule.runOnUiThread {
+            provider.performAction(textFieldNodeId, ACTION_CLICK, null)
+        }
 
         // Assert.
         rule.onNodeWithTag(tag).assert(expectValue(Focused, true))
@@ -2658,11 +2671,10 @@ class AndroidAccessibilityTest {
         argument.putInt(AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_END_INT, 1)
 
         // Act.
-        val actionPerformed =
-            rule.runOnUiThread {
-                textFieldSelectionOne = false
-                provider.performAction(textFieldId, ACTION_SET_SELECTION, argument)
-            }
+        val actionPerformed = rule.runOnUiThread {
+            textFieldSelectionOne = false
+            provider.performAction(textFieldId, ACTION_SET_SELECTION, argument)
+        }
         rule.waitUntil(5_000) { textFieldSelectionOne }
 
         // Assert.
@@ -2687,16 +2699,18 @@ class AndroidAccessibilityTest {
         val textFieldId = rule.onNodeWithTag(tag).assert(expectValue(Focused, false)).semanticsId()
 
         // Act.
-        var actionPerformed =
-            rule.runOnUiThread { provider.performAction(textFieldId, ACTION_FOCUS, null) }
+        var actionPerformed = rule.runOnUiThread {
+            provider.performAction(textFieldId, ACTION_FOCUS, null)
+        }
 
         // Assert.
         rule.onNodeWithTag(tag).assert(expectValue(Focused, true))
         assertThat(actionPerformed).isTrue()
 
         // Act.
-        actionPerformed =
-            rule.runOnUiThread { provider.performAction(textFieldId, ACTION_CLEAR_FOCUS, null) }
+        actionPerformed = rule.runOnUiThread {
+            provider.performAction(textFieldId, ACTION_CLEAR_FOCUS, null)
+        }
 
         // Assert.
         rule.onNodeWithTag(tag).assert(expectValue(Focused, false))
@@ -3063,8 +3077,9 @@ class AndroidAccessibilityTest {
         val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
-        val actionPerformed =
-            rule.runOnUiThread { provider.performAction(virtualViewId, ACTION_CLICK, null) }
+        val actionPerformed = rule.runOnUiThread {
+            provider.performAction(virtualViewId, ACTION_CLICK, null)
+        }
 
         // Assert.
         rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
@@ -3195,10 +3210,9 @@ class AndroidAccessibilityTest {
         val toggleableVirtualViewId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId()
 
         // Act.
-        val actionPerformed =
-            rule.runOnUiThread {
-                provider.performAction(toggleableVirtualViewId, ACTION_CLICK, null)
-            }
+        val actionPerformed = rule.runOnUiThread {
+            provider.performAction(toggleableVirtualViewId, ACTION_CLICK, null)
+        }
 
         // Assert that `TYPE_VIEW_CLICKED` event was sent.
         rule.runOnIdle {
@@ -3368,7 +3382,7 @@ class AndroidAccessibilityTest {
     @Test
     fun sendTextEvents_whenSetText() {
         // Arrange.
-        val locale = LocaleList("en_US")
+        val locale = Locale("en_US")
         val initialText = "h"
         val finalText = "hello"
         setContent {
@@ -3730,13 +3744,12 @@ class AndroidAccessibilityTest {
             with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect() }
 
         // Act.
-        val toggleableNodeId =
-            rule.runOnIdle {
-                delegate.hitTestSemanticsAt(
-                    (toggleableBounds.left + toggleableBounds.right) / 2,
-                    (toggleableBounds.top + toggleableBounds.bottom) / 2,
-                )
-            }
+        val toggleableNodeId = rule.runOnIdle {
+            delegate.hitTestSemanticsAt(
+                (toggleableBounds.left + toggleableBounds.right) / 2,
+                (toggleableBounds.top + toggleableBounds.bottom) / 2,
+            )
+        }
 
         // Assert.
         assertThat(toggleableId).isEqualTo(toggleableNodeId)
@@ -3764,13 +3777,12 @@ class AndroidAccessibilityTest {
             with(rule.density) { rule.onNodeWithTag(childTwoTag).getBoundsInRoot().toRect() }
 
         // Act.
-        val overlappedChildNodeId =
-            rule.runOnIdle {
-                delegate.hitTestSemanticsAt(
-                    (overlappedChildNodeBounds.left + overlappedChildNodeBounds.right) / 2,
-                    (overlappedChildNodeBounds.top + overlappedChildNodeBounds.bottom) / 2,
-                )
-            }
+        val overlappedChildNodeId = rule.runOnIdle {
+            delegate.hitTestSemanticsAt(
+                (overlappedChildNodeBounds.left + overlappedChildNodeBounds.right) / 2,
+                (overlappedChildNodeBounds.top + overlappedChildNodeBounds.bottom) / 2,
+            )
+        }
 
         // Assert.
         assertThat(childOneId).isEqualTo(overlappedChildNodeId)
@@ -3831,13 +3843,12 @@ class AndroidAccessibilityTest {
         val bounds = with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect() }
 
         // Act.
-        val hitNodeId =
-            rule.runOnIdle {
-                delegate.hitTestSemanticsAt(
-                    bounds.left + bounds.width / 2,
-                    bounds.top + bounds.height / 2,
-                )
-            }
+        val hitNodeId = rule.runOnIdle {
+            delegate.hitTestSemanticsAt(
+                bounds.left + bounds.width / 2,
+                bounds.top + bounds.height / 2,
+            )
+        }
 
         // Assert.
         rule.runOnIdle { assertThat(hitNodeId).isEqualTo(InvalidId) }
@@ -4221,13 +4232,12 @@ class AndroidAccessibilityTest {
         val bounds = with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect() }
 
         // Act.
-        val hitNodeId =
-            rule.runOnIdle {
-                delegate.hitTestSemanticsAt(
-                    bounds.left + bounds.width / 2,
-                    bounds.top + bounds.height / 2,
-                )
-            }
+        val hitNodeId = rule.runOnIdle {
+            delegate.hitTestSemanticsAt(
+                bounds.left + bounds.width / 2,
+                bounds.top + bounds.height / 2,
+            )
+        }
 
         // Assert.
         rule.runOnIdle { assertThat(hitNodeId).isEqualTo(InvalidId) }
@@ -4248,13 +4258,12 @@ class AndroidAccessibilityTest {
             with(rule.density) { rule.onNodeWithTag(innertag, true).getBoundsInRoot().toRect() }
 
         // Act.
-        val hitNodeId =
-            rule.runOnIdle {
-                delegate.hitTestSemanticsAt(
-                    bounds.left + bounds.width / 2,
-                    bounds.top + bounds.height / 2,
-                )
-            }
+        val hitNodeId = rule.runOnIdle {
+            delegate.hitTestSemanticsAt(
+                bounds.left + bounds.width / 2,
+                bounds.top + bounds.height / 2,
+            )
+        }
 
         // Assert.
         rule.runOnIdle { assertThat(outerNodeId).isEqualTo(hitNodeId) }
@@ -4312,8 +4321,9 @@ class AndroidAccessibilityTest {
         val androidView =
             rule.onNodeWithTag(tag).fetchSemanticsNode("can't find node with tag $tag")
         val viewGroup =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[androidView.layoutNode]!!.view
-                as ViewGroup
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[androidView.layoutNode]!!
+                .view as ViewGroup
         val getAccessibilityViewIdMethod =
             View::class.java.getDeclaredMethod("getAccessibilityViewId")
         getAccessibilityViewIdMethod.isAccessible = true
@@ -4347,11 +4357,10 @@ class AndroidAccessibilityTest {
         val colAccessibilityNode = createAccessibilityNodeInfo(colSemanticsNode.id)
 
         // Act.
-        val buttonHolder =
-            rule.runOnIdle {
-                androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                        colSemanticsNode.replacedChildren[0].layoutNode]
-            }
+        val buttonHolder = rule.runOnIdle {
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[0].layoutNode]
+        }
         checkNotNull(buttonHolder)
 
         // Assert.
@@ -4424,6 +4433,195 @@ class AndroidAccessibilityTest {
         }
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
+    private fun withInteropHoverZOrderFlag(enabled: Boolean = true, block: () -> Unit) {
+        val saved = AndroidComposeUiFlags.isInteropHoverZOrderEnabled
+        AndroidComposeUiFlags.isInteropHoverZOrderEnabled = enabled
+        try {
+            block()
+        } finally {
+            AndroidComposeUiFlags.isInteropHoverZOrderEnabled = saved
+        }
+    }
+
+    @Composable
+    private fun RecordingAndroidView(
+        receivedActions: MutableList<Int>,
+        modifier: Modifier = Modifier,
+    ) {
+        AndroidView(
+            factory = { context ->
+                object : Button(context) {
+                    init {
+                        layoutParams =
+                            ViewGroup.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                            )
+                    }
+
+                    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+                        receivedActions.add(event.actionMasked)
+                        return super.dispatchGenericMotionEvent(event)
+                    }
+                }
+            },
+            modifier = modifier,
+        )
+    }
+
+    private fun nodeCenter(tag: String): Offset =
+        with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect().center }
+
+    private fun dispatchHover(action: Int, x: Float, y: Float): Boolean =
+        androidComposeView.dispatchHoverEvent(createHoverMotionEvent(action = action, x = x, y = y))
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun testViewInterop_hoverOverComposeContentCoveringAndroidView_doesNotForwardToView() =
+        withInteropHoverZOrderFlag {
+            val overlayTag = "overlayTag"
+            val receivedActions = mutableListOf<Int>()
+            setContent {
+                Box(Modifier.size(100.dp)) {
+                    RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
+                    Box(
+                        Modifier.fillMaxSize().testTag(overlayTag).semantics {
+                            contentDescription = "Covering Overlay"
+                        }
+                    )
+                }
+            }
+
+            val overlayId = rule.onNodeWithTag(overlayTag).semanticsId()
+            val (centerX, centerY) = nodeCenter(overlayTag)
+
+            rule.runOnUiThread {
+                // Hover enter, move, and exit over covering Compose node should not reach
+                // AndroidView
+                assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, centerY)).isTrue()
+                assertThat(delegate.hoveredVirtualViewId).isEqualTo(overlayId)
+                assertThat(dispatchHover(ACTION_HOVER_MOVE, centerX, centerY)).isTrue()
+                assertThat(dispatchHover(ACTION_HOVER_EXIT, centerX, centerY)).isTrue()
+                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+                assertThat(receivedActions).isEmpty()
+
+                // Legacy behavior when flag disabled: hover enter forwards to covered AndroidView
+                AndroidComposeUiFlags.isInteropHoverZOrderEnabled = false
+                dispatchHover(ACTION_HOVER_ENTER, centerX, centerY)
+                assertThat(receivedActions).contains(ACTION_HOVER_ENTER)
+            }
+        }
+
+    @Test
+    fun testViewInterop_hoverOverUncoveredAndroidViewInFrontOfComposeContent_forwardsToView() =
+        withInteropHoverZOrderFlag {
+            val bgTag = "backgroundCompose"
+            val receivedActions = mutableListOf<Int>()
+            setContent {
+                Box(Modifier.size(100.dp)) {
+                    Box(
+                        Modifier.fillMaxSize().testTag(bgTag).semantics {
+                            contentDescription = "Background"
+                        }
+                    )
+                    // Raw AndroidView without any Compose modifiers or semantics placed in front
+                    RecordingAndroidView(receivedActions)
+                }
+            }
+
+            val (centerX, centerY) = nodeCenter(bgTag)
+
+            rule.runOnUiThread {
+                assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, centerY)).isTrue()
+                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+                assertThat(receivedActions).containsExactly(ACTION_HOVER_ENTER)
+            }
+        }
+
+    @Test
+    fun testViewInterop_hoverMoveFromUncoveredAndroidViewToCoveringComposeNode_synthesizesHoverExit() =
+        withInteropHoverZOrderFlag {
+            val overlayTag = "overlayTag"
+            val receivedActions = mutableListOf<Int>()
+            setContent {
+                Box(Modifier.size(100.dp)) {
+                    RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
+                    // Overlay covers the bottom half (y in 50.dp..100.dp)
+                    Box(
+                        Modifier.offset(y = 50.dp)
+                            .size(width = 100.dp, height = 50.dp)
+                            .testTag(overlayTag)
+                            .semantics { contentDescription = "Bottom Sheet" }
+                    )
+                }
+            }
+
+            val overlayId = rule.onNodeWithTag(overlayTag).semanticsId()
+            val overlayBounds =
+                with(rule.density) { rule.onNodeWithTag(overlayTag).getBoundsInRoot().toRect() }
+            val centerX = overlayBounds.center.x
+            val topHalfY = overlayBounds.top / 2f
+            val bottomHalfY = overlayBounds.center.y
+
+            rule.runOnUiThread {
+                // 1. Hover enter on uncovered top half -> forwards to AndroidView
+                assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, topHalfY)).isTrue()
+                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+                assertThat(receivedActions).contains(ACTION_HOVER_ENTER)
+                receivedActions.clear()
+
+                // 2. Hover move onto covering overlay -> synthesizes single HOVER_EXIT to
+                // AndroidView
+                assertThat(dispatchHover(ACTION_HOVER_MOVE, centerX, bottomHalfY)).isTrue()
+                assertThat(delegate.hoveredVirtualViewId).isEqualTo(overlayId)
+                assertThat(receivedActions).containsExactly(ACTION_HOVER_EXIT)
+                receivedActions.clear()
+
+                // 3. Hover exit from overlay -> does not send duplicate HOVER_EXIT to AndroidView
+                assertThat(dispatchHover(ACTION_HOVER_EXIT, centerX, bottomHalfY)).isTrue()
+                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+                assertThat(receivedActions).isEmpty()
+            }
+        }
+
+    @Test
+    fun testViewInterop_hoverOverHiddenAndroidView_doesNotForwardToView() =
+        withInteropHoverZOrderFlag {
+            val directTag = "directHidden"
+            val ancestorTag = "ancestorHidden"
+            val receivedActions = mutableListOf<Int>()
+            setContent {
+                Column {
+                    RecordingAndroidView(
+                        receivedActions,
+                        Modifier.size(100.dp).testTag(directTag).semantics {
+                            hideFromAccessibility()
+                        },
+                    )
+                    Box(
+                        Modifier.size(100.dp).testTag(ancestorTag).semantics(
+                            mergeDescendants = true
+                        ) {
+                            hideFromAccessibility()
+                        }
+                    ) {
+                        RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
+                    }
+                }
+            }
+
+            val (directX, directY) = nodeCenter(directTag)
+            val (ancestorX, ancestorY) = nodeCenter(ancestorTag)
+
+            rule.runOnUiThread {
+                dispatchHover(ACTION_HOVER_ENTER, directX, directY)
+                dispatchHover(ACTION_HOVER_ENTER, ancestorX, ancestorY)
+                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+                assertThat(receivedActions).isEmpty()
+            }
+        }
+
     @Test
     fun dispatchHoverEvent_returnsTrueForHandledAndFalseForUnhandled() {
         val hoverableBoxTag = "hoverable"
@@ -4462,58 +4660,6 @@ class AndroidAccessibilityTest {
                     y = (unhoverableBounds.top + unhoverableBounds.bottom) / 2f,
                 )
             assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
-        }
-    }
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    @Test
-    fun dispatchHoverEvent_returnsTrueForHandledAndFalseForUnhandled_featureFlagOff() {
-        val original = AndroidComposeUiFlags.isExploreByTouchHoverHandled
-        try {
-            AndroidComposeUiFlags.isExploreByTouchHoverHandled = false
-            val hoverableBoxTag = "hoverable"
-            val unhoverableBoxTag = "unhoverable"
-
-            setContent {
-                Column {
-                    Box(
-                        Modifier.testTag(hoverableBoxTag).size(100.dp).semantics {
-                            contentDescription = "Hoverable Box"
-                        }
-                    )
-                    Box(Modifier.testTag(unhoverableBoxTag).size(100.dp))
-                }
-            }
-
-            val hoverableBounds =
-                with(rule.density) {
-                    rule.onNodeWithTag(hoverableBoxTag).getBoundsInRoot().toRect()
-                }
-            rule.runOnUiThread {
-                val hoverEnter =
-                    createHoverMotionEvent(
-                        action = ACTION_HOVER_ENTER,
-                        x = (hoverableBounds.left + hoverableBounds.right) / 2f,
-                        y = (hoverableBounds.top + hoverableBounds.bottom) / 2f,
-                    )
-                assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
-            }
-
-            val unhoverableBounds =
-                with(rule.density) {
-                    rule.onNodeWithTag(unhoverableBoxTag).getBoundsInRoot().toRect()
-                }
-            rule.runOnUiThread {
-                val hoverEnter =
-                    createHoverMotionEvent(
-                        action = ACTION_HOVER_ENTER,
-                        x = (unhoverableBounds.left + unhoverableBounds.right) / 2f,
-                        y = (unhoverableBounds.top + unhoverableBounds.bottom) / 2f,
-                    )
-                assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
-            }
-        } finally {
-            AndroidComposeUiFlags.isExploreByTouchHoverHandled = original
         }
     }
 
@@ -5082,13 +5228,12 @@ class AndroidAccessibilityTest {
         val bounds = with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect() }
 
         // Act.
-        val hitNodeId =
-            rule.runOnIdle {
-                delegate.hitTestSemanticsAt(
-                    bounds.left + bounds.width / 2,
-                    bounds.top + bounds.height / 2,
-                )
-            }
+        val hitNodeId = rule.runOnIdle {
+            delegate.hitTestSemanticsAt(
+                bounds.left + bounds.width / 2,
+                bounds.top + bounds.height / 2,
+            )
+        }
 
         // Assert it doesn't hit the tagged node since it only has unimportant properties.
         rule.runOnIdle { assertThat(hitNodeId).isEqualTo(InvalidId) }
@@ -5388,8 +5533,9 @@ class AndroidAccessibilityTest {
             val virtualViewId = rule.onNodeWithTag("tag").semanticsId()
 
             // Act.
-            val accessibilityNodeInfo =
-                rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
+            val accessibilityNodeInfo = rule.runOnIdle {
+                createAccessibilityNodeInfo(virtualViewId)
+            }
 
             // Assert.
             rule.runOnIdle {
@@ -5427,8 +5573,9 @@ class AndroidAccessibilityTest {
             val virtualViewId = rule.onNodeWithTag("tag").semanticsId()
 
             // Act.
-            val accessibilityNodeInfo =
-                rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
+            val accessibilityNodeInfo = rule.runOnIdle {
+                createAccessibilityNodeInfo(virtualViewId)
+            }
 
             // Assert.
             rule.runOnIdle {
@@ -5496,8 +5643,9 @@ class AndroidAccessibilityTest {
             val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
             // Act.
-            val accessibilityNodeInfo =
-                rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
+            val accessibilityNodeInfo = rule.runOnIdle {
+                createAccessibilityNodeInfo(virtualViewId)
+            }
 
             // Assert.
             rule.runOnIdle {

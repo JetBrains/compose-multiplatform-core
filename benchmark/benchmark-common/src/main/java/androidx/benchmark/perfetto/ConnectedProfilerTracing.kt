@@ -28,9 +28,9 @@ public data class Response(
     val data: String? = null,
     val throwable: Throwable? = null,
 ) {
-    fun isSuccess() = code > 0
+    public fun isSuccess(): Boolean = code > 0
 
-    fun isFailure() = code <= 0
+    public fun isFailure(): Boolean = code <= 0
 }
 
 /**
@@ -43,7 +43,21 @@ public class ConnectedProfilerTracing(private val targetPackage: String) {
     /** Enables in-process tracing on the target package. */
     public fun enable(): Response {
         Log.d(BenchmarkState.TAG, "Enabling in-process tracing")
-        return sendBroadcast(ACTION_START)
+        val response = sendBroadcast(ACTION_START)
+        return if (response.isFailure()) {
+            // The only reason why this can fail is that we failed to deliver the broadcast.
+            // The app probably does not have the BroadcastReceiver. So, make that
+            // clearer.
+            response.copy(
+                data =
+                    """
+                    Unable to enable in-process tracing in $targetPackage.
+                    The app is likely missing a dependency on androidx.tracing:tracing-wire.
+                    """
+            )
+        } else {
+            response
+        }
     }
 
     /** Disables in-process tracing on the target package. */
@@ -60,10 +74,10 @@ public class ConnectedProfilerTracing(private val targetPackage: String) {
 
     internal fun sendBroadcast(action: String): Response {
         return runCatching {
-                val command = "-a $action $targetPackage/$RECEIVER_NAME"
-                val output = Shell.amBroadcast(command)
-                return parseResponse(output)
-            }
+            val command = "-a $action $targetPackage/$RECEIVER_NAME"
+            val output = Shell.amBroadcast(command)
+            return parseResponse(output)
+        }
             .getOrElse { throwable -> Response(code = RESPONSE_CODE_FAILED, throwable = throwable) }
     }
 
@@ -73,7 +87,7 @@ public class ConnectedProfilerTracing(private val targetPackage: String) {
         return Response(code = code, data = data)
     }
 
-    companion object {
+    public companion object {
         internal const val RECEIVER_NAME =
             "androidx.tracing.profiler.ConnectedProfilerTracingReceiver"
 

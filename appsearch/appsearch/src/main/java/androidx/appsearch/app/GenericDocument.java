@@ -30,6 +30,7 @@ import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.annotation.CurrentTimeMillisLong;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.annotation.SystemApi;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.flags.FlaggedApi;
@@ -77,17 +78,15 @@ public class GenericDocument {
 
     /**
      * Fixed constant synthetic property for parent types.
-     *
-     * <!--@exportToFramework:hide-->
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String PARENT_TYPES_SYNTHETIC_PROPERTY = "$$__AppSearch__parentTypes";
 
     /**
      * An immutable empty {@link GenericDocument}.
-     *
-     * <!--@exportToFramework:hide-->
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final GenericDocument EMPTY = new GenericDocument.Builder<>("", "", "").build();
 
@@ -144,8 +143,8 @@ public class GenericDocument {
      *
      * @param documentParcel Packaged {@link GenericDocument} data, such as the result of
      *                       {@link #getDocumentParcel()}.
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @SuppressWarnings("deprecation")
     public GenericDocument(@NonNull GenericDocumentParcel documentParcel) {
@@ -166,13 +165,11 @@ public class GenericDocument {
      *
      * @param dest The {@link Parcel} to write to.
      * @param flags The flags to use for parceling.
-     * @exportToFramework:hide
      */
     // GenericDocument is an open class that can be extended, whereas parcelable classes must be
     // final in those methods. Thus, we make this a system api to avoid 3p apps depending on it
     // and getting confused by the inheritability.
     @SystemApi(client = SystemApi.Client.MODULE_LIBRARIES)
-    @FlaggedApi(Flags.FLAG_ENABLE_GENERIC_DOCUMENT_OVER_IPC)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public final void writeToParcel(@NonNull Parcel dest, int flags) {
         Objects.requireNonNull(dest);
@@ -183,14 +180,12 @@ public class GenericDocument {
      * Creates a {@link GenericDocument} from a {@link Parcel}.
      *
      * @param parcel The {@link Parcel} to read from.
-     * @exportToFramework:hide
      */
     // GenericDocument is an open class that can be extended, whereas parcelable classes must be
     // final in those methods. Thus, we make this a system api to avoid 3p apps depending on it
     // and getting confused by the inheritability.
     @SuppressWarnings("deprecation")
     @SystemApi(client = SystemApi.Client.MODULE_LIBRARIES)
-    @FlaggedApi(Flags.FLAG_ENABLE_GENERIC_DOCUMENT_OVER_IPC)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static @NonNull GenericDocument createFromParcel(@NonNull Parcel parcel) {
         Objects.requireNonNull(parcel);
@@ -227,9 +222,8 @@ public class GenericDocument {
     /**
      * Returns the {@link GenericDocumentParcel} holding the values for this
      * {@link GenericDocument}.
-     *
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @NonNull GenericDocumentParcel getDocumentParcel() {
         return mDocumentParcel;
@@ -257,8 +251,8 @@ public class GenericDocument {
      *
      * @deprecated Parent types should no longer be set in {@link GenericDocument}. Use
      * {@link SearchResult.Builder#getParentTypeMap()} instead.
-     * <!--@exportToFramework:hide-->
      */
+    @HideInPlatform
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Deprecated
     public @Nullable List<String> getParentTypes() {
@@ -376,9 +370,15 @@ public class GenericDocument {
      */
     public @Nullable Object getProperty(@NonNull String path) {
         Objects.requireNonNull(path);
-        Object rawValue =
-                getRawPropertyFromRawDocument(new PropertyPath(path), /*pathIndex=*/ 0,
-                        mDocumentParcel.getPropertyMap());
+        Map<String, PropertyParcel> propertyMap = mDocumentParcel.getPropertyMap();
+        Object rawValue;
+        if (isSimplePropertyName(path)) {
+            PropertyParcel propertyParcel = propertyMap.get(path);
+            rawValue = propertyParcel != null ? propertyParcel.getValues() : null;
+        } else {
+            rawValue = getRawPropertyFromRawDocument(
+                    new PropertyPath(path), /*pathIndex=*/ 0, propertyMap);
+        }
 
         // Unpack the raw value into the types the user expects, if required.
         if (rawValue instanceof GenericDocumentParcel) {
@@ -406,6 +406,24 @@ public class GenericDocument {
 
         // Otherwise the raw property is the same as the final property and needs no transformation.
         return rawValue;
+    }
+
+    /**
+     * Returns {@code true} if {@code path} is a direct property name rather than a nested or
+     * indexed property path (i.e. non-empty and contains no {@code '.'}, {@code '['}, or
+     * {@code ']'} characters).
+     */
+    private static boolean isSimplePropertyName(@NonNull String path) {
+        if (path.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < path.length(); i++) {
+            char c = path.charAt(i);
+            if (c == '.' || c == '[' || c == ']') {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -1412,8 +1430,8 @@ public class GenericDocument {
          *
          * @deprecated Parent types should no longer be set in {@link GenericDocument}. Use
          * {@link SearchResult.Builder#setParentTypeMap(Map)} instead.
-         * <!--@exportToFramework:hide-->
          */
+        @HideInPlatform
         @CanIgnoreReturnValue
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @Deprecated

@@ -23,9 +23,9 @@ import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.adapter.ZslControlNoOpImpl
+import androidx.camera.camera2.adapter.propagateTo
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
-import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.compat.workaround.TemplateParamsQuirkOverride
 import androidx.camera.camera2.config.CameraConfig
 import androidx.camera.camera2.config.UseCaseCameraComponent
@@ -52,6 +52,7 @@ import androidx.camera.core.impl.Config
 import androidx.camera.testing.impl.FakeCameraCapturePipeline
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -72,10 +73,7 @@ class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
             cameraMetadata,
             StreamConfigurationMapCompat(
                 StreamConfigurationMapBuilder.newBuilder().build(),
-                OutputSizesCorrector(
-                    cameraMetadata,
-                    StreamConfigurationMapBuilder.newBuilder().build(),
-                ),
+                cameraMetadata,
             ),
         )
     val configProvider =
@@ -246,22 +244,29 @@ open class FakeUseCaseCameraRequestControl(
             )
         )
 
+        val currentResult = CompletableDeferred<Result3A>()
+        focusMeteringResult.propagateTo(currentResult)
+
         if (focusAutoCompletesAfterTimeout) {
             scope.launch {
-                withTimeoutOrNull(MILLISECONDS.convert(timeLimitNs, NANOSECONDS)) {
-                        focusMeteringResult.await()
-                    }
-                    .let { result3A ->
-                        if (result3A == null) {
-                            focusMeteringResult.complete(
-                                Result3A(status = Result3A.Status.TIME_LIMIT_REACHED)
-                            )
+                try {
+                    withTimeoutOrNull(MILLISECONDS.convert(timeLimitNs, NANOSECONDS).milliseconds) {
+                            currentResult.await()
                         }
-                    }
+                        .let { result3A ->
+                            if (result3A == null) {
+                                currentResult.complete(
+                                    Result3A(status = Result3A.Status.TIME_LIMIT_REACHED)
+                                )
+                            }
+                        }
+                } catch (_: kotlinx.coroutines.CancellationException) {
+                    // Ignore cancellation of currentResult
+                }
             }
         }
 
-        return focusMeteringResult
+        return currentResult
     }
 
     override fun cancelFocusAndMeteringAsync(): Deferred<Result3A> {

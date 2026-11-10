@@ -103,6 +103,38 @@ public class LayoutComponent extends Component {
         return mVerticalScrollDelegate;
     }
 
+    @Override
+    public boolean hasHorizontalScroll() {
+        if (mHorizontalScrollDelegate != null || mComponentModifiers.hasHorizontalScroll()) {
+            return true;
+        }
+        if (super.hasHorizontalScroll()) {
+            return true;
+        }
+        for (Component c : mChildrenComponents) {
+            if (c.hasHorizontalScroll()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasVerticalScroll() {
+        if (mVerticalScrollDelegate != null || mComponentModifiers.hasVerticalScroll()) {
+            return true;
+        }
+        if (super.hasVerticalScroll()) {
+            return true;
+        }
+        for (Component c : mChildrenComponents) {
+            if (c.hasVerticalScroll()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public LayoutComponent(
             @Nullable Component parent,
             int componentId,
@@ -381,6 +413,7 @@ public class LayoutComponent extends Component {
                 mGraphicsLayerModifier = (GraphicsLayerModifierOperation) op;
             } else if (op instanceof AnimationSpec) {
                 mAnimationSpec = (AnimationSpec) op;
+                mAnimationId = mAnimationSpec.getAnimationId();
             } else if (op instanceof ScrollDelegate) {
                 ScrollDelegate scrollDelegate = (ScrollDelegate) op;
                 if (scrollDelegate.handlesHorizontalScroll()) {
@@ -661,7 +694,8 @@ public class LayoutComponent extends Component {
         return s + w + e;
     }
 
-    protected float applyWidthConstraints(float width) {
+    /** Applies width constraints from modifiers to the specified width dimension. */
+    public float applyWidthConstraints(float width) {
         if (mWidthModifier == null) {
             return width;
         }
@@ -672,7 +706,8 @@ public class LayoutComponent extends Component {
         return widthIn.applyWidthConstraint(width);
     }
 
-    protected float applyHeightConstraints(float height) {
+    /** Applies height constraints from modifiers to the specified height dimension. */
+    public float applyHeightConstraints(float height) {
         if (mHeightModifier == null) {
             return height;
         }

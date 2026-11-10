@@ -36,7 +36,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,9 +44,10 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("DEPRECATION")
 class ListItemScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -237,7 +237,7 @@ class ListItemScreenshotTest {
             @OptIn(ExperimentalMaterial3Api::class)
             CompositionLocalProvider(
                 LocalRippleThemeConfiguration provides
-                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+                    RippleDefaults.InsetFocusRingThemeConfiguration
             ) {
                 localInputModeManager = LocalInputModeManager.current
                 Column(Modifier.testTag(Tag)) {

@@ -134,14 +134,13 @@ class BinaryCompatibilityChecker(
             )
     }
 
-    private fun AbiDeclarationContainer.decoratedDeclarations() =
-        declarations.map {
-            when (it) {
-                is AbiFunction -> DecoratedAbiFunction(it, null)
-                is AbiProperty -> DecoratedAbiProperty(it, null)
-                else -> it
-            }
+    private fun AbiDeclarationContainer.decoratedDeclarations() = declarations.map {
+        when (it) {
+            is AbiFunction -> DecoratedAbiFunction(it, null)
+            is AbiProperty -> DecoratedAbiProperty(it, null)
+            else -> it
         }
+    }
 
     private fun AbiDeclaration.isBinaryCompatibleWith(
         oldDeclaration: AbiDeclaration,
@@ -523,9 +522,9 @@ private fun DecoratedAbiValueParameter.isBinaryCompatibleWith(
     errors: CompatibilityErrors,
 ) {
     type.isBinaryCompatibleWith(otherParam.type, parentQualifiedName, errors)
-    if (effectiveIsVararg != otherParam.effectiveIsVararg) {
+    if (isVararg != otherParam.isVararg) {
         errors.add(
-            "isVararg changed from ${otherParam.effectiveIsVararg} to $effectiveIsVararg for parameter " +
+            "isVararg changed from ${otherParam.isVararg} to $isVararg for parameter " +
                 "${asString()} of $parentQualifiedName"
         )
     }
@@ -930,11 +929,13 @@ private class DecoratedAbiClass(
 private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
     AbiValueParameter by param
 
-fun AbiFunction.contextReceiverParametersCount(): Int =
-    valueParameters.count { it.kind == AbiValueParameterKind.CONTEXT }
+fun AbiFunction.contextReceiverParametersCount(): Int = valueParameters.count {
+    it.kind == AbiValueParameterKind.CONTEXT
+}
 
-private fun AbiFunction.hasExtensionReceiverParameter() =
-    valueParameters.any { it.kind == AbiValueParameterKind.EXTENSION_RECEIVER }
+private fun AbiFunction.hasExtensionReceiverParameter() = valueParameters.any {
+    it.kind == AbiValueParameterKind.EXTENSION_RECEIVER
+}
 
 // b/493871877
 private val AbiValueParameter.effectiveIsVararg

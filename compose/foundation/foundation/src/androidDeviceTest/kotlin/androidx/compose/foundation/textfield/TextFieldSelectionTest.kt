@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.foundation.textfield
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -69,14 +71,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(ContextMenuFlagFlipperRunner::class)
 class TextFieldSelectionTest : FocusedWindowTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val testTag = "text field"
 

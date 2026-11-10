@@ -22,7 +22,6 @@ import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -39,6 +38,7 @@ import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
@@ -61,10 +61,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
  * camera device fails to open for various reasons.
  */
 @RunWith(ParameterizedRobolectricTestRunner::class)
-@Config(
-    minSdk = Build.VERSION_CODES.M,
-    shadows = [TestShadowCameraManager::class, TestShadowCameraDeviceImpl::class],
-)
+@Config(minSdk = 24, shadows = [TestShadowCameraManager::class, TestShadowCameraDeviceImpl::class])
 class CameraStateRobolectricTest(private val config: TestConfig) {
 
     data class TestConfig(
@@ -144,11 +141,11 @@ class CameraStateRobolectricTest(private val config: TestConfig) {
                     }
 
                     override fun postToMainThread(runnable: Runnable) {
-                        runnable.run()
+                        mainThreadHandler.post(runnable)
                     }
 
                     override fun isMainThread(): Boolean {
-                        return true
+                        return Looper.myLooper() == Looper.getMainLooper()
                     }
                 }
             )
@@ -229,7 +226,18 @@ class CameraStateRobolectricTest(private val config: TestConfig) {
         flushLoopers()
 
         // Assert: Wait for the error state and verify it matches expectations.
-        assertThat(cameraErrorLatch.await(5, TimeUnit.SECONDS)).isTrue()
+        // Periodically flush the loopers while waiting for the latch to prevent real-world time
+        // delays.
+        val timeoutMs = 5000L
+        val pollIntervalMs = 20L
+        val startTime = System.currentTimeMillis()
+        while (cameraErrorLatch.count > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
+            flushLoopers()
+            cameraErrorLatch.await(pollIntervalMs, TimeUnit.MILLISECONDS)
+        }
+        assertWithMessage("Camera error latch did not reach 0 within the timeout period.")
+            .that(cameraErrorLatch.count)
+            .isEqualTo(0L)
         assertThat(capturedState).isNotNull()
         assertThat(capturedState!!.error?.code).isEqualTo(config.expectedErrorCode)
         assertThat(capturedState.type).isIn(config.expectedCameraStateTypes)

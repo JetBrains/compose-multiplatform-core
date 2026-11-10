@@ -33,6 +33,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
 import androidx.webkit.BackForwardCacheSettings;
+import androidx.webkit.JavaScriptExecutionWorld;
 import androidx.webkit.Navigation;
 import androidx.webkit.NavigationListener;
 import androidx.webkit.NavigationParameters;
@@ -631,6 +632,7 @@ public class WebViewFeatureInternal {
      * {@link WebSettingsCompat#setAttributionRegistrationBehavior(WebSettings, int)}
      * {@link WebSettingsCompat#getAttributionRegistrationBehavior(WebSettings)}
      */
+    @SuppressWarnings("deprecation")
     public static final ApiFeature.NoFramework ATTRIBUTION_REGISTRATION_BEHAVIOR =
             new ApiFeature.NoFramework(WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR,
                     Features.ATTRIBUTION_BEHAVIOR);
@@ -707,8 +709,8 @@ public class WebViewFeatureInternal {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers
-     * {@link BackForwardCacheSettings#setKeepForwardEntries(boolean)}
-     * {@link BackForwardCacheSettings#getKeepForwardEntries()}
+     * {@link BackForwardCacheSettings#setKeepForwardEntriesEnabled(boolean)}
+     * {@link BackForwardCacheSettings#isKeepForwardEntriesEnabled()}
      */
     public static final ApiFeature.NoFramework BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4 =
             new ApiFeature.NoFramework(WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4,
@@ -739,7 +741,7 @@ public class WebViewFeatureInternal {
 
     /**
      * Feature that is relevant for the implementation of
-     * {@link androidx.webkit.WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link androidx.webkit.WebViewCompat#startUpWebView(Context, WebViewStartUpConfig, WebViewOutcomeReceiver)}
      *
      * This feature is not referred to by the app and is only used by the library to choose
      * different code paths based on underlying support from WebView.
@@ -751,7 +753,7 @@ public class WebViewFeatureInternal {
     /**
      * @deprecated Use {@link #ASYNC_WEBVIEW_STARTUP_V2} instead.
      * Feature that is relevant for the implementation of
-     * {@link androidx.webkit.WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link androidx.webkit.WebViewCompat#startUpWebView(Context, WebViewStartUpConfig, WebViewOutcomeReceiver)}
      *
      * This feature is not referred to by the app and is only used by the library to choose
      * different code paths based on underlying support from WebView.
@@ -762,7 +764,7 @@ public class WebViewFeatureInternal {
 
     /**
      * Feature that is relevant for the implementation of
-     * {@link WebViewStartUpResult#getAsyncStartUpLocations()}
+     * {@link WebViewStartUpResult#getNonUiThreadBlockingStartUpLocations()}
      *
      * This feature is not referred to by the app and is only used by the library to choose
      * different code paths based on underlying support from WebView.
@@ -903,7 +905,7 @@ public class WebViewFeatureInternal {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers:
-     * {@link WebViewBuilder#build(Context)}.
+     * {@link androidx.webkit.WebViewBuilder#build(Context)}.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final ApiFeature.NoFramework WEBVIEW_BUILDER_V1 =
@@ -913,7 +915,7 @@ public class WebViewFeatureInternal {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers:
-     * {@link WebViewBuilder#applyTo(WebView)}.
+     * {@link androidx.webkit.WebViewBuilder#applyTo(WebView)}.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final ApiFeature.NoFramework WEBVIEW_BUILDER_V2 =
@@ -934,7 +936,7 @@ public class WebViewFeatureInternal {
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers {@link WebViewCompat#setShouldCacheProvider(boolean)}.
+     * This feature covers {@code WebViewCompat#setShouldCacheProvider(boolean)}.
      */
     @Profile.ExperimentalWarmUpRendererProcess
     public static final ApiFeature.NoFramework WARM_UP_RENDERER_PROCESS =
@@ -1004,6 +1006,15 @@ public class WebViewFeatureInternal {
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#enqueuePreconnect(String)}
+     */
+    public static final ApiFeature.NoFramework ENQUEUE_PRECONNECT =
+            new ApiFeature.NoFramework(WebViewFeature.ENQUEUE_PRECONNECT,
+                    Features.ENQUEUE_PRECONNECT);
+
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link Profile#addQuicHints(Set)}
      */
     public static final ApiFeature.NoFramework ADD_QUIC_HINTS_V1 =
@@ -1011,7 +1022,7 @@ public class WebViewFeatureInternal {
                     Features.ADD_QUIC_HINTS_V1);
 
     /**
-     * Feature for {@link WebSettingsFeature#isFeatureSupported(String)}.
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers
      * {@link WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)},
      */
@@ -1024,10 +1035,10 @@ public class WebViewFeatureInternal {
      * androidx.webkit.WebViewCompat#addJavaScriptOnEvent(android.webkit.WebView, String, int, Set,
      * androidx.webkit.JavaScriptExecutionWorld)} {@link
      * androidx.webkit.WebViewCompat#getExecutionWorld(android.webkit.WebView, String)} {@link
-     * androidx.webkit.WebViewCompat#addWebMessageListener(android.webkit.WebView, String, Set,
-     * WebMessageListener, JavaScriptExecutionWorld)} {@link
-     * androidx.webkit.WebViewCompat#removeWebMessageListener(android.webkit.WebView, String,
-     * JavaScriptExecutionWorld)}
+     * androidx.webkit.WebViewCompat#addWebMessageListener(WebView, String, Set, JavaScriptExecutionWorld, WebViewCompat.WebMessageListener)
+     * } {@link
+     * androidx.webkit.WebViewCompat#removeWebMessageListener(WebView, JavaScriptExecutionWorld, String)
+     * }
      */
     public static final ApiFeature.NoFramework JS_INJECTION_IN_FRAME_AND_WORLD =
             new ApiFeature.NoFramework(
@@ -1044,16 +1055,49 @@ public class WebViewFeatureInternal {
                     Features.WEBVIEW_NAVIGATE_V1);
 
     /**
+     * When this feature is enabled,
+     * {@link WebViewCompat#navigate(WebView, String, NavigationParameters)}
+     * will drain the prefetch queue before navigating.
+     * <p>
+     * This will become the default behavior of
+     * {@link WebViewCompat#navigate(WebView, String, NavigationParameters)}.
+     */
+    public static final ApiFeature.NoFramework WEBVIEW_NAVIGATE_DRAIN_PREFETCH =
+            new ApiFeature.NoFramework(WebViewFeature.WEBVIEW_NAVIGATE_DRAIN_PREFETCH,
+                    Features.WEBVIEW_NAVIGATE_DRAIN_PREFETCH);
+
+    /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers:
      * {@link WebSettingsCompat#setDownloadFaviconsEnabled(WebSettings, boolean)}
      * {@link WebSettingsCompat#getDownloadFaviconsEnabled(WebSettings)}
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final ApiFeature.NoFramework DOWNLOAD_FAVICONS_ENABLED =
             new ApiFeature.NoFramework(
                     WebViewFeature.DOWNLOAD_FAVICONS_ENABLED,
                     Features.DOWNLOAD_FAVICONS_ENABLED);
+
+    /**
+     * This feature covers
+     * {@link Profile#getHttpCache()}
+     * {@link androidx.webkit.HttpCache#getDefaultQuotaBytes()}
+     * {@link androidx.webkit.HttpCache#isUsingDefaultQuota()}
+     * {@link androidx.webkit.HttpCache#useDefaultQuota()}
+     * {@link androidx.webkit.HttpCache#getQuotaBytes()}
+     * {@link androidx.webkit.HttpCache#setQuotaBytes(long)}
+     */
+    public static final ApiFeature.NoFramework HTTP_CACHE_MANAGER =
+            new ApiFeature.NoFramework(WebViewFeature.HTTP_CACHE_MANAGER,
+                    Features.HTTP_CACHE_MANAGER);
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link Profile#setCrossOriginIsolatedAllowlist(Set)}
+     * {@link Profile#getCrossOriginIsolatedAllowlist()}
+     */
+    public static final ApiFeature.NoFramework CROSS_ORIGIN_ISOLATED_ALLOWLIST =
+            new ApiFeature.NoFramework(WebViewFeature.CROSS_ORIGIN_ISOLATED_ALLOWLIST,
+                    Features.CROSS_ORIGIN_ISOLATED_ALLOW_LIST);
 
     // --- Add new feature constants above this line ---
 

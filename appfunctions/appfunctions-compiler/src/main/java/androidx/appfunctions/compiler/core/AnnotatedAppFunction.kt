@@ -17,11 +17,10 @@
 package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
-import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
-import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.SUPPORTED_TYPES_STRING
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.isAllowToBeOptional
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.isSupportedType
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAccessLevelAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
@@ -77,7 +76,7 @@ data class AnnotatedAppFunction(
         if (!skipFirstParameterValidation) {
             validateFirstParameter()
         }
-        validateParameterTypes()
+        validateParameterTypes(skipFirstParameterValidation)
         return this
     }
 
@@ -126,8 +125,6 @@ data class AnnotatedAppFunction(
                 functionAnnotations = appFunctionDeclaration.annotations,
             )
 
-        val deprecationMetadata = appFunctionDeclaration.getDeprecationMetadata()
-
         return CompileTimeAppFunctionMetadata(
             id = getAppFunctionIdentifier(enclosingClass),
             isEnabledByDefault = checkNotNull(appFunctionAnnotationProperties.isEnabledByDefault),
@@ -136,11 +133,13 @@ data class AnnotatedAppFunction(
             response =
                 AppFunctionResponseMetadata(
                     valueType = responseTypeMetadata,
-                    description = getResponseDescription(rawKDoc),
+                    description = appFunctionDeclaration.getResponseDescription(rawKDoc),
                 ),
             components = AppFunctionComponentsMetadata(dataTypes = sharedDataTypeMap),
-            description = getFunctionDescription(rawKDoc),
-            deprecation = deprecationMetadata,
+            description = appFunctionDeclaration.getFunctionDescription(rawKDoc),
+            deprecation = appFunctionDeclaration.getDeprecationMetadata(),
+            accessLevel = appFunctionAnnotationProperties.accessLevel,
+            isCompatEnforcementEnabled = appFunctionAnnotationProperties.isCompatEnforcementEnabled,
         )
     }
 
@@ -170,7 +169,8 @@ data class AnnotatedAppFunction(
             val parameterTypeReference = AppFunctionTypeReference(ksValueParameter.type)
             if (parameterTypeReference.typeOrItemTypeIsAppFunctionSerializable()) {
                 sourceFileSet.addAll(
-                    getAnnotatedAppFunctionSerializable(parameterTypeReference)
+                    parameterTypeReference
+                        .getAnnotatedAppFunctionSerializable()
                         .getTransitiveSerializableSourceFiles()
                 )
             }
@@ -180,7 +180,8 @@ data class AnnotatedAppFunction(
             AppFunctionTypeReference(checkNotNull(appFunctionDeclaration.returnType))
         if (returnTypeReference.typeOrItemTypeIsAppFunctionSerializable()) {
             sourceFileSet.addAll(
-                getAnnotatedAppFunctionSerializable(returnTypeReference)
+                returnTypeReference
+                    .getAnnotatedAppFunctionSerializable()
                     .getTransitiveSerializableSourceFiles()
             )
         }
@@ -206,10 +207,9 @@ data class AnnotatedAppFunction(
         }
     }
 
-    private fun validateParameterTypes() {
+    private fun validateParameterTypes(skipFirstParameterValidation: Boolean) {
         for ((paramIndex, ksValueParameter) in appFunctionDeclaration.parameters.withIndex()) {
-            if (paramIndex == 0) {
-                // Skip the first parameter which is always the `AppFunctionContext`.
+            if (paramIndex == 0 && !skipFirstParameterValidation) {
                 continue
             }
 
@@ -236,6 +236,20 @@ data class AnnotatedAppFunction(
                     ksValueParameter,
                 )
             }
+
+            val uriConstraint =
+                ksValueParameter.annotations.findAnnotation(
+                    IntrospectionHelper.AppFunctionUriValueConstraintAnnotation.CLASS_NAME
+                )
+            if (
+                uriConstraint != null &&
+                    !ksValueParameter.type.isOfType(IntrospectionHelper.UriClass.URI_CLASS_NAME)
+            ) {
+                throw ProcessingException(
+                    "@${IntrospectionHelper.AppFunctionUriValueConstraintAnnotation.CLASS_NAME.simpleName} can only be applied to ${IntrospectionHelper.UriClass.URI_CLASS_NAME.canonicalName}",
+                    ksValueParameter,
+                )
+            }
         }
     }
 
@@ -245,7 +259,7 @@ data class AnnotatedAppFunction(
         val appFunctionAnnotation =
             functionDeclaration.annotations.findAnnotation(AppFunctionAnnotation.CLASS_NAME)
                 ?: throw ProcessingException(
-                    "Function not annotated with @AppFunction.",
+                    "Function not annotated with @AppFunctionDeclaration.",
                     functionDeclaration,
                 )
         val rootInterfaceWithAppFunctionSchemaDefinition =
@@ -254,9 +268,14 @@ data class AnnotatedAppFunction(
             rootInterfaceWithAppFunctionSchemaDefinition
                 ?.annotations
                 ?.findAnnotation(AppFunctionSchemaDefinitionAnnotation.CLASS_NAME)
+        val accessLevelAnnotation =
+            functionDeclaration.annotations.findAnnotation(
+                AppFunctionAccessLevelAnnotation.CLASS_NAME
+            )
         return computeAppFunctionAnnotationProperties(
             appFunctionAnnotation = appFunctionAnnotation,
             schemaDefinitionAnnotation = schemaDefinitionAnnotation,
+            accessLevelAnnotation = accessLevelAnnotation,
         )
     }
 
@@ -289,35 +308,6 @@ data class AnnotatedAppFunction(
         }
     }
 
-    private fun getFunctionDescription(rawKDoc: String): String {
-        val instruction =
-            appFunctionDeclaration.annotations
-                .findAnnotation(IntrospectionHelper.AppFunctionInstructionAnnotation.CLASS_NAME)
-                ?.requirePropertyValueOfType(
-                    IntrospectionHelper.AppFunctionInstructionAnnotation.PROPERTY_INSTRUCTION,
-                    String::class,
-                )
-        if (instruction != null) {
-            return instruction
-        }
-        return sanitizeKDoc(rawKDoc)
-    }
-
-    private fun getResponseDescription(rawKDoc: String): String {
-        val returnInstruction =
-            appFunctionDeclaration.returnType
-                ?.annotations
-                ?.findAnnotation(IntrospectionHelper.AppFunctionInstructionAnnotation.CLASS_NAME)
-                ?.requirePropertyValueOfType(
-                    IntrospectionHelper.AppFunctionInstructionAnnotation.PROPERTY_INSTRUCTION,
-                    String::class,
-                )
-        if (returnInstruction != null) {
-            return returnInstruction
-        }
-        return getResponseDescriptionFromKDoc(rawKDoc)
-    }
-
     private fun KSDeclaration.getDeprecationMetadata(): AppFunctionDeprecationMetadata? {
         val annotation =
             annotations.findAnnotation(IntrospectionHelper.DeprecatedAnnotation.CLASS_NAME)
@@ -328,26 +318,5 @@ data class AnnotatedAppFunction(
                 String::class,
             )
         return AppFunctionDeprecationMetadata(message)
-    }
-
-    private fun getAnnotatedAppFunctionSerializable(
-        appFunctionTypeReference: AppFunctionTypeReference
-    ): AppFunctionSerializableType {
-        val appFunctionSerializableKSType =
-            appFunctionTypeReference.selfOrItemTypeReference.resolve()
-        return AppFunctionSerializableType.create(
-            classDeclaration =
-                appFunctionSerializableKSType.declaration as? KSClassDeclaration
-                    ?: throw ProcessingException(
-                        "Only classes/interfaces should be annotated with @AppFunctionSerializable",
-                        appFunctionSerializableKSType.declaration,
-                    ),
-            typeArguments = appFunctionSerializableKSType.arguments,
-        )
-    }
-
-    private fun AppFunctionTypeReference.typeOrItemTypeIsAppFunctionSerializable(): Boolean {
-        return this.isOfTypeCategory(SERIALIZABLE_SINGULAR) ||
-            this.isOfTypeCategory(SERIALIZABLE_LIST)
     }
 }

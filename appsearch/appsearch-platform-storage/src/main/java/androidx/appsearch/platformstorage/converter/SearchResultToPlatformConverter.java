@@ -16,7 +16,6 @@
 
 package androidx.appsearch.platformstorage.converter;
 
-import android.annotation.SuppressLint;
 import android.os.Build;
 import android.util.Log;
 
@@ -25,9 +24,11 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresExtension;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.SearchResult;
+import androidx.appsearch.platformstorage.PlatformConversionAdapter;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
@@ -39,8 +40,8 @@ import java.util.Map;
 
 /**
  * Translates between Platform and Jetpack versions of {@link SearchResult}.
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.S)
 public class SearchResultToPlatformConverter {
@@ -51,10 +52,12 @@ public class SearchResultToPlatformConverter {
     /** Translates from Platform to Jetpack versions of {@link SearchResult}. */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static @NonNull SearchResult toJetpackSearchResult(
-            android.app.appsearch.@NonNull SearchResult platformResult) {
+            android.app.appsearch.@NonNull SearchResult platformResult,
+            @NonNull PlatformConversionAdapter adapter) {
         Preconditions.checkNotNull(platformResult);
+        Preconditions.checkNotNull(adapter);
         GenericDocument document = GenericDocumentToPlatformConverter.toJetpackGenericDocument(
-                platformResult.getGenericDocument());
+                platformResult.getGenericDocument(), adapter);
         SearchResult.Builder builder = new SearchResult.Builder(platformResult.getPackageName(),
                 platformResult.getDatabaseName())
                 .setGenericDocument(document)
@@ -68,7 +71,7 @@ public class SearchResultToPlatformConverter {
         if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.U_BASE) {
             for (android.app.appsearch.SearchResult joinedResult :
                     ApiHelperForSdkExtensionUBase.getJoinedResults(platformResult)) {
-                builder.addJoinedResult(toJetpackSearchResult(joinedResult));
+                builder.addJoinedResult(toJetpackSearchResult(joinedResult, adapter));
             }
         }
         if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.B_BASE) {

@@ -22,8 +22,10 @@ plugins {
 }
 
 androidXMultiplatform {
-    // Only supported on non-Android JVM for Linux on x86_64
+    // Only supported on non-Android JVM for Linux on x86_64 and Mac on arm64
     jvm()
+
+    ios()
 
     androidLibrary {
         namespace = "androidx.ink.strokes"
@@ -33,13 +35,10 @@ androidXMultiplatform {
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.androidx.annotation)
-            implementation(project(":ink:ink-nativeloader"))
-        }
-
-        jvmAndAndroidMain.dependencies {
-            implementation(project(":ink:ink-geometry"))
+            api("androidx.annotation:annotation:1.11.0")
             implementation(project(":ink:ink-brush"))
+            implementation(project(":ink:ink-geometry"))
+            implementation(project(":ink:ink-nativeloader"))
         }
 
         commonTest.dependencies {

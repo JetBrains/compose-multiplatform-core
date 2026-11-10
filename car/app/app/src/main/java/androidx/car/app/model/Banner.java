@@ -16,21 +16,26 @@
 
 package androidx.car.app.model;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.SuppressLint;
 
+import androidx.annotation.IntDef;
+import androidx.annotation.RestrictTo;
 import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.constraints.ActionsConstraints;
-import androidx.car.app.model.constraints.BackgroundConstraints;
 import androidx.car.app.model.constraints.CarTextConstraints;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,12 +52,40 @@ import java.util.Objects;
 @KeepFields
 @RequiresCarApi(9)
 public final class Banner implements Item {
+    @RestrictTo(LIBRARY)
+    @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_MEDIUM, IMAGE_TYPE_LARGE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface BannerImageType {
+    }
+
+    /**
+     * Represents a small icon-sized image to be displayed in the banner.
+     *
+     * <p>The host renders it with standard padding and scales the image to fit within the bounds.
+     */
+    public static final int IMAGE_TYPE_SMALL = 1;
+
+    /**
+     * Represents a medium padded artwork image to be displayed in the banner.
+     *
+     * <p>The host renders it with standard padding and scales the image to fit within the bounds.
+     */
+    public static final int IMAGE_TYPE_MEDIUM = 2;
+
+    /**
+     * Represents a large edge-to-edge image to be displayed in the banner. Scales the image
+     * to fill the container and potentially clip within the bounds if a shape is applied.
+     *
+     * <p>This image type cannot be used in combination with {@link Builder#addBelowAction(Action)}.
+     */
+    public static final int IMAGE_TYPE_LARGE = 3;
+
     private static final int MAX_TRAILING_ELEMENTS = 2;
 
     private final @Nullable CarText mTitle;
     private final @Nullable CarText mSubtitle;
     private final @Nullable OnClickDelegate mOnClickDelegate;
-    private final @Nullable Background mBackground;
+    private final @Nullable BannerStyle mStyle;
     private final @Nullable BannerElement mLeadingElement;
     private final List<BannerElement> mTrailingElements;
     private final List<Action> mBelowActions;
@@ -61,7 +94,7 @@ public final class Banner implements Item {
         mTitle = builder.mTitle;
         mSubtitle = builder.mSubtitle;
         mOnClickDelegate = builder.mOnClickDelegate;
-        mBackground = builder.mBackground;
+        mStyle = builder.mStyle;
         mLeadingElement = builder.mLeadingElement;
         mTrailingElements = Collections.unmodifiableList(builder.mTrailingElements);
         mBelowActions = Collections.unmodifiableList(builder.mBelowActions);
@@ -72,7 +105,7 @@ public final class Banner implements Item {
         mTitle = null;
         mSubtitle = null;
         mOnClickDelegate = null;
-        mBackground = null;
+        mStyle = null;
         mLeadingElement = null;
         mTrailingElements = Collections.emptyList();
         mBelowActions = Collections.emptyList();
@@ -93,7 +126,7 @@ public final class Banner implements Item {
     /**
      * Returns the subtitle of the banner.
      *
-     * <p>The title is automatically truncated if it's too long; however, shorter variants can be
+     * <p>The subtitle is automatically truncated if it's too long; however, shorter variants can be
      * added via {@link CarText.Builder#addVariant(CharSequence)}.
      *
      * @see Builder#setSubtitle(CharSequence)
@@ -112,12 +145,12 @@ public final class Banner implements Item {
     }
 
     /**
-     * Returns the background of the banner.
+     * Returns the {@link BannerStyle} of the banner, or {@code null} if not set.
      *
-     * @see Builder#setBackground(Background)
+     * @see Builder#setStyle(BannerStyle)
      */
-    public @Nullable Background getBackground() {
-        return mBackground;
+    public @Nullable BannerStyle getStyle() {
+        return mStyle;
     }
 
     /**
@@ -126,8 +159,7 @@ public final class Banner implements Item {
      * <p>This is currently restricted to icons and images only.
      *
      * @see Builder#setLeadingImage(CarIcon)
-     * @see Builder#setLeadingIcon(CarIcon)
-     *
+     * @see Builder#setLeadingImage(CarIcon, int)
      */
     public @Nullable BannerElement getLeadingElement() {
         return mLeadingElement;
@@ -137,9 +169,8 @@ public final class Banner implements Item {
      * Returns the list of trailing elements of the banner.
      *
      * @see Builder#addTrailingAction(Action)
-     * @see Builder#addTrailingIcon(CarIcon)
      * @see Builder#addTrailingImage(CarIcon)
-     *
+     * @see Builder#addTrailingImage(CarIcon, int)
      */
     public @NonNull List<BannerElement> getTrailingElements() {
         return mTrailingElements;
@@ -156,17 +187,17 @@ public final class Banner implements Item {
 
     @Override
     public @NonNull String toString() {
-        return "[title: " + CarText.toShortString(mTitle) + ", subtitle: "
+        return "Banner { title: " + CarText.toShortString(mTitle) + ", subtitle: "
                 + CarText.toShortString(mSubtitle) + ", has click listener: "
-                + (mOnClickDelegate != null) + ", background color: "
-                + mBackground + ", leading element: " + mLeadingElement
+                + (mOnClickDelegate != null) + ", style: "
+                + mStyle + ", leading element: " + mLeadingElement
                 + ", trailing elements: " + mTrailingElements + ", below actions: "
-                + mBelowActions + "]";
+                + mBelowActions + " }";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mTitle, mSubtitle, mOnClickDelegate == null, mBackground,
+        return Objects.hash(mTitle, mSubtitle, mOnClickDelegate == null, mStyle,
                 mLeadingElement, mTrailingElements, mBelowActions);
     }
 
@@ -184,25 +215,23 @@ public final class Banner implements Item {
         return Objects.equals(mTitle, otherBanner.mTitle)
                 && Objects.equals(mSubtitle, otherBanner.mSubtitle)
                 && Objects.equals(mOnClickDelegate == null, otherBanner.mOnClickDelegate == null)
-                && Objects.equals(mBackground, otherBanner.mBackground)
+                && Objects.equals(mStyle, otherBanner.mStyle)
                 && Objects.equals(mLeadingElement, otherBanner.mLeadingElement)
                 && Objects.equals(mTrailingElements, otherBanner.mTrailingElements)
                 && Objects.equals(mBelowActions, otherBanner.mBelowActions);
     }
 
     /** A builder of {@link Banner}. */
+    @RequiresCarApi(9)
+    @ExperimentalCarApi
     public static final class Builder {
         @Nullable CarText mTitle;
         @Nullable CarText mSubtitle;
         @Nullable OnClickDelegate mOnClickDelegate;
-        @Nullable Background mBackground;
+        @Nullable BannerStyle mStyle;
         @Nullable BannerElement mLeadingElement;
         List<BannerElement> mTrailingElements = new ArrayList<>();
         List<Action> mBelowActions = new ArrayList<>();
-
-        /** Returns an empty {@link Builder} instance. */
-        public Builder() {
-        }
 
         /**
          * Sets the title of the banner.
@@ -279,63 +308,58 @@ public final class Banner implements Item {
         }
 
         /**
-         * Sets the {@link Background} of the banner.
+         * Sets the {@link BannerStyle} of the banner.
          *
-         * <p>The {@code background} must conform to {@link BackgroundConstraints#COLOR_ONLY}.
+         * <p>If a style is not provided via this method, a host default style will be used.
          *
-         * @throws NullPointerException     if {@code background} is {@code null}
-         * @throws IllegalArgumentException if an unsupported background is added
+         * @throws NullPointerException if {@code style} is {@code null}
          */
-        public @NonNull Builder setBackground(@NonNull Background background) {
-            BackgroundConstraints.COLOR_ONLY.validateOrThrow(requireNonNull(background));
-            mBackground = background;
+        public @NonNull Builder setStyle(@NonNull BannerStyle style) {
+            mStyle = requireNonNull(style);
             return this;
         }
 
-        /**
-         * Sets the leading element in this banner to be a {@link CarIcon} displayed as an icon.
-         *
-         * <p>Only a single leading icon or image can be set, so this will overwrite calls to
-         * {@link #setLeadingImage(CarIcon)}.
-         *
-         * <p>This is visually distinct from {@link #setLeadingImage(CarIcon)} as icons are smaller
-         * due to added padding, and are expected to be tinted.
-         *
-         * @throws NullPointerException if {@code icon} is {@code null}
-         */
-        @SuppressLint("MissingGetterMatchingBuilder")
-        public @NonNull Builder setLeadingIcon(@NonNull CarIcon icon) {
-            BannerElement element =
-                    new BannerElement(
-                            BannerElement.TYPE_ICON, /* action= */ null, requireNonNull(icon));
-            mLeadingElement = element;
-            return this;
-        }
 
         /**
-         * Sets the leading element in this banner to be a {@link CarIcon} displayed as an image.
+         * Sets the leading element in this banner to be a {@link CarIcon} displayed as an
+         * {@link #IMAGE_TYPE_MEDIUM} image, not expected to be tinted.
          *
-         * <p>Only a single leading icon or image can be set, so this will overwrite calls to
-         * {@link #setLeadingIcon(CarIcon)}.
-         *
-         * <p>This is visually distinct from {@link #setLeadingIcon(CarIcon)} as images have no
-         * added padding, and are not expected to be tinted.
+         * <p>Only a single leading image can be set. Subsequent calls will overwrite
+         * previous calls.
          *
          * @throws NullPointerException if {@code image} is {@code null}
          */
         @SuppressLint("MissingGetterMatchingBuilder")
         public @NonNull Builder setLeadingImage(@NonNull CarIcon image) {
-            BannerElement element =
-                    new BannerElement(
-                            BannerElement.TYPE_IMAGE, /* action= */ null, requireNonNull(image));
-            mLeadingElement = element;
+            return setLeadingImage(requireNonNull(image), IMAGE_TYPE_MEDIUM);
+        }
+
+        /**
+         * Sets the leading element in this banner to be a {@link CarIcon} displayed as an image.
+         *
+         * <p>Only a single leading icon or image can be set. Subsequent calls will overwrite
+         * previous calls.
+         *
+         * <p>A large image cannot be used in combination with
+         * {@link Builder#addBelowAction(Action)}.
+         *
+         * @param image     the {@link CarIcon} for the leading image
+         * @param imageType one of {@link Banner#IMAGE_TYPE_SMALL},
+         * {@link Banner#IMAGE_TYPE_MEDIUM}, {@link Banner#IMAGE_TYPE_LARGE}
+         *
+         * @throws NullPointerException if {@code image} is {@code null}
+         */
+        @SuppressLint("MissingGetterMatchingBuilder")
+        public @NonNull Builder setLeadingImage(@NonNull CarIcon image,
+                @BannerImageType int imageType) {
+            mLeadingElement = BannerElement.createForImageType(requireNonNull(image), imageType);
             return this;
         }
 
         /**
          * Adds an {@link Action} to the trailing part of the banner.
          *
-         * <p>A banner can have at most 2 trailing elements
+         * <p>A banner can have at most 2 trailing elements.
          *
          * <p>{@code action} must conform to
          * {@link ActionsConstraints#ACTION_CONSTRAINTS_BANNER_TRAILING}.
@@ -345,45 +369,50 @@ public final class Banner implements Item {
          */
         @SuppressLint("MissingGetterMatchingBuilder")
         public @NonNull Builder addTrailingAction(@NonNull Action action) {
-            BannerElement element =
-                    new BannerElement(
-                            BannerElement.TYPE_ACTION, requireNonNull(action), /* icon= */ null);
+            BannerElement element = BannerElement.createForAction(requireNonNull(action));
             validateNewTrailingElement(element);
             mTrailingElements.add(element);
             return this;
         }
 
         /**
-         * Adds a {@link CarIcon} to be displayed as an icon to the trailing part of the banner.
+         * Adds a {@link CarIcon} to be displayed as an {@link #IMAGE_TYPE_MEDIUM} image at the
+         * trailing part of the Banner, not expected to be tinted.
          *
-         * <p>A banner can have at most 2 trailing elements
-         *
-         * @throws NullPointerException     if {@code icon} is {@code null}
-         * @throws IllegalArgumentException if there are already 2 trailing elements
-         */
-        @SuppressLint("MissingGetterMatchingBuilder")
-        public @NonNull Builder addTrailingIcon(@NonNull CarIcon icon) {
-            BannerElement element =
-                    new BannerElement(
-                            BannerElement.TYPE_ICON, /* action= */ null, requireNonNull(icon));
-            validateNewTrailingElement(element);
-            mTrailingElements.add(element);
-            return this;
-        }
-
-        /**
-         * Adds a {@link CarIcon} to be displayed as an image to the trailing part of the banner.
-         *
-         * <p>A banner can have at most 2 trailing elements
+         * <p>A banner can have at most 2 trailing elements.
          *
          * @throws NullPointerException     if {@code image} is {@code null}
          * @throws IllegalArgumentException if there are already 2 trailing elements
          */
         @SuppressLint("MissingGetterMatchingBuilder")
         public @NonNull Builder addTrailingImage(@NonNull CarIcon image) {
-            BannerElement element =
-                    new BannerElement(
-                            BannerElement.TYPE_IMAGE, /* action= */ null, requireNonNull(image));
+            return addTrailingImage(requireNonNull(image), IMAGE_TYPE_MEDIUM);
+        }
+
+        /**
+         * Adds a {@link CarIcon} to be displayed as an image to the trailing part of the banner.
+         *
+         * <p>A banner can have at most 2 trailing elements.
+         *
+         * <p>A large image cannot be used in combination with
+         * {@link Builder#addBelowAction(Action)}.
+         *
+         * <p>A large trailing image cannot be used in combination with
+         * another large trailing image.
+         *
+         * @param image     the {@link CarIcon} for the trailing image
+         * @param imageType one of {@link Banner#IMAGE_TYPE_SMALL},
+         * {@link Banner#IMAGE_TYPE_MEDIUM}, {@link Banner#IMAGE_TYPE_LARGE}
+         * @throws NullPointerException     if {@code image} is {@code null}
+         * @throws IllegalArgumentException if there are already 2 trailing elements
+         * @throws IllegalArgumentException if a large trailing image is combined with anything
+         *                                  other than a trailing small image or action
+         */
+        @SuppressLint("MissingGetterMatchingBuilder")
+        public @NonNull Builder addTrailingImage(@NonNull CarIcon image,
+                @BannerImageType int imageType) {
+            BannerElement element = BannerElement.createForImageType(
+                    requireNonNull(image), imageType);
             validateNewTrailingElement(element);
             mTrailingElements.add(element);
             return this;
@@ -393,7 +422,9 @@ public final class Banner implements Item {
          * Adds an {@link Action} below the title and subtitle of the {@link Banner}.
          *
          * <p>A {@link Banner}'s below actions must conform to
-         * {@link ActionsConstraints#ACTION_CONSTRAINTS_BANNER_BELOW}
+         * {@link ActionsConstraints#ACTION_CONSTRAINTS_BANNER_BELOW}.
+         *
+         * <p>Below actions cannot be used in combination with a large image.
          *
          * @throws NullPointerException     if {@code action} is {@code null}
          * @throws IllegalArgumentException if {@code action} does not conform to
@@ -403,24 +434,58 @@ public final class Banner implements Item {
             List<Action> actionsCopy = new ArrayList<>(mBelowActions);
             actionsCopy.add(requireNonNull(action));
             ActionsConstraints.ACTION_CONSTRAINTS_BANNER_BELOW.validateOrThrow(actionsCopy);
-            mBelowActions.add(requireNonNull(action));
+            mBelowActions.add(action);
             return this;
         }
 
         /**
          * Constructs the {@link Banner} defined by this builder.
          *
-         * @throws IllegalStateException if the title is null or empty
-         * @throws IllegalStateException if there are more than 4 elements across the banner's
-         *                               leading and trailing elements lists OR more than 2 of
-         *                               these elements are {@link Action}s
+         * @throws IllegalArgumentException if the title is null or empty
+         * @throws IllegalArgumentException if below actions are used in combination with a large
+         *                                  image
          */
         public @NonNull Banner build() {
             if (CarText.isNullOrEmpty(mTitle)) {
                 throw new IllegalArgumentException("A title must be provided");
             }
 
+            if (!mBelowActions.isEmpty() && hasLargeImage()) {
+                throw new IllegalArgumentException(
+                        "Below actions cannot be combined with a large image");
+            }
+
             return new Banner(this);
+        }
+
+        private boolean hasLargeImage() {
+            return isLargeImage(mLeadingElement) || getLargeImageCount(mTrailingElements) > 0;
+        }
+
+        private boolean isLargeImage(@Nullable BannerElement element) {
+            return element != null
+                    && element.getType() == BannerElement.TYPE_IMAGE
+                    && element.getImageType() == IMAGE_TYPE_LARGE;
+        }
+
+        private int getLargeImageCount(List<BannerElement> elements) {
+            int count = 0;
+            for (BannerElement element : elements) {
+                if (isLargeImage(element)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private boolean hasMediumImage(List<BannerElement> elements) {
+            for (BannerElement element : elements) {
+                if (element.getType() == BannerElement.TYPE_IMAGE
+                        && element.getImageType() == IMAGE_TYPE_MEDIUM) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
@@ -438,6 +503,17 @@ public final class Banner implements Item {
                 throw new IllegalStateException(
                         "Total number of trailing elements in a banner must not exceed "
                                 + MAX_TRAILING_ELEMENTS + ", found " + mTrailingElements.size());
+            }
+
+            int largeImageCount = getLargeImageCount(allElements);
+            if (largeImageCount >= 2) {
+                throw new IllegalArgumentException(
+                        "Too many large images, only one large image can be set at a time");
+            }
+            if (largeImageCount > 0 && hasMediumImage(allElements)) {
+                throw new IllegalArgumentException(
+                        "A large trailing image can only be combined with a trailing small image"
+                                + " or action");
             }
 
             // Validate actions

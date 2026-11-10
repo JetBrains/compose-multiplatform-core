@@ -44,14 +44,84 @@ import kotlinx.coroutines.withContext
  * the [StateFlow] the returned [State] will be updated causing recomposition of every [State.value]
  * usage.
  *
+ * Optionally, the [context] that the flow is collected in and the [mutationPolicy] that is used to
+ * report and merge changes in the returned state can be customized. If the [context] or `StateFlow`
+ * changes, the same state will be returned, the previous collection will be canceled, and the
+ * provided Flow will start collection in the new context. Changes to the [mutationPolicy] after the
+ * state has been created are ignored.
+ *
  * @sample androidx.compose.runtime.samples.StateFlowSample
  * @param context [CoroutineContext] to use for collecting.
+ * @param mutationPolicy A policy used to control how changes are handled in the returned state.
  */
 @Suppress("StateFlowValueCalledInComposition")
 @Composable
 public fun <T> StateFlow<T>.collectAsState(
+    context: CoroutineContext = EmptyCoroutineContext,
+    mutationPolicy: SnapshotMutationPolicy<T> = structuralEqualityPolicy(),
+): State<T> {
+    val state = remember { mutableStateOf(value, mutationPolicy) }
+    collectInto(state, context)
+    return state
+}
+
+/**
+ * Collects values from this [Flow] and represents its latest value via [State]. Every time there
+ * would be new value posted into the [Flow] the returned [State] will be updated causing
+ * recomposition of every [State.value] usage.
+ *
+ * Optionally, the [context] that the flow is collected in and the [mutationPolicy] that is used to
+ * report and merge changes in the returned state can be customized. If the [context] or `Flow`
+ * changes, the same state will be returned, the previous collection will be canceled, and the
+ * provided Flow will start collection in the new context. Changes to the [mutationPolicy] after the
+ * state has been created are ignored.
+ *
+ * @sample androidx.compose.runtime.samples.FlowWithInitialSample
+ * @param initial the value of the state will have until the first flow value is emitted.
+ * @param context [CoroutineContext] to use for collecting.
+ * @param mutationPolicy A policy used to control how changes are handled in the returned state.
+ */
+@Composable
+public fun <T : R, R> Flow<T>.collectAsState(
+    initial: R,
+    context: CoroutineContext = EmptyCoroutineContext,
+    mutationPolicy: SnapshotMutationPolicy<R> = structuralEqualityPolicy(),
+): State<R> {
+    val state = remember { mutableStateOf(initial, mutationPolicy) }
+    collectInto(state, context)
+    return state
+}
+
+@Suppress("ComposableNaming")
+@Composable
+@NonRestartableComposable
+private fun <T : R, R> Flow<T>.collectInto(state: MutableState<R>, context: CoroutineContext) {
+    LaunchedEffect(this, context) {
+        if (context == EmptyCoroutineContext) {
+            collect { state.value = it }
+        } else {
+            withContext(context) { collect { state.value = it } }
+        }
+    }
+}
+
+/**
+ * Collects values from this [StateFlow] and represents its latest value via [State]. The
+ * [StateFlow.value] is used as an initial value. Every time there would be new value posted into
+ * the [StateFlow] the returned [State] will be updated causing recomposition of every [State.value]
+ * usage.
+ *
+ * @sample androidx.compose.runtime.samples.StateFlowSample
+ * @param context [CoroutineContext] to use for collecting.
+ */
+@Deprecated(
+    "Use the overload with a SnapshotMutationPolicy parameter",
+    level = DeprecationLevel.HIDDEN,
+)
+@Composable
+public fun <T> StateFlow<T>.collectAsState(
     context: CoroutineContext = EmptyCoroutineContext
-): State<T> = collectAsState(value, context)
+): State<T> = collectAsState(context, structuralEqualityPolicy())
 
 /**
  * Collects values from this [Flow] and represents its latest value via [State]. Every time there
@@ -62,16 +132,15 @@ public fun <T> StateFlow<T>.collectAsState(
  * @param initial the value of the state will have until the first flow value is emitted.
  * @param context [CoroutineContext] to use for collecting.
  */
+@Deprecated(
+    "Use the overload with a SnapshotMutationPolicy parameter",
+    level = DeprecationLevel.HIDDEN,
+)
 @Composable
 public fun <T : R, R> Flow<T>.collectAsState(
     initial: R,
     context: CoroutineContext = EmptyCoroutineContext,
-): State<R> =
-    produceState(initial, this, context) {
-        if (context == EmptyCoroutineContext) {
-            collect { value = it }
-        } else withContext(context) { collect { value = it } }
-    }
+): State<R> = collectAsState(initial, context, structuralEqualityPolicy())
 
 /**
  * Orchestrates the observation of [Snapshot] state for [snapshotFlow]s that are collected on the
@@ -252,24 +321,23 @@ private class SingleSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() 
     // Caches the only valid return value of [readObserverFor].
     private val readObserverCache = { obj: Any -> watch(subscribedChannel!!, obj) }
 
-    private val unregisterApplyObserver =
-        Snapshot.registerApplyObserver { changed, _ ->
-            var toNotify: SendChannel<Unit>? = null
-            synchronized(lock) {
-                val watchSet = watchSet
-                if (watchSet == null) {
-                    if (changed.contains(soleWatchedObject)) {
-                        toNotify = subscribedChannel
-                    }
-                } else {
-                    // Assumption: [watchSet] will typically be smaller than [changed].
-                    if (watchSet.any { changed.contains(it) }) {
-                        toNotify = subscribedChannel
-                    }
+    private val unregisterApplyObserver = Snapshot.registerApplyObserver { changed, _ ->
+        var toNotify: SendChannel<Unit>? = null
+        synchronized(lock) {
+            val watchSet = watchSet
+            if (watchSet == null) {
+                if (changed.contains(soleWatchedObject)) {
+                    toNotify = subscribedChannel
+                }
+            } else {
+                // Assumption: [watchSet] will typically be smaller than [changed].
+                if (watchSet.any { changed.contains(it) }) {
+                    toNotify = subscribedChannel
                 }
             }
-            toNotify?.trySend(Unit)
         }
+        toNotify?.trySend(Unit)
+    }
 
     override fun watch(channel: SendChannel<Unit>, obj: Any) {
         checkPrecondition(subscribedChannel == channel) {
@@ -402,27 +470,26 @@ private class MultiSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() {
     // Used by [readObserverFor] to cache partially applied functions.
     private val readObserverCache = mutableScatterMapOf<SendChannel<Unit>, (Any) -> Unit>()
 
-    private val unregisterApplyObserver =
-        Snapshot.registerApplyObserver { changed, _ ->
-            var toNotify: MutableList<SendChannel<Unit>>? = null
+    private val unregisterApplyObserver = Snapshot.registerApplyObserver { changed, _ ->
+        var toNotify: MutableList<SendChannel<Unit>>? = null
 
-            synchronized(lock) {
-                // Assumption: there will typically be fewer keys in [subscriptions] than elements
-                // in [changed].
-                subscriptions.forEachKey { key ->
-                    if (changed.contains(key)) {
-                        subscriptions.forEachScopeOf(key) {
-                            if (toNotify == null) {
-                                toNotify = mutableListOf()
-                            }
-                            toNotify.add(it)
+        synchronized(lock) {
+            // Assumption: there will typically be fewer keys in [subscriptions] than elements
+            // in [changed].
+            subscriptions.forEachKey { key ->
+                if (changed.contains(key)) {
+                    subscriptions.forEachScopeOf(key) {
+                        if (toNotify == null) {
+                            toNotify = mutableListOf()
                         }
+                        toNotify.add(it)
                     }
                 }
-
-                toNotify?.fastForEach { it.trySend(Unit) }
             }
+
+            toNotify?.fastForEach { it.trySend(Unit) }
         }
+    }
 
     override fun watch(channel: SendChannel<Unit>, obj: Any) {
         pendingChanges.add(Add(obj, channel))

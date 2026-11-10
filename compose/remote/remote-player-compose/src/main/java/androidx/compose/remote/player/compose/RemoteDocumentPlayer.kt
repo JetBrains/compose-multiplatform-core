@@ -28,7 +28,9 @@ import androidx.compose.remote.core.operations.Theme
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.remote.player.core.action.NamedActionHandler
 import androidx.compose.remote.player.core.action.StateUpdaterActionCallback
+import androidx.compose.remote.player.core.platform.AndroidCustomContext
 import androidx.compose.remote.player.core.platform.BitmapLoader
+import androidx.compose.remote.player.core.platform.TypefaceResolver
 import androidx.compose.remote.player.core.state.StateUpdater
 import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.runtime.Composable
@@ -46,6 +48,7 @@ import androidx.core.view.doOnPreDraw
 /** A player of a [CoreDocument] */
 @OptIn(ExperimentalRemotePlayerApi::class)
 @Composable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteDocumentPlayer(
     document: CoreDocument,
     documentWidth: Int,
@@ -57,6 +60,8 @@ public fun RemoteDocumentPlayer(
     onAction: (actionId: Int, value: String?) -> Unit = { _, _ -> },
     onNamedAction: (name: String, value: Any?, stateUpdater: StateUpdater) -> Unit = { _, _, _ -> },
     bitmapLoader: BitmapLoader? = null,
+    typefaceResolver: TypefaceResolver? = null,
+    customSupport: AndroidCustomContext? = null,
 ) {
     var inDarkTheme by remember { mutableStateOf(false) }
     var playbackTheme by remember { mutableIntStateOf(Theme.UNSPECIFIED) }
@@ -102,16 +107,21 @@ public fun RemoteDocumentPlayer(
         factory = {
             RemoteComposePlayer(it).apply {
                 doOnPreDraw { fullyDrawnReporter?.removeReporter() }
+                // See CL 4198105
+                // (https://android-review.git.corp.google.com/c/platform/frameworks/support/+/4198105):
+                // set bitmapLoader and typefaceResolver before init(this) so the player uses them
+                // during initial setup.
+                bitmapLoader?.let(::setBitmapLoader)
+                typefaceResolver?.let(::setTypefaceResolver)
+                customSupport?.let(::setCustomSupport)
                 init(this)
-                if (bitmapLoader != null) {
-                    setBitmapLoader(bitmapLoader)
-                }
             }
         },
         update = { remoteComposePlayer ->
             remoteComposePlayer.setTheme(playbackTheme)
             remoteComposePlayer.setDocument(remoteDoc)
             remoteComposePlayer.setDebug(debugMode)
+            customSupport?.let(remoteComposePlayer::setCustomSupport)
             remoteComposePlayer.document.document.clearActionCallbacks()
             remoteComposePlayer.document.document.addIdActionListener { id, value ->
                 onAction.invoke(id, value)

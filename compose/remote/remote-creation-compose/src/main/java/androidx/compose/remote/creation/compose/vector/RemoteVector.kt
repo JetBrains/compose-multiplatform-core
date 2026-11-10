@@ -17,6 +17,7 @@
 package androidx.compose.remote.creation.compose.vector
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.core.Operations
 import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.compose.capture.DefaultGroupName
 import androidx.compose.remote.creation.compose.capture.DefaultPathName
@@ -34,9 +35,11 @@ import androidx.compose.remote.creation.compose.capture.DefaultTranslationY
 import androidx.compose.remote.creation.compose.capture.DefaultTrimPathEnd
 import androidx.compose.remote.creation.compose.capture.DefaultTrimPathOffset
 import androidx.compose.remote.creation.compose.capture.DefaultTrimPathStart
+import androidx.compose.remote.creation.compose.capture.EmptyPath
 import androidx.compose.remote.creation.compose.capture.toRemotePath
 import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
 import androidx.compose.remote.creation.compose.layout.RemoteSize
+import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteColorFilter
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
@@ -45,19 +48,21 @@ import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.isUnspecified
+import androidx.compose.ui.graphics.vector.DefaultFillType
 import androidx.compose.ui.graphics.vector.PathNode
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 
-/** DSL for building a vector with [RemotePathBuilder]. */
+/** DSL for building a vector with [RemotePathScope]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun RemotePathData(block: RemotePathBuilder.() -> Unit): List<RemotePathNode> =
-    with(RemotePathBuilder()) {
+public fun RemotePathData(block: RemotePathScope.() -> Unit): List<RemotePathNode> =
+    with(RemotePathScope()) {
         block()
         nodes
     }
@@ -101,7 +106,10 @@ internal class RemotePathComponent : RemoteVNode() {
     var name = DefaultPathName
     var fill: Brush? = null
     var fillAlpha = 1.0f.rf
-    var pathData: List<RemotePathNode> = androidx.compose.remote.creation.compose.capture.EmptyPath
+    var pathFillType: PathFillType = DefaultFillType
+    var pathData: List<RemotePathNode> = EmptyPath
+    var targetPathData: List<RemotePathNode>? = null
+    var pathTween: RemoteFloat = 0f.rf
     var strokeAlpha = 1.0f.rf
     var strokeLineWidth = DefaultStrokeLineWidth
     var stroke: Brush? = null
@@ -111,25 +119,122 @@ internal class RemotePathComponent : RemoteVNode() {
     var trimPathStart = DefaultTrimPathStart
     var trimPathEnd = DefaultTrimPathEnd
     var trimPathOffset = DefaultTrimPathOffset
+    var remoteFillColor: RemoteColor? = null
+    var remoteStrokeColor: RemoteColor? = null
 
     private val path = RemotePath()
-    private var renderPath = path
+    private val targetPath = RemotePath()
+
+    private fun RemoteDrawScope.applyBrushToPaint(
+        brush: Brush?,
+        alpha: RemoteFloat,
+        paint: RemotePaint,
+    ) {
+        if (brush == null) return
+        when (brush) {
+            is SolidColor -> {
+                val c = brush.value
+                paint.color =
+                    RemoteColor.rgb(
+                        red = c.red.rf,
+                        green = c.green.rf,
+                        blue = c.blue.rf,
+                        alpha = c.alpha.rf * alpha,
+                    )
+            }
+            is ShaderBrush -> {
+                // Compose ShaderBrush cannot be serialized directly without reflection,
+                // degrade to transparent paint
+                paint.color = RemoteColor.rgb(0f.rf, 0f.rf, 0f.rf, 0f.rf)
+            }
+        }
+    }
 
     override fun RemoteDrawScope.draw(colorFilter: RemoteColorFilter?) {
         // The call below resets the path
         pathData.toRemotePath(path, this.remoteCanvas.creationState)
-
-        val paint = RemotePaint { this.colorFilter = colorFilter }
-        fill?.let {
-            paint.style = PaintingStyle.Fill
-            drawPath(renderPath, paint)
+        val hasTween = targetPathData != null && targetPathData!!.isNotEmpty()
+        if (hasTween) {
+            targetPathData!!.toRemotePath(targetPath, this.remoteCanvas.creationState)
         }
-        stroke?.let {
-            paint.style = PaintingStyle.Stroke
-            paint.strokeWidth = strokeLineWidth
-            paint.strokeCap = strokeLineCap
-            paint.strokeJoin = strokeLineJoin
-            drawPath(renderPath, paint)
+
+        val isTrimmed =
+            !(trimPathStart.hasConstantValue &&
+                trimPathStart.constantValue == 0f &&
+                trimPathEnd.hasConstantValue &&
+                trimPathEnd.constantValue == 1f &&
+                trimPathOffset.hasConstantValue &&
+                trimPathOffset.constantValue == 0f)
+
+        val start = if (isTrimmed) (trimPathStart + trimPathOffset) % 1f.rf else 0f.rf
+        val stop =
+            if (isTrimmed) {
+                if (trimPathOffset.hasConstantValue && trimPathOffset.constantValue == 0f) {
+                    trimPathEnd
+                } else {
+                    (trimPathEnd + trimPathOffset) % 1f.rf
+                }
+            } else {
+                1f.rf
+            }
+
+        val effectiveFillBrush = fill
+        val effectiveFillColor = remoteFillColor
+
+        if (effectiveFillBrush != null || effectiveFillColor != null) {
+            val fillPaint = RemotePaint {
+                this.colorFilter = colorFilter
+                this.style = PaintingStyle.Fill
+            }
+            if (effectiveFillColor != null) {
+                val paintColor =
+                    if (fillAlpha.hasConstantValue && fillAlpha.constantValue == 1f) {
+                        effectiveFillColor
+                    } else {
+                        effectiveFillColor.copy(alpha = effectiveFillColor.alpha * fillAlpha)
+                    }
+                fillPaint.color = paintColor
+            } else if (effectiveFillBrush != null) {
+                applyBrushToPaint(effectiveFillBrush, fillAlpha, fillPaint)
+            }
+            if (hasTween) {
+                drawTweenPath(path, targetPath, pathTween, start, stop, fillPaint)
+            } else if (isTrimmed) {
+                drawTweenPath(path, path, 0f.rf, start, stop, fillPaint)
+            } else {
+                drawPath(path, pathFillType, fillPaint)
+            }
+        }
+
+        val effectiveStrokeBrush = stroke
+        val effectiveStrokeColor = remoteStrokeColor
+
+        if (effectiveStrokeBrush != null || effectiveStrokeColor != null) {
+            val strokePaint = RemotePaint {
+                this.colorFilter = colorFilter
+                this.style = PaintingStyle.Stroke
+                this.strokeWidth = strokeLineWidth
+                this.strokeCap = strokeLineCap
+                this.strokeJoin = strokeLineJoin
+            }
+            if (effectiveStrokeColor != null) {
+                val paintColor =
+                    if (strokeAlpha.hasConstantValue && strokeAlpha.constantValue == 1f) {
+                        effectiveStrokeColor
+                    } else {
+                        effectiveStrokeColor.copy(alpha = effectiveStrokeColor.alpha * strokeAlpha)
+                    }
+                strokePaint.color = paintColor
+            } else if (effectiveStrokeBrush != null) {
+                applyBrushToPaint(effectiveStrokeBrush, strokeAlpha, strokePaint)
+            }
+            if (hasTween) {
+                drawTweenPath(path, targetPath, pathTween, start, stop, strokePaint)
+            } else if (isTrimmed) {
+                drawTweenPath(path, path, 0f.rf, start, stop, strokePaint)
+            } else {
+                drawPath(path, pathFillType, strokePaint)
+            }
         }
     }
 
@@ -137,8 +242,6 @@ internal class RemotePathComponent : RemoteVNode() {
 }
 
 internal class RemoteGroupComponent : RemoteVNode() {
-    private var groupMatrix: Matrix? = null
-
     private val children = mutableListOf<RemoteVNode>()
 
     /**
@@ -202,6 +305,14 @@ internal class RemoteGroupComponent : RemoteVNode() {
         if (node is RemotePathComponent) {
             markTintForBrush(node.fill)
             markTintForBrush(node.stroke)
+            if (node.remoteFillColor != null) {
+                node.remoteFillColor?.constantValueOrNull?.let { markTintForColor(it) }
+                    ?: markNotTintable()
+            }
+            if (node.remoteStrokeColor != null) {
+                node.remoteStrokeColor?.constantValueOrNull?.let { markTintForColor(it) }
+                    ?: markNotTintable()
+            }
         } else if (node is RemoteGroupComponent) {
             if (node.isTintable && isTintable) {
                 markTintForColor(node.tintColor)
@@ -234,8 +345,14 @@ internal class RemoteGroupComponent : RemoteVNode() {
 
     var translationY: RemoteFloat = DefaultTranslationY
 
+    var clipPathData: List<RemotePathNode> = EmptyPath
+
+    private val clipPath = RemotePath()
+
     val numChildren: Int
         get() = children.size
+
+    operator fun get(index: Int): RemoteVNode = children[index]
 
     fun insertAt(index: Int, instance: RemoteVNode) {
         if (index < numChildren) {
@@ -248,7 +365,38 @@ internal class RemoteGroupComponent : RemoteVNode() {
     }
 
     override fun RemoteDrawScope.draw(colorFilter: RemoteColorFilter?) {
-        withTransform({ groupMatrix?.let { transform(it) } }) {
+        val hasTransform =
+            !(translationX.hasConstantValue &&
+                translationX.constantValue == 0f &&
+                translationY.hasConstantValue &&
+                translationY.constantValue == 0f &&
+                rotation.hasConstantValue &&
+                rotation.constantValue == 0f &&
+                scaleX.hasConstantValue &&
+                scaleX.constantValue == 1f &&
+                scaleY.hasConstantValue &&
+                scaleY.constantValue == 1f)
+        val hasClip =
+            clipPathData.isNotEmpty() &&
+                Operations.CLIP_PATH in
+                    this@draw.remoteCanvas.creationState.profile.supportedOperations
+
+        if (hasTransform || hasClip) {
+            withTransform({
+                if (hasTransform) {
+                    translate(translationX + pivotX, translationY + pivotY)
+                    rotate(rotation)
+                    scale(scaleX, scaleY)
+                    translate(-pivotX, -pivotY)
+                }
+                if (hasClip) {
+                    clipPathData.toRemotePath(clipPath, this@draw.remoteCanvas.creationState)
+                    clipPath(clipPath)
+                }
+            }) {
+                children.fastForEach { node -> with(node) { this@draw.draw(colorFilter) } }
+            }
+        } else {
             children.fastForEach { node -> with(node) { this@draw.draw(colorFilter) } }
         }
     }

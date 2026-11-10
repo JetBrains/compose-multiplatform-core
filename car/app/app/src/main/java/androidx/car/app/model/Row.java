@@ -96,9 +96,14 @@ public final class Row implements Item {
      * images targeting a 88 x 88 dp bounding box. If necessary, the icon will be scaled down while
      * preserving its aspect ratio.
      *
-     * <p>A tint color is expected to be provided via {@link CarIcon.Builder#setTint}. Otherwise, a
-     * default tint color as determined by the host will be applied.
+     * <p>A tint color is expected to be provided via {@link CarIconStyle.Builder#setTint}
+     * provided to the icon with {@link CarIcon.Builder#setStyle}.
+     * Otherwise, a default tint color as determined by the host will be applied.
+     *
+     * @deprecated Use {@link #IMAGE_TYPE_SMALL} instead and set explicit tint via {@link
+     *     CarIcon.Builder#setTint} if needed.
      */
+    @Deprecated
     public static final int IMAGE_TYPE_ICON = (1 << 2);
 
     /**
@@ -330,6 +335,8 @@ public final class Row implements Item {
                 mTexts,
                 mImage,
                 mEndImage,
+                mActions,
+                mNumericDecoration,
                 mToggle,
                 mOnClickDelegate == null,
                 mMetadata,
@@ -356,6 +363,8 @@ public final class Row implements Item {
                 && Objects.equals(mTexts, otherRow.mTexts)
                 && Objects.equals(mImage, otherRow.mImage)
                 && Objects.equals(mEndImage, otherRow.mEndImage)
+                && Objects.equals(mActions, otherRow.mActions)
+                && mNumericDecoration == otherRow.mNumericDecoration
                 && Objects.equals(mToggle, otherRow.mToggle)
                 && Objects.equals(mOnClickDelegate == null, otherRow.mOnClickDelegate == null)
                 && Objects.equals(mMetadata, otherRow.mMetadata)
@@ -616,8 +625,9 @@ public final class Row implements Item {
          * <li>The row is part of a selectable itemlist </li>
          * </ul>
          *
-         * @param endImage The {@link CarIcon} to display at the end of the row, or {@code null} to
-         * not display one.
+         * @param endImage        The {@link CarIcon} to display at the end of the row, or
+         * {@code null} to
+         *                        not display one.
          * @param rowEndImageType one of {@link #IMAGE_TYPE_SMALL}, {@link #IMAGE_TYPE_ICON},
          *                        {@link #IMAGE_TYPE_LARGE}, {@link #IMAGE_TYPE_EXTRA_SMALL},
          *                        {@link #IMAGE_TYPE_MEDIUM}
@@ -625,7 +635,7 @@ public final class Row implements Item {
          */
         @RequiresCarApi(8)
         public @NonNull Builder setEndImage(@NonNull CarIcon endImage,
-        @RowImageType int rowEndImageType) {
+                @RowImageType int rowEndImageType) {
             CarIconConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(endImage));
             mEndImage = endImage;
             mRowEndImageType = rowEndImageType;

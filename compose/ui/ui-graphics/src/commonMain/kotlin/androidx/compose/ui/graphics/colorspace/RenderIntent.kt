@@ -27,8 +27,8 @@ import androidx.compose.runtime.Immutable
  */
 @Immutable
 @kotlin.jvm.JvmInline
-value class RenderIntent internal constructor(@Suppress("unused") internal val value: Int) {
-    companion object {
+public value class RenderIntent internal constructor(@Suppress("unused") internal val value: Int) {
+    public companion object {
         /**
          * Compresses the source gamut into the destination gamut. This render intent affects all
          * colors, inside and outside of destination gamut. The goal of this render intent is to
@@ -36,13 +36,15 @@ value class RenderIntent internal constructor(@Suppress("unused") internal val v
          *
          * This render intent is currently not implemented and behaves like [Relative].
          */
-        val Perceptual = RenderIntent(0)
+        public val Perceptual: RenderIntent
+            get() = RenderIntent(0)
 
         /**
          * Similar to the [Absolute] render intent, this render intent matches the closest color in
          * the destination gamut but makes adjustments for the destination white point.
          */
-        val Relative = RenderIntent(1)
+        public val Relative: RenderIntent
+            get() = RenderIntent(1)
 
         /**
          * Attempts to maintain the relative saturation of colors from the source gamut to the
@@ -50,17 +52,19 @@ value class RenderIntent internal constructor(@Suppress("unused") internal val v
          *
          * This render intent is currently not implemented and behaves like [Relative].
          */
-        val Saturation = RenderIntent(2)
+        public val Saturation: RenderIntent
+            get() = RenderIntent(2)
 
         /**
          * Colors that are in the destination gamut are left unchanged. Colors that fall outside of
          * the destination gamut are mapped to the closest possible color within the gamut of the
          * destination color space (they are clipped).
          */
-        val Absolute = RenderIntent(3)
+        public val Absolute: RenderIntent
+            get() = RenderIntent(3)
     }
 
-    override fun toString() =
+    public override fun toString(): String =
         when (this) {
             Perceptual -> "Perceptual"
             Relative -> "Relative"

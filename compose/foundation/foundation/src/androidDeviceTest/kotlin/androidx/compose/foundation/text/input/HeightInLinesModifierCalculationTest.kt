@@ -18,6 +18,7 @@ package androidx.compose.foundation.text.input
 
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.EmptyTextReplacement
+import androidx.compose.foundation.text.TEST_LOCALE_LIST
 import androidx.compose.foundation.text.ceilToIntPx
 import androidx.compose.foundation.text.computeSizeForDefaultText
 import androidx.compose.ui.layout.Layout
@@ -32,7 +33,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +54,7 @@ class HeightInLinesModifierCalculationTest(private val config: TestConfig) {
         }
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun heightInLinesCalculation() {
@@ -99,6 +99,7 @@ class HeightInLinesModifierCalculationTest(private val config: TestConfig) {
                             style = textStyle,
                             density = density,
                             fontFamilyResolver = fontFamilyResolver,
+                            defaultLocaleList = TEST_LOCALE_LIST,
                         )
                         .height
 
@@ -107,6 +108,7 @@ class HeightInLinesModifierCalculationTest(private val config: TestConfig) {
                             style = textStyle,
                             density = density,
                             fontFamilyResolver = fontFamilyResolver,
+                            defaultLocaleList = TEST_LOCALE_LIST,
                             lines = 2,
                         )
                         .height
@@ -140,6 +142,7 @@ class HeightInLinesModifierCalculationTest(private val config: TestConfig) {
                             density = density,
                             fontFamilyResolver = fontFamilyResolver,
                             constraints = Constraints(),
+                            defaultLocaleList = TEST_LOCALE_LIST,
                         )
                         .height
                         .ceilToIntPx()

@@ -19,7 +19,6 @@ package androidx.xr.compose.testapp.panelembeddedsubspace
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +61,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.PlanarEmbeddedSubspace
 import androidx.xr.compose.spatial.Subspace
@@ -75,11 +75,11 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.size
-import androidx.xr.compose.subspace.layout.transformingMovable
-import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -93,15 +93,12 @@ class PanelEmbeddedSubspace : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContent {
             Subspace {
                 SpatialRow {
                     SpatialPanel(
-                        SubspaceModifier.height(400.dp)
-                            .width(800.dp)
-                            .transformingMovable()
-                            .transformingResizable()
+                        SubspaceModifier.height(400.dp).width(800.dp).movable().resizable()
                     ) {
                         Row(horizontalArrangement = Arrangement.SpaceEvenly) {
                             Box(
@@ -178,9 +175,7 @@ class PanelEmbeddedSubspace : ComponentActivity() {
                     }
 
                     SpatialSpacer(SubspaceModifier.size(100.dp))
-                    SpatialPanel(
-                        SubspaceModifier.height(800.dp).width(400.dp).transformingMovable()
-                    ) {
+                    SpatialPanel(SubspaceModifier.height(800.dp).width(400.dp).movable()) {
                         Box(Modifier.border(30.dp, Color.White, RoundedCornerShape(10.dp))) {
                             PlanarEmbeddedSubspace {
                                 SpatialPanel(SubspaceModifier.offset(z = (-200).dp)) {

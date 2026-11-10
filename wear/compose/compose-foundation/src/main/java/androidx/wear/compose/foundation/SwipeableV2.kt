@@ -403,14 +403,13 @@ internal class SwipeableV2State<T>(
             try {
                 swipe {
                     animationTarget = targetValue
-                    var prev = offset ?: 0f
+                    val prev = offset ?: 0f
                     animate(prev, targetOffset, velocity, animationSpec) { value, velocity ->
                         // Our onDrag coerces the value within the bounds, but an animation may
                         // overshoot, for example a spring animation or an overshooting interpolator
                         // We respect the user's intention and allow the overshoot, but still use
                         // DraggableState's drag for its mutex.
                         offset = value
-                        prev = value
                         lastVelocity = velocity
                     }
                     lastVelocity = 0f
@@ -768,9 +767,9 @@ private class SwipeAnchorsModifier(
 private fun <T> Map<T, Float>.closestAnchor(offset: Float = 0f, searchUpwards: Boolean = false): T {
     require(isNotEmpty()) { "The anchors were empty when trying to find the closest anchor" }
     return minBy { (_, anchor) ->
-            val delta = if (searchUpwards) anchor - offset else offset - anchor
-            if (delta < 0) Float.POSITIVE_INFINITY else delta
-        }
+        val delta = if (searchUpwards) anchor - offset else offset - anchor
+        if (delta < 0) Float.POSITIVE_INFINITY else delta
+    }
         .key
 }
 

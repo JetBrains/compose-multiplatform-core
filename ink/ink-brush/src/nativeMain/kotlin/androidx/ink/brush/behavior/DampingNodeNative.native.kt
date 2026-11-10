@@ -16,25 +16,26 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.cinterop.DampingNodeNative_create
-import androidx.ink.nativeloader.cinterop.DampingNodeNative_getDampingGap
-import androidx.ink.nativeloader.cinterop.DampingNodeNative_getDampingSourceInt
+import androidx.ink.nativeloader.cinterop.DampingNodeNative_getDampOverInt
+import androidx.ink.nativeloader.cinterop.DampingNodeNative_getStrength
 import androidx.ink.nativeloader.throwForNonOkStatusCallback
 import kotlinx.cinterop.ExperimentalForeignApi
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object DampingNodeNative {
-    actual fun create(dampingSource: Int, dampingGap: Float): Long =
+    actual fun create(dampOver: Int, strength: Float): Long =
         DampingNodeNative_create(
             jni_env_pass_through = null,
-            dampingSource,
-            dampingGap,
+            dampOver,
+            strength,
             throwForNonOkStatusCallback,
         )
 
-    actual fun getDampingSourceInt(nativePointer: Long): Int =
-        DampingNodeNative_getDampingSourceInt(nativePointer)
+    actual fun getDampOverInt(nativePointer: Long): Int =
+        DampingNodeNative_getDampOverInt(nativePointer)
 
-    actual fun getDampingGap(nativePointer: Long): Float =
-        DampingNodeNative_getDampingGap(nativePointer)
+    actual fun getStrength(nativePointer: Long): Float =
+        DampingNodeNative_getStrength(nativePointer)
 }

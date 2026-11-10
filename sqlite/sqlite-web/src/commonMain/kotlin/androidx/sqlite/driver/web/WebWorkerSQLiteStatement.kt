@@ -20,6 +20,8 @@ import androidx.sqlite.SQLITE_DATA_NULL
 import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.throwSQLiteException
 import androidx.sqlite.util.getStatementPrefix
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 internal class WebWorkerSQLiteStatement
 private constructor(
@@ -43,7 +45,7 @@ private constructor(
             columnNames: Array<String>,
             inTransactionSetter: (Boolean) -> Unit,
         ): WebWorkerSQLiteStatement {
-            val sqlString = sql.trim().uppercase()
+            val sqlString = sql.trim()
             val sqlPrefix = getStatementPrefix(sqlString)
             if (sqlPrefix == null) {
                 return WebWorkerSQLiteStatement(
@@ -85,24 +87,23 @@ private constructor(
         }
 
         private fun getTransactionOperation(prefix: String, sql: String): TransactionOperation? =
-            when (prefix) {
-                "END",
-                "COM" -> TransactionOperation.END
-                "ROL" ->
-                    if (sql.contains(" TO ")) {
+            when {
+                "END".equals(prefix, ignoreCase = true) ||
+                    "COM".equals(prefix, ignoreCase = true) -> TransactionOperation.END
+                "ROL".equals(prefix, ignoreCase = true) ->
+                    if (sql.contains(" TO ", ignoreCase = true)) {
                         null
                     } else {
                         TransactionOperation.ROLLBACK
                     }
-                "BEG" -> {
-                    if (sql.contains("EXCLUSIVE")) {
+                "BEG".equals(prefix, ignoreCase = true) ->
+                    if (sql.contains("EXCLUSIVE", ignoreCase = true)) {
                         TransactionOperation.BEGIN_EXCLUSIVE
-                    } else if (sql.contains("IMMEDIATE")) {
+                    } else if (sql.contains("IMMEDIATE", ignoreCase = true)) {
                         TransactionOperation.BEGIN_IMMEDIATE
                     } else {
                         TransactionOperation.BEGIN_DEFERRED
                     }
-                }
                 else -> null
             }
 
@@ -217,17 +218,22 @@ private constructor(
     override suspend fun step(): Boolean {
         throwIfClosed()
         if (rowIndex == -1) {
-            this.result = dbWorker.step(statementId, bindings)
-            // If this is a transaction statement, set the connection's inTransaction state.
             if (transactionOperation != null) {
-                checkNotNull(inTransactionSetter)
-                when (transactionOperation) {
-                    TransactionOperation.END,
-                    TransactionOperation.ROLLBACK -> inTransactionSetter.invoke(false)
-                    TransactionOperation.BEGIN_EXCLUSIVE,
-                    TransactionOperation.BEGIN_IMMEDIATE,
-                    TransactionOperation.BEGIN_DEFERRED -> inTransactionSetter.invoke(true)
+                // Do transaction operation in a non-cancellable for atomicity with transaction
+                // state flag.
+                withContext(NonCancellable) {
+                    result = dbWorker.step(statementId, bindings)
+                    checkNotNull(inTransactionSetter)
+                    when (transactionOperation) {
+                        TransactionOperation.END,
+                        TransactionOperation.ROLLBACK -> inTransactionSetter.invoke(false)
+                        TransactionOperation.BEGIN_EXCLUSIVE,
+                        TransactionOperation.BEGIN_IMMEDIATE,
+                        TransactionOperation.BEGIN_DEFERRED -> inTransactionSetter.invoke(true)
+                    }
                 }
+            } else {
+                result = dbWorker.step(statementId, bindings)
             }
         }
         rowIndex++

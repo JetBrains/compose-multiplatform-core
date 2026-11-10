@@ -18,10 +18,10 @@ package androidx.camera.camera2.pipe.internal
 
 import androidx.annotation.GuardedBy
 import androidx.camera.camera2.pipe.CameraTimestamp
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.media.Finalizer
+import androidx.camera.common.CameraFrameNumber
 import kotlinx.atomicfu.atomic
 
 /**
@@ -61,7 +61,7 @@ internal class OutputDistributor<T>(
          * output has arrived, or an explicit output failure event).
          */
         fun onOutputComplete(
-            cameraFrameNumber: FrameNumber,
+            cameraFrameNumber: CameraFrameNumber,
             cameraTimestamp: CameraTimestamp,
             cameraOutputSequence: Long,
             outputNumber: Long,
@@ -77,7 +77,7 @@ internal class OutputDistributor<T>(
 
     @GuardedBy("lock") private var newestCameraOutputNumber = Long.MIN_VALUE
 
-    @GuardedBy("lock") private var newestFrameNumber = FrameNumber(Long.MIN_VALUE)
+    @GuardedBy("lock") private var newestFrameNumber: CameraFrameNumber? = null
 
     @GuardedBy("lock") private var lastFailedFrameNumber = Long.MIN_VALUE
 
@@ -91,7 +91,7 @@ internal class OutputDistributor<T>(
      * supplying the callback to listen for the output to become available. The [outputListener] can
      * be invoked synchronously if the output is already available.
      *
-     * @param cameraFrameNumber The Camera2 FrameNumber for this output
+     * @param cameraFrameNumber The Camera2 CameraFrameNumber for this output
      * @param cameraTimestamp The Camera2 CameraTimestamp for this output
      * @param cameraOutputNumber untyped number that corresponds to the number provided by
      *   [onOutputResult]. For Images, this will likely be the timestamp of the image (Which may be
@@ -102,7 +102,7 @@ internal class OutputDistributor<T>(
      *   OutputDistributor is now closed.
      */
     fun onOutputStarted(
-        cameraFrameNumber: FrameNumber,
+        cameraFrameNumber: CameraFrameNumber,
         cameraTimestamp: CameraTimestamp,
         cameraOutputNumber: Long,
         outputListener: OutputListener<T>,
@@ -128,7 +128,7 @@ internal class OutputDistributor<T>(
             //   is ignored, and nothing will be done for it.
             //
             // Please see b/324320062 and b/324940238 for context.
-            // TODO: b/327289130 - Make sure we finalize all OutputResults if multiple are returned.
+            // TODO(b/327289130): Make sure we finalize all OutputResults if multiple are returned.
             startedOutputs
                 .firstOrNull { it.cameraFrameNumber == cameraFrameNumber }
                 ?.let {
@@ -154,15 +154,17 @@ internal class OutputDistributor<T>(
                             outputNumber = it,
                         )
                     }
-                outputToFinalize =
-                    outputToFinalizeKey?.let { availableOutputs.remove(outputToFinalizeKey) }
+                outputToFinalize = outputToFinalizeKey?.let {
+                    availableOutputs.remove(outputToFinalizeKey)
+                }
                 outputNumber = outputToFinalizeKey
                 invokeOutputListener = true
                 return@synchronized
             }
 
             // Determine if the frameNumber is out of order relative to other onOutputStarted calls
-            val isFrameNumberOutOfOrder = cameraFrameNumber.value < newestFrameNumber.value
+            val isFrameNumberOutOfOrder =
+                newestFrameNumber?.let { cameraFrameNumber.value < it.value } ?: false
             if (!isFrameNumberOutOfOrder) {
                 newestFrameNumber = cameraFrameNumber
             }
@@ -236,9 +238,10 @@ internal class OutputDistributor<T>(
     /**
      * Indicates a camera2 output has arrived for a specific [outputNumber].
      *
-     * This value is the primary keu used to match `onOutputStart` events with `onOutputResult`
+     * This value is the primary key used to match `onOutputStart` events with `onOutputResult`
      * events. For images, these values will often refer to the nanosecond timestamp of the Image,
-     * and for TotalCaptureResults, this value will often reference the associated FrameNumber.
+     * and for TotalCaptureResults, this value will often reference the associated
+     * CameraFrameNumber.
      */
     fun onOutputResult(outputNumber: Long, outputResult: OutputResult<T>) {
         var outputToFinalize: OutputResult<T>? = null
@@ -256,13 +259,12 @@ internal class OutputDistributor<T>(
                 return@synchronized
             }
 
-            val matchingOutput =
-                startedOutputs.firstOrNull {
-                    outputMatcher.fuzzyEqual(
-                        cameraOutputNumber = it.cameraOutputNumber,
-                        outputNumber = outputNumber,
-                    )
-                }
+            val matchingOutput = startedOutputs.firstOrNull {
+                outputMatcher.fuzzyEqual(
+                    cameraOutputNumber = it.cameraOutputNumber,
+                    outputNumber = outputNumber,
+                )
+            }
 
             // Complete the matching output, if possible, and remove it from the list of started
             // outputs.
@@ -291,8 +293,8 @@ internal class OutputDistributor<T>(
         outputsToCancel?.forEach { it.completeWithFailure(OutputStatus.ERROR_OUTPUT_MISSING) }
     }
 
-    /** Indicates an output will not arrive for a specific [FrameNumber]. */
-    fun onOutputFailure(frameNumber: FrameNumber) {
+    /** Indicates an output will not arrive for a specific [CameraFrameNumber]. */
+    fun onOutputFailure(frameNumber: CameraFrameNumber) {
         var outputWithFailure: StartedOutput<T>? = null
 
         synchronized(lock) {
@@ -329,19 +331,18 @@ internal class OutputDistributor<T>(
         // This filter is bi-modal: If [output] is outOfOrder, it will only remove *other* out of
         // order events that are older than the most recent event. Similarly, if it's normal and in
         // order, then this will ignore other outOfOrder events.
-        val outputsToCancel =
-            startedOutputs.filter {
-                it.isOutOfOrder == isOutOfOrder &&
-                    it.cameraOutputSequence < cameraOutputSequence &&
-                    it.cameraOutputNumber < cameraOutputNumber
-            }
+        val outputsToCancel = startedOutputs.filter {
+            it.isOutOfOrder == isOutOfOrder &&
+                it.cameraOutputSequence < cameraOutputSequence &&
+                it.cameraOutputNumber < cameraOutputNumber
+        }
         startedOutputs.removeAll(outputsToCancel)
         return outputsToCancel
     }
 
     override fun close() {
-        var outputsToFinalize: List<OutputResult<T>>
-        var outputsToCancel: List<StartedOutput<T>>
+        val outputsToFinalize: List<OutputResult<T>>
+        val outputsToCancel: List<StartedOutput<T>>
 
         synchronized(lock) {
             if (closed) {
@@ -369,7 +370,7 @@ internal class OutputDistributor<T>(
      */
     private data class StartedOutput<T>(
         val isOutOfOrder: Boolean,
-        val cameraFrameNumber: FrameNumber,
+        val cameraFrameNumber: CameraFrameNumber,
         val cameraTimestamp: CameraTimestamp,
         val cameraOutputSequence: Long,
         val cameraOutputNumber: Long,

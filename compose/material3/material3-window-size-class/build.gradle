@@ -32,7 +32,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.material3.windowsizeclass"
-        compileSdk { version = release(37) }
+        compileSdk { version = release(35) }
     }
     jvmStubs()
     linuxX64Stubs()
@@ -45,6 +45,8 @@ androidXMultiplatform {
             api("androidx.compose.runtime:runtime:1.8.1")
             api("androidx.compose.ui:ui:1.8.2")
             api("androidx.compose.ui:ui-unit:1.8.1")
+            // Older versions of lifecycle-runtime lint checks use a deleted lint API
+            implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
         }
 
         commonTest.dependencies {
@@ -79,6 +81,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2022"
     description = "Provides window size classes for building responsive UIs"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material3:material3-window-size-class:material3-window-size-class-samples"))
 }

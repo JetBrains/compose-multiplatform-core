@@ -51,6 +51,7 @@ public final class FanDirectionProfile {
     }
 
     /** A builder for FanDirectionProfile. */
+    @SuppressWarnings("EmptyBuilder")
     public static final class Builder {
         Map<Set<CarZone>, Set<Integer>> mCarZoneSetsToFanDirectionValues;
 
@@ -61,8 +62,7 @@ public final class FanDirectionProfile {
          *                                 corresponding to the set of car zones. The
          *                                 range values could be one of the values
          *                                 from [0,6] specified in {@link
-         *                                 androidx.car.app.hardware.common.CarPropertyProfile#
-         *                                 #VehicleHvacFanDirection}.
+         *                                 androidx.car.app.hardware.common.CarPropertyProfile.HvacFanDirection}.
          */
         public Builder(@NonNull Map<Set<CarZone>, Set<Integer>>
                 carZoneSetsToFanDirectionValues) {

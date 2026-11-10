@@ -30,13 +30,13 @@ import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.impl.toParameters
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import androidx.camera.camera2.pipe.FrameInfo
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.InputRequest
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.media.AndroidImage
+import androidx.camera.common.CameraFrameNumber
 import androidx.camera.common.unwrapAs
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
@@ -80,19 +80,11 @@ constructor(
             "Attempted to issue a capture without surfaces using $captureConfig"
         }
 
-        val streamIdList =
-            surfaces.map {
-                checkNotNull(useCaseCameraContext.surfaceToStreamMap[it]) {
-                    "Attempted to issue a capture with an unrecognized surface: $it"
-                }
+        val streamIdList = surfaces.map {
+            checkNotNull(useCaseCameraContext.surfaceToStreamMap[it]) {
+                "Attempted to issue a capture with an unrecognized surface: $it"
             }
-
-        val callbacks =
-            CameraCallbackMap().apply {
-                captureConfig.cameraCaptureCallbacks.forEach { callback ->
-                    addCaptureCallback(callback, threads.sequentialExecutor)
-                }
-            }
+        }
 
         val configOptions = captureConfig.implementationOptions
         val optionBuilder = Camera2ImplConfig.Builder()
@@ -102,6 +94,23 @@ constructor(
         // P2 SessionConfig options
         optionBuilder.insertAllOptions(sessionConfigOptions)
         optionBuilder.insertAllOptions(configOptions)
+
+        val mergedConfig = optionBuilder.build()
+        val stillCaptureCallback =
+            mergedConfig.retrieveOption(Camera2ImplConfig.STILL_CAPTURE_CALLBACK_OPTION, null)
+
+        val callbacks =
+            CameraCallbackMap().apply {
+                captureConfig.cameraCaptureCallbacks.forEach { callback ->
+                    addCaptureCallback(callback, threads.sequentialExecutor)
+                }
+                stillCaptureCallback?.let {
+                    addCaptureCallback(
+                        CameraUseCaseAdapter.CaptureCallbackContainer.create(it),
+                        threads.sequentialExecutor,
+                    )
+                }
+            }
 
         // Add capture options defined in CaptureConfig
         if (configOptions.containsOption(CaptureConfig.OPTION_ROTATION)) {
@@ -180,7 +189,7 @@ constructor(
         return object : Request.Listener {
             override fun onComplete(
                 requestMetadata: RequestMetadata,
-                frameNumber: FrameNumber,
+                frameNumber: CameraFrameNumber,
                 result: FrameInfo,
             ) {
                 closeImageProxy()
@@ -188,7 +197,7 @@ constructor(
 
             override fun onFailed(
                 requestMetadata: RequestMetadata,
-                frameNumber: FrameNumber,
+                frameNumber: CameraFrameNumber,
                 requestFailure: RequestFailure,
             ) {
                 closeImageProxy()
@@ -200,7 +209,7 @@ constructor(
 
             override fun onTotalCaptureResult(
                 requestMetadata: RequestMetadata,
-                frameNumber: FrameNumber,
+                frameNumber: CameraFrameNumber,
                 totalCaptureResult: FrameInfo,
             ) {
                 closeImageProxy()

@@ -193,24 +193,23 @@ class NetworkRequestConstraintControllerTest {
 
         val constraints = listOf(buildConstraint(), buildConstraint())
         val initialValueBarriers = listOf(CompletableDeferred<Unit>(), CompletableDeferred<Unit>())
-        val asyncResults =
-            constraints.mapIndexed { index, constraint ->
-                async(Dispatchers.IO) {
-                    val result = CompletableDeferred<ConstraintsState>()
-                    controller.track(constraints[index]).take(2).collectIndexed { i, state ->
-                        when (i) {
-                            // initial value is ConstraintNotMet due timeout since there is
-                            // no network
-                            0 -> initialValueBarriers[index].complete(Unit)
-                            // second value is the one we are interested on emitted by the test
-                            // network callback invocation
-                            1 -> result.complete(state)
-                            else -> error("Received too many results")
-                        }
+        val asyncResults = constraints.mapIndexed { index, constraint ->
+            async(Dispatchers.IO) {
+                val result = CompletableDeferred<ConstraintsState>()
+                controller.track(constraints[index]).take(2).collectIndexed { i, state ->
+                    when (i) {
+                        // initial value is ConstraintNotMet due timeout since there is
+                        // no network
+                        0 -> initialValueBarriers[index].complete(Unit)
+                        // second value is the one we are interested on emitted by the test
+                        // network callback invocation
+                        1 -> result.complete(state)
+                        else -> error("Received too many results")
                     }
-                    result.await()
                 }
+                result.await()
             }
+        }
         initialValueBarriers.awaitAll() // await for async initial values
 
         connManagerShadow.setActiveNetworkInfo(mobileNetwork)
@@ -398,17 +397,41 @@ class NetworkRequestConstraintControllerTest {
         val state = async(Dispatchers.IO) { controller.track(buildConstraint()).first() }
         assertThat(state.await()).isEqualTo(ConstraintsMet)
     }
+
+    @Test
+    fun testSecurityExceptionDuringRegistration() {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+
+        connManagerShadow.onRegisterNetworkCallback = { throw SecurityException("Test Exception") }
+
+        val controller = NetworkRequestConstraintController(connectivityManager, 10000L)
+        val constraints =
+            Constraints.Builder()
+                .setRequiredNetworkRequest(NetworkRequest.Builder().build(), NetworkType.CONNECTED)
+                .build()
+        runBlocking {
+            val constraintsState = controller.track(constraints).first()
+            assertThat(constraintsState)
+                .isEqualTo(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
+        }
+    }
 }
 
 @RequiresApi(28)
 @Implements(ConnectivityManager::class)
 class ExtendedShadowConnectivityManager : ShadowConnectivityManager() {
+    var onRegisterNetworkCallback: (() -> Unit)? = null
 
     override fun registerNetworkCallback(
         request: NetworkRequest?,
         networkCallback: ConnectivityManager.NetworkCallback?,
         handler: Handler?,
     ) {
+        onRegisterNetworkCallback?.invoke()
         super.registerNetworkCallback(request, networkCallback, handler)
         val network = activeNetwork ?: return
 
@@ -419,6 +442,7 @@ class ExtendedShadowConnectivityManager : ShadowConnectivityManager() {
     override fun registerDefaultNetworkCallback(
         networkCallback: ConnectivityManager.NetworkCallback?
     ) {
+        onRegisterNetworkCallback?.invoke()
         super.registerDefaultNetworkCallback(networkCallback)
         val network = activeNetwork ?: return
 

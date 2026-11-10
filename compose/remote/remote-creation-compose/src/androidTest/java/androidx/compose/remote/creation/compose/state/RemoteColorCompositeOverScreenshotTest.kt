@@ -16,6 +16,7 @@
 
 package androidx.compose.remote.creation.compose.state
 
+import android.content.Context
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
@@ -23,7 +24,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteRow
-import androidx.compose.remote.creation.compose.layout.RemoteSpacer
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
@@ -31,8 +31,10 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.RemoteFloat.Companion.createNamedRemoteFloatExpression
 import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.test.core.app.ApplicationProvider
@@ -59,10 +61,10 @@ class RemoteColorCompositeOverScreenshotTest {
     @Test
     fun compositeOverColors() =
         composeTestRule.runScreenshotTest(
-            remoteCreationDisplayInfo = RemoteCreationDisplayInfo(300, 510, 240)
+            remoteCreationDisplayInfo = getScaledDisplayInfo(300, 510, 240)
         ) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.White).padding(8.rdp)
+                modifier = RemoteModifier.fillMaxSize().background(Color.White.rc).padding(8.rdp)
             ) {
                 // Case 1: Constant Blue + 50% Red
                 ComparisonRow(
@@ -73,10 +75,12 @@ class RemoteColorCompositeOverScreenshotTest {
                     composeResult = Color.Red.copy(alpha = 0.5f).compositeOver(Color.Blue).rc,
                 )
 
-                RemoteSpacer(modifier = RemoteModifier.height(6.rdp))
+                RemoteBox(modifier = RemoteModifier.height(6.rdp))
 
                 // Case 2: Opaque Background: Blue + Dynamic 40% Magenta
-                val dynamicAlpha40 = rememberNamedRemoteFloat("alpha_40") { 0.4f.rf }
+                val dynamicAlpha40 = remember {
+                    createNamedRemoteFloatExpression("alpha_40") { 0.4f.rf }
+                }
                 ComparisonRow(
                     title = "2. Opaque BG: Blue + Dynamic 40% Magenta",
                     bg = Color.Blue.rc,
@@ -86,10 +90,12 @@ class RemoteColorCompositeOverScreenshotTest {
                     composeResult = Color.Magenta.copy(alpha = 0.4f).compositeOver(Color.Blue).rc,
                 )
 
-                RemoteSpacer(modifier = RemoteModifier.height(6.rdp))
+                RemoteBox(modifier = RemoteModifier.height(6.rdp))
 
                 // Case 3: Both Alphas Constant: Dynamic 50% Red + Dynamic 60% Blue
-                val dynamicRedComponent = rememberNamedRemoteFloat("red_comp") { 0.8f.rf }
+                val dynamicRedComponent = remember {
+                    createNamedRemoteFloatExpression("red_comp") { 0.8f.rf }
+                }
                 val bgConstAlpha =
                     RemoteColor.rgb(
                         red = dynamicRedComponent,
@@ -97,7 +103,9 @@ class RemoteColorCompositeOverScreenshotTest {
                         blue = 0.rf,
                         alpha = 0.5f.rf,
                     )
-                val dynamicBlueComponent = rememberNamedRemoteFloat("blue_comp") { 0.9f.rf }
+                val dynamicBlueComponent = remember {
+                    createNamedRemoteFloatExpression("blue_comp") { 0.9f.rf }
+                }
                 val fgConstAlpha =
                     RemoteColor.rgb(
                         red = 0.rf,
@@ -116,12 +124,16 @@ class RemoteColorCompositeOverScreenshotTest {
                             .rc,
                 )
 
-                RemoteSpacer(modifier = RemoteModifier.height(6.rdp))
+                RemoteBox(modifier = RemoteModifier.height(6.rdp))
 
                 // Case 4: Fully Dynamic: 80% Cyan + 30% Yellow
-                val dynamicAlpha80 = rememberNamedRemoteFloat("alpha_80") { 0.8f.rf }
+                val dynamicAlpha80 = remember {
+                    createNamedRemoteFloatExpression("alpha_80") { 0.8f.rf }
+                }
                 val dynamicBgCyan = Color.Cyan.rc.copy(alpha = dynamicAlpha80)
-                val dynamicAlpha30 = rememberNamedRemoteFloat("alpha_30") { 0.3f.rf }
+                val dynamicAlpha30 = remember {
+                    createNamedRemoteFloatExpression("alpha_30") { 0.3f.rf }
+                }
                 val dynamicFgYellow = Color.Yellow.rc.copy(alpha = dynamicAlpha30)
                 ComparisonRow(
                     title = "4. Fully Dynamic: 80% Cyan + 30% Yellow",
@@ -134,7 +146,7 @@ class RemoteColorCompositeOverScreenshotTest {
                             .rc,
                 )
 
-                RemoteSpacer(modifier = RemoteModifier.height(6.rdp))
+                RemoteBox(modifier = RemoteModifier.height(6.rdp))
 
                 // Case 5: Black + 70% White
                 ComparisonRow(
@@ -158,30 +170,43 @@ class RemoteColorCompositeOverScreenshotTest {
         composeResult: RemoteColor,
     ) {
         RemoteColumn {
-            RemoteText(text = title, fontSize = 9.rsp, color = Color.Black.rc)
-            RemoteSpacer(modifier = RemoteModifier.height(2.rdp))
+            RemoteText(text = title.rs, fontSize = 9.rsp, color = Color.Black.rc)
+            RemoteBox(modifier = RemoteModifier.height(2.rdp))
 
             // Row 1: Remote Blend
             RemoteRow(verticalAlignment = RemoteAlignment.CenterVertically) {
                 RemoteBox(modifier = RemoteModifier.size(20.rdp).background(bg))
-                RemoteText(text = " + ", fontSize = 8.rsp, color = Color.Gray.rc)
+                RemoteText(text = " + ".rs, fontSize = 8.rsp, color = Color.Gray.rc)
                 RemoteBox(modifier = RemoteModifier.size(20.rdp).background(fg))
-                RemoteText(text = " = ", fontSize = 8.rsp, color = Color.Gray.rc)
+                RemoteText(text = " = ".rs, fontSize = 8.rsp, color = Color.Gray.rc)
                 RemoteBox(modifier = RemoteModifier.size(20.rdp).background(remoteResult))
-                RemoteText(text = " (Rem)", fontSize = 7.rsp, color = Color.Gray.rc)
+                RemoteText(text = " (Rem)".rs, fontSize = 7.rsp, color = Color.Gray.rc)
             }
 
-            RemoteSpacer(modifier = RemoteModifier.height(2.rdp))
+            RemoteBox(modifier = RemoteModifier.height(2.rdp))
 
             // Row 2: Compose Blend
             RemoteRow(verticalAlignment = RemoteAlignment.CenterVertically) {
                 RemoteBox(modifier = RemoteModifier.size(20.rdp).background(bg))
-                RemoteText(text = " + ", fontSize = 8.rsp, color = Color.Gray.rc)
+                RemoteText(text = " + ".rs, fontSize = 8.rsp, color = Color.Gray.rc)
                 RemoteBox(modifier = RemoteModifier.size(20.rdp).background(fg))
-                RemoteText(text = " = ", fontSize = 8.rsp, color = Color.Gray.rc)
+                RemoteText(text = " = ".rs, fontSize = 8.rsp, color = Color.Gray.rc)
                 RemoteBox(modifier = RemoteModifier.size(20.rdp).background(composeResult))
-                RemoteText(text = " (Comp)", fontSize = 7.rsp, color = Color.Gray.rc)
+                RemoteText(text = " (Comp)".rs, fontSize = 7.rsp, color = Color.Gray.rc)
             }
         }
+    }
+
+    private fun getScaledDisplayInfo(
+        originalWidthPx: Int,
+        originalHeightPx: Int,
+        originalDensity: Int,
+    ): RemoteCreationDisplayInfo {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val hostDensityDpi = context.resources.displayMetrics.densityDpi
+        val scale = hostDensityDpi.toFloat() / originalDensity.toFloat()
+        val widthPx = Math.round(originalWidthPx * scale)
+        val heightPx = Math.round(originalHeightPx * scale)
+        return RemoteCreationDisplayInfo(widthPx, heightPx, hostDensityDpi)
     }
 }

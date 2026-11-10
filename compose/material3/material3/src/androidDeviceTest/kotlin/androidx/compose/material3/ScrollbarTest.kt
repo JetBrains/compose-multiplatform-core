@@ -24,7 +24,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReusableContent
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.geometry.Rect
@@ -34,6 +37,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -43,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import kotlin.math.abs
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -65,8 +68,7 @@ class ScrollbarTest(
             override var scaleFactor: Float = 1f
         }
 
-    @get:Rule
-    val rule = createComposeRule(effectContext = motionDurationScale + StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule(ComposeUiTestConfig(motionDurationScale))
 
     @After
     fun tearDown() {
@@ -87,7 +89,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbar_fadeAnimation() {
+    fun nonInteractiveScrollbar_fadeAnimation() {
         val offsetState = mutableStateOf(0)
         val state =
             object : ScrollIndicatorState {
@@ -154,7 +156,96 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbar_fadeAnimation_whenSystemDisablesAnimations() {
+    fun nonInteractiveScrollbar_fadeAnimation_onNodeReattach() {
+        val offsetState = mutableStateOf(0)
+        val state =
+            object : ScrollIndicatorState {
+                override val scrollOffset: Int
+                    get() = offsetState.value
+
+                override val contentSize: Int = 200
+                override val viewportSize: Int = 100
+            }
+
+        var reuseKey by mutableStateOf(true)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                Box(
+                    Modifier.size(ScrollableContainerSize).background(TestContainerBackgroundColor)
+                ) {
+                    ReusableContent(reuseKey) {
+                        Box(
+                            Modifier.size(ScrollableContainerSize)
+                                .nonInteractiveScrollbar(
+                                    state = state,
+                                    orientation = orientation,
+                                    thumbColor = ScrollbarThumbColor,
+                                    trackColor = ScrollbarTrackColor,
+                                    thickness = ScrollbarThickness,
+                                    isFadeEnabled = true,
+                                    fadeDelayMillis = 100,
+                                    fadeDurationMillis = 100,
+                                )
+                                .testTag(ScrollableContainerTestTag)
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.mainClock.autoAdvance = false
+
+        assertEquals(0, state.scrollOffset)
+
+        // Trigger a reuse cycle. This detaches the node and re-attaches the SAME node instance.
+        rule.runOnIdle { reuseKey = false }
+        // Trigger recomposition
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        // Trigger scroll
+        rule.runOnIdle { offsetState.value = 10 }
+
+        // Advance clock a bit to trigger the first draw
+        rule.mainClock.advanceTimeBy(20)
+
+        with(rule.density) {
+            val thicknessPx = ScrollbarThickness.roundToPx()
+            val viewportWidthPx = ScrollableContainerSize.roundToPx()
+            val viewportHeightPx = ScrollableContainerSize.roundToPx()
+
+            val initialImage = rule.onNodeWithTag(ScrollableContainerTestTag).captureToImage()
+            val initialColors =
+                computeScrollbarTestColors(
+                    initialImage.toPixelMap(),
+                    thicknessPx,
+                    viewportWidthPx,
+                    viewportHeightPx,
+                )
+
+            // Verify that the scrollbar is visible after scroll
+            assertEquals(ScrollbarThumbColor, initialColors.thumbColor)
+            assertEquals(ScrollbarTrackColor, initialColors.trackColor)
+
+            // Advance clock past delay and animation duration
+            rule.mainClock.advanceTimeBy(230)
+
+            val imageBitmap = rule.onNodeWithTag(ScrollableContainerTestTag).captureToImage()
+            val pixelMap = imageBitmap.toPixelMap()
+
+            val actualColors =
+                computeScrollbarTestColors(pixelMap, thicknessPx, viewportWidthPx, viewportHeightPx)
+
+            // Verify that the scrollbar fades out successfully (proves channel works on
+            // re-attachment)
+            assertEquals(TestContainerBackgroundColor, actualColors.thumbColor)
+            assertEquals(TestContainerBackgroundColor, actualColors.trackColor)
+        }
+    }
+
+    @Test
+    fun nonInteractiveScrollbar_fadeAnimation_whenSystemDisablesAnimations() {
         motionDurationScale.scaleFactor = 0f
         val offsetState = mutableStateOf(0)
         val state =
@@ -236,7 +327,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbar_updatesOnScroll() {
+    fun nonInteractiveScrollbar_updatesOnScroll() {
         val offsetState = mutableStateOf(0)
         val state =
             object : ScrollIndicatorState {
@@ -298,7 +389,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbar_hidesWhenContentFitsViewport() {
+    fun nonInteractiveScrollbar_hidesWhenContentFitsViewport() {
         val viewportSizeState = mutableStateOf(100)
         val state =
             object : ScrollIndicatorState {
@@ -369,7 +460,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbar_coercesToMinThumbLength() {
+    fun nonInteractiveScrollbar_coercesToMinThumbLength() {
         val state =
             object : ScrollIndicatorState {
                 override val scrollOffset: Int = 0
@@ -410,7 +501,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbar_coercesToMaxThumbLength() {
+    fun nonInteractiveScrollbar_coercesToMaxThumbLength() {
         val state =
             object : ScrollIndicatorState {
                 override val scrollOffset: Int = 0
@@ -454,7 +545,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbar_hidesWhenTrackTooSmallForMinThumbLength() {
+    fun nonInteractiveScrollbar_hidesWhenTrackTooSmallForMinThumbLength() {
         val state =
             object : ScrollIndicatorState {
                 override val scrollOffset: Int = 0
@@ -498,7 +589,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbar_respectsTrackInsets() {
+    fun nonInteractiveScrollbar_respectsTrackInsets() {
         val state =
             object : ScrollIndicatorState {
                 override val scrollOffset: Int = 0
@@ -571,7 +662,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbarModifier_inspectableProperties() {
+    fun nonInteractiveScrollbarModifier_inspectableProperties() {
         val state =
             object : ScrollIndicatorState {
                 override val scrollOffset: Int = 0
@@ -581,7 +672,7 @@ class ScrollbarTest(
 
         rule.setContent {
             val modifier =
-                Modifier.scrollbar(
+                Modifier.nonInteractiveScrollbar(
                     state = state,
                     orientation = orientation,
                     thumbColor = Color.Red,
@@ -597,7 +688,7 @@ class ScrollbarTest(
                 ) as? InspectableValue
 
             assertNotNull(modifier)
-            assertEquals("scrollbar", modifier?.nameFallback)
+            assertEquals("nonInteractiveScrollbar", modifier?.nameFallback)
 
             val properties = modifier?.inspectableElements?.associate { it.name to it.value }
             assertNotNull(properties)
@@ -617,7 +708,7 @@ class ScrollbarTest(
     }
 
     @Test
-    fun scrollbarModifier_equals() {
+    fun nonInteractiveScrollbarModifier_equals() {
         val state =
             object : ScrollIndicatorState {
                 override val scrollOffset: Int = 0
@@ -627,11 +718,23 @@ class ScrollbarTest(
 
         rule.setContent {
             val modifier1 =
-                Modifier.scrollbar(state = state, orientation = orientation, thickness = 10.dp)
+                Modifier.nonInteractiveScrollbar(
+                    state = state,
+                    orientation = orientation,
+                    thickness = 10.dp,
+                )
             val modifier2 =
-                Modifier.scrollbar(state = state, orientation = orientation, thickness = 10.dp)
+                Modifier.nonInteractiveScrollbar(
+                    state = state,
+                    orientation = orientation,
+                    thickness = 10.dp,
+                )
             val modifier3 =
-                Modifier.scrollbar(state = state, orientation = orientation, thickness = 5.dp)
+                Modifier.nonInteractiveScrollbar(
+                    state = state,
+                    orientation = orientation,
+                    thickness = 5.dp,
+                )
 
             assertEquals(modifier1, modifier2)
             assertEquals(modifier1.hashCode(), modifier2.hashCode())
@@ -748,7 +851,7 @@ private fun ScrollbarTestContainer(
     trackColor: Color = ScrollbarTrackColor,
     thickness: Dp = ScrollbarThickness,
     thumbMinLength: Dp = 24.dp,
-    thumbMaxLengthFraction: Float = ScrollbarDefaults.ThumbMaxLengthFraction,
+    thumbMaxLengthFraction: Float = NonInteractiveScrollbarDefaults.ThumbMaxLengthFraction,
     isFadeEnabled: Boolean = true,
     mainAxisTrackInset: Dp = 0.dp,
     crossAxisTrackInset: Dp = 0.dp,
@@ -761,7 +864,7 @@ private fun ScrollbarTestContainer(
             modifier
                 .size(ScrollableContainerSize)
                 .background(backgroundColor)
-                .scrollbar(
+                .nonInteractiveScrollbar(
                     state = state,
                     orientation = orientation,
                     thumbColor = thumbColor,

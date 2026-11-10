@@ -363,9 +363,6 @@ constructor(
         requests.removeIndices(prunedIndices).forEach { it.onRemoved() }
 
         // Step 4: Determine whether we abort the current request.
-        if (!flags.cameraOpenAbortEnabled) {
-            return false
-        }
         if (currentRequest == null) {
             return false
         }
@@ -661,8 +658,9 @@ constructor(
     }
 
     private suspend fun connectPendingRequestOpens(cameraIds: Set<CameraId>) {
-        val filteredPendingRequestOpens =
-            pendingRequestOpens.filter { cameraIds.contains(it.request.virtualCamera.cameraId) }
+        val filteredPendingRequestOpens = pendingRequestOpens.filter {
+            cameraIds.contains(it.request.virtualCamera.cameraId)
+        }
         for (pendingRequestOpen in filteredPendingRequestOpens) {
             val request = pendingRequestOpen.request
 

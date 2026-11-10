@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("RestrictedApiAndroidX")
+@file:Suppress("RestrictedApiAndroidX") // Referring to remote-core
 
 package androidx.compose.remote.integration.view.demos.examples
 
@@ -31,20 +31,22 @@ import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.visibility
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.state.MutableRemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 
 @Composable
 @RemoteComposable
 fun TestDrawContentDemo() {
     val rcFloat = 200f.rf
-    val visibility = rememberMutableRemoteInt(Component.Visibility.VISIBLE)
+    val visibility = remember { MutableRemoteInt(Component.Visibility.VISIBLE) }
 
     RemoteRow {
         RemoteBox(
@@ -56,7 +58,7 @@ fun TestDrawContentDemo() {
                         valueChange(remoteState = visibility, updatedValue = (visibility + 1) % 2)
                     )
         ) {
-            RemoteText(text = "Hello world!")
+            RemoteText(text = "Hello world!".rs)
         }
         RemoteBox(
             modifier =
@@ -65,7 +67,7 @@ fun TestDrawContentDemo() {
                     .visibility(visibility)
                     .border(1.rdp, Color.Companion.Green.rc)
         ) {
-            RemoteText(text = "Hello world!")
+            RemoteText(text = "Hello world!".rs)
         }
         RemoteBox(
             modifier =
@@ -76,11 +78,11 @@ fun TestDrawContentDemo() {
                         drawContent()
                         val paint = RemotePaint.Companion()
                         paint.color = RemoteColor.Companion.rgb(1f, 1f, 1f, 0f)
-                        drawCircle(paint, center, 40.rf)
+                        drawCircle(paint, 40.rf, center)
                         rotate(30f.rf) { scale(0.5f.rf) { drawContent() } }
                     }
         ) {
-            RemoteText(text = "Hello world!")
+            RemoteText(text = "Hello world!".rs)
         }
     }
 }

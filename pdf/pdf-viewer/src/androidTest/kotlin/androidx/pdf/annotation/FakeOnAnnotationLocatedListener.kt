@@ -16,11 +16,15 @@
 
 package androidx.pdf.annotation
 
-internal class FakeOnAnnotationLocatedListener : OnAnnotationLocatedListener {
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+
+@OptIn(ExperimentalPdfApi::class)
+internal class FakeOnAnnotationLocatedListener : AnnotationsView.OnAnnotationLocatedListener {
     var isHit: Boolean = false
         private set
 
-    override fun onAnnotationsLocated(locatedAnnotations: LocatedAnnotations) {
+    override fun onAnnotationsLocated(x: Float, y: Float, annotations: List<KeyedPdfAnnotation>) {
         isHit = true
     }
 }

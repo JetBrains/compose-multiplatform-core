@@ -21,7 +21,6 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.Frame
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.StreamFormat
@@ -33,6 +32,7 @@ import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
 import androidx.camera.camera2.pipe.testing.FakeImage
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
 import androidx.camera.camera2.pipe.testing.FakeSurfaces
+import androidx.camera.common.CameraFrameNumber
 import com.google.common.truth.Truth.assertThat
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Dispatchers
@@ -91,7 +91,7 @@ class FrameStateTest {
             outputStream5.stream = this
         }
 
-    private val frameNumber = FrameNumber(420)
+    private val frameNumber = CameraFrameNumber(420)
     private val frameTimestampNs = 1234L
     private val frameTimestamp = CameraTimestamp(frameTimestampNs)
 
@@ -112,7 +112,8 @@ class FrameStateTest {
                     stream3Id to stream3Surface,
                 )
         )
-    private val fakeFrameMetadata = FakeFrameMetadata(frameNumber = frameNumber)
+    private val fakeFrameMetadata =
+        FakeFrameMetadata(frameNumber = CameraFrameNumber(frameNumber.value))
     private val fakeFrameInfo =
         FakeFrameInfo(metadata = fakeFrameMetadata, requestMetadata = fakeRequestMetadata)
 
@@ -123,7 +124,10 @@ class FrameStateTest {
             val imagesAvailableCalled = atomic(0)
             val frameCompletedCalled = atomic(0)
 
-            override fun onFrameStarted(frameNumber: FrameNumber, frameTimestamp: CameraTimestamp) {
+            override fun onFrameStarted(
+                frameNumber: CameraFrameNumber,
+                frameTimestamp: CameraTimestamp,
+            ) {
                 frameStartedCalled.incrementAndGet()
             }
 
@@ -265,7 +269,7 @@ class FrameStateTest {
     @Test
     fun frameInfoResultCanBeCompletedWithAResultWithADifferentFrameNumber() {
         frameState.frameInfoOutput.onOutputComplete(
-            FrameNumber(1),
+            CameraFrameNumber(1),
             frameTimestamp,
             10,
             1,
@@ -399,8 +403,6 @@ class FrameStateTest {
 
     @Test
     fun concurrentFrameStateChangeAndNewListenerAdded_ensureCallbacksCalledOnce() = runBlocking {
-        val numCoroutines = 4
-
         val jobs =
             listOf(
                 launch(Dispatchers.Default) { frameState.onFrameInfoComplete() },
@@ -414,6 +416,40 @@ class FrameStateTest {
         assertThat(fakeListener.frameStartedCalled.value).isEqualTo(1)
         assertThat(fakeListener.frameInfoAvailableCalled.value).isEqualTo(1)
         assertThat(fakeListener.imagesAvailableCalled.value).isEqualTo(1)
+        assertThat(fakeListener.frameCompletedCalled.value).isEqualTo(1)
+    }
+
+    @Test
+    fun frameState_transitionsToComplete_whenNoStreamOutputsExpected() {
+        // Create a FrameState with no internal image streams (e.g., only external streams like a
+        // Viewfinder)
+        val emptyImageStreamsFrameState =
+            FrameState(
+                requestMetadata = fakeRequestMetadata,
+                frameNumber = frameNumber,
+                frameTimestamp = frameTimestamp,
+                imageStreams = emptySet(), // No internal image streams managed by CameraPipe
+                concurrentImageStreams = setOf(),
+            )
+
+        emptyImageStreamsFrameState.addListener(fakeListener)
+
+        // Since there are no image outputs expected, the state should initialize to
+        // STREAM_RESULTS_COMPLETE.
+        // Therefore, adding the listener should immediately trigger onStarted and
+        // onImagesAvailable.
+        assertThat(fakeListener.frameStartedCalled.value).isEqualTo(1)
+        assertThat(fakeListener.imagesAvailableCalled.value).isEqualTo(1)
+        assertThat(fakeListener.frameInfoAvailableCalled.value).isEqualTo(0)
+        assertThat(fakeListener.frameCompletedCalled.value).isEqualTo(0)
+
+        // When the camera metadata (FrameInfo) arrives, the frame should transition to COMPLETE.
+        emptyImageStreamsFrameState.onFrameInfoComplete()
+
+        // All callbacks should now be triggered exactly once.
+        assertThat(fakeListener.frameStartedCalled.value).isEqualTo(1)
+        assertThat(fakeListener.imagesAvailableCalled.value).isEqualTo(1)
+        assertThat(fakeListener.frameInfoAvailableCalled.value).isEqualTo(1)
         assertThat(fakeListener.frameCompletedCalled.value).isEqualTo(1)
     }
 }

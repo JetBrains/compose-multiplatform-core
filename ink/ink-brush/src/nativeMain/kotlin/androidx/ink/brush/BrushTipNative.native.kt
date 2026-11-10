@@ -16,6 +16,8 @@
 
 package androidx.ink.brush
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
+import androidx.ink.nativeloader.cinterop.BrushTipNative_calculateMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.BrushTipNative_create
 import androidx.ink.nativeloader.cinterop.BrushTipNative_free
 import androidx.ink.nativeloader.cinterop.BrushTipNative_getBehaviorCount
@@ -33,7 +35,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object BrushTipNative {
     actual fun create(
         scaleX: Float,
@@ -45,23 +47,22 @@ actual internal object BrushTipNative {
         particleGapDistanceScale: Float,
         particleGapDurationMillis: Long,
         behaviorNativePointersArray: LongArray,
-    ): Long =
-        behaviorNativePointersArray.usePinned { pinned ->
-            BrushTipNative_create(
-                jni_env_pass_through = null,
-                scaleX,
-                scaleY,
-                cornerRounding,
-                slantDegrees,
-                pinch,
-                rotationDegrees,
-                particleGapDistanceScale,
-                particleGapDurationMillis,
-                if (behaviorNativePointersArray.isEmpty()) null else pinned.addressOf(0),
-                behaviorNativePointersArray.size,
-                throwForNonOkStatusCallback,
-            )
-        }
+    ): Long = behaviorNativePointersArray.usePinned { pinned ->
+        BrushTipNative_create(
+            jni_env_pass_through = null,
+            scaleX,
+            scaleY,
+            cornerRounding,
+            slantDegrees,
+            pinch,
+            rotationDegrees,
+            particleGapDistanceScale,
+            particleGapDurationMillis,
+            if (behaviorNativePointersArray.isEmpty()) null else pinned.addressOf(0),
+            behaviorNativePointersArray.size,
+            throwForNonOkStatusCallback,
+        )
+    }
 
     actual fun free(nativePointer: Long) = BrushTipNative_free(nativePointer)
 
@@ -91,4 +92,7 @@ actual internal object BrushTipNative {
 
     actual fun newCopyOfBrushBehavior(nativePointer: Long, index: Int): Long =
         BrushTipNative_newCopyOfBrushBehavior(nativePointer, index)
+
+    actual fun calculateMinimumRequiredVersion(nativePointer: Long): Int =
+        BrushTipNative_calculateMinimumRequiredVersion(nativePointer)
 }

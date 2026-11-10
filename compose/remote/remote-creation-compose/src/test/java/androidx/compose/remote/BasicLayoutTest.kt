@@ -22,11 +22,15 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.view.View
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.remote.core.operations.layout.LayoutComponent
+import androidx.compose.remote.core.operations.layout.managers.CoreText
 import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
 import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.action.valueChange
+import androidx.compose.remote.creation.compose.capture.LocalRemoteDensity
 import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.RemoteDensity
 import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
@@ -39,8 +43,10 @@ import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.layout.RemoteStateLayout
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.RemoteScrollState
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.clickable
+import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxHeight
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
@@ -50,21 +56,21 @@ import androidx.compose.remote.creation.compose.modifier.onTouchCancel
 import androidx.compose.remote.creation.compose.modifier.onTouchDown
 import androidx.compose.remote.creation.compose.modifier.onTouchUp
 import androidx.compose.remote.creation.compose.modifier.padding
-import androidx.compose.remote.creation.compose.modifier.rememberRemoteScrollState
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.verticalScroll
 import androidx.compose.remote.creation.compose.modifier.width
 import androidx.compose.remote.creation.compose.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.shaders.radialGradient
+import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
+import androidx.compose.remote.creation.compose.state.MutableRemoteEnum
+import androidx.compose.remote.creation.compose.state.MutableRemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteEnum
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.RemoteString.Companion.createNamedRemoteString
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteEnum
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
-import androidx.compose.remote.creation.compose.state.rememberNamedRemoteString
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
@@ -76,12 +82,16 @@ import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.remote.serialization.yaml.YAMLSerializer
 import androidx.compose.remote.testing.RemoteCaptureTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -232,7 +242,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow),
+                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
@@ -240,9 +250,9 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                     modifier =
                         RemoteModifier.fillMaxWidth()
                             .height(100.rdp)
-                            .background(Color.White)
+                            .background(Color.White.rc)
                             .padding(8.rdp)
-                            .background(Color.LightGray)
+                            .background(Color.LightGray.rc)
                 ) {
                     val blue = Color.Blue
                     val w = remote.component.width
@@ -292,7 +302,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow),
+                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
@@ -300,9 +310,9 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                     modifier =
                         RemoteModifier.fillMaxWidth()
                             .height(100.rdp)
-                            .background(Color.White)
+                            .background(Color.White.rc)
                             .padding(8.rdp)
-                            .background(Color.LightGray)
+                            .background(Color.LightGray.rc)
                 )
             }
         }
@@ -325,11 +335,11 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow),
+                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                val state = rememberRemoteScrollState()
+                val state = remember { RemoteScrollState() }
                 RemoteBox(modifier = RemoteModifier.size(100.rdp).verticalScroll(state))
             }
         }
@@ -373,37 +383,37 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
             RemoteColumn(
                 modifier =
                     RemoteModifier.fillMaxSize()
-                        .background(Color.Red)
+                        .background(Color.Red.rc)
                         .padding(20.rdp)
-                        .background(Color.Cyan),
+                        .background(Color.Cyan.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                val text = rememberNamedRemoteString("test", "Bonjour le monde!")
+                val text = remember { createNamedRemoteString("test", "Bonjour le monde!") }
                 val white = RemoteColor(Color.White)
 
                 RemoteRow(
-                    modifier = RemoteModifier.background(Color.LightGray),
+                    modifier = RemoteModifier.background(Color.LightGray.rc),
                     verticalAlignment = RemoteAlignment.CenterVertically,
                 ) {
-                    RemoteText(text = "Hello World")
+                    RemoteText(text = "Hello World".rs)
                     RemoteText(
                         text = text,
                         modifier =
-                            RemoteModifier.background(Color.Yellow)
+                            RemoteModifier.background(Color.Yellow.rc)
                                 .padding(4.rdp)
-                                .background(Color.Red)
+                                .background(Color.Red.rc)
                                 .padding(4.rdp),
                         fontSize = 32.rsp,
                         color = white,
                     )
                 }
                 RemoteText(
-                    text = "Hola Mundo",
+                    text = "Hola Mundo".rs,
                     modifier =
-                        RemoteModifier.background(Color.Blue)
+                        RemoteModifier.background(Color.Blue.rc)
                             .padding(4.rdp)
-                            .background(Color.Black)
+                            .background(Color.Black.rc)
                             .padding(4.rdp),
                     fontSize = 18.rsp,
                     color = white,
@@ -469,29 +479,29 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
             RemoteColumn(
                 modifier =
                     RemoteModifier.fillMaxSize()
-                        .background(Color.Red)
+                        .background(Color.Red.rc)
                         .padding(20.rdp)
-                        .background(Color.Cyan),
+                        .background(Color.Cyan.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                val text = rememberNamedRemoteString("plop", "Bonjour Le Monde!")
+                val text = remember { createNamedRemoteString("plop", "Bonjour Le Monde!") }
                 val white = RemoteColor(Color.White)
 
                 RemoteText(
                     text,
-                    RemoteModifier.background(Color.Yellow)
+                    RemoteModifier.background(Color.Yellow.rc)
                         .padding(4.rdp)
-                        .background(Color.Red)
+                        .background(Color.Red.rc)
                         .padding(4.rdp),
                     white,
                     18.rsp,
                 )
                 RemoteText(
                     text,
-                    RemoteModifier.background(Color.Yellow)
+                    RemoteModifier.background(Color.Yellow.rc)
                         .padding(4.rdp)
-                        .background(Color.Red)
+                        .background(Color.Red.rc)
                         .padding(4.rdp),
                     white,
                     18.rsp,
@@ -499,9 +509,9 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 )
                 RemoteText(
                     text,
-                    RemoteModifier.background(Color.Yellow)
+                    RemoteModifier.background(Color.Yellow.rc)
                         .padding(4.rdp)
-                        .background(Color.Red)
+                        .background(Color.Red.rc)
                         .padding(4.rdp),
                     white,
                     18.rsp,
@@ -509,9 +519,9 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 )
                 RemoteText(
                     text,
-                    RemoteModifier.background(Color.Yellow)
+                    RemoteModifier.background(Color.Yellow.rc)
                         .padding(4.rdp)
-                        .background(Color.Red)
+                        .background(Color.Red.rc)
                         .padding(4.rdp),
                     white,
                     18.rsp,
@@ -519,9 +529,9 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 )
                 RemoteText(
                     text,
-                    RemoteModifier.background(Color.Yellow)
+                    RemoteModifier.background(Color.Yellow.rc)
                         .padding(4.rdp)
-                        .background(Color.Red)
+                        .background(Color.Red.rc)
                         .padding(4.rdp),
                     white,
                     18.rsp,
@@ -529,9 +539,9 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 )
                 RemoteText(
                     text,
-                    RemoteModifier.background(Color.Yellow)
+                    RemoteModifier.background(Color.Yellow.rc)
                         .padding(4.rdp)
-                        .background(Color.Red)
+                        .background(Color.Red.rc)
                         .padding(4.rdp),
                     white,
                     18.rsp,
@@ -559,7 +569,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow),
+                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
@@ -589,11 +599,11 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow),
+                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                val param = rememberMutableRemoteInt(128)
+                val param = remember { MutableRemoteInt(128) }
                 RemoteBox(
                     modifier =
                         RemoteModifier.size(100.rdp)
@@ -632,11 +642,11 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow),
+                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                val checked = rememberMutableRemoteEnum<Checked>(Checked.Off)
+                val checked = remember { MutableRemoteEnum<Checked>(Checked.Off) }
 
                 RemoteStateLayout(
                     currentState = checked,
@@ -644,10 +654,12 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 ) { state ->
                     when (state) {
                         Checked.Off ->
-                            RemoteBox(modifier = RemoteModifier.size(60.rdp).background(Color.Red))
+                            RemoteBox(
+                                modifier = RemoteModifier.size(60.rdp).background(Color.Red.rc)
+                            )
                         Checked.On ->
                             RemoteBox(
-                                modifier = RemoteModifier.size(80.rdp).background(Color.Green)
+                                modifier = RemoteModifier.size(80.rdp).background(Color.Green.rc)
                             )
                     }
                 }
@@ -684,11 +696,11 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow),
+                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                val checked = rememberMutableRemoteEnum(Checked.On)
+                val checked = remember { MutableRemoteEnum(Checked.On) }
 
                 RemoteStateLayout(
                     currentState = checked,
@@ -696,10 +708,12 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 ) { state ->
                     when (state) {
                         Checked.Off ->
-                            RemoteBox(modifier = RemoteModifier.size(60.rdp).background(Color.Red))
+                            RemoteBox(
+                                modifier = RemoteModifier.size(60.rdp).background(Color.Red.rc)
+                            )
                         Checked.On ->
                             RemoteBox(
-                                modifier = RemoteModifier.size(80.rdp).background(Color.Green)
+                                modifier = RemoteModifier.size(80.rdp).background(Color.Green.rc)
                             )
                     }
                 }
@@ -737,11 +751,11 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
-                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow),
+                modifier = RemoteModifier.fillMaxSize().background(Color.Yellow.rc),
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                val checked = rememberMutableRemoteEnum(Checked.On).withGlobalScope()
+                val checked = remember { MutableRemoteEnum(Checked.On) }.withGlobalScope()
 
                 RemoteStateLayout(
                     currentState = checked,
@@ -753,11 +767,13 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 ) { state ->
                     when (state) {
                         Checked.Off -> {
-                            RemoteBox(modifier = RemoteModifier.size(60.rdp).background(Color.Red))
+                            RemoteBox(
+                                modifier = RemoteModifier.size(60.rdp).background(Color.Red.rc)
+                            )
                         }
                         Checked.On -> {
                             RemoteBox(
-                                modifier = RemoteModifier.size(80.rdp).background(Color.Green)
+                                modifier = RemoteModifier.size(80.rdp).background(Color.Green.rc)
                             )
                         }
                     }
@@ -790,20 +806,23 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
         PADDING = [0.0, 0.0, 11.0, 0.0]
 """
         testLayout(result) {
-            RemoteRow(modifier = RemoteModifier.background(Color.Cyan).height(IntrinsicSize.Min)) {
+            RemoteRow(
+                modifier = RemoteModifier.background(Color.Cyan.rc).height(IntrinsicSize.Min)
+            ) {
                 RemoteBox(
                     modifier =
-                        RemoteModifier.background(Color.Red)
+                        RemoteModifier.background(Color.Red.rc)
                             .weight(1f)
                             .height(30.rdp)
                             .padding(start = 4.rdp)
                 )
                 RemoteBox(
-                    modifier = RemoteModifier.fillMaxHeight().width(1.rdp).background(Color.Green)
+                    modifier =
+                        RemoteModifier.fillMaxHeight().width(1.rdp).background(Color.Green.rc)
                 )
                 RemoteBox(
                     modifier =
-                        RemoteModifier.background(Color.Blue)
+                        RemoteModifier.background(Color.Blue.rc)
                             .weight(1f)
                             .height(60.rdp)
                             .padding(end = 4.rdp)
@@ -844,29 +863,30 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
         testLayout(result) {
             RemoteColumn {
                 RemoteRow(
-                    modifier = RemoteModifier.background(Color.Cyan).height(IntrinsicSize.Min)
+                    modifier = RemoteModifier.background(Color.Cyan.rc).height(IntrinsicSize.Min)
                 ) {
                     RemoteBox(
                         modifier =
-                            RemoteModifier.background(Color.Red)
+                            RemoteModifier.background(Color.Red.rc)
                                 .weight(1f)
                                 .height(60.rdp)
                                 .padding(start = 4.rdp)
                     )
                     RemoteBox(
                         modifier =
-                            RemoteModifier.fillMaxHeight().width(1.rdp).background(Color.Green)
+                            RemoteModifier.fillMaxHeight().width(1.rdp).background(Color.Green.rc)
                     )
                     RemoteBox(
                         modifier =
-                            RemoteModifier.background(Color.Blue)
+                            RemoteModifier.background(Color.Blue.rc)
                                 .weight(1f)
                                 .height(30.rdp)
                                 .padding(end = 4.rdp)
                     )
                 }
                 RemoteBox(
-                    modifier = RemoteModifier.fillMaxWidth().height(20.rdp).background(Color.Yellow)
+                    modifier =
+                        RemoteModifier.fillMaxWidth().height(20.rdp).background(Color.Yellow.rc)
                 )
             }
         }
@@ -883,7 +903,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     DATA_TEXT<47> = "Green"
     MODIFIERS
       DRAW_CONTENT
-    CORE_TEXT [-5:-1] = [355.0, 412.5, 5.0, 0.0] VISIBLE (47:"Green")
+    CORE_TEXT [-5:-1] = [250.0, 364.0, 215.0, 97.0] VISIBLE (47:"Green")
       MODIFIERS
 """
         testLayout(result) {
@@ -896,7 +916,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 contentAlignment = RemoteAlignment.Center,
             ) {
                 val green = RemoteColor(Color.Green)
-                RemoteText("Green", color = green, fontSize = 30.rsp)
+                RemoteText("Green".rs, color = green, fontSize = 30.rsp)
             }
         }
     }
@@ -941,7 +961,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                         .background(RemoteBrush.radialGradient(colors = colors)),
                 contentAlignment = RemoteAlignment.Center,
             ) {
-                RemoteRow(modifier = RemoteModifier.background(Color.Blue)) {
+                RemoteRow(modifier = RemoteModifier.background(Color.Blue.rc)) {
                     RemoteIconVector(
                         ImageVector.vectorResource(
                             androidx.compose.remote.creation.compose.R.drawable.android
@@ -1064,7 +1084,7 @@ list:
 """
         testLayoutAndPaint(layoutResult, paintResult) {
             RemoteRow(
-                modifier = RemoteModifier.background(Color.Yellow),
+                modifier = RemoteModifier.background(Color.Yellow.rc),
                 horizontalArrangement = RemoteArrangement.Center,
                 verticalAlignment = RemoteAlignment.CenterVertically,
             ) {
@@ -1083,15 +1103,254 @@ list:
                                 }
                             }
                             .size(64.rdp)
-                            .background(Color.Blue)
+                            .background(Color.Blue.rc)
                             .padding(8.rdp)
-                            .background(Color.Magenta),
+                            .background(Color.Magenta.rc),
                     contentAlignment = RemoteAlignment.Center,
                 ) {
-                    RemoteText("XYZ")
+                    RemoteText("XYZ".rs)
                 }
             }
         }
+    }
+
+    @Test
+    fun testClipRoundedCornerDynamicDensity() {
+        val expectedLayout =
+            """
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  ComponentValue value 42 set to WIDTH of Component -2
+  ComponentValue value 43 set to HEIGHT of Component -2
+  BOX [-3:-1] = [0.0, 0.0, 275.0, 275.0] VISIBLE
+    MODIFIERS
+      WIDTH = 100.0 dp
+      HEIGHT = 100.0 dp
+      ROUNDED_CLIP_RECT = [275.0, 275.0, 27.5, 27.5, 27.5, 27.5]
+      BACKGROUND = [0.0, 0.0, 275.0, 275.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
+"""
+        testLayout(expectedLayout) {
+            CompositionLocalProvider(LocalRemoteDensity provides RemoteDensity.Host) {
+                RemoteBox(
+                    modifier =
+                        RemoteModifier.size(100.rdp)
+                            .clip(RemoteRoundedCornerShape(10.rdp))
+                            .background(Color.Red.rc)
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testTextClipRoundedCornerOverriddenDensity() {
+        val expectedLayout =
+            """
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  DATA_TEXT<42> = "Test"
+  ComponentValue value 43 set to WIDTH of Component -2
+  ComponentValue value 44 set to HEIGHT of Component -2
+  CORE_TEXT [-3:-1] = [0.0, 0.0, 275.0, 275.0] VISIBLE (42:"Test")
+    MODIFIERS
+      WIDTH = 100.0 dp
+      HEIGHT = 100.0 dp
+      ROUNDED_CLIP_RECT = [275.0, 275.0, 10.0, 10.0, 10.0, 10.0]
+"""
+        testLayout(expectedLayout) {
+            CompositionLocalProvider(LocalRemoteDensity provides RemoteDensity(1f.rf, 1f.rf)) {
+                RemoteText(
+                    text = "Test".rs,
+                    modifier = RemoteModifier.size(100.rdp).clip(RemoteRoundedCornerShape(10.rdp)),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testRowRtl() {
+        val result =
+            """
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  ROW [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+    MODIFIERS
+    BOX [-5:-1] = [165.0, 0.0, 275.0, 825.0] VISIBLE
+      MODIFIERS
+        WIDTH = 100.0 dp
+        BACKGROUND = [0.0, 0.0, 275.0, 825.0] color [0.0, 0.0, 1.0, 1.0] shape [0]
+    BOX [-7:-1] = [440.0, 0.0, 275.0, 825.0] VISIBLE
+      MODIFIERS
+        WIDTH = 100.0 dp
+        BACKGROUND = [0.0, 0.0, 275.0, 825.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
+"""
+        testLayout(result) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                RemoteRow(
+                    modifier = RemoteModifier.fillMaxSize(),
+                    horizontalArrangement = RemoteArrangement.Start,
+                ) {
+                    RemoteBox(
+                        modifier =
+                            RemoteModifier.width(100.rdp).fillMaxHeight().background(Color.Red.rc)
+                    )
+                    RemoteBox(
+                        modifier =
+                            RemoteModifier.width(100.rdp).fillMaxHeight().background(Color.Blue.rc)
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testLocalRemoteDensityOverride() {
+        // Host density is 2.75.
+        // Default text size: 12sp -> 12 * 2.75 = 33.0 pixels.
+        // Overridden text size: 12sp * 1.0 = 12.0 pixels.
+        assertDensityOverrideFontSizes(33.0f, 12.0f) {
+            RemoteColumn {
+                RemoteText("Default".rs, fontSize = 12.rsp)
+                CompositionLocalProvider(LocalRemoteDensity provides RemoteDensity(1f.rf, 1f.rf)) {
+                    RemoteText("Overridden".rs, fontSize = 12.rsp)
+                }
+            }
+        }
+    }
+
+    private fun assertDensityOverrideFontSizes(
+        expectedDefaultPx: Float,
+        expectedOverriddenPx: Float,
+        contentUnderTest: @Composable @RemoteComposable () -> Unit,
+    ) {
+        val documentBytes = runBlocking {
+            captureSingleRemoteDocument(
+                    context = context,
+                    creationDisplayInfo = creationDisplayInfo,
+                    content = contentUnderTest,
+                )
+                .bytes
+        }
+
+        val remoteDocument = RemoteDocument(documentBytes)
+        val configuration =
+            Configuration(context.resources.configuration).apply {
+                densityDpi = (2.75 * 160).toInt()
+            }
+        val fixedContext = context.createConfigurationContext(configuration)
+        val player = RemoteComposePlayer(fixedContext)
+        player.setDocument(remoteDocument)
+
+        val width = creationDisplayInfo.size.width.toInt()
+        val height = creationDisplayInfo.size.height.toInt()
+        player.measure(
+            View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY),
+        )
+        player.layout(0, 0, width, height)
+
+        // Force draw to resolve variables
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        player.draw(canvas)
+
+        val root = player.document.document.rootLayoutComponent!!
+        val column = root.list.first { it is LayoutComponent } as LayoutComponent
+        val defaultText = column.childrenComponents[0] as CoreText
+        val overriddenText = column.childrenComponents[1] as CoreText
+
+        fun getFontSize(text: CoreText): Float? {
+            val serializer = YAMLSerializer()
+            text.serialize(serializer.serializeMap())
+            val map = serializer.toObject() as? Map<*, *> ?: return null
+            val fontSizeMap = map["fontSize"] as? Map<*, *> ?: return null
+            return (fontSizeMap["value"] as? Number)?.toFloat()
+        }
+
+        val defaultFontSize: Float? = getFontSize(defaultText)
+        val overriddenFontSize: Float? = getFontSize(overriddenText)
+
+        assertThat(defaultFontSize).isEqualTo(expectedDefaultPx)
+        assertThat(overriddenFontSize).isEqualTo(expectedOverriddenPx)
+    }
+
+    @Test
+    fun testPaddingBeforeDrawWithContent() {
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 160, 1.0f)
+        val documentBytes = runBlocking {
+            captureSingleRemoteDocument(
+                    context = context,
+                    creationDisplayInfo = displayInfo,
+                ) {
+                    CompositionLocalProvider(LocalRemoteDensity provides RemoteDensity.Host) {
+                        RemoteBox(
+                            modifier =
+                                RemoteModifier.size(100.rdp)
+                                    .padding(
+                                        start = 10.rdp,
+                                        top = 20.rdp,
+                                        end = 30.rdp,
+                                        bottom = 40.rdp,
+                                    )
+                                    .drawWithContent {
+                                        drawRect(paint = RemotePaint { color = Color.Red.rc })
+                                        drawContent()
+                                    }
+                        ) {
+                            RemoteBox(
+                                modifier = RemoteModifier.size(20.rdp).background(Color.Blue.rc)
+                            )
+                        }
+                    }
+                }
+                .bytes
+        }
+
+        val remoteDocument = RemoteDocument(documentBytes)
+        val player = RemoteComposePlayer(context)
+        player.setDocument(remoteDocument)
+        player.setUseChoreographer(false)
+        val widthSpec = View.MeasureSpec.makeMeasureSpec(500, View.MeasureSpec.EXACTLY)
+        val heightSpec = View.MeasureSpec.makeMeasureSpec(500, View.MeasureSpec.EXACTLY)
+        player.measure(widthSpec, heightSpec)
+        player.layout(0, 0, 500, 500)
+        val bitmap = Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888)
+        player.draw(android.graphics.Canvas(bitmap))
+        // 1. Verify canvas operations structure and exact translation offsets:
+        val root = player.document.document.rootLayoutComponent!!
+        val box = root.list.first { it is LayoutComponent } as LayoutComponent
+        val canvasOps = box.getCanvasOperations()
+        assertThat(canvasOps).isNotNull()
+        val ops = canvasOps!!.list
+
+        // Verify pre-translation to padding offset (10, 20) before onDraw,
+        // translation back (-10, -20) during drawContent() so child layout is not double-offset,
+        // and re-translation (10, 20) after drawContent().
+        val translates =
+            ops.filterIsInstance<androidx.compose.remote.core.operations.MatrixTranslate>()
+        assertThat(translates.map { it.toString() })
+            .containsExactly(
+                "MatrixTranslate 10.0 20.0",
+                "MatrixTranslate -10.0 -20.0",
+                "MatrixTranslate 10.0 20.0",
+            )
+            .inOrder()
+
+        // Verify drawRect size matches the scoped content bounds:
+        // width = 100 - 10 - 30 = 60, height = 100 - 20 - 40 = 40
+        val drawRect =
+            ops.filterIsInstance<androidx.compose.remote.core.operations.DrawRect>().first()
+        assertThat(drawRect.toString())
+            .matches("DrawRect 0\\.0 0\\.0 \\[[0-9]+\\]60\\.0 \\[[0-9]+\\]40\\.0")
+
+        // 2. Verify child layout component inside box is placed at (0, 0) within the content
+        // area, and parent box padding is (10, 20, 30, 40)
+        assertThat(box.paddingLeft).isEqualTo(10f)
+        assertThat(box.paddingTop).isEqualTo(20f)
+        assertThat(box.paddingRight).isEqualTo(30f)
+        assertThat(box.paddingBottom).isEqualTo(40f)
+        val child = box.list.filterIsInstance<LayoutComponent>().firstOrNull()
+        assertThat(child).isNotNull()
+        assertThat(child!!.x).isEqualTo(0f)
+        assertThat(child.y).isEqualTo(0f)
+        assertThat(child.width).isEqualTo(20f)
+        assertThat(child.height).isEqualTo(20f)
     }
 }
 

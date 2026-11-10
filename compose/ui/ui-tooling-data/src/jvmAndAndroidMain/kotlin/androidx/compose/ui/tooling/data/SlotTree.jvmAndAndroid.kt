@@ -18,6 +18,8 @@
 
 package androidx.compose.ui.tooling.data
 
+import androidx.collection.IntList
+import androidx.collection.MutableIntList
 import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.CompositionGroup
@@ -29,85 +31,86 @@ import androidx.compose.ui.layout.ModifierInfo
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.IntRect
 import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 /** A group in the slot table. Represents either a call or an emitted node. */
 @UiToolingDataApi
-sealed class Group(
+public sealed class Group(
     /** The key is the key generated for the group */
-    val key: Any?,
+    public val key: Any?,
 
     /** The name of the function called, if provided */
-    val name: String?,
+    public val name: String?,
 
     /** The source location that produce the group if it can be determined */
-    val location: SourceLocation?,
+    public val location: SourceLocation?,
 
     /**
      * An optional value that identifies a Group independently of movement caused by recompositions.
      */
-    val identity: Any?,
+    public val identity: Any?,
 
     /** The bounding layout box for the group. */
-    val box: IntRect,
+    public val box: IntRect,
 
     /** Any data that was stored in the slot table for the group */
-    val data: Collection<Any?>,
+    public val data: Collection<Any?>,
 
     /** The child groups of this group */
-    val children: Collection<Group>,
+    public val children: Collection<Group>,
 
     /** True if the group is for an inline function call */
-    val isInline: Boolean,
+    public val isInline: Boolean,
 ) {
     /** Modifier information for the Group, or empty list if there isn't any. */
-    open val modifierInfo: List<ModifierInfo>
+    public open val modifierInfo: List<ModifierInfo>
         get() = emptyList()
 
     /** Parameter information for Groups that represent calls */
-    open val parameters: List<ParameterInformation>
+    public open val parameters: List<ParameterInformation>
         get() = emptyList()
 }
 
 @UiToolingDataApi
 @Suppress("DataClassDefinition")
-data class ParameterInformation(
-    val name: String,
-    val value: Any?,
-    val fromDefault: Boolean,
-    val static: Boolean,
-    val compared: Boolean,
-    val inlineClass: String?,
-    val stable: Boolean,
+public data class ParameterInformation(
+    public val name: String,
+    public val value: Any?,
+    public val fromDefault: Boolean,
+    public val static: Boolean,
+    public val compared: Boolean,
+    public val inlineClass: String?,
+    public val stable: Boolean,
 )
 
 /** Source location of the call that produced the call group. */
 @UiToolingDataApi
 @Suppress("DataClassDefinition")
-data class SourceLocation(
+public data class SourceLocation(
     /** A 0 offset line number of the source location. */
-    val lineNumber: Int,
+    public val lineNumber: Int,
 
     /**
      * Offset into the file. The offset is calculated as the number of UTF-16 code units from the
      * beginning of the file to the first UTF-16 code unit of the call that produced the group.
      */
-    val offset: Int,
+    public val offset: Int,
 
     /**
      * The length of the source code. The length is calculated as the number of UTF-16 code units
      * that that make up the call expression.
      */
-    val length: Int,
+    public val length: Int,
 
     /**
      * The file name (without path information) of the source file that contains the call that
      * produced the group. A source file names are not guaranteed to be unique, [packageHash] is
      * included to help disambiguate files with duplicate names.
      */
-    val sourceFile: String?,
+    public val sourceFile: String?,
 
     /**
      * A hash code of the package name of the file. This hash is calculated by,
@@ -118,12 +121,12 @@ data class SourceLocation(
      * which file is referenced by [sourceFile]. This number is -1 if there was no package hash
      * information generated such as when the file does not contain a package declaration.
      */
-    val packageHash: Int,
+    public val packageHash: Int,
 )
 
 /** A group that represents the invocation of a component */
 @UiToolingDataApi
-class CallGroup(
+public class CallGroup(
     key: Any?,
     name: String?,
     box: IntRect,
@@ -137,11 +140,11 @@ class CallGroup(
 
 /** A group that represents an emitted node */
 @UiToolingDataApi
-class NodeGroup(
+public class NodeGroup(
     key: Any?,
 
     /** An emitted node */
-    val node: Any,
+    public val node: Any,
     box: IntRect,
     data: Collection<Any?>,
     override val modifierInfo: List<ModifierInfo>,
@@ -164,7 +167,7 @@ private object EmptyGroup :
 /** A key that has being joined together to form one key. */
 @UiToolingDataApi
 @Suppress("DataClassDefinition")
-data class JoinedKey(val left: Any?, val right: Any?)
+public data class JoinedKey(public val left: Any?, public val right: Any?)
 
 internal val emptyBox = IntRect(0, 0, 0, 0)
 
@@ -348,9 +351,17 @@ private class CompositionCallStack<T, R>(
         return box
     }
 
+    // Check the cache first to reuse pre-parsed SourceInformationContext if available.
+    // If not cached, fall back to lightweight string inspection rather than calling
+    // contextOf(info).
+    // Calling contextOf(info) triggers full parsing (locations, parameters), which wastes
+    // CPU/memory
+    // if accessed before early-exit checks (e.g., unwanted nodes in CompositionBuilder.parse).
     override val name: String?
         get() {
             val info = current.sourceInfo ?: return null
+            val cached = contexts[info] as? SourceInformationContext
+            if (cached != null) return cached.name
             val startIndex =
                 when {
                     info.startsWith("CC(") -> 3
@@ -362,7 +373,11 @@ private class CompositionCallStack<T, R>(
         }
 
     override val isInline: Boolean
-        get() = current.sourceInfo?.startsWith("CC") == true
+        get() {
+            val info = current.sourceInfo ?: return false
+            val cached = contexts[info] as? SourceInformationContext
+            return if (cached != null) cached.isInline else info.startsWith("CC")
+        }
 
     override var bounds: IntRect = emptyBox
         private set
@@ -410,9 +425,9 @@ private class CompositionCallStack<T, R>(
 
 /** A cache of [SourceInformationContext] that optionally can be specified when using [mapTree]. */
 @UiToolingDataApi
-class ContextCache {
+public class ContextCache {
     /** Clears the cache. */
-    fun clear() {
+    public fun clear() {
         contexts.clear()
     }
 
@@ -425,24 +440,24 @@ class ContextCache {
  * See the factory argument of [mapTree].
  */
 @UiToolingDataApi
-interface SourceContext {
+public interface SourceContext {
     /** The name of the Composable or null if not applicable. */
-    val name: String?
+    public val name: String?
 
     /** The bounds of the Composable if known. */
-    val bounds: IntRect
+    public val bounds: IntRect
 
     /** The [SourceLocation] of where the Composable was called. */
-    val location: SourceLocation?
+    public val location: SourceLocation?
 
     /** The parameters of the Composable. */
-    val parameters: List<ParameterInformation>
+    public val parameters: List<ParameterInformation>
 
     /** The current depth into the [CompositionGroup] tree. */
-    val depth: Int
+    public val depth: Int
 
     /** The source context is for a call to an inline composable function */
-    val isInline: Boolean
+    public val isInline: Boolean
         get() = false
 }
 
@@ -458,7 +473,7 @@ interface SourceContext {
  * save some time if the values of [CompositionGroup.sourceInfo] are not unique.
  */
 @UiToolingDataApi
-fun <T> CompositionData.mapTree(
+public fun <T> CompositionData.mapTree(
     factory: (CompositionGroup, SourceContext, List<T>) -> T?,
     cache: ContextCache = ContextCache(),
 ): T? {
@@ -511,7 +526,9 @@ internal fun <T, R> CompositionData.mapTreeWithStitching(
 
 /** Return the parameters found for this [CompositionGroup]. */
 @UiToolingDataApi
-fun CompositionGroup.findParameters(cache: ContextCache? = null): List<ParameterInformation> {
+public fun CompositionGroup.findParameters(
+    cache: ContextCache? = null
+): List<ParameterInformation> {
     val information = sourceInfo ?: return emptyList()
     val context =
         if (cache == null) sourceInformationContextOf(information)
@@ -527,7 +544,8 @@ fun CompositionGroup.findParameters(cache: ContextCache? = null): List<Parameter
  * Return a group tree for for the slot table that represents the entire content of the slot table.
  */
 @UiToolingDataApi
-fun CompositionData.asTree(): Group = compositionGroups.firstOrNull()?.getGroup(null) ?: EmptyGroup
+public fun CompositionData.asTree(): Group =
+    compositionGroups.firstOrNull()?.getGroup(null) ?: EmptyGroup
 
 internal fun IntRect.union(other: IntRect): IntRect {
     if (this == emptyBox) return other else if (other == emptyBox) return this
@@ -595,8 +613,9 @@ private fun extractFromIndyLambdaFields(
     block: Any,
     metadata: List<ParameterSourceInformation>,
 ): List<ParameterInformation> {
-    val sortedFields =
-        fields.sortedBy { it.name.substringAfter("f$").toIntOrNull() ?: Int.MAX_VALUE }
+    val sortedFields = fields.sortedBy {
+        it.name.substringAfter("f$").toIntOrNull() ?: Int.MAX_VALUE
+    }
 
     val firstField = sortedFields.firstOrNull()
     val hasThis = firstField != null && block.javaClass.name.startsWith(firstField.type.name + "$")
@@ -610,22 +629,62 @@ private fun extractFromIndyLambdaFields(
             }
             .let { if (hasParameterNames) it.take(metadata.size) else it }
 
-    // todo: parameter logic assumes one changed parameter and one default
-    val changedIndex =
-        (if (hasThis) 1 else 0) + (if (hasParameterNames) metadata.size else realFields.size)
-    val changed = (sortedFields.getOrNull(changedIndex)?.get(block) as? Int) ?: 0
-    val defaults = (sortedFields.getOrNull(changedIndex + 1)?.get(block) as? Int) ?: 0
+    val numParams = if (hasParameterNames) metadata.size else realFields.size
+    // Each $changed parameter is a 32-bit Int tracking up to 10 parameters (3 bits per parameter,
+    // with 1 bit used for Compose internal flags, e.g., self-dirty).
+    // We calculate the number of $changed fields using ceiling division (ceil(numParams / 10)).
+    val numChanged = (numParams + 9) / 10
+    // Indy lambda fields are generated in a strict order: [this] -> [parameters] -> [changed] ->
+    // [default].
+    // We calculate how many fields we expect before the default fields, and any remaining fields
+    // at the end are treated as $default fields (each tracking up to 32 parameters, 1 bit each).
+    val expectedFieldsWithoutDefaults = (if (hasThis) 1 else 0) + numParams + numChanged
+    val numDefaults = max(0, sortedFields.size - expectedFieldsWithoutDefaults)
+
+    val changedIndex = (if (hasThis) 1 else 0) + numParams
+    val changedList: IntList =
+        MutableIntList(numChanged).apply {
+            repeat(numChanged) { i ->
+                val field = sortedFields.getOrNull(changedIndex + i)?.apply { isAccessible = true }
+                add((field?.get(block) as? Int) ?: 0)
+            }
+        }
+
+    val defaultIndex = changedIndex + numChanged
+    val defaultsList: IntList =
+        MutableIntList(numDefaults).apply {
+            repeat(numDefaults) { i ->
+                val field = sortedFields.getOrNull(defaultIndex + i)?.apply { isAccessible = true }
+                add((field?.get(block) as? Int) ?: 0)
+            }
+        }
 
     return realFields.mapIndexed { index, field ->
         buildParameterInfo(
             field,
             block,
             index,
-            defaults,
-            changed,
+            defaultsList,
+            changedList,
             metadata.firstOrNull { it.sortedIndex == index },
         )
     }
+}
+
+private fun collectIndexedFields(block: Any, prefix: String): IntList {
+    val blockClass = block.javaClass
+    val declaredFields = blockClass.declaredFields
+    val result = MutableIntList()
+    var i = 0
+    while (true) {
+        val suffix = if (i > 0) "$i" else ""
+        val name = "$prefix$suffix"
+        val field = declaredFields.firstOrNull { it.name == name } ?: break
+        field.isAccessible = true
+        result.add((field.get(block) as? Int) ?: 0)
+        i++
+    }
+    return result
 }
 
 @OptIn(UiToolingDataApi::class, ComposeToolingApi::class)
@@ -634,9 +693,8 @@ private fun extractFromLegacyFields(
     block: Any,
     metadata: List<ParameterSourceInformation>,
 ): List<ParameterInformation> {
-    val blockClass = block.javaClass
-    val defaults = blockClass.accessibleField(defaultFieldName)?.get(block) as? Int ?: 0
-    val changed = blockClass.accessibleField(changedFieldName)?.get(block) as? Int ?: 0
+    val changedList = collectIndexedFields(block, changedFieldName)
+    val defaultsList = collectIndexedFields(block, defaultFieldName)
 
     fun Field.extractedName(): String? {
         val extractedGroups = legacyLambdaRegex.find(name)?.groups
@@ -645,15 +703,18 @@ private fun extractFromLegacyFields(
         return (extractedGroups?.get(1) ?: extractedGroups?.get(2))?.value
     }
 
-    val sortedFields = fields.sortedBy { it.extractedName() }
     return fields.mapIndexedNotNull { index, _ ->
         var paramMeta = metadata.getOrNull(index) ?: ParameterSourceInformation(index)
         val sortedIndex = paramMeta.sortedIndex
         if (sortedIndex >= fields.size) return@mapIndexedNotNull null
 
+        // Since sortedIndex is the original declaration index, we should index the
+        // declaration-ordered fields list directly, not the alphabetical sortedFields list.
+        // This fixes the fallback bug and makes alphabetical sorting of fields unnecessary.
         val field =
             (if (paramMeta.name != null) fields.firstOrNull { paramMeta.name == it.extractedName() }
-            else null) ?: sortedFields[sortedIndex]
+            else null) ?: fields[sortedIndex]
+
         if (paramMeta.name == null) {
             paramMeta =
                 ParameterSourceInformation(
@@ -663,7 +724,7 @@ private fun extractFromLegacyFields(
                 )
         }
 
-        buildParameterInfo(field, block, index, defaults, changed, paramMeta)
+        buildParameterInfo(field, block, index, defaultsList, changedList, paramMeta)
     }
 }
 
@@ -673,15 +734,21 @@ private fun buildParameterInfo(
     field: Field,
     block: Any,
     index: Int,
-    defaults: Int,
-    changed: Int,
+    defaultsList: IntList,
+    changedList: IntList,
     metadata: ParameterSourceInformation?,
 ): ParameterInformation {
     field.isAccessible = true
     val value = field.get(block)
 
-    val fromDefault = (1 shl index) and defaults != 0
-    val changedOffset = index * BITS_PER_SLOT + 1
+    val defaultBucket = index / 32
+    val defaultOffset = index % 32
+    val defaults = if (defaultBucket < defaultsList.size) defaultsList[defaultBucket] else 0
+    val fromDefault = (1 shl defaultOffset) and defaults != 0
+
+    val changedBucket = index / 10
+    val changedOffset = (index % 10) * BITS_PER_SLOT + 1
+    val changed = if (changedBucket < changedList.size) changedList[changedBucket] else 0
     val parameterChanged = ((SLOT_MASK shl changedOffset) and changed) shr changedOffset
 
     val static = parameterChanged and STATIC_BITS == STATIC_BITS
@@ -701,6 +768,9 @@ private fun buildParameterInfo(
 
 private fun filterParameterFields(fields: Array<Field>, isIndyLambda: Boolean): List<Field> {
     return fields.filter { field ->
+        if (Modifier.isStatic(field.modifiers)) {
+            return@filter false
+        }
         val name = field.name
         val validPrefix =
             if (isIndyLambda) {
@@ -720,7 +790,7 @@ private const val STABLE_BITS = 0b100
 
 /** The source position of the group extracted from the key, if one exists for the group. */
 @UiToolingDataApi
-val Group.position: String?
+public val Group.position: String?
     get() = keyPosition(key)
 
 private fun Class<*>.accessibleField(name: String): Field? =

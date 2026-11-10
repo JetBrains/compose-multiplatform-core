@@ -501,6 +501,9 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                 // Ensure the ICS mCalls list is updated with the newly removed call so we don't
                 // accidentally grab the stale call when starting the next round.
                 TestUtils.waitOnInCallServiceToReachXCalls(ics, 0)
+                // Ensure the VoIP app side has also finished its setup so the gatekeeper lock is
+                // released before starting the next iteration.
+                callback.waitForCallAdded(requestId)
             }
             if (failedTries.isNotEmpty()) {
                 fail("Failed to set up extensions on ${failedTries.size}/$iterations tries")
@@ -901,14 +904,13 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             val voipAppControl = bindToVoipAppWithExtensions()
             val callback = TestCallCallbackListener(this)
             voipAppControl.setCallback(callback)
-            val voipCallId =
-                createAndVerifyVoipCall(
-                    voipAppControl,
-                    callback,
-                    listOf(getLocalSilenceCapability(setOf())),
-                    parameters.direction,
-                    true, /* start the local call silence as silenced / muted */
-                )
+            createAndVerifyVoipCall(
+                voipAppControl,
+                callback,
+                listOf(getLocalSilenceCapability(setOf())),
+                parameters.direction,
+                true, /* start the local call silence as silenced / muted */
+            )
             val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
             var hasConnected = false
 

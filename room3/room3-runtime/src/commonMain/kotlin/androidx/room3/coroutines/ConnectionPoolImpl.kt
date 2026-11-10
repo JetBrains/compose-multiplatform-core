@@ -38,7 +38,7 @@ import kotlin.collections.removeLast as removeLastKt
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.sync.Mutex
@@ -62,15 +62,14 @@ internal class ConnectionPoolImpl : ConnectionPool {
 
     @Volatile private var isClosed: Boolean = false
 
-    // Amount of time to wait to acquire a connection before logging, Android uses 30 seconds in
-    // its pool, so we do too here, but IDK if that is a good number. This timeout is unrelated
-    // to the busy handler.
-    // TODO(b/404380974): Allow public configuration
-    internal var timeout = 30.seconds
+    // Amount of time to wait to acquire a connection before logging, This timeout is unrelated to
+    // the busy handler.
+    internal var timeout = DEFAULT_CONNECTION_POOL_TIMEOUT
     internal var onTimeout = LOG_TIMEOUT_EXCEPTION
 
-    constructor(connectionFactory: ConnectionFactory, statementCacheSize: Int) {
+    constructor(connectionFactory: ConnectionFactory, statementCacheSize: Int, timeout: Duration) {
         this.connectionFactory = connectionFactory
+        this.timeout = timeout
         this.readers =
             Pool(
                 capacity = 1,
@@ -85,10 +84,12 @@ internal class ConnectionPoolImpl : ConnectionPool {
         maxNumOfReaders: Int,
         maxNumOfWriters: Int,
         statementCacheSize: Int,
+        timeout: Duration,
     ) {
         require(maxNumOfReaders > 0) { "Maximum number of readers must be greater than 0" }
         require(maxNumOfWriters > 0) { "Maximum number of writers must be greater than 0" }
         this.connectionFactory = connectionFactory
+        this.timeout = timeout
         this.readers =
             Pool(
                 capacity = maxNumOfReaders,
@@ -163,14 +164,17 @@ internal class ConnectionPoolImpl : ConnectionPool {
             exception = ex
             throw ex
         } finally {
-            try {
-                connection?.let { usedConnection ->
-                    usedConnection.markRecycled()
-                    usedConnection.delegate.markReleased()
-                    pool.recycle(usedConnection.delegate)
+            // Perform cleanup in a non-cancellable way, avoids leaking connection locks.
+            withContext(NonCancellable) {
+                try {
+                    connection?.let { usedConnection ->
+                        usedConnection.markRecycled()
+                        usedConnection.delegate.markReleased()
+                        pool.recycle(usedConnection.delegate)
+                    }
+                } catch (recycleException: Throwable) {
+                    exception?.addSuppressed(recycleException) ?: throw recycleException
                 }
-            } catch (recycleException: Throwable) {
-                exception?.addSuppressed(recycleException) ?: throw recycleException
             }
         }
         return result
@@ -268,10 +272,9 @@ private class Pool(
             // At this point a permit was acquired but there is no available connections therefore
             // the pool is not at capacity and a new connection is needed to satisfy the permit.
             check(size < capacity)
-            val newConnection =
-                mutex.withReentrantLock {
-                    newConnectionWrapper(connectionFactory.invoke(), statementCacheSize)
-                }
+            val newConnection = mutex.withReentrantLock {
+                newConnectionWrapper(connectionFactory.invoke(), statementCacheSize)
+            }
             lock.withLock {
                 if (isClosed) {
                     // Pool was closed in-between opening a new connection, close it and throw.
@@ -302,23 +305,22 @@ private class Pool(
     }
 
     /* Dumps debug information */
-    fun dump(builder: StringBuilder) =
-        lock.withLock {
-            val availableQueue = buildList {
-                for (i in 0 until availableConnections.size) {
-                    add(availableConnections[i])
-                }
-            }
-            builder.append("\t" + super.toString() + " (")
-            builder.append("capacity=$capacity, ")
-            builder.append("permits=${connectionPermits.availablePermits}, ")
-            builder.append("queue=(size=${availableQueue.size})[${availableQueue.joinToString()}]")
-            builder.appendLine(")")
-            connections.forEachIndexed { index, connection ->
-                builder.appendLine("\t\t[${index + 1}] - ${connection?.toString()}")
-                connection?.dump(builder)
+    fun dump(builder: StringBuilder) = lock.withLock {
+        val availableQueue = buildList {
+            for (i in 0 until availableConnections.size) {
+                add(availableConnections[i])
             }
         }
+        builder.append("\t" + super.toString() + " (")
+        builder.append("capacity=$capacity, ")
+        builder.append("permits=${connectionPermits.availablePermits}, ")
+        builder.append("queue=(size=${availableQueue.size})[${availableQueue.joinToString()}]")
+        builder.appendLine(")")
+        connections.forEachIndexed { index, connection ->
+            builder.appendLine("\t\t[${index + 1}] - ${connection?.toString()}")
+            connection?.dump(builder)
+        }
+    }
 }
 
 internal expect fun newConnectionWrapper(
@@ -466,7 +468,7 @@ private class PooledConnectionImpl(
         type: SQLiteTransactionType?,
         block: suspend TransactionScope<R>.() -> R,
     ): R {
-        beginTransaction(type ?: SQLiteTransactionType.DEFERRED)
+        withContext(NonCancellable) { beginTransaction(type ?: SQLiteTransactionType.DEFERRED) }
         var success = true
         var exception: Throwable? = null
         try {
@@ -483,52 +485,51 @@ private class PooledConnectionImpl(
                 throw ex
             }
         } finally {
-            try {
-                endTransaction(success)
-            } catch (ex: SQLiteException) {
-                exception?.addSuppressed(ex) ?: throw ex
+            withContext(NonCancellable) {
+                try {
+                    endTransaction(success)
+                } catch (ex: SQLiteException) {
+                    exception?.addSuppressed(ex) ?: throw ex
+                }
             }
         }
     }
 
-    private suspend fun beginTransaction(type: SQLiteTransactionType) =
-        delegate.withLock {
-            val newTransactionId = transactionStack.size
-            if (transactionStack.isEmpty()) {
-                when (type) {
-                    SQLiteTransactionType.DEFERRED ->
-                        delegate.executeSQL("BEGIN DEFERRED TRANSACTION")
-                    SQLiteTransactionType.IMMEDIATE ->
-                        delegate.executeSQL("BEGIN IMMEDIATE TRANSACTION")
-                    SQLiteTransactionType.EXCLUSIVE ->
-                        delegate.executeSQL("BEGIN EXCLUSIVE TRANSACTION")
-                }
-            } else {
-                delegate.executeSQL("SAVEPOINT '$newTransactionId'")
+    private suspend fun beginTransaction(type: SQLiteTransactionType) = delegate.withLock {
+        val newTransactionId = transactionStack.size
+        if (transactionStack.isEmpty()) {
+            when (type) {
+                SQLiteTransactionType.DEFERRED -> delegate.executeSQL("BEGIN DEFERRED TRANSACTION")
+                SQLiteTransactionType.IMMEDIATE ->
+                    delegate.executeSQL("BEGIN IMMEDIATE TRANSACTION")
+                SQLiteTransactionType.EXCLUSIVE ->
+                    delegate.executeSQL("BEGIN EXCLUSIVE TRANSACTION")
             }
-            transactionStack.addLast(TransactionItem(id = newTransactionId, shouldRollback = false))
+        } else {
+            delegate.executeSQL("SAVEPOINT '$newTransactionId'")
         }
+        transactionStack.addLast(TransactionItem(id = newTransactionId, shouldRollback = false))
+    }
 
-    private suspend fun endTransaction(success: Boolean) =
-        delegate.withLock {
+    private suspend fun endTransaction(success: Boolean) = delegate.withLock {
+        if (transactionStack.isEmpty()) {
+            error("Not in a transaction")
+        }
+        val transaction = transactionStack.removeLastKt()
+        if (success && !transaction.shouldRollback) {
             if (transactionStack.isEmpty()) {
-                error("Not in a transaction")
-            }
-            val transaction = transactionStack.removeLastKt()
-            if (success && !transaction.shouldRollback) {
-                if (transactionStack.isEmpty()) {
-                    delegate.executeSQL("END TRANSACTION")
-                } else {
-                    delegate.executeSQL("RELEASE SAVEPOINT '${transaction.id}'")
-                }
+                delegate.executeSQL("END TRANSACTION")
             } else {
-                if (transactionStack.isEmpty()) {
-                    delegate.executeSQL("ROLLBACK TRANSACTION")
-                } else {
-                    delegate.executeSQL("ROLLBACK TRANSACTION TO SAVEPOINT '${transaction.id}'")
-                }
+                delegate.executeSQL("RELEASE SAVEPOINT '${transaction.id}'")
+            }
+        } else {
+            if (transactionStack.isEmpty()) {
+                delegate.executeSQL("ROLLBACK TRANSACTION")
+            } else {
+                delegate.executeSQL("ROLLBACK TRANSACTION TO SAVEPOINT '${transaction.id}'")
             }
         }
+    }
 
     private class TransactionItem(val id: Int, var shouldRollback: Boolean)
 

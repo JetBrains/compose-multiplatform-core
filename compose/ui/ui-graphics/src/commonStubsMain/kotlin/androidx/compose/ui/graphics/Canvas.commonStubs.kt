@@ -16,6 +16,10 @@
 
 package androidx.compose.ui.graphics
 
-@Deprecated("Use direct reference to platform type instead of typealias") actual class NativeCanvas
+@Deprecated(
+    message = "Use direct reference to platform type instead of typealias",
+    level = DeprecationLevel.ERROR,
+)
+public actual class NativeCanvas
 
 internal actual fun ActualCanvas(image: ImageBitmap): Canvas = implementedInJetBrainsFork()

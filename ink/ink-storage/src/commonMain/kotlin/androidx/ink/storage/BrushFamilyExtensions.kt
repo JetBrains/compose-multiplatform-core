@@ -16,13 +16,16 @@
 
 @file:JvmName("BrushFamilyExtensions")
 @file:JvmMultifileClass
+@file:OptIn(InkInternalOnlyApi::class)
 
 package androidx.ink.storage
 
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
+import androidx.ink.brush.ExperimentalInkBrushCompatibilityApi
 import androidx.ink.brush.Version
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointer
 import androidx.ink.nativeloader.UsedByNative
 import kotlin.jvm.JvmMultifileClass
@@ -30,9 +33,8 @@ import kotlin.jvm.JvmName
 
 /**
  * Write a gzip-compressed `ink.proto.BrushFamily` binary proto message representing the
- * [BrushFamily] to the given [ByteArray] using the provided texture map represented in
- * corresponding arrays of keys (client texture IDs) and values (PNG bytes). If
- * [BrushFamily.hasFallbacks] is true, then the stored proto message including fallbacks for this
+ * [BrushFamily] to the given [ByteArray] using the provided callback to retrieve texture PNG bytes.
+ * If [BrushFamily.hasFallbacks] is true, then the stored proto message including fallbacks for this
  * [BrushFamily] will be used instead of recomputing the proto from the [BrushFamily] object.
  *
  * @param textureIdToPngBytes A callback to retrieve the PNG bytes of the texture bitmap for a given
@@ -89,16 +91,15 @@ internal fun BrushFamily.Companion.decodeUncompressed(
     decompressed: DecompressedBytes,
     maxVersion: Version,
     onDecodeTexture: OnDecodeTexturePngBytes?,
-): BrushFamily =
-    BrushFamily.wrapNative {
-        BrushFamilySerializationNative.createFromProto(
-                brushFamilyByteArray = decompressed.buffer,
-                length = decompressed.size,
-                onDecodeTexture = onDecodeTexture,
-                maxVersion = maxVersion.value,
-            )
-            .also { check(it != 0L) { "Should have thrown exception if decoding failed." } }
-    }
+): BrushFamily = BrushFamily.wrapNative {
+    BrushFamilySerializationNative.createFromProto(
+            brushFamilyByteArray = decompressed.buffer,
+            length = decompressed.size,
+            onDecodeTexture = onDecodeTexture,
+            maxVersion = maxVersion.value,
+        )
+        .also { check(it != 0L) { "Should have thrown exception if decoding failed." } }
+}
 
 /**
  * Write a gzip-compressed serialized `ink.proto.BrushFamily` proto message representing the [List]
@@ -116,6 +117,7 @@ internal fun BrushFamily.Companion.decodeUncompressed(
  *   client texture ID.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkBrushCompatibilityApi
 public fun List<BrushFamily>.encodeMultiple(
     textureIdToPngBytes: TexturePngBytesLookup? = null
 ): ByteArray {
@@ -160,6 +162,7 @@ internal fun List<BrushFamily>.encodeMultipleUncompressed(
  * @throws [IOException] if gzip-format bytes cannot be read from [input].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkBrushCompatibilityApi
 @Throws(IOException::class)
 public fun BrushFamily.Companion.decodeMultiple(
     input: ByteArray,
@@ -253,6 +256,7 @@ expect internal object BrushFamilySerializationNative {
     ): Long
 }
 
+@OptIn(InkInternalOnlyApi::class)
 internal class MultipleBrushFamilies private constructor(nativeAlloc: () -> Long) {
     private val nativePointer: Long by NativePointer(nativeAlloc, MultipleBrushFamiliesNative::free)
 
@@ -275,19 +279,16 @@ internal class MultipleBrushFamilies private constructor(nativeAlloc: () -> Long
             length: Int,
             onDecodeTexture: OnDecodeTexturePngBytes?,
             maxVersion: Int,
-        ): List<BrushFamily> =
-            MultipleBrushFamilies {
-                    MultipleBrushFamiliesNative.createFromProto(
-                            brushFamilyByteArray,
-                            length,
-                            onDecodeTexture,
-                            maxVersion,
-                        )
-                        .also {
-                            check(it != 0L) { "Should have thrown exception if decoding failed." }
-                        }
-                }
-                .releaseBrushFamilies()
+        ): List<BrushFamily> = MultipleBrushFamilies {
+            MultipleBrushFamiliesNative.createFromProto(
+                    brushFamilyByteArray,
+                    length,
+                    onDecodeTexture,
+                    maxVersion,
+                )
+                .also { check(it != 0L) { "Should have thrown exception if decoding failed." } }
+        }
+            .releaseBrushFamilies()
     }
 }
 

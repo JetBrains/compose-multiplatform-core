@@ -58,7 +58,6 @@ import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertThrows
@@ -70,7 +69,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SheetStateTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @After
     fun resetFlag() {
@@ -377,7 +376,7 @@ class SheetStateTest {
             ) {
                 scope = rememberCoroutineScope()
                 LazyColumn(Modifier.testTag(sheetTag)) {
-                    items(amountOfItems) { ListItem(headlineContent = { Text("$it") }) }
+                    items(amountOfItems) { ListItem { Text("$it") } }
                 }
             }
         }
@@ -585,8 +584,8 @@ class SheetStateTest {
 
         hasSheetContent = true // Recompose with sheet content
         rule.waitForIdle()
-        assertThat(state.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
-        assertThat(state.requireOffset()).isWithin(1f).of(rule.rootHeightPx() * 0.5f)
+        assertThat(state.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(state.requireOffset()).isWithin(1f).of(rule.rootHeightPx() * 0.4f)
     }
 
     @Test

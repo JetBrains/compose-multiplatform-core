@@ -20,14 +20,14 @@ import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.XEnumEntry
 import androidx.room3.compiler.processing.XEnumTypeElement
-import androidx.room3.compiler.processing.XFieldElement
 import androidx.room3.compiler.processing.XMemberContainer
 import androidx.room3.compiler.processing.XMethodElement
 import androidx.room3.compiler.processing.XNullability
+import androidx.room3.compiler.processing.XPropertyElement
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.XTypeParameterElement
 import androidx.room3.compiler.processing.collectAllMethods
-import androidx.room3.compiler.processing.collectFieldsIncludingPrivateSupers
+import androidx.room3.compiler.processing.collectPropertiesIncludingPrivateSupers
 import androidx.room3.compiler.processing.filterMethodsByConfig
 import androidx.room3.compiler.processing.javac.kotlin.KmClassContainer
 import androidx.room3.compiler.processing.util.MemoizedSequence
@@ -80,40 +80,41 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
         }
     }
 
-    override val companionObject: JavacTypeElement? =
+    override val companionObject: JavacTypeElement? by lazy {
         // Note: we use the kotlinMetadata to first get the companion object name to avoid parsing
         // metadata for every enclosed type just to figure out if it's a companion object.
-        kotlinMetadata?.let { km ->
+        kotlinMetadata?.companionObjectName?.let { name ->
             getEnclosedTypeElements().filterIsInstance<JavacTypeElement>().singleOrNull {
-                it.name == km.companionObjectName
+                it.name == name
             }
         }
+    }
 
     override val closestMemberContainer: JavacTypeElement
         get() = this
 
     override val enclosingTypeElement: XTypeElement? by lazy { element.enclosingType(env) }
 
-    private val _declaredFields by lazy {
+    private val _declaredProperties by lazy {
         ElementFilter.fieldsIn(element.enclosedElements)
             .filterNot { it.kind == ElementKind.ENUM_CONSTANT }
-            .map { JavacFieldElement(env = env, element = it) }
+            .map { JavacPropertyElement(env = env, element = it) }
             // To be consistent with KSP consider delegates to not have a backing field.
             .filterNot { it.kotlinMetadata?.isDelegated() == true }
     }
 
     private val allMethods = MemoizedSequence { collectAllMethods(this) }
 
-    private val allFieldsIncludingPrivateSupers = MemoizedSequence {
-        collectFieldsIncludingPrivateSupers(this)
+    private val allPropertiesIncludingPrivateSupers = MemoizedSequence {
+        collectPropertiesIncludingPrivateSupers(this) { it.getDeclaredProperties() }
     }
 
     override fun getAllMethods(): Sequence<XMethodElement> = allMethods
 
-    override fun getAllFieldsIncludingPrivateSupers() = allFieldsIncludingPrivateSupers
+    override fun getAllPropertiesIncludingPrivateSupers() = allPropertiesIncludingPrivateSupers
 
-    override fun getDeclaredFields(): List<XFieldElement> {
-        return _declaredFields
+    override fun getDeclaredProperties(): List<XPropertyElement> {
+        return _declaredProperties
     }
 
     override fun isKotlinObject() =
@@ -130,11 +131,17 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
     override fun isExpect() = kotlinMetadata?.isExpect() == true
 
     override fun isAnnotationClass(): Boolean {
-        return kotlinMetadata?.isAnnotationClass() ?: (element.kind == ElementKind.ANNOTATION_TYPE)
+        if (element.kind == ElementKind.ANNOTATION_TYPE) return true
+        if (element.kind != ElementKind.CLASS) {
+            // is not an annotation and is not c class, then it must be an enum or interface
+            return false
+        }
+        return kotlinMetadata?.isAnnotationClass() ?: false
     }
 
     override fun isClass(): Boolean {
-        return kotlinMetadata?.isClass() ?: (element.kind == ElementKind.CLASS)
+        if (element.kind != ElementKind.CLASS) return false
+        return kotlinMetadata?.isClass() ?: true
     }
 
     override fun isNested(): Boolean {
@@ -142,7 +149,12 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
     }
 
     override fun isInterface(): Boolean {
-        return kotlinMetadata?.isInterface() ?: (element.kind == ElementKind.INTERFACE)
+        if (element.kind == ElementKind.INTERFACE) return true
+        if (element.kind != ElementKind.CLASS) {
+            // is not an interface and is not a class, then it must be an enum or annotation
+            return false
+        }
+        return kotlinMetadata?.isInterface() ?: false
     }
 
     override fun isRecordClass(): Boolean {
@@ -157,10 +169,7 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
 
     private val _declaredMethods by lazy {
         val companionObjectMethodDescriptors =
-            getEnclosedTypeElements()
-                .firstOrNull { it.isCompanionObject() }
-                ?.getDeclaredMethods()
-                ?.map { it.jvmDescriptor } ?: emptyList()
+            companionObject?.getDeclaredMethods()?.map { it.jvmDescriptor } ?: emptyList()
 
         val declaredMethods =
             ElementFilter.methodsIn(element.enclosedElements)

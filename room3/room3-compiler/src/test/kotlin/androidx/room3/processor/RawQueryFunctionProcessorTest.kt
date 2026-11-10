@@ -488,7 +488,7 @@ class RawQueryFunctionProcessorTest {
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava3TypeNames.COMPLETABLE.canonicalName}",
+                RxJava3TypeNames.COMPLETABLE.canonicalName,
                 "${LifecyclesTypeNames.LIVE_DATA.canonicalName}<Int>",
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
@@ -557,7 +557,9 @@ class RawQueryFunctionProcessorTest {
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(RawQuery::class) }.toList(),
+                            it.getAllMethods()
+                                .filter { it.hasAnnotation(RawQuery::class) }
+                                .toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -604,7 +606,9 @@ class RawQueryFunctionProcessorTest {
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(RawQuery::class) }.toList(),
+                            it.getAllMethods()
+                                .filter { it.hasAnnotation(RawQuery::class) }
+                                .toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }

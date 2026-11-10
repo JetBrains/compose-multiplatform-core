@@ -27,11 +27,11 @@ import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.testing.FakeCameraProperties
 import androidx.camera.camera2.testing.FakeUseCaseCameraRequestControl
+import androidx.camera.common.Metadata
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.lang.Class
@@ -73,7 +73,9 @@ class ZoomCompatTest {
             FakeCameraMetadata.fromTemplate(
                 template = HighEndDeviceTemplate,
                 characteristicsOverrides =
-                    mapOf(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE to Rect(0, 0, 10, 10)),
+                    mapOf(
+                        CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE to Rect(0, 0, 10, 10)
+                    ),
             )
         val zoomCompat = CropRegionZoomCompat(FakeCameraProperties(fakeCameraMetadata))
         zoomCompat.resetAsync(fakeRequestControl)
@@ -178,21 +180,16 @@ class ZoomCompatTest {
                 TODO("Not yet implemented")
             }
 
-            override fun <T> get(key: Metadata.Key<T>): T? {
-                TODO("Not yet implemented")
-            }
-
-            override fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T {
-                TODO("Not yet implemented")
-            }
-
-            override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T {
-                TODO("Not yet implemented")
-            }
-
             override suspend fun getPhysicalMetadata(cameraId: CameraId): CameraMetadata {
                 TODO("Not yet implemented")
             }
+
+            override fun <T : Any> get(key: Metadata.Key<T>): T? {
+                TODO("Not yet implemented")
+            }
+
+            override val metadataKeys: Set<Metadata.Key<*>>
+                get() = TODO("Not yet implemented")
 
             override fun <T : Any> unwrapAs(type: Class<T>): T? {
                 TODO("Not yet implemented")

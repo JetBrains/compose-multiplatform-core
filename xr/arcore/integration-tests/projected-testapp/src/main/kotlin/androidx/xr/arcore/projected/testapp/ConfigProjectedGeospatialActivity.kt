@@ -21,7 +21,6 @@ import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,33 +34,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
+import androidx.xr.projected.ProjectedActivityCompat
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
-import androidx.xr.projected.permissions.ProjectedPermissionsRequestParams
-import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.GeospatialMode
-import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
-@OptIn(PreviewSpatialApi::class)
 class ConfigProjectedGeospatialActivity : ComponentActivity() {
 
     private val test1Result = mutableStateOf("Pending...")
     private val test2Result = mutableStateOf("Pending...")
     private lateinit var targetMode: GeospatialMode
     private var modeName: String = "SPATIAL"
-
-    @OptIn(ExperimentalProjectedApi::class)
-    private val requestPermissionLauncher:
-        ActivityResultLauncher<List<ProjectedPermissionsRequestParams>> =
-        registerForActivityResult(ProjectedPermissionsResultContract()) { results ->
-            tryCreateAndConfigureSession()
-        }
 
     @OptIn(ExperimentalProjectedApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,23 +64,23 @@ class ConfigProjectedGeospatialActivity : ComponentActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
             )
-        val hasAllPermissions =
-            permissionsRequired.all {
-                androidx.core.content.ContextCompat.checkSelfPermission(this, it) ==
-                    android.content.pm.PackageManager.PERMISSION_GRANTED
-            }
+        val hasAllPermissions = permissionsRequired.all {
+            androidx.core.content.ContextCompat.checkSelfPermission(this, it) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
 
         if (hasAllPermissions) {
 
             tryCreateAndConfigureSession()
         } else {
 
-            val params =
-                ProjectedPermissionsRequestParams(
-                    permissions = permissionsRequired,
-                    rationale = "Location permissions are required in projected mode.",
+            lifecycleScope.launch(Dispatchers.Default) {
+                ProjectedActivityCompat.requestPermissions(
+                    this@ConfigProjectedGeospatialActivity,
+                    permissionsRequired.toTypedArray(),
+                    PERMISSION_REQUEST_CODE,
                 )
-            requestPermissionLauncher.launch(listOf(params))
+            }
         }
 
         setContent {
@@ -184,5 +173,20 @@ class ConfigProjectedGeospatialActivity : ComponentActivity() {
                 test2Result.value = "False"
             }
         }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray,
+        deviceId: Int,
+    ) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            tryCreateAndConfigureSession()
+        }
+    }
+
+    companion object {
+        private const val PERMISSION_REQUEST_CODE = 1234
     }
 }

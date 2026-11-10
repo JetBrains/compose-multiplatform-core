@@ -17,6 +17,7 @@
 package androidx.appfunctions
 
 import android.app.AppInteractionAttribution
+import android.app.appfunctions.AppFunctionActivityId
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
@@ -24,27 +25,43 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.appfunctions.metadata.AppFunctionMetadata
 
-/**
- * Represents a request to execute a specific app function.
- *
- * @property targetPackageName The package name of the app that hosts the function.
- * @property functionIdentifier The unique string identifier of the app function to be executed.
- * @property functionParameters The parameters required to invoke this function. Within this
- *   [AppFunctionData], the property names are the names of the function parameters and the property
- *   values are the values of those parameters. The data object may have missing parameters.
- *   Developers are advised to implement defensive handling measures.
- * @property attribution The attribution that can be used by the privacy setting to provide
- *   transparency to the user about why an app function was invoked.
- */
+/** Represents a request to execute a specific app function. */
 public class ExecuteAppFunctionRequest
 @RestrictTo(LIBRARY_GROUP)
 constructor(
+    /** The package name of the app that hosts the function. */
     public val targetPackageName: String,
+    /** The unique string identifier of the app function to be executed. */
     public val functionIdentifier: String,
+    /**
+     * The parameters required to invoke this function. Within this [AppFunctionData], the property
+     * names are the names of the function parameters and the property values are the values of
+     * those parameters.
+     *
+     * The data object may have missing parameters. Developers are advised to implement defensive
+     * handling measures.
+     */
     public val functionParameters: AppFunctionData,
-    @get:RequiresApi(37) public val attribution: AppInteractionAttribution? = null,
-    /** Whether the parameters in this request is encoded in the jetpack format or not. */
-    @get:RestrictTo(LIBRARY_GROUP) public val useJetpackSchema: Boolean,
+    /**
+     * The [AppFunctionActivityId] for this request.
+     *
+     * This identifier is used to disambiguate between instances of the same app function running in
+     * different activities when the function's [AppFunctionMetadata.scope] is
+     * [AppFunctionMetadata.SCOPE_ACTIVITY].
+     *
+     * If the property's value is `null`, the request targets an app function that is not
+     * [AppFunctionMetadata.SCOPE_ACTIVITY].
+     */
+    @get:RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    public val activityId: AppFunctionActivityId? = null,
+    /**
+     * The attribution that can be used by the privacy setting to provide transparency to the user
+     * about why an app function was invoked.
+     */
+    @get:RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    public val attribution: AppInteractionAttribution? = null,
+    /** Indicates whether to enable AppFunction execution's safety evaluation or not. */
+    internal val enableSafetyEvaluation: Boolean = false,
 ) {
     /**
      * Creates a new [ExecuteAppFunctionRequest].
@@ -61,11 +78,11 @@ constructor(
         functionIdentifier: String,
         functionParameters: AppFunctionData,
     ) : this(
-        targetPackageName,
-        functionIdentifier,
-        functionParameters,
+        targetPackageName = targetPackageName,
+        functionIdentifier = functionIdentifier,
+        functionParameters = functionParameters,
+        activityId = null,
         attribution = null,
-        useJetpackSchema = true,
     )
 
     /**
@@ -79,6 +96,11 @@ constructor(
      *   parameters. Developers are advised to implement defensive handling measures.
      * @param attribution The attribution that can be used by the privacy setting to provide
      *   transparency to the user about why an app function was invoked.
+     * @param activityId The [AppFunctionActivityId] for this request. This identifier is used to
+     *   disambiguate between instances of the same app function running in different activities
+     *   when the function's [AppFunctionMetadata.scope] is [AppFunctionMetadata.SCOPE_ACTIVITY]. If
+     *   the property's value is `null`, the request targets an app function that is not
+     *   [AppFunctionMetadata.SCOPE_ACTIVITY].
      */
     @RequiresApi(37)
     public constructor(
@@ -86,12 +108,13 @@ constructor(
         functionIdentifier: String,
         functionParameters: AppFunctionData,
         attribution: AppInteractionAttribution,
+        activityId: AppFunctionActivityId? = null,
     ) : this(
         targetPackageName,
         functionIdentifier,
         functionParameters,
-        attribution = attribution,
-        useJetpackSchema = true,
+        activityId,
+        attribution,
     )
 
     internal fun toPlatformExtensionClass():
@@ -104,7 +127,6 @@ constructor(
             .setExtras(
                 Bundle().apply {
                     putBundle(EXTRA_PARAMETERS, functionParameters.extras)
-                    putBoolean(EXTRA_USE_JETPACK_SCHEMA, useJetpackSchema)
                 }
             )
             .build()
@@ -127,12 +149,18 @@ constructor(
             .setExtras(
                 Bundle().apply {
                     putBundle(EXTRA_PARAMETERS, functionParameters.extras)
-                    putBoolean(EXTRA_USE_JETPACK_SCHEMA, useJetpackSchema)
+                    if (enableSafetyEvaluation) {
+                        putBoolean(
+                            EXTRA_ENABLE_APP_FUNCTION_EVALUATION,
+                            true,
+                        )
+                    }
                 }
             )
             .apply {
-                if (Build.VERSION.SDK_INT >= 37 && attribution != null) {
-                    setAttribution(attribution)
+                if (Build.VERSION.SDK_INT >= 37) {
+                    attribution?.let { setAttribution(it) }
+                    setActivityId(activityId)
                 }
             }
             .build()
@@ -140,27 +168,32 @@ constructor(
 
     override fun toString(): String {
         return "ExecuteAppFunctionRequest(functionMetadata.packageName=$targetPackageName, " +
-            "functionMetadata.id=$functionIdentifier, functionParameters=$functionParameters)"
+            "functionMetadata.id=$functionIdentifier, functionParameters=$functionParameters, " +
+            "activityId=$activityId)"
     }
 
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
     @RestrictTo(LIBRARY_GROUP)
     public fun copy(
         targetPackageName: String = this.targetPackageName,
         functionIdentifier: String = this.functionIdentifier,
         functionParameters: AppFunctionData = this.functionParameters,
-        useJetpackSchema: Boolean = this.useJetpackSchema,
+        activityId: AppFunctionActivityId? = this.activityId,
+        enableSafetyEvaluation: Boolean = this.enableSafetyEvaluation,
     ): ExecuteAppFunctionRequest =
         ExecuteAppFunctionRequest(
-            targetPackageName,
-            functionIdentifier,
-            functionParameters,
-            attribution,
-            useJetpackSchema,
+            targetPackageName = targetPackageName,
+            functionIdentifier = functionIdentifier,
+            functionParameters = functionParameters,
+            activityId = activityId,
+            attribution = attribution,
+            enableSafetyEvaluation = enableSafetyEvaluation,
         )
 
     public companion object {
         internal const val EXTRA_PARAMETERS = "androidXAppfunctionsExtraParameters"
-        internal const val EXTRA_USE_JETPACK_SCHEMA = "androidXAppfunctionsExtraUseJetpackSchema"
+        private const val EXTRA_ENABLE_APP_FUNCTION_EVALUATION =
+            "com.android.extensions.safetyevaluator.events.extra.ENABLE_APP_FUNCTION_EVALUATION"
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         internal fun fromPlatformExtensionClass(
@@ -178,7 +211,6 @@ constructor(
                             request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
                         ),
                     ),
-                useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
             )
 
         /**
@@ -208,7 +240,12 @@ constructor(
                             this.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
                         ),
                     ),
-                useJetpackSchema = this.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
+                activityId =
+                    if (Build.VERSION.SDK_INT >= 37) {
+                        this.activityId
+                    } else {
+                        null
+                    },
                 attribution =
                     if (Build.VERSION.SDK_INT >= 37) {
                         this.attribution

@@ -55,6 +55,9 @@ final class androidx.savedstate/SavedState { // androidx.savedstate/SavedState|n
 }
 
 final class androidx.savedstate/SavedStateRegistry { // androidx.savedstate/SavedStateRegistry|null[0]
+    constructor <init>() // androidx.savedstate/SavedStateRegistry.<init>|<init>(){}[0]
+    constructor <init>(androidx.savedstate/SavedState?) // androidx.savedstate/SavedStateRegistry.<init>|<init>(androidx.savedstate.SavedState?){}[0]
+
     final val isRestored // androidx.savedstate/SavedStateRegistry.isRestored|{}isRestored[0]
         final fun <get-isRestored>(): kotlin/Boolean // androidx.savedstate/SavedStateRegistry.isRestored.<get-isRestored>|<get-isRestored>(){}[0]
 
@@ -65,6 +68,10 @@ final class androidx.savedstate/SavedStateRegistry { // androidx.savedstate/Save
 
     abstract fun interface SavedStateProvider { // androidx.savedstate/SavedStateRegistry.SavedStateProvider|null[0]
         abstract fun saveState(): androidx.savedstate/SavedState // androidx.savedstate/SavedStateRegistry.SavedStateProvider.saveState|saveState(){}[0]
+    }
+
+    abstract fun interface SavedStateRestorer { // androidx.savedstate/SavedStateRegistry.SavedStateRestorer|null[0]
+        abstract fun restoreState(androidx.savedstate/SavedState?) // androidx.savedstate/SavedStateRegistry.SavedStateRestorer.restoreState|restoreState(androidx.savedstate.SavedState?){}[0]
     }
 }
 

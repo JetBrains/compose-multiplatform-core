@@ -481,7 +481,10 @@ class NullabilityAwareColumnTypeConverterStoreTest {
                     columnTypeConverters =
                         listOf(
                             MockTypeConverter(from = string, to = int),
-                            MockTypeConverter(from = string.makeNullable(), to = int.makeNullable()),
+                            MockTypeConverter(
+                                from = string.makeNullable(),
+                                to = int.makeNullable(),
+                            ),
                         ),
                     knownColumnTypes = emptyList(),
                 )
@@ -495,7 +498,10 @@ class NullabilityAwareColumnTypeConverterStoreTest {
                         listOf(
                             MockTypeConverter(from = string, to = int),
                             MockTypeConverter(from = string, to = long),
-                            MockTypeConverter(from = string.makeNullable(), to = int.makeNullable()),
+                            MockTypeConverter(
+                                from = string.makeNullable(),
+                                to = int.makeNullable(),
+                            ),
                         ),
                     knownColumnTypes = emptyList(),
                 )
@@ -560,7 +566,7 @@ class NullabilityAwareColumnTypeConverterStoreTest {
             val byteArray =
                 invocation.processingEnv
                     .requireTypeElement("Subject")
-                    .getDeclaredFields()
+                    .getDeclaredProperties()
                     .first()
                     .type
                     .makeNonNullable()

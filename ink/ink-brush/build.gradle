@@ -29,7 +29,7 @@ plugins {
 }
 
 androidXMultiplatform {
-  // Only supported on non-Android JVM for Linux on x86_64
+  // Only supported on non-Android JVM for Linux on x86_64 and Mac on arm64
   jvm()
 
   androidLibrary {
@@ -52,6 +52,7 @@ androidXMultiplatform {
     commonTest.dependencies {
       implementation(libs.kotlinTest)
       implementation(project(":kruth:kruth"))
+      implementation(project(":ink:ink-brush:ink-brush-samples"))
     }
 
     jvmAndAndroidTest.dependencies {
@@ -73,6 +74,7 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Define brushes for freehand input."
+    samples(project(":ink:ink-brush:ink-brush-samples"))
     usePlatformSpecificCacheForJvmTests = true
 }
 

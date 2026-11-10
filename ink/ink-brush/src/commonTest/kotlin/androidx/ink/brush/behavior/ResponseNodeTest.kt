@@ -16,22 +16,30 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.geometry.ImmutableVec
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 
+@OptIn(InkInternalOnlyApi::class)
 class ResponseNodeTest {
 
     @Test
     fun responseNodeNativePointers_cleanedUpWhenOutOfScope() {
+        // Companion class properties are initialized the first time the class is loaded and they're
+        // cached, so that initialization needs to be outside the block where we assert all
+        // allocations
+        // are cleaned up.
+        val easingFunction = EasingFunction.Predefined.EASE
         awaitNativePointerCleanupAfter {
-            val unused = ResponseNode(EasingFunction.Predefined.EASE, ConstantNode(0f))
+            @Suppress("UNUSED_VARIABLE") val unused = ResponseNode(easingFunction, ConstantNode(0f))
         }
     }
 
     @Test
     fun responseNode_usesPassedInEasingFunction() {
-        val easingFunction = EasingFunction.CubicBezier(0f, 0f, 1f, 1f)
+        val easingFunction = EasingFunction.CubicBezier(ImmutableVec(0f, 0f), ImmutableVec(1f, 1f))
         val input = ConstantNode(0f)
         val node = ResponseNode(easingFunction, input)
         assertThat(node.responseCurve).isSameInstanceAs(easingFunction)

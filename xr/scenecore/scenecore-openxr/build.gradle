@@ -1,0 +1,101 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
+ *
+ * Please use the task when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.AndroidXConfig
+import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
+
+plugins {
+    id("AndroidXPlugin")
+    id("com.android.library")
+}
+
+// Exclude production ARCore perception backends (transitively pulled in by scenecore-runtime)
+// from the test APK so instrumented tests can run on emulators and CI without requiring hardware
+// OpenXR perception drivers. Session.create() will use arcore-testing fakes instead.
+configurations.configureEach { configuration ->
+    if (configuration.name.toLowerCase().contains("androidtest")) {
+        configuration.exclude group: "androidx.xr.arcore", module: "arcore-openxr"
+        configuration.exclude group: "androidx.xr.arcore", module: "arcore-play-services"
+    }
+}
+
+dependencies {
+    api(project(":xr:scenecore:scenecore-runtime"))
+
+    implementation("androidx.annotation:annotation:1.8.1")
+
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(libs.kotlinTest)
+    testImplementation(libs.mockitoKotlin)
+    testImplementation(libs.junit)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
+    testImplementation(project(":xr:scenecore:scenecore-testing"))
+
+    androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation("androidx.appcompat:appcompat:1.2.0")
+    // Exclude the default spatial-core and spatial-rendering runtime backends so that
+    // Session.create() selects and tests OpenXrSceneRuntimeFactory in isolation without
+    // runtime factory provider conflicts or pulling in CPM/spatial-core native dependencies.
+    androidTestImplementation(project(":xr:scenecore:scenecore")) {
+        exclude group: "androidx.xr.scenecore", module: "scenecore-spatial-core"
+        exclude group: "androidx.xr.scenecore", module: "scenecore-spatial-rendering"
+    }
+    androidTestImplementation(project(":xr:arcore:arcore-testing"))
+}
+
+android {
+    compileSdk { version = release(36) }
+    namespace = "androidx.xr.scenecore.openxr"
+}
+
+androidComponents {
+    def prebuiltsRoot = AndroidXConfig.getPrebuiltsRoot(project)
+    def mainNativePath = new File(prebuiltsRoot, "androidx/xr/native/scenecore-openxr/android").absolutePath
+    def testSceneCoreNativePath = new File(prebuiltsRoot, "androidx/xr/native/scenecore-openxr/androidTest").absolutePath
+
+    onVariants(selector().all()) { variant ->
+        variant.sources.jniLibs.addStaticSourceDirectory(mainNativePath)
+        (variant as HasAndroidTest).androidTest.sources.jniLibs.addStaticSourceDirectory(testSceneCoreNativePath)
+    }
+}
+
+androidx {
+    name = "XR SceneCore OpenXR"
+
+    // scenecore-openxr is an experimental / work-in-progress OpenXR backend
+    // implementation for SceneCore. It is intentionally not published
+    // to maven.google.com because the OpenXR pathway is not yet supported on
+    // public devices. API tracking is enabled so the surface stays reviewed
+    // while development continues.
+    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_WITH_API_TASKS
+    inceptionYear = "2026"
+    description = "OpenXR runtime implementation of SceneCore for Jetpack XR."
+    enableRobolectric()
+}

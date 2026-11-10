@@ -15,16 +15,27 @@
  */
 package androidx.compose.remote.creation.json;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
+import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.RcPlatformServices;
+import androidx.compose.remote.core.operations.Header;
+import androidx.compose.remote.core.operations.Rem;
 import androidx.compose.remote.core.operations.Utils;
+import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
 import org.json.JSONException;
 import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 public class RemoteComposeJsonParserTest {
     private RemoteComposeWriter mWriter;
@@ -522,6 +533,701 @@ public class RemoteComposeJsonParserTest {
         org.junit.Assert.assertNotNull(result);
     }
 
+    @Test
+    public void testStage1Features() throws JSONException {
+        String json = "{"
+                + "  \"root\": {"
+                + "    \"type\": \"flow\","
+                + "    \"maxColumns\": 4,"
+                + "    \"maxLines\": 2,"
+                + "    \"modifiers\": ["
+                + "      { \"verticalScroll\": { \"position\": 10.0, \"notches\": 5 } },"
+                + "      { \"collapsiblePriority\": { \"orientation\": \"vertical\","
+                + " \"priority\": 2.0 } }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"text\","
+                + "        \"value\": \"Styled Text\","
+                + "        \"fontSize\": 18,"
+                + "        \"fontStyle\": \"italic\","
+                + "        \"fontFamily\": \"sans-serif\","
+                + "        \"letterSpacing\": 1.5,"
+                + "        \"lineHeightAdd\": 2.0,"
+                + "        \"lineHeightMultiplier\": 1.2,"
+                + "        \"underline\": true,"
+                + "        \"strikethrough\": true,"
+                + "        \"autoSize\": true"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testStage2Features() throws JSONException {
+        String json = "{"
+                + "  \"resources\": {"
+                + "    \"variables\": ["
+                + "      { \"name\": \"val\", \"value\": 0.0, \"export\": true }"
+                + "    ]"
+                + "  },"
+                + "  \"root\": {"
+                + "    \"type\": \"box\","
+                + "    \"modifiers\": ["
+                + "      { \"onTouchDown\": { \"type\": \"ValueFloatChange\", \"targetId\":"
+                + " \"@vars.val\", \"value\": 1.0 } },"
+                + "      { \"onTouchUp\": { \"type\": \"ValueFloatChange\", \"targetId\":"
+                + " \"@vars.val\", \"value\": 0.0 } },"
+                + "      { \"onTouchCancel\": { \"type\": \"ValueFloatChange\", \"targetId\":"
+                + " \"@vars.val\", \"value\": 0.0 } }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"canvas\","
+                + "        \"commands\": ["
+                + "          { \"type\": \"performHaptic\", \"constant\": 1 },"
+                + "          { \"type\": \"playSound\", \"id\": \"clickSound\" },"
+                + "          { \"type\": \"textSubtext\", \"text\": \"Full String\","
+                + " \"start\": 0.0, \"len\": 4.0, \"varName\": \"subText\" },"
+                + "          { \"type\": \"textTransform\", \"text\": \"subText\","
+                + " \"start\": 0.0, \"len\": 4.0, \"operation\": \"uppercase\","
+                + " \"varName\": \"upperText\" }"
+                + "        ]"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testStage3Features() throws JSONException {
+        String json = "{"
+                + "  \"resources\": {"
+                + "    \"variables\": ["
+                + "      { \"name\": \"x\", \"value\": 0.0 }"
+                + "    ]"
+                + "  },"
+                + "  \"root\": {"
+                + "    \"type\": \"custom\","
+                + "    \"config\": \"testConfig\","
+                + "    \"properties\": ["
+                + "      { \"type\": 1, \"dataType\": 0, \"value\": 10 },"
+                + "      { \"type\": 2, \"dataType\": 1, \"value\": 3.14 }"
+                + "    ],"
+                + "    \"modifiers\": ["
+                + "      { \"drawWithContent\": {} }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"canvas\","
+                + "        \"commands\": ["
+                + "          { \"type\": \"wakeIn\", \"seconds\": 2.5 },"
+                + "          { \"type\": \"particlesComparison\", \"systemId\": 1.0,"
+                + " \"flags\": 0, \"min\": 0.0, \"max\": 10.0, \"condition\": \"x\","
+                + " \"then1\": [\"x\"] }"
+                + "        ]"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testStage4Features() throws JSONException {
+        String json = "{"
+                + "  \"root\": {"
+                + "    \"type\": \"stateLayout\","
+                + "    \"indexId\": 0,"
+                + "    \"modifiers\": ["
+                + "      { \"spacedBy\": 8.0 },"
+                + "      { \"animationSpec\": 1 },"
+                + "      { \"alignByBaseline\": {} },"
+                + "      { \"fillParentMaxWidth\": 1.0 },"
+                + "      { \"fillParentMaxHeight\": 1.0 },"
+                + "      { \"fillParentMaxSize\": 1.0 }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"canvas\","
+                + "        \"commands\": ["
+                + "          { \"type\": \"polarPathExpression\", \"id\": \"polar1\","
+                + " \"expressionR\": \"10\", \"start\": 0.0, \"end\": 6.28, \"count\": 100.0 },"
+                + "          { \"type\": \"setArrayValue\", \"id\": 1, \"index\": 0.0,"
+                + " \"value\": 5.0 },"
+                + "          { \"type\": \"callFloatFunction\", \"id\": 2, \"args\": [1.0, 2.0] }"
+                + "        ]"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testStage5Features() throws JSONException {
+        String json = "{"
+                + "  \"root\": {"
+                + "    \"type\": \"box\","
+                + "    \"modifiers\": ["
+                + "      { \"graphicsLayer\": { \"scaleX\": 1.2, \"alpha\": 0.8 } },"
+                + "      { \"marquee\": { \"iterations\": 5, \"velocity\": 10.0 } },"
+                + "      { \"ripple\": {} },"
+                + "      { \"semantics\": { \"contentDescription\": \"desc\","
+                + " \"clickable\": true } }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"canvas\","
+                + "        \"commands\": ["
+                + "          { \"type\": \"clickArea\", \"id\": 1,"
+                + " \"contentDescription\": \"click\","
+                + " \"left\": 0.0, \"top\": 0.0, \"right\": 100.0, \"bottom\": 100.0 }"
+                + "        ]"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testPathEffects() throws JSONException {
+        String json = "{\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"canvas\",\n"
+                + "    \"commands\": [\n"
+                + "      {\n"
+                + "        \"type\": \"paint\",\n"
+                + "        \"patheffect\": [10.0, 5.0]\n"
+                + "      },\n"
+                + "      {\n"
+                + "        \"type\": \"paint\",\n"
+                + "        \"patheffect\": {\n"
+                + "          \"intervals\": [15.0, 10.0],\n"
+                + "          \"phase\": 2.5\n"
+                + "        }\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testPathResources() throws JSONException {
+        String json = "{\n"
+                + "  \"resources\": {\n"
+                + "    \"paths\": {\n"
+                + "      \"customPath\": [\n"
+                + "        { \"type\": \"moveTo\", \"x\": 0, \"y\": 0 },\n"
+                + "        { \"type\": \"lineTo\", \"x\": 100, \"y\": 0 },\n"
+                + "        { \"type\": \"quadTo\", \"x1\": 150, \"y1\": 50, \"x2\": 100, \"y2\": "
+                + "100 },\n"
+                + "        { \"type\": \"cubicTo\", \"x1\": 80, \"y1\": 120, \"x2\": 20, \"y2\": "
+                + "120, \"x3\": 0, \"y3\": 100 },\n"
+                + "        { \"type\": \"close\" }\n"
+                + "      ]\n"
+                + "    }\n"
+                + "  },\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"canvas\",\n"
+                + "    \"commands\": [\n"
+                + "      {\n"
+                + "        \"type\": \"drawPath\",\n"
+                + "        \"path\": \"$paths.customPath\"\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testSystemVariablesAndDeltaTime() throws JSONException {
+        String json = "{\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"canvas\",\n"
+                + "    \"commands\": [\n"
+                + "      {\n"
+                + "        \"type\": \"drawCircle\",\n"
+                + "        \"cx\": \"delta_time * 60 + touchX\",\n"
+                + "        \"cy\": \"deltaTime * 60 + gyroX\",\n"
+                + "        \"radius\": \"10 + accelX + month + year + density\"\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testRemCommand() throws JSONException {
+        String json = "{\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"canvas\",\n"
+                + "    \"commands\": [\n"
+                + "      { \"type\": \"rem\", \"text\": \"Canvas comment\" },\n"
+                + "      { \"rem\": \"Shorthand comment\" }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}";
+        mParser.parse(json);
+        java.util.ArrayList<Operation> ops = new java.util.ArrayList<>();
+        mWriter.getBuffer().inflateFromBuffer(ops);
+        boolean foundCanvas = false;
+        boolean foundShorthand = false;
+        for (Operation op : ops) {
+            if (op instanceof Rem) {
+                Rem rem = (Rem) op;
+                if ("Canvas comment".equals(rem.mText)) foundCanvas = true;
+                if ("Shorthand comment".equals(rem.mText)) foundShorthand = true;
+            }
+        }
+        assertTrue(foundCanvas);
+        assertTrue(foundShorthand);
+    }
+
+    @Test
+    public void testRemComponent() throws JSONException {
+        String json = "{\n"
+                + "  \"root\": [\n"
+                + "    { \"type\": \"rem\", \"text\": \"Root comment\" },\n"
+                + "    { \"type\": \"box\", \"children\": [\n"
+                + "      { \"type\": \"rem\", \"text\": \"Box comment\" }\n"
+                + "    ]}\n"
+                + "  ]\n"
+                + "}";
+        mParser.parse(json);
+        java.util.ArrayList<Operation> ops = new java.util.ArrayList<>();
+        mWriter.getBuffer().inflateFromBuffer(ops);
+        boolean foundRoot = false;
+        boolean foundBox = false;
+        for (Operation op : ops) {
+            if (op instanceof Rem) {
+                Rem rem = (Rem) op;
+                if ("Root comment".equals(rem.mText)) foundRoot = true;
+                if ("Box comment".equals(rem.mText)) foundBox = true;
+            }
+        }
+        assertTrue(foundRoot);
+        assertTrue(foundBox);
+    }
+
+    @Test
+    public void testRemVarsFlag() throws JSONException {
+        mParser.setRemVars(true);
+        String json = "{\n"
+                + "  \"resources\": {\n"
+                + "    \"v_dims\": {\n"
+                + "      \"width\": \"width\",\n"
+                + "      \"height\": \"height\"\n"
+                + "    }\n"
+                + "  },\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"box\"\n"
+                + "  }\n"
+                + "}";
+        mParser.parse(json);
+        java.util.ArrayList<Operation> ops = new java.util.ArrayList<>();
+        mWriter.getBuffer().inflateFromBuffer(ops);
+        String debugNames = null;
+        for (Operation op : ops) {
+            if (op instanceof Rem) {
+                Rem rem = (Rem) op;
+                if (rem.mText.startsWith("Debug Names ")) {
+                    debugNames = rem.mText;
+                }
+            }
+        }
+        assertNotNull(debugNames);
+        assertTrue(debugNames.contains("=width"));
+        assertTrue(debugNames.contains("=height"));
+    }
+
+    @Test
+    public void testRemVarsInHeader() throws JSONException {
+        String json = "{\n"
+                + "  \"header\": {\n"
+                + "    \"remVars\": true\n"
+                + "  },\n"
+                + "  \"resources\": {\n"
+                + "    \"variables\": {\n"
+                + "      \"myCount\": { \"type\": \"int\", \"value\": 42 },\n"
+                + "      \"myScale\": { \"type\": \"float\", \"value\": 1.5 }\n"
+                + "    }\n"
+                + "  },\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"box\"\n"
+                + "  }\n"
+                + "}";
+        mParser.parse(json);
+        java.util.ArrayList<Operation> ops = new java.util.ArrayList<>();
+        mWriter.getBuffer().inflateFromBuffer(ops);
+        String debugNames = null;
+        for (Operation op : ops) {
+            if (op instanceof Rem) {
+                Rem rem = (Rem) op;
+                if (rem.mText.startsWith("Debug Names ")) {
+                    debugNames = rem.mText;
+                }
+            }
+        }
+        assertNotNull(debugNames);
+        assertTrue(debugNames.contains("=myCount"));
+        assertTrue(debugNames.contains("=myScale"));
+    }
+
+    @Test
+    public void testDisallowInterceptTouchInHeader() throws JSONException {
+        String json = "{\n"
+                + "  \"header\": {\n"
+                + "    \"disallowInterceptTouch\": 0\n"
+                + "  },\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"box\"\n"
+                + "  }\n"
+                + "}";
+        RemoteComposeWriter.HTag[] tags = RemoteComposeJsonParser.parseHeaderOnly(json);
+        assertEquals(1, tags.length);
+        assertEquals(Header.FEATURE_DISALLOW_INTERCEPT_TOUCH, tags[0].getTag());
+        assertEquals(0, tags[0].getValue());
+    }
+
+    @Test
+    public void testDataPassCanvasOpsInHeader() throws JSONException {
+        String json = "{\n"
+                + "  \"header\": {\n"
+                + "    \"dataPassCanvasOps\": 1\n"
+                + "  },\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"box\"\n"
+                + "  }\n"
+                + "}";
+        RemoteComposeWriter.HTag[] tags = RemoteComposeJsonParser.parseHeaderOnly(json);
+        assertEquals(1, tags.length);
+        assertEquals(Header.FEATURE_DATA_PASS_CANVAS_OPS, tags[0].getTag());
+        assertEquals(1, tags[0].getValue());
+    }
+
+    @Test
+    public void testCompressInHeader() throws JSONException {
+        assertEquals(Header.COMPRESSION_DEFLATE, parseCompressTag("true").getValue());
+        assertEquals(Header.COMPRESSION_NONE, parseCompressTag("false").getValue());
+        assertEquals(Header.COMPRESSION_DEFLATE, parseCompressTag("1").getValue());
+        assertEquals(Header.COMPRESS, parseCompressTag("true").getTag());
+    }
+
+    @Test
+    public void testParseWithCompressInHeader_compressesDocument()
+            throws JSONException, IOException {
+        byte[] plain =
+                RemoteComposeJsonParser.parse(columnDocument("\"apiLevel\": 8"), null).array();
+        byte[] compressed =
+                RemoteComposeJsonParser.parse(
+                                columnDocument("\"apiLevel\": 8, \"compress\": true"), null)
+                        .array();
+
+        Header header = Header.readDirect(new ByteArrayInputStream(compressed));
+        assertEquals(Header.COMPRESSION_DEFLATE, header.get(Header.COMPRESS));
+        assertTrue(compressed.length < plain.length);
+        assertArrayEquals(plain, Header.decompressDocument(compressed, compressed.length));
+    }
+
+    @Test
+    public void testParseWithCompressInHeader_requiresApiLevel8() {
+        // Without an explicit apiLevel, JSON documents are written at API level 7.
+        IllegalArgumentException e =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () ->
+                                RemoteComposeJsonParser.parse(
+                                        columnDocument("\"compress\": true"), null));
+        assertTrue(e.getMessage().contains("API level 8"));
+    }
+
+    private static RemoteComposeWriter.@NonNull HTag parseCompressTag(@NonNull String value)
+            throws JSONException {
+        String json =
+                "{ \"header\": { \"compress\": "
+                        + value
+                        + " }, "
+                        + "\"root\": { \"type\": \"box\" } }";
+        RemoteComposeWriter.HTag[] tags = RemoteComposeJsonParser.parseHeaderOnly(json);
+        assertEquals(1, tags.length);
+        return tags[0];
+    }
+
+    @Test
+    public void testScrollInHeader() throws JSONException {
+        assertEquals(Header.SCROLL_HORIZONTAL, parseScrollTag("\"horizontal\"").getValue());
+        assertEquals(Header.SCROLL_VERTICAL, parseScrollTag("\"vertical\"").getValue());
+        assertEquals(
+                Header.SCROLL_HORIZONTAL | Header.SCROLL_VERTICAL,
+                parseScrollTag("\"both\"").getValue());
+        assertEquals(Header.SCROLL_VERTICAL, parseScrollTag("2").getValue());
+        assertEquals(Header.DOC_SCROLL, parseScrollTag("\"both\"").getTag());
+        assertThrows(JSONException.class, () -> parseScrollTag("\"diagonal\""));
+    }
+
+    @Test
+    public void testParseWithScrollInHeader_writesDocScroll() throws JSONException, IOException {
+        byte[] document =
+                RemoteComposeJsonParser.parse(columnDocument("\"scroll\": \"vertical\""), null)
+                        .array();
+
+        Header header = Header.readDirect(new ByteArrayInputStream(document));
+        assertEquals(Header.SCROLL_VERTICAL, header.get(Header.DOC_SCROLL));
+    }
+
+    private static RemoteComposeWriter.@NonNull HTag parseScrollTag(@NonNull String value)
+            throws JSONException {
+        String json =
+                "{ \"header\": { \"scroll\": " + value + " }, \"root\": { \"type\": \"box\" } }";
+        RemoteComposeWriter.HTag[] tags = RemoteComposeJsonParser.parseHeaderOnly(json);
+        assertEquals(1, tags.length);
+        return tags[0];
+    }
+
+    /** A JSON document with the given header entries and a column of texts. */
+    private static @NonNull String columnDocument(@NonNull String headerEntries) {
+        StringBuilder children = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            if (i > 0) {
+                children.append(", ");
+            }
+            children.append("{ \"type\": \"text\", \"value\": \"Item ").append(i).append("\" }");
+        }
+        return "{ \"header\": { "
+                + headerEntries
+                + " }, "
+                + "\"root\": { \"type\": \"column\", \"children\": [ "
+                + children
+                + " ] } }";
+    }
+
+    @Test
+    public void testSeedExpression() throws JSONException {
+        ExpressionParser parser = new ExpressionParser(mParser);
+        java.util.List<Object> rpn = parser.infixToRpn("seed(12345, rand)");
+        float[] exp = new float[rpn.size()];
+        for (int i = 0; i < rpn.size(); i++) {
+            Object o = rpn.get(i);
+            if (o instanceof Float) {
+                exp[i] = (Float) o;
+            } else if (o instanceof Integer) {
+                exp[i] = AnimatedFloatExpression.asNan((Integer) o);
+            }
+        }
+        AnimatedFloatExpression e1 = new AnimatedFloatExpression();
+        float val1 = e1.eval(exp);
+
+        AnimatedFloatExpression e2 = new AnimatedFloatExpression();
+        float expected = e2.eval(new float[] {12345f,
+                AnimatedFloatExpression.RAND_SEED, AnimatedFloatExpression.RAND});
+        assertEquals(expected, val1, 0.0001f);
+
+        // Test seed with 1 arg
+        java.util.List<Object> rpnSingle = parser.infixToRpn("seed(12345)");
+        float[] expSingle = new float[rpnSingle.size()];
+        for (int i = 0; i < rpnSingle.size(); i++) {
+            Object o = rpnSingle.get(i);
+            if (o instanceof Float) {
+                expSingle[i] = (Float) o;
+            } else if (o instanceof Integer) {
+                expSingle[i] = AnimatedFloatExpression.asNan((Integer) o);
+            }
+        }
+        AnimatedFloatExpression e3 = new AnimatedFloatExpression();
+        float valSingle = e3.eval(expSingle);
+        assertEquals(1.0f, valSingle, 0.0001f);
+    }
+
+    @Test
+    public void testSeedInJsonDocument() throws JSONException {
+        String json = "{\n"
+                + "  \"root\": {\n"
+                + "    \"type\": \"canvas\",\n"
+                + "    \"commands\": [\n"
+                + "      {\n"
+                + "        \"type\": \"drawCircle\",\n"
+                + "        \"cx\": \"seed(42, rand * 100)\",\n"
+                + "        \"cy\": \"seed(99, 50)\",\n"
+                + "        \"radius\": \"10\"\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testCustomVisibilityAnimationInJson() throws JSONException {
+        String json = "{\n"
+                + "  \"header\": { \"apiLevel\": 8, \"profiles\": 513, \"densityBehavior\": 2 },\n"
+                + "  \"root\": [\n"
+                + "    { \"variable\": { \"name\": \"cardVis\", \"vtype\": \"integer\", "
+                + "\"value\": 1 } },\n"
+                + "    { \"createOffscreenBitmap\": \"offscreenTex\" },\n"
+                + "    {\n"
+                + "      \"defineVisibilityAnimation\": {\n"
+                + "        \"name\": \"customEnter\",\n"
+                + "        \"params\": [\"progress\", \"w\", \"h\", \"x\", \"y\"],\n"
+                + "        \"commands\": [\n"
+                + "          { \"variable\": { \"name\": \"cx\", \"value\": \"@x + @w / 2\" } },\n"
+                + "          { \"variable\": { \"name\": \"cy\", \"value\": \"@y + @h / 2\" } },\n"
+                + "          { \"drawComponentToBitmap\": \"@offscreenTex\" },\n"
+                + "          {\n"
+                + "            \"save\": [\n"
+                + "              { \"paint\": { \"alpha\": \"@progress\" } },\n"
+                + "              { \"rotate\": { \"angle\": \"(1 - @progress) * -90\", "
+                + "\"pivotX\": \"@cx\", \"pivotY\": \"@cy\" } },\n"
+                + "              { \"scale\": { \"sx\": \"@progress\", \"sy\": \"@progress\","
+                + " \"pivotX\": \"@cx\", \"pivotY\": \"@cy\" } },\n"
+                + "              { \"type\": \"drawComponentContent\" }\n"
+                + "            ]\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"defineVisibilityAnimation\": {\n"
+                + "        \"name\": \"customExit\",\n"
+                + "        \"params\": [\"progress\", \"w\", \"h\", \"x\", \"y\"],\n"
+                + "        \"commands\": [\n"
+                + "          { \"paint\": { \"alpha\": \"1 - @progress\" } },\n"
+                + "          { \"type\": \"drawComponentContent\" }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"box\": {\n"
+                + "        \"modifiers\": [\n"
+                + "          { \"visibility\": \"@cardVis\" },\n"
+                + "          {\n"
+                + "            \"animationSpec\": {\n"
+                + "              \"visibilityDuration\": 500,\n"
+                + "              \"enterFunction\": \"@customEnter\",\n"
+                + "              \"exitFunction\": \"@customExit\"\n"
+                + "            }\n"
+                + "          },\n"
+                + "          {\n"
+                + "            \"onclick\": {\n"
+                + "              \"type\": \"ValueIntegerExpressionChange\",\n"
+                + "              \"targetId\": \"@cardVis\",\n"
+                + "              \"value\": \"1 - @cardVis\"\n"
+                + "            }\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+        RemoteComposeWriter.HTag[] tags = RemoteComposeJsonParser.parseHeaderOnly(json);
+        int apiLevel = RemoteComposeJsonParser.parseApiLevel(json);
+        RemoteComposeWriter writer = new RemoteComposeWriter(new MockPlatform(), apiLevel, tags);
+        RemoteComposeJsonParser parser = new RemoteComposeJsonParser(writer);
+        parser.parse(json);
+        byte[] result = writer.encodeToByteArray();
+        assertNotNull(result);
+        androidx.compose.remote.core.CoreDocument doc =
+                new androidx.compose.remote.core.CoreDocument();
+        doc.initFromBuffer(writer.getBuffer());
+    }
+
+    @Test
+    public void testParseDefineVisibilityAnimationWithShaderAndOffscreenBitmap() throws Exception {
+        String json = "{\n"
+                + "  \"header\": { \"apiLevel\": 8, \"width\": 360, \"height\": 520,"
+                + " \"profiles\": 513 },\n"
+                + "  \"root\": [\n"
+                + "    { \"variable\": { \"name\": \"card3Vis\", \"vtype\": \"integer\","
+                + " \"value\": 1 } },\n"
+                + "    {\n"
+                + "      \"defineVisibilityAnimation\": {\n"
+                + "        \"name\": \"shaderMeltExit\",\n"
+                + "        \"params\": [\"progress\", \"w\", \"h\", \"x\", \"y\", \"id\"],\n"
+                + "        \"commands\": [\n"
+                + "          { \"createOffscreenBitmap\": \"offscreenBitmap\" },\n"
+                + "          { \"drawComponentToBitmap\": { \"id\": \"@id\","
+                + " \"bitmap\": \"@offscreenBitmap\" } },\n"
+                + "          {\n"
+                + "            \"save\": [\n"
+                + "              { \"translate\": { \"dx\": \"@x\", \"dy\": \"@y\" } },\n"
+                + "              {\n"
+                + "                \"paint\": {\n"
+                + "                  \"shader\": {\n"
+                + "                    \"agsl\": \"uniform shader uTexture; uniform float"
+                + " uProgress; uniform float2 uResolution; half4 main(vec2 fc) { return"
+                + " uTexture.eval(fc); }\",\n"
+                + "                    \"uniforms\": {\n"
+                + "                      \"uTexture\": \"@offscreenBitmap\",\n"
+                + "                      \"uProgress\": \"@progress\",\n"
+                + "                      \"uResolution\": [\"@w\", \"@h\"]\n"
+                + "                    }\n"
+                + "                  }\n"
+                + "                }\n"
+                + "              },\n"
+                + "              { \"drawRoundRect\": { \"left\": 0, \"top\": 0,"
+                + " \"right\": \"@w\", \"bottom\": \"@h\", \"rx\": \"@h * 0.35\","
+                + " \"ry\": \"@h * 0.35\" } },\n"
+                + "              { \"paint\": { \"shader\": 0 } }\n"
+                + "            ]\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"box\": {\n"
+                + "        \"modifiers\": [\n"
+                + "          { \"visibility\": \"@card3Vis\" },\n"
+                + "          {\n"
+                + "            \"animationSpec\": {\n"
+                + "              \"visibilityDuration\": 1000,\n"
+                + "              \"exitAnimation\": \"CUSTOM\",\n"
+                + "              \"exitFunction\": \"shaderMeltExit\",\n"
+                + "              \"enterSequence\": \"AFTER\",\n"
+                + "              \"exitSequence\": \"BEFORE\"\n"
+                + "            }\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+        RemoteComposeWriter.HTag[] tags = RemoteComposeJsonParser.parseHeaderOnly(json);
+        int apiLevel = RemoteComposeJsonParser.parseApiLevel(json);
+        RemoteComposeWriter writer = new RemoteComposeWriter(new MockPlatform(), apiLevel, tags);
+        RemoteComposeJsonParser parser = new RemoteComposeJsonParser(writer);
+        parser.parse(json);
+        byte[] result = writer.encodeToByteArray();
+        assertNotNull(result);
+        androidx.compose.remote.core.CoreDocument doc =
+                new androidx.compose.remote.core.CoreDocument();
+        doc.initFromBuffer(writer.getBuffer());
+    }
+
     private static class MockPlatform implements RcPlatformServices {
         @Override
         public float[] pathToFloatArray(Object path) {
@@ -554,6 +1260,7 @@ public class RemoteComposeJsonParserTest {
         }
 
         @Override
-        public void log(@NonNull LogCategory category, @NonNull String message) {}
+        public void log(@NonNull LogCategory category, @NonNull String message) {
+        }
     }
 }

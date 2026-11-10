@@ -36,7 +36,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -132,7 +132,7 @@ fun SimpleFlowColumnMaxLinesWithSeeMore() {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SimpleFlowColumnWithMaxWidth() {
-    var initialWidth = 200.dp // Reversed from initialHeight
+    val initialWidth = 200.dp // Reversed from initialHeight
     var width by remember { mutableStateOf(initialWidth) } // Reversed from height
 
     Text(

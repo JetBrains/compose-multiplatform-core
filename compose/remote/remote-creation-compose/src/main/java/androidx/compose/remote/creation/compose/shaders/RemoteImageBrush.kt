@@ -21,15 +21,19 @@ import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteSize
+import androidx.compose.remote.creation.compose.layout.toTileModeInt
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
+import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3.Companion.createIdentity
+import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3.Companion.createScaleX
+import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3.Companion.createScaleY
+import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3.Companion.createTranslateXy
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.TileMode as ComposeTileMode
-import androidx.compose.ui.graphics.toAndroidTileMode
 import androidx.compose.ui.layout.ContentScale
 
 internal class RemoteImageShader(
@@ -40,14 +44,12 @@ internal class RemoteImageShader(
     override fun apply(creationState: RemoteComposeCreationState, paintBundle: PaintBundle) {
         paintBundle.setTextureShader(
             bitmap.getIdForCreationState(creationState),
-            tileModeX.toAndroidTileMode().ordinal.toShort(),
-            tileModeY.toAndroidTileMode().ordinal.toShort(),
+            tileModeX.toTileModeInt().toShort(),
+            tileModeY.toTileModeInt().toShort(),
             Rc.Texture.FILTER_DEFAULT,
             0,
         )
     }
-
-    override var remoteMatrix3x3: RemoteMatrix3x3? = null
 }
 
 @Immutable
@@ -56,7 +58,7 @@ internal data class RemoteImageBrush(
     public val tileModeX: ComposeTileMode = ComposeTileMode.Clamp,
     public val tileModeY: ComposeTileMode = ComposeTileMode.Clamp,
     public val contentScale: ContentScale = ContentScale.None,
-) : RemoteBrush() {
+) : RemoteShaderBrush() {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun RemoteStateScope.createShader(size: RemoteSize): RemoteShader {
@@ -65,7 +67,7 @@ internal data class RemoteImageBrush(
         }
     }
 
-    private fun createScaleMatrix(size: RemoteSize): RemoteMatrix3x3? {
+    private fun createScaleMatrix(size: RemoteSize): RemoteMatrix3x3 {
         val intrinsicWidth = bitmap.width
         val intrinsicHeight = bitmap.height
         val scaleX = size.width / intrinsicWidth
@@ -106,15 +108,13 @@ internal data class RemoteImageBrush(
                 finalScaleX = 1.rf
                 finalScaleY = 1.rf
             }
-            else -> return null
+            else -> return createIdentity()
         }
 
         val dx = (size.width - (intrinsicWidth * finalScaleX)) / 2f
         val dy = (size.height - (intrinsicHeight * finalScaleY)) / 2f
 
-        return RemoteMatrix3x3.createTranslateXy(dx, dy) *
-            RemoteMatrix3x3.createScaleX(finalScaleX) *
-            RemoteMatrix3x3.createScaleY(finalScaleY)
+        return createTranslateXy(dx, dy) * createScaleX(finalScaleX) * createScaleY(finalScaleY)
     }
 }
 
@@ -134,4 +134,4 @@ public fun RemoteBrush.Companion.image(
     tileModeX: ComposeTileMode = ComposeTileMode.Clamp,
     tileModeY: ComposeTileMode = ComposeTileMode.Clamp,
     contentScale: ContentScale = ContentScale.None,
-): RemoteBrush = RemoteImageBrush(image, tileModeX, tileModeY, contentScale)
+): RemoteShaderBrush = RemoteImageBrush(image, tileModeX, tileModeY, contentScale)

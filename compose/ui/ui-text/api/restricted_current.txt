@@ -46,6 +46,12 @@ package androidx.compose.ui.text {
   }
 
   public static sealed nonexhaustive interface AnnotatedString.Annotation {
+    field public static final androidx.compose.ui.text.AnnotatedString.Annotation.Companion Companion;
+  }
+
+  public static final class AnnotatedString.Annotation.Companion {
+    method @InaccessibleFromKotlin public androidx.compose.runtime.saveable.Saver<androidx.compose.ui.text.AnnotatedString.Annotation,java.lang.Object> getSaver();
+    property public androidx.compose.runtime.saveable.Saver<androidx.compose.ui.text.AnnotatedString.Annotation,java.lang.Object> Saver;
   }
 
   public static final class AnnotatedString.Builder implements java.lang.Appendable {
@@ -121,14 +127,18 @@ package androidx.compose.ui.text {
     method public static androidx.compose.ui.text.AnnotatedString AnnotatedString(String text, androidx.compose.ui.text.SpanStyle spanStyle, optional androidx.compose.ui.text.ParagraphStyle? paragraphStyle);
     method @BytecodeOnly public static androidx.compose.ui.text.AnnotatedString! AnnotatedString$default(String!, androidx.compose.ui.text.SpanStyle!, androidx.compose.ui.text.ParagraphStyle!, int, Object!);
     method public static inline androidx.compose.ui.text.AnnotatedString buildAnnotatedString(kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,kotlin.Unit> builder);
-    method public static androidx.compose.ui.text.AnnotatedString capitalize(androidx.compose.ui.text.AnnotatedString, optional androidx.compose.ui.text.intl.LocaleList localeList);
-    method @BytecodeOnly public static androidx.compose.ui.text.AnnotatedString! capitalize$default(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
-    method public static androidx.compose.ui.text.AnnotatedString decapitalize(androidx.compose.ui.text.AnnotatedString, optional androidx.compose.ui.text.intl.LocaleList localeList);
-    method @BytecodeOnly public static androidx.compose.ui.text.AnnotatedString! decapitalize$default(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
-    method public static androidx.compose.ui.text.AnnotatedString toLowerCase(androidx.compose.ui.text.AnnotatedString, optional androidx.compose.ui.text.intl.LocaleList localeList);
-    method @BytecodeOnly public static androidx.compose.ui.text.AnnotatedString! toLowerCase$default(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
-    method public static androidx.compose.ui.text.AnnotatedString toUpperCase(androidx.compose.ui.text.AnnotatedString, optional androidx.compose.ui.text.intl.LocaleList localeList);
-    method @BytecodeOnly public static androidx.compose.ui.text.AnnotatedString! toUpperCase$default(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
+    method public static androidx.compose.ui.text.AnnotatedString capitalize(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.text.intl.Locale locale);
+    method @Deprecated public static androidx.compose.ui.text.AnnotatedString capitalize(androidx.compose.ui.text.AnnotatedString, optional androidx.compose.ui.text.intl.LocaleList localeList);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.AnnotatedString! capitalize$default(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
+    method public static androidx.compose.ui.text.AnnotatedString decapitalize(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.text.intl.Locale locale);
+    method @Deprecated public static androidx.compose.ui.text.AnnotatedString decapitalize(androidx.compose.ui.text.AnnotatedString, optional androidx.compose.ui.text.intl.LocaleList localeList);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.AnnotatedString! decapitalize$default(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
+    method public static androidx.compose.ui.text.AnnotatedString toLowerCase(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.text.intl.Locale locale);
+    method @Deprecated public static androidx.compose.ui.text.AnnotatedString toLowerCase(androidx.compose.ui.text.AnnotatedString, optional androidx.compose.ui.text.intl.LocaleList localeList);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.AnnotatedString! toLowerCase$default(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
+    method public static androidx.compose.ui.text.AnnotatedString toUpperCase(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.text.intl.Locale locale);
+    method @Deprecated public static androidx.compose.ui.text.AnnotatedString toUpperCase(androidx.compose.ui.text.AnnotatedString, optional androidx.compose.ui.text.intl.LocaleList localeList);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.AnnotatedString! toUpperCase$default(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
     method public static inline <R> R withAnnotation(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.TtsAnnotation ttsAnnotation, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method @Deprecated @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public static inline <R> R withAnnotation(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.UrlAnnotation urlAnnotation, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method public static inline <R> R withAnnotation(androidx.compose.ui.text.AnnotatedString.Builder, String tag, String annotation, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
@@ -236,15 +246,18 @@ package androidx.compose.ui.text {
   }
 
   public final class MultiParagraph {
-    ctor @KotlinOnly public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, androidx.compose.ui.unit.Constraints constraints, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional androidx.compose.ui.text.style.TextOverflow overflow);
+    ctor @KotlinOnly public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, androidx.compose.ui.unit.Constraints constraints, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, androidx.compose.ui.text.intl.LocaleList defaultLocaleList, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional androidx.compose.ui.text.style.TextOverflow overflow);
+    ctor @KotlinOnly @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, androidx.compose.ui.unit.Constraints constraints, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional androidx.compose.ui.text.style.TextOverflow overflow);
     ctor @BytecodeOnly @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, float, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis);
     ctor @BytecodeOnly @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, java.util.List!, int, boolean, float, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.Font.ResourceLoader!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader);
+    ctor @BytecodeOnly public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, androidx.compose.ui.text.intl.LocaleList!, java.util.List!, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, androidx.compose.ui.text.intl.LocaleList!, java.util.List!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, boolean, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    ctor @BytecodeOnly public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @KotlinOnly public MultiParagraph(androidx.compose.ui.text.MultiParagraphIntrinsics intrinsics, androidx.compose.ui.unit.Constraints constraints, optional int maxLines, optional androidx.compose.ui.text.style.TextOverflow overflow);
     ctor @Deprecated public MultiParagraph(androidx.compose.ui.text.MultiParagraphIntrinsics intrinsics, optional int maxLines, optional boolean ellipsis, float width);
     ctor @BytecodeOnly @Deprecated public MultiParagraph(androidx.compose.ui.text.MultiParagraphIntrinsics!, int, boolean, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -314,7 +327,8 @@ package androidx.compose.ui.text {
   public final class MultiParagraphIntrinsics implements androidx.compose.ui.text.ParagraphIntrinsics {
     ctor @Deprecated public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader);
     ctor @Deprecated public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver);
-    ctor public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, boolean softWrap);
+    ctor @Deprecated public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, boolean softWrap);
+    ctor public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, boolean softWrap, androidx.compose.ui.text.intl.LocaleList defaultLocaleList);
     method @InaccessibleFromKotlin public androidx.compose.ui.text.AnnotatedString getAnnotatedString();
     method @InaccessibleFromKotlin public float getMaxIntrinsicWidth();
     method @InaccessibleFromKotlin public float getMinIntrinsicWidth();
@@ -394,7 +408,8 @@ package androidx.compose.ui.text {
 
   public final class ParagraphIntrinsicsKt {
     method @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, java.util.List<? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>> annotations, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders);
-    method public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, java.util.List<? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>> annotations, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, boolean softWrap);
+    method @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, java.util.List<? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>> annotations, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, boolean softWrap);
+    method public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, java.util.List<? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>> annotations, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, boolean softWrap, androidx.compose.ui.text.intl.LocaleList defaultLocaleList);
     method @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader);
     method @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics! ParagraphIntrinsics$default(String!, androidx.compose.ui.text.TextStyle!, java.util.List!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, Object!);
@@ -405,16 +420,19 @@ package androidx.compose.ui.text {
   public final class ParagraphKt {
     method @KotlinOnly public static androidx.compose.ui.text.Paragraph Paragraph(androidx.compose.ui.text.ParagraphIntrinsics paragraphIntrinsics, androidx.compose.ui.unit.Constraints constraints, optional int maxLines, optional androidx.compose.ui.text.style.TextOverflow overflow);
     method @Deprecated public static androidx.compose.ui.text.Paragraph Paragraph(androidx.compose.ui.text.ParagraphIntrinsics paragraphIntrinsics, optional int maxLines, optional boolean ellipsis, float width);
-    method @KotlinOnly public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, androidx.compose.ui.unit.Constraints constraints, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional androidx.compose.ui.text.style.TextOverflow overflow);
+    method @KotlinOnly public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, androidx.compose.ui.unit.Constraints constraints, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, androidx.compose.ui.text.intl.LocaleList defaultLocaleList, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional androidx.compose.ui.text.style.TextOverflow overflow);
+    method @KotlinOnly @Deprecated public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, androidx.compose.ui.unit.Constraints constraints, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional androidx.compose.ui.text.style.TextOverflow overflow);
     method @Deprecated public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis);
     method @Deprecated public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph! Paragraph$default(androidx.compose.ui.text.ParagraphIntrinsics!, int, boolean, float, int, Object!);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph! Paragraph$default(String!, androidx.compose.ui.text.TextStyle!, float, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, java.util.List!, int, boolean, int, Object!);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph! Paragraph$default(String!, androidx.compose.ui.text.TextStyle!, java.util.List!, java.util.List!, int, boolean, float, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.Font.ResourceLoader!, int, Object!);
+    method @BytecodeOnly public static androidx.compose.ui.text.Paragraph Paragraph-MGmvA3A(String, androidx.compose.ui.text.TextStyle, long, androidx.compose.ui.unit.Density, androidx.compose.ui.text.font.FontFamily.Resolver, androidx.compose.ui.text.intl.LocaleList, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle!>!>, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder!>!>, int, int);
+    method @BytecodeOnly public static androidx.compose.ui.text.Paragraph! Paragraph-MGmvA3A$default(String!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, androidx.compose.ui.text.intl.LocaleList!, java.util.List!, java.util.List!, int, int, int, Object!);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph! Paragraph-UdtVg6A(String!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, java.util.List!, int, boolean);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph! Paragraph-UdtVg6A$default(String!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, java.util.List!, int, boolean, int, Object!);
-    method @BytecodeOnly public static androidx.compose.ui.text.Paragraph Paragraph-Ul8oQg4(String, androidx.compose.ui.text.TextStyle, long, androidx.compose.ui.unit.Density, androidx.compose.ui.text.font.FontFamily.Resolver, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle!>!>, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder!>!>, int, int);
-    method @BytecodeOnly public static androidx.compose.ui.text.Paragraph! Paragraph-Ul8oQg4$default(String!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, java.util.List!, int, int, int, Object!);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph Paragraph-Ul8oQg4(String, androidx.compose.ui.text.TextStyle, long, androidx.compose.ui.unit.Density, androidx.compose.ui.text.font.FontFamily.Resolver, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle!>!>, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder!>!>, int, int);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph! Paragraph-Ul8oQg4$default(String!, androidx.compose.ui.text.TextStyle!, long, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, java.util.List!, int, int, int, Object!);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph! Paragraph-_EkL_-Y(androidx.compose.ui.text.ParagraphIntrinsics!, long, int, boolean);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.Paragraph! Paragraph-_EkL_-Y$default(androidx.compose.ui.text.ParagraphIntrinsics!, long, int, boolean, int, Object!);
     method @BytecodeOnly public static androidx.compose.ui.text.Paragraph Paragraph-czeN-Hc(androidx.compose.ui.text.ParagraphIntrinsics, long, int, int);
@@ -422,6 +440,7 @@ package androidx.compose.ui.text {
   }
 
   @androidx.compose.runtime.Immutable public final class ParagraphStyle implements androidx.compose.ui.text.AnnotatedString.Annotation {
+    ctor @BytecodeOnly public ParagraphStyle();
     ctor @KotlinOnly public ParagraphStyle(optional androidx.compose.ui.text.style.TextAlign textAlign, optional androidx.compose.ui.text.style.TextDirection textDirection, optional androidx.compose.ui.unit.TextUnit lineHeight, optional androidx.compose.ui.text.style.TextIndent? textIndent, optional androidx.compose.ui.text.PlatformParagraphStyle? platformStyle, optional androidx.compose.ui.text.style.LineHeightStyle? lineHeightStyle, optional androidx.compose.ui.text.style.LineBreak lineBreak, optional androidx.compose.ui.text.style.Hyphens hyphens, optional androidx.compose.ui.text.style.TextMotion? textMotion);
     ctor @BytecodeOnly public ParagraphStyle(androidx.compose.ui.text.style.TextAlign!, androidx.compose.ui.text.style.TextDirection!, long, androidx.compose.ui.text.style.TextIndent!, androidx.compose.ui.text.PlatformParagraphStyle!, androidx.compose.ui.text.style.LineHeightStyle!, androidx.compose.ui.text.style.LineBreak!, androidx.compose.ui.text.style.Hyphens!, androidx.compose.ui.text.style.TextMotion!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly @Deprecated public ParagraphStyle(androidx.compose.ui.text.style.TextAlign!, androidx.compose.ui.text.style.TextDirection!, long, androidx.compose.ui.text.style.TextIndent!, androidx.compose.ui.text.PlatformParagraphStyle!, androidx.compose.ui.text.style.LineHeightStyle!, androidx.compose.ui.text.style.LineBreak!, androidx.compose.ui.text.style.Hyphens!, androidx.compose.ui.text.style.TextMotion!, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -640,13 +659,13 @@ package androidx.compose.ui.text {
 
   public final class StringKt {
     method public static String capitalize(String, androidx.compose.ui.text.intl.Locale locale);
-    method public static String capitalize(String, androidx.compose.ui.text.intl.LocaleList localeList);
+    method @Deprecated public static String capitalize(String, androidx.compose.ui.text.intl.LocaleList localeList);
     method public static String decapitalize(String, androidx.compose.ui.text.intl.Locale locale);
-    method public static String decapitalize(String, androidx.compose.ui.text.intl.LocaleList localeList);
+    method @Deprecated public static String decapitalize(String, androidx.compose.ui.text.intl.LocaleList localeList);
     method public static String toLowerCase(String, androidx.compose.ui.text.intl.Locale locale);
-    method public static String toLowerCase(String, androidx.compose.ui.text.intl.LocaleList localeList);
+    method @Deprecated public static String toLowerCase(String, androidx.compose.ui.text.intl.LocaleList localeList);
     method public static String toUpperCase(String, androidx.compose.ui.text.intl.Locale locale);
-    method public static String toUpperCase(String, androidx.compose.ui.text.intl.LocaleList localeList);
+    method @Deprecated public static String toUpperCase(String, androidx.compose.ui.text.intl.LocaleList localeList);
   }
 
   @kotlin.jvm.JvmInline public final value class TextGranularity {
@@ -678,13 +697,16 @@ package androidx.compose.ui.text {
 
   public final class TextLayoutInput {
     ctor @BytecodeOnly @Deprecated public TextLayoutInput(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, java.util.List!, int, boolean, int, androidx.compose.ui.unit.Density!, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.text.font.Font.ResourceLoader!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
-    ctor @BytecodeOnly public TextLayoutInput(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, java.util.List!, int, boolean, int, androidx.compose.ui.unit.Density!, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.text.font.FontFamily.Resolver!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public TextLayoutInput(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, java.util.List!, int, boolean, int, androidx.compose.ui.unit.Density!, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.text.font.FontFamily.Resolver!, androidx.compose.ui.text.intl.LocaleList!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public TextLayoutInput(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, java.util.List!, int, boolean, int, androidx.compose.ui.unit.Density!, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.text.font.FontFamily.Resolver!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @KotlinOnly @Deprecated public TextLayoutInput(androidx.compose.ui.text.AnnotatedString text, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, int maxLines, boolean softWrap, androidx.compose.ui.text.style.TextOverflow overflow, androidx.compose.ui.unit.Density density, androidx.compose.ui.unit.LayoutDirection layoutDirection, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader, androidx.compose.ui.unit.Constraints constraints);
-    ctor @KotlinOnly public TextLayoutInput(androidx.compose.ui.text.AnnotatedString text, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, int maxLines, boolean softWrap, androidx.compose.ui.text.style.TextOverflow overflow, androidx.compose.ui.unit.Density density, androidx.compose.ui.unit.LayoutDirection layoutDirection, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, androidx.compose.ui.unit.Constraints constraints);
+    ctor @KotlinOnly public TextLayoutInput(androidx.compose.ui.text.AnnotatedString text, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, int maxLines, boolean softWrap, androidx.compose.ui.text.style.TextOverflow overflow, androidx.compose.ui.unit.Density density, androidx.compose.ui.unit.LayoutDirection layoutDirection, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, androidx.compose.ui.text.intl.LocaleList defaultLocaleList, androidx.compose.ui.unit.Constraints constraints);
+    ctor @KotlinOnly @Deprecated public TextLayoutInput(androidx.compose.ui.text.AnnotatedString text, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, int maxLines, boolean softWrap, androidx.compose.ui.text.style.TextOverflow overflow, androidx.compose.ui.unit.Density density, androidx.compose.ui.unit.LayoutDirection layoutDirection, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, androidx.compose.ui.unit.Constraints constraints);
     method @KotlinOnly @Deprecated public androidx.compose.ui.text.TextLayoutInput copy(optional androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean softWrap, optional androidx.compose.ui.text.style.TextOverflow overflow, optional androidx.compose.ui.unit.Density density, optional androidx.compose.ui.unit.LayoutDirection layoutDirection, optional androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader, optional androidx.compose.ui.unit.Constraints constraints);
     method @BytecodeOnly @Deprecated public androidx.compose.ui.text.TextLayoutInput copy-hu-1Yfo(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.text.TextStyle, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder!>!>, int, boolean, int, androidx.compose.ui.unit.Density, androidx.compose.ui.unit.LayoutDirection, androidx.compose.ui.text.font.Font.ResourceLoader, long);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.TextLayoutInput! copy-hu-1Yfo$default(androidx.compose.ui.text.TextLayoutInput!, androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, java.util.List!, int, boolean, int, androidx.compose.ui.unit.Density!, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.text.font.Font.ResourceLoader!, long, int, Object!);
     method @BytecodeOnly public long getConstraints-msEJaDk();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.intl.LocaleList getDefaultLocaleList();
     method @InaccessibleFromKotlin public androidx.compose.ui.unit.Density getDensity();
     method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontFamily.Resolver getFontFamilyResolver();
     method @InaccessibleFromKotlin public androidx.compose.ui.unit.LayoutDirection getLayoutDirection();
@@ -696,6 +718,7 @@ package androidx.compose.ui.text {
     method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getStyle();
     method @InaccessibleFromKotlin public androidx.compose.ui.text.AnnotatedString getText();
     property public androidx.compose.ui.unit.Constraints constraints;
+    property public androidx.compose.ui.text.intl.LocaleList defaultLocaleList;
     property public androidx.compose.ui.unit.Density density;
     property public androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver;
     property public androidx.compose.ui.unit.LayoutDirection layoutDirection;
@@ -772,14 +795,20 @@ package androidx.compose.ui.text {
   }
 
   @androidx.compose.runtime.Immutable public final class TextMeasurer {
-    ctor public TextMeasurer(androidx.compose.ui.text.font.FontFamily.Resolver defaultFontFamilyResolver, androidx.compose.ui.unit.Density defaultDensity, androidx.compose.ui.unit.LayoutDirection defaultLayoutDirection, optional int cacheSize);
-    ctor @BytecodeOnly public TextMeasurer(androidx.compose.ui.text.font.FontFamily.Resolver!, androidx.compose.ui.unit.Density!, androidx.compose.ui.unit.LayoutDirection!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method @KotlinOnly @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure(androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.text.TextStyle style, optional androidx.compose.ui.text.style.TextOverflow overflow, optional boolean softWrap, optional int maxLines, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional androidx.compose.ui.unit.Constraints constraints, optional androidx.compose.ui.unit.LayoutDirection layoutDirection, optional androidx.compose.ui.unit.Density density, optional androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional boolean skipCache);
-    method @KotlinOnly @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure(String text, optional androidx.compose.ui.text.TextStyle style, optional androidx.compose.ui.text.style.TextOverflow overflow, optional boolean softWrap, optional int maxLines, optional androidx.compose.ui.unit.Constraints constraints, optional androidx.compose.ui.unit.LayoutDirection layoutDirection, optional androidx.compose.ui.unit.Density density, optional androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional boolean skipCache);
-    method @BytecodeOnly @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure-wNUYSr0(String, androidx.compose.ui.text.TextStyle, int, boolean, int, long, androidx.compose.ui.unit.LayoutDirection, androidx.compose.ui.unit.Density, androidx.compose.ui.text.font.FontFamily.Resolver, boolean);
-    method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.text.TextLayoutResult! measure-wNUYSr0$default(androidx.compose.ui.text.TextMeasurer!, String!, androidx.compose.ui.text.TextStyle!, int, boolean, int, long, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, boolean, int, Object!);
-    method @BytecodeOnly @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure-xDpz5zY(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.text.TextStyle, int, boolean, int, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder!>!>, long, androidx.compose.ui.unit.LayoutDirection, androidx.compose.ui.unit.Density, androidx.compose.ui.text.font.FontFamily.Resolver, boolean);
-    method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.text.TextLayoutResult! measure-xDpz5zY$default(androidx.compose.ui.text.TextMeasurer!, androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, int, boolean, int, java.util.List!, long, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, boolean, int, Object!);
+    ctor public TextMeasurer(androidx.compose.ui.text.font.FontFamily.Resolver defaultFontFamilyResolver, androidx.compose.ui.text.intl.LocaleList defaultLocaleList, androidx.compose.ui.unit.Density defaultDensity, androidx.compose.ui.unit.LayoutDirection defaultLayoutDirection, optional int cacheSize);
+    ctor @BytecodeOnly public TextMeasurer(androidx.compose.ui.text.font.FontFamily.Resolver!, androidx.compose.ui.text.intl.LocaleList!, androidx.compose.ui.unit.Density!, androidx.compose.ui.unit.LayoutDirection!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @Deprecated public TextMeasurer(androidx.compose.ui.text.font.FontFamily.Resolver defaultFontFamilyResolver, androidx.compose.ui.unit.Density defaultDensity, androidx.compose.ui.unit.LayoutDirection defaultLayoutDirection, optional int cacheSize);
+    ctor @BytecodeOnly @Deprecated public TextMeasurer(androidx.compose.ui.text.font.FontFamily.Resolver!, androidx.compose.ui.unit.Density!, androidx.compose.ui.unit.LayoutDirection!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @KotlinOnly @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure(androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.text.TextStyle style, optional androidx.compose.ui.text.style.TextOverflow overflow, optional boolean softWrap, optional int maxLines, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional androidx.compose.ui.unit.Constraints constraints, optional androidx.compose.ui.unit.LayoutDirection layoutDirection, optional androidx.compose.ui.unit.Density density, optional androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional boolean skipCache, optional androidx.compose.ui.text.intl.LocaleList defaultLocaleList);
+    method @KotlinOnly @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure(String text, optional androidx.compose.ui.text.TextStyle style, optional androidx.compose.ui.text.style.TextOverflow overflow, optional boolean softWrap, optional int maxLines, optional androidx.compose.ui.unit.Constraints constraints, optional androidx.compose.ui.unit.LayoutDirection layoutDirection, optional androidx.compose.ui.unit.Density density, optional androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional boolean skipCache, optional androidx.compose.ui.text.intl.LocaleList defaultLocaleList);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure-7kVAXEo(String, androidx.compose.ui.text.TextStyle, int, boolean, int, long, androidx.compose.ui.unit.LayoutDirection, androidx.compose.ui.unit.Density, androidx.compose.ui.text.font.FontFamily.Resolver, boolean, androidx.compose.ui.text.intl.LocaleList);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.text.TextLayoutResult! measure-7kVAXEo$default(androidx.compose.ui.text.TextMeasurer!, String!, androidx.compose.ui.text.TextStyle!, int, boolean, int, long, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, boolean, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure-trO9Fmg(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.text.TextStyle, int, boolean, int, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder!>!>, long, androidx.compose.ui.unit.LayoutDirection, androidx.compose.ui.unit.Density, androidx.compose.ui.text.font.FontFamily.Resolver, boolean, androidx.compose.ui.text.intl.LocaleList);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.text.TextLayoutResult! measure-trO9Fmg$default(androidx.compose.ui.text.TextMeasurer!, androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, int, boolean, int, java.util.List!, long, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, boolean, androidx.compose.ui.text.intl.LocaleList!, int, Object!);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult! measure-wNUYSr0(String!, androidx.compose.ui.text.TextStyle!, int, boolean, int, long, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, boolean);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public static androidx.compose.ui.text.TextLayoutResult! measure-wNUYSr0$default(androidx.compose.ui.text.TextMeasurer!, String!, androidx.compose.ui.text.TextStyle!, int, boolean, int, long, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, boolean, int, Object!);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult! measure-xDpz5zY(androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, int, boolean, int, java.util.List!, long, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, boolean);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public static androidx.compose.ui.text.TextLayoutResult! measure-xDpz5zY$default(androidx.compose.ui.text.TextMeasurer!, androidx.compose.ui.text.AnnotatedString!, androidx.compose.ui.text.TextStyle!, int, boolean, int, java.util.List!, long, androidx.compose.ui.unit.LayoutDirection!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, boolean, int, Object!);
   }
 
   public final class TextPainter {
@@ -983,7 +1012,7 @@ package androidx.compose.ui.text {
 
 }
 
-package androidx.compose.ui.text.android {
+package @SuppressCompatibility androidx.compose.ui.text.android {
 
   @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This is internal API that may change frequently and without warning.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY}) public @interface InternalPlatformTextApi {
   }
@@ -1061,9 +1090,11 @@ package androidx.compose.ui.text.font {
   @androidx.compose.runtime.Immutable public interface Font {
     method @BytecodeOnly public default int getLoadingStrategy-PKNRLFQ();
     method @BytecodeOnly public int getStyle-_-LCdwA();
+    method @InaccessibleFromKotlin public default androidx.compose.ui.text.font.FontVariation.Settings getVariationSettings();
     method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontWeight getWeight();
     property public default androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy;
     property public abstract androidx.compose.ui.text.font.FontStyle style;
+    property public default androidx.compose.ui.text.font.FontVariation.Settings variationSettings;
     property public abstract androidx.compose.ui.text.font.FontWeight weight;
     field public static final androidx.compose.ui.text.font.Font.Companion Companion;
     field public static final long MaximumAsyncTimeoutMillis = 15000L; // 0x3a98L
@@ -1229,6 +1260,7 @@ package androidx.compose.ui.text.font {
     method public androidx.compose.ui.text.font.FontVariation.Setting Setting(String name, float value);
     method @KotlinOnly public androidx.compose.ui.text.font.FontVariation.Settings Settings(androidx.compose.ui.text.font.FontWeight weight, androidx.compose.ui.text.font.FontStyle style, androidx.compose.ui.text.font.FontVariation.Setting... settings);
     method @BytecodeOnly public androidx.compose.ui.text.font.FontVariation.Settings Settings-6EWAqTQ(androidx.compose.ui.text.font.FontWeight, int, androidx.compose.ui.text.font.FontVariation.Setting!...);
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontVariation.Settings getEmpty();
     method public androidx.compose.ui.text.font.FontVariation.Setting grade(int value);
     method public androidx.compose.ui.text.font.FontVariation.Setting italic(float value);
     method @KotlinOnly public androidx.compose.ui.text.font.FontVariation.Setting opticalSizing(androidx.compose.ui.unit.TextUnit textSize);
@@ -1236,6 +1268,7 @@ package androidx.compose.ui.text.font {
     method public androidx.compose.ui.text.font.FontVariation.Setting slant(float value);
     method public androidx.compose.ui.text.font.FontVariation.Setting weight(int value);
     method public androidx.compose.ui.text.font.FontVariation.Setting width(float value);
+    property public androidx.compose.ui.text.font.FontVariation.Settings Empty;
     field public static final androidx.compose.ui.text.font.FontVariation INSTANCE;
   }
 
@@ -1250,6 +1283,8 @@ package androidx.compose.ui.text.font {
   @androidx.compose.runtime.Immutable public static final class FontVariation.Settings {
     ctor public FontVariation.Settings(androidx.compose.ui.text.font.FontVariation.Setting... settings);
     method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.text.font.FontVariation.Setting> getSettings();
+    method public androidx.compose.ui.text.font.FontVariation.Settings merge(androidx.compose.ui.text.font.FontVariation.Setting... overrides);
+    method public androidx.compose.ui.text.font.FontVariation.Settings merge(androidx.compose.ui.text.font.FontVariation.Settings? other);
     property public java.util.List<androidx.compose.ui.text.font.FontVariation.Setting> settings;
   }
 
@@ -1324,7 +1359,6 @@ package androidx.compose.ui.text.font {
     method @BytecodeOnly public static androidx.compose.ui.text.font.ResourceFont! copy-RetOiIg$default(androidx.compose.ui.text.font.ResourceFont!, int, androidx.compose.ui.text.font.FontWeight!, int, int, Object!);
     method @InaccessibleFromKotlin public int getResId();
     method @BytecodeOnly public int getStyle-_-LCdwA();
-    method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontVariation.Settings getVariationSettings();
     method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontWeight getWeight();
     property public androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy;
     property public int resId;
@@ -1434,6 +1468,7 @@ package androidx.compose.ui.text.input {
   }
 
   @androidx.compose.runtime.Immutable public final class ImeOptions {
+    ctor @BytecodeOnly public ImeOptions();
     ctor @KotlinOnly public ImeOptions(optional boolean singleLine, optional androidx.compose.ui.text.input.KeyboardCapitalization capitalization, optional boolean autoCorrect, optional androidx.compose.ui.text.input.KeyboardType keyboardType, optional androidx.compose.ui.text.input.ImeAction imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions, optional androidx.compose.ui.text.intl.LocaleList hintLocales);
     ctor @BytecodeOnly public ImeOptions(boolean, int, boolean, int, int, androidx.compose.ui.text.input.PlatformImeOptions!, androidx.compose.ui.text.intl.LocaleList!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public ImeOptions(boolean, int, boolean, int, int, androidx.compose.ui.text.input.PlatformImeOptions!, androidx.compose.ui.text.intl.LocaleList!, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -1563,24 +1598,24 @@ package androidx.compose.ui.text.input {
     property public int amount;
   }
 
-  public interface OffsetMapping {
-    method public int originalToTransformed(int offset);
-    method public int transformedToOriginal(int offset);
-    field public static final androidx.compose.ui.text.input.OffsetMapping.Companion Companion;
+  @Deprecated public interface OffsetMapping {
+    method @Deprecated public int originalToTransformed(int offset);
+    method @Deprecated public int transformedToOriginal(int offset);
+    field @Deprecated public static final androidx.compose.ui.text.input.OffsetMapping.Companion Companion;
   }
 
-  public static final class OffsetMapping.Companion {
-    method @InaccessibleFromKotlin public androidx.compose.ui.text.input.OffsetMapping getIdentity();
-    property public androidx.compose.ui.text.input.OffsetMapping Identity;
+  @Deprecated public static final class OffsetMapping.Companion {
+    method @InaccessibleFromKotlin @Deprecated public androidx.compose.ui.text.input.OffsetMapping getIdentity();
+    property @Deprecated public androidx.compose.ui.text.input.OffsetMapping Identity;
   }
 
-  public final class PasswordVisualTransformation implements androidx.compose.ui.text.input.VisualTransformation {
-    ctor public PasswordVisualTransformation();
-    ctor public PasswordVisualTransformation(optional char mask);
-    ctor @BytecodeOnly public PasswordVisualTransformation(char, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method public androidx.compose.ui.text.input.TransformedText filter(androidx.compose.ui.text.AnnotatedString text);
-    method @InaccessibleFromKotlin public char getMask();
-    property public char mask;
+  @Deprecated public final class PasswordVisualTransformation implements androidx.compose.ui.text.input.VisualTransformation {
+    ctor @Deprecated public PasswordVisualTransformation();
+    ctor @Deprecated public PasswordVisualTransformation(optional char mask);
+    ctor @BytecodeOnly @Deprecated public PasswordVisualTransformation(char, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @Deprecated public androidx.compose.ui.text.input.TransformedText filter(androidx.compose.ui.text.AnnotatedString text);
+    method @InaccessibleFromKotlin @Deprecated public char getMask();
+    property @Deprecated public char mask;
   }
 
   @androidx.compose.runtime.Immutable public final class PlatformImeOptions {
@@ -1687,22 +1722,22 @@ package androidx.compose.ui.text.input {
     property @Deprecated public boolean isOpen;
   }
 
-  public final class TransformedText {
-    ctor public TransformedText(androidx.compose.ui.text.AnnotatedString text, androidx.compose.ui.text.input.OffsetMapping offsetMapping);
-    method @InaccessibleFromKotlin public androidx.compose.ui.text.input.OffsetMapping getOffsetMapping();
-    method @InaccessibleFromKotlin public androidx.compose.ui.text.AnnotatedString getText();
-    property public androidx.compose.ui.text.input.OffsetMapping offsetMapping;
-    property public androidx.compose.ui.text.AnnotatedString text;
+  @Deprecated public final class TransformedText {
+    ctor @Deprecated public TransformedText(androidx.compose.ui.text.AnnotatedString text, androidx.compose.ui.text.input.OffsetMapping offsetMapping);
+    method @InaccessibleFromKotlin @Deprecated public androidx.compose.ui.text.input.OffsetMapping getOffsetMapping();
+    method @InaccessibleFromKotlin @Deprecated public androidx.compose.ui.text.AnnotatedString getText();
+    property @Deprecated public androidx.compose.ui.text.input.OffsetMapping offsetMapping;
+    property @Deprecated public androidx.compose.ui.text.AnnotatedString text;
   }
 
-  @androidx.compose.runtime.Immutable public fun interface VisualTransformation {
-    method public androidx.compose.ui.text.input.TransformedText filter(androidx.compose.ui.text.AnnotatedString text);
-    field public static final androidx.compose.ui.text.input.VisualTransformation.Companion Companion;
+  @Deprecated @androidx.compose.runtime.Immutable public fun interface VisualTransformation {
+    method @Deprecated public androidx.compose.ui.text.input.TransformedText filter(androidx.compose.ui.text.AnnotatedString text);
+    field @Deprecated public static final androidx.compose.ui.text.input.VisualTransformation.Companion Companion;
   }
 
-  public static final class VisualTransformation.Companion {
-    method @InaccessibleFromKotlin public androidx.compose.ui.text.input.VisualTransformation getNone();
-    property @androidx.compose.runtime.Stable public androidx.compose.ui.text.input.VisualTransformation None;
+  @Deprecated public static final class VisualTransformation.Companion {
+    method @InaccessibleFromKotlin @Deprecated public androidx.compose.ui.text.input.VisualTransformation getNone();
+    property @Deprecated @androidx.compose.runtime.Stable public androidx.compose.ui.text.input.VisualTransformation None;
   }
 
 }
@@ -1726,8 +1761,8 @@ package androidx.compose.ui.text.intl {
   }
 
   public static final class Locale.Companion {
-    method @InaccessibleFromKotlin public androidx.compose.ui.text.intl.Locale getCurrent();
-    property public androidx.compose.ui.text.intl.Locale current;
+    method @InaccessibleFromKotlin @Deprecated public androidx.compose.ui.text.intl.Locale getCurrent();
+    property @Deprecated public androidx.compose.ui.text.intl.Locale current;
   }
 
   @androidx.compose.runtime.Immutable public final class LocaleList implements java.util.Collection<androidx.compose.ui.text.intl.Locale> kotlin.jvm.internal.markers.KMappedMarker {
@@ -1758,10 +1793,10 @@ package androidx.compose.ui.text.intl {
   }
 
   public static final class LocaleList.Companion {
-    method @InaccessibleFromKotlin public androidx.compose.ui.text.intl.LocaleList getCurrent();
+    method @InaccessibleFromKotlin @Deprecated public androidx.compose.ui.text.intl.LocaleList getCurrent();
     method @InaccessibleFromKotlin public androidx.compose.ui.text.intl.LocaleList getEmpty();
     property public androidx.compose.ui.text.intl.LocaleList Empty;
-    property public androidx.compose.ui.text.intl.LocaleList current;
+    property @Deprecated public androidx.compose.ui.text.intl.LocaleList current;
   }
 
   @Deprecated public typealias PlatformLocale = java.util.Locale;
@@ -1771,10 +1806,10 @@ package androidx.compose.ui.text.intl {
 package androidx.compose.ui.text.platform {
 
   public final class Synchronization_jvmKt {
-    method @kotlin.PublishedApi internal static inline <R> R synchronized(androidx.compose.ui.text.platform.SynchronizedObject lock, kotlin.jvm.functions.Function0<? extends R> block);
+    method @BytecodeOnly @kotlin.PublishedApi internal static <R> R synchronized(androidx.compose.ui.text.platform.SynchronizedObject, kotlin.jvm.functions.Function0<? extends R>);
   }
 
-  @kotlin.PublishedApi internal final class SynchronizedObject {
+  @BytecodeOnly @kotlin.PublishedApi internal final class SynchronizedObject {
   }
 
 }
@@ -1951,7 +1986,9 @@ package androidx.compose.ui.text.style {
     ctor @KotlinOnly public LineHeightStyle.Alignment(float topRatio);
     method @BytecodeOnly public static androidx.compose.ui.text.style.LineHeightStyle.Alignment! box-impl(float);
     method @BytecodeOnly public static float constructor-impl(float);
+    method @InaccessibleFromKotlin public float getTopRatio();
     method @BytecodeOnly public float unbox-impl();
+    property public float topRatio;
     field public static final androidx.compose.ui.text.style.LineHeightStyle.Alignment.Companion Companion;
   }
 
@@ -1980,15 +2017,21 @@ package androidx.compose.ui.text.style {
   public static final class LineHeightStyle.Mode.Companion {
     method @BytecodeOnly public int getFixed-lzQqcRY();
     method @BytecodeOnly public int getMinimum-lzQqcRY();
+    method @BytecodeOnly public int getPerLine-lzQqcRY();
     method @BytecodeOnly public int getTight-lzQqcRY();
     property public androidx.compose.ui.text.style.LineHeightStyle.Mode Fixed;
     property public androidx.compose.ui.text.style.LineHeightStyle.Mode Minimum;
+    property public androidx.compose.ui.text.style.LineHeightStyle.Mode PerLine;
     property public androidx.compose.ui.text.style.LineHeightStyle.Mode Tight;
   }
 
   @kotlin.jvm.JvmInline public static final value class LineHeightStyle.Trim {
     method @BytecodeOnly public static androidx.compose.ui.text.style.LineHeightStyle.Trim! box-impl(int);
+    method @BytecodeOnly public static boolean getTrimsFirstLineTop-impl(int);
+    method @BytecodeOnly public static boolean getTrimsLastLineBottom-impl(int);
     method @BytecodeOnly public int unbox-impl();
+    property public boolean trimsFirstLineTop;
+    property public boolean trimsLastLineBottom;
     field public static final androidx.compose.ui.text.style.LineHeightStyle.Trim.Companion Companion;
   }
 
@@ -2115,6 +2158,7 @@ package androidx.compose.ui.text.style {
   }
 
   @androidx.compose.runtime.Immutable public final class TextIndent {
+    ctor @BytecodeOnly public TextIndent();
     ctor @KotlinOnly public TextIndent(optional androidx.compose.ui.unit.TextUnit firstLine, optional androidx.compose.ui.unit.TextUnit restLine);
     ctor @BytecodeOnly public TextIndent(long, long, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public TextIndent(long, long, kotlin.jvm.internal.DefaultConstructorMarker!);

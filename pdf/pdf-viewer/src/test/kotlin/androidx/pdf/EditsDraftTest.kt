@@ -23,6 +23,7 @@ import kotlin.test.assertFailsWith
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalPdfApi::class)
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class EditsDraftTest {
@@ -80,5 +81,17 @@ class EditsDraftTest {
         // Act & Assert
         assertFailsWith<IllegalArgumentException> { originalDraft.splitAt(-1) }
         assertFailsWith<IllegalArgumentException> { originalDraft.splitAt(4) }
+    }
+
+    @Test
+    fun sortedByPage_outOfOrderDraft_returnsSortedDraft() {
+        // Arrange
+        val originalDraft = createDraft(3, 1, 4, 2)
+
+        // Act
+        val sortedDraft = originalDraft.sortedByPage()
+
+        // Assert
+        assertEquals(createDraft(1, 2, 3, 4), sortedDraft)
     }
 }

@@ -1,0 +1,105 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.compose.material3.a2ui.catalog
+
+import androidx.a2ui.compose.runtime.A2uiComponentScope
+import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFirstOrNull
+
+/** A Jetpack Compose Material 3 implementation of the A2UI Basic Catalog `"CheckBox"` component. */
+internal object MaterialA2uiBasicCatalogV1CheckBox : A2uiBasicCatalogV1.CheckBox {
+
+    @Composable
+    override fun A2uiComponentScope.TypedContent(
+        label: String,
+        value: Boolean,
+        onValueChange: (Boolean) -> Unit,
+        enabled: Boolean,
+        accessibility: A2uiBasicCatalogV1.AccessibilityAttributes?,
+        checks: List<A2uiBasicCatalogV1.CheckRule>,
+        modifier: Modifier,
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val failedCheck = checks.fastFirstOrNull { !it.condition }
+        val errorMessage = failedCheck?.message
+
+        Column(modifier = modifier) {
+            Row(
+                modifier =
+                    Modifier.toggleable(
+                            value = value,
+                            interactionSource = interactionSource,
+                            indication = null,
+                            role = Role.Checkbox,
+                            enabled = enabled,
+                            onValueChange = onValueChange,
+                        )
+                        .a2uiAccessibility(
+                            attributes = accessibility,
+                            isClickable = true,
+                        )
+                        .semantics {
+                            if (!errorMessage.isNullOrBlank()) {
+                                error(errorMessage)
+                            }
+                        },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = value,
+                    onCheckedChange = null,
+                    interactionSource = interactionSource,
+                    enabled = enabled,
+                )
+
+                Spacer(CheckBoxSpacingModifier)
+
+                Text(text = label)
+            }
+
+            if (!errorMessage.isNullOrBlank()) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = CheckBoxErrorModifier,
+                )
+            }
+        }
+    }
+}
+
+private val CheckBoxSpacingModifier = Modifier.width(8.dp)
+private val CheckBoxErrorModifier = Modifier.padding(top = 4.dp)

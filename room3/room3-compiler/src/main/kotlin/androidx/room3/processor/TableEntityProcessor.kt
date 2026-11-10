@@ -19,6 +19,7 @@ package androidx.room3.processor
 import androidx.room3.PrimaryKey.Algorithm as PrimaryKeyAlgorithm
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
+import androidx.room3.ext.getAnnotationOnPropertyOrField
 import androidx.room3.ext.isNotError
 import androidx.room3.ext.isNotNone
 import androidx.room3.parser.SQLTypeAffinity
@@ -384,7 +385,7 @@ internal constructor(
     ): List<PrimaryKey> {
         return properties.mapNotNull { property ->
             val primaryKeyAnnotation =
-                property.element.getAnnotation(androidx.room3.PrimaryKey::class)
+                property.element.getAnnotationOnPropertyOrField(androidx.room3.PrimaryKey::class)
                     ?: return@mapNotNull null
             if (property.parent != null) {
                 // the property in the entity that contains this error.
@@ -427,20 +428,20 @@ internal constructor(
                 if (primaryKeyColumns.isEmpty()) {
                     emptyList()
                 } else {
-                    val properties =
-                        primaryKeyColumns.mapNotNull { pKeyColumnName ->
-                            val property =
-                                availableProperties.firstOrNull { it.columnName == pKeyColumnName }
-                            context.checker.check(
-                                property != null,
-                                typeElement,
-                                ProcessorErrors.primaryKeyColumnDoesNotExist(
-                                    pKeyColumnName,
-                                    availableProperties.map { it.columnName },
-                                ),
-                            )
-                            property
+                    val properties = primaryKeyColumns.mapNotNull { pKeyColumnName ->
+                        val property = availableProperties.firstOrNull {
+                            it.columnName == pKeyColumnName
                         }
+                        context.checker.check(
+                            property != null,
+                            typeElement,
+                            ProcessorErrors.primaryKeyColumnDoesNotExist(
+                                pKeyColumnName,
+                                availableProperties.map { it.columnName },
+                            ),
+                        )
+                        property
+                    }
                     listOf(
                         PrimaryKey(
                             declaredIn = typeElement,
@@ -456,8 +457,9 @@ internal constructor(
         val superPKeys =
             if (mySuper != null && mySuper.isNotNone() && mySuper.isNotError()) {
                 // my super cannot see my properties so remove them.
-                val remainingProperties =
-                    availableProperties.filterNot { it.element.enclosingElement == typeElement }
+                val remainingProperties = availableProperties.filterNot {
+                    it.element.enclosingElement == typeElement
+                }
                 collectPrimaryKeysFromEntityAnnotations(mySuper.typeElement!!, remainingProperties)
             } else {
                 emptyList()
@@ -469,24 +471,26 @@ internal constructor(
         embeddedProperties: List<EmbeddedProperty>
     ): List<PrimaryKey> {
         return embeddedProperties.mapNotNull { embeddedProperty ->
-            embeddedProperty.property.element.getAnnotation(androidx.room3.PrimaryKey::class)?.let {
-                val autoGenerate = it["autoGenerate"]?.asBoolean() ?: false
-                val algorithm =
-                    it["algorithm"]?.asEnum()?.let { enumEntry ->
-                        PrimaryKeyAlgorithm.valueOf(enumEntry.name)
-                    } ?: PrimaryKeyAlgorithm.AUTOINCREMENT
-                context.checker.check(
-                    !autoGenerate || embeddedProperty.dataClass.properties.size == 1,
-                    embeddedProperty.property.element,
-                    ProcessorErrors.AUTO_INCREMENT_EMBEDDED_HAS_MULTIPLE_PROPERTIES,
-                )
-                PrimaryKey(
-                    declaredIn = embeddedProperty.property.element.enclosingElement,
-                    properties = embeddedProperty.dataClass.properties,
-                    autoGenerateId = autoGenerate,
-                    algorithm = algorithm,
-                )
-            }
+            val primaryKeyAnnotation =
+                embeddedProperty.property.element.getAnnotationOnPropertyOrField(
+                    androidx.room3.PrimaryKey::class
+                ) ?: return@mapNotNull null
+            val autoGenerate = primaryKeyAnnotation["autoGenerate"]?.asBoolean() ?: false
+            val algorithm =
+                primaryKeyAnnotation["algorithm"]?.asEnum()?.let { enumEntry ->
+                    PrimaryKeyAlgorithm.valueOf(enumEntry.name)
+                } ?: PrimaryKeyAlgorithm.AUTOINCREMENT
+            context.checker.check(
+                !autoGenerate || embeddedProperty.dataClass.properties.size == 1,
+                embeddedProperty.property.element,
+                ProcessorErrors.AUTO_INCREMENT_EMBEDDED_HAS_MULTIPLE_PROPERTIES,
+            )
+            PrimaryKey(
+                declaredIn = embeddedProperty.property.element.enclosingElement,
+                properties = embeddedProperty.dataClass.properties,
+                autoGenerateId = autoGenerate,
+                algorithm = algorithm,
+            )
         }
     }
 
@@ -534,44 +538,43 @@ internal constructor(
         dataClass: DataClass,
     ): List<Index> {
         // check for columns
-        val indices =
-            inputs.mapNotNull { input ->
-                context.checker.check(
-                    input.columnNames.isNotEmpty(),
-                    element,
-                    INDEX_COLUMNS_CANNOT_BE_EMPTY,
-                )
-                val properties =
-                    input.columnNames.mapNotNull { columnName ->
-                        val property = dataClass.findPropertyByColumnName(columnName)
-                        context.checker.check(
-                            property != null,
-                            element,
-                            ProcessorErrors.indexColumnDoesNotExist(
-                                columnName,
-                                dataClass.columnNames,
-                            ),
-                        )
-                        property
-                    }
-                if (input.orders.isNotEmpty()) {
+        val indices = inputs.mapNotNull { input ->
+            context.checker.check(
+                input.columnNames.isNotEmpty(),
+                element,
+                INDEX_COLUMNS_CANNOT_BE_EMPTY,
+            )
+            val properties =
+                input.columnNames.mapNotNull { columnName ->
+                    val property = dataClass.findPropertyByColumnName(columnName)
                     context.checker.check(
-                        input.columnNames.size == input.orders.size,
+                        property != null,
                         element,
-                        INVALID_INDEX_ORDERS_SIZE,
+                        ProcessorErrors.indexColumnDoesNotExist(
+                            columnName,
+                            dataClass.columnNames,
+                        ),
                     )
+                    property
                 }
-                if (properties.isEmpty()) {
-                    null
-                } else {
-                    Index(
-                        name = input.name,
-                        unique = input.unique,
-                        properties = Properties(properties),
-                        orders = input.orders,
-                    )
-                }
+            if (input.orders.isNotEmpty()) {
+                context.checker.check(
+                    input.columnNames.size == input.orders.size,
+                    element,
+                    INVALID_INDEX_ORDERS_SIZE,
+                )
             }
+            if (properties.isEmpty()) {
+                null
+            } else {
+                Index(
+                    name = input.name,
+                    unique = input.unique,
+                    properties = Properties(properties),
+                    orders = input.orders,
+                )
+            }
+        }
 
         // check for duplicate indices
         indices

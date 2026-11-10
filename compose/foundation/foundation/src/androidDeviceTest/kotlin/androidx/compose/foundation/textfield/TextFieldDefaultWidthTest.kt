@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.textfield
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
@@ -37,7 +38,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.ceil
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BaseTextFieldDefaultWidthTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     val density = Density(density = 1f, fontScale = 1f)
 
@@ -173,7 +173,8 @@ private fun DefaultWidthTextField(
     density: Density,
 ) {
     CompositionLocalProvider(LocalDensity provides density) {
-        androidx.compose.foundation.layout.Box {
+        Box {
+            @Suppress("DEPRECATION") // b/552879150
             BasicTextField(
                 value = text,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),

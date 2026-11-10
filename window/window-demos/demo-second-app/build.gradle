@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(37) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     defaultConfig {
         applicationId = "androidx.window.demo2"
     }
@@ -36,8 +36,8 @@ dependencies {
     api(libs.constraintLayout)
     implementation("androidx.core:core-ktx:1.8.0")
     // TODO(b/152245564) Conflicting dependencies cause IDE errors.
-    implementation("androidx.lifecycle:lifecycle-viewmodel:2.4.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
     implementation(project(":window:window-java"))
     implementation(project(":window:window-demos:demo-common"))

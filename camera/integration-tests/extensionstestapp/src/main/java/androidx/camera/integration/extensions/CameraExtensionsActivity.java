@@ -240,6 +240,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
                 Log.e(TAG, "Cannot find next camera id that supports the extensions mode");
                 return;
             }
+            mCurrentCameraId = nextCameraId;
             mCurrentCameraSelector = CameraSelectorUtil.createCameraSelectorById(mCurrentCameraId);
         } else {
             mCurrentCameraSelector = (mCurrentCameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
@@ -273,6 +274,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
     }
 
     @OptIn(markerClass = {ExperimentalCamera2Interop.class})
+    @SuppressWarnings("deprecation")
     boolean bindUseCasesWithCurrentExtensionMode() {
         if (!mExtensionsManager.isExtensionAvailable(mCurrentCameraSelector,
                 mCurrentExtensionMode)) {

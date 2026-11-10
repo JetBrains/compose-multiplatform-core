@@ -30,8 +30,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +60,7 @@ import androidx.compose.ui.semantics.elementFor
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
@@ -69,7 +73,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
 import kotlin.math.sqrt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -83,7 +86,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class OnGloballyPositionedTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
     fun handlesChildrenNodeMoveCorrectly() {
@@ -266,15 +269,14 @@ class OnGloballyPositionedTest {
 
         val changeLambda = mutableStateOf(true)
 
-        val layoutModifier =
-            Modifier.layout { measurable, constraints ->
-                layoutCalled = true
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) {
-                    placementCalled = true
-                    placeable.place(0, 0)
-                }
+        val layoutModifier = Modifier.layout { measurable, constraints ->
+            layoutCalled = true
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                placementCalled = true
+                placeable.place(0, 0)
             }
+        }
 
         rule.setContent {
             Box(
@@ -967,18 +969,16 @@ class OnGloballyPositionedTest {
         val line2 = HorizontalAlignmentLine(::min)
         val lineValue = 10
         rule.setContent {
-            val onPositioned =
-                Modifier.onGloballyPositioned { coordinates: LayoutCoordinates ->
-                    assertEquals(2, coordinates.providedAlignmentLines.size)
-                    assertEquals(lineValue, coordinates[line1])
-                    assertEquals(lineValue, coordinates[line2])
-                    latch.countDown()
-                }
-            val lineProvider =
-                Modifier.layout { measurable, constraints ->
-                    val placeable = measurable.measure(constraints)
-                    layout(0, 0, mapOf(line2 to lineValue)) { placeable.place(0, 0) }
-                }
+            val onPositioned = Modifier.onGloballyPositioned { coordinates: LayoutCoordinates ->
+                assertEquals(2, coordinates.providedAlignmentLines.size)
+                assertEquals(lineValue, coordinates[line1])
+                assertEquals(lineValue, coordinates[line2])
+                latch.countDown()
+            }
+            val lineProvider = Modifier.layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                layout(0, 0, mapOf(line2 to lineValue)) { placeable.place(0, 0) }
+            }
             Layout(modifier = onPositioned.then(lineProvider), content = {}) { _, _ ->
                 layout(0, 0, mapOf(line1 to lineValue)) {}
             }
@@ -1045,7 +1045,8 @@ class OnGloballyPositionedTest {
                         Modifier.padding(10).background(Color.Red).onGloballyPositioned {
                             coords = it
                         },
-                    ) { /* no-op */
+                    ) {
+                        /* no-op */
                     }
                 }
             }
@@ -1310,6 +1311,86 @@ class OnGloballyPositionedTest {
 
         assertThat(latch.await(1, TimeUnit.SECONDS)).isTrue()
         assertThat(contentPos).isEqualTo(IntOffset(100, 200))
+    }
+
+    @Test
+    fun callbacksAreCalledWhenMovedBetweenLayouts() {
+        var moveContent by mutableStateOf(false)
+        var lastPositionInRoot = Offset.Unspecified
+        var positionCallbackCount = 0
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                val movableBox = remember {
+                    movableContentOf {
+                        Box(
+                            Modifier.size(50.dp).onGloballyPositioned { coordinates ->
+                                lastPositionInRoot = coordinates.positionInRoot()
+                                positionCallbackCount++
+                            }
+                        )
+                    }
+                }
+
+                Box(Modifier.size(200.dp)) {
+                    if (moveContent) {
+                        Box(Modifier.offset(100.dp, 100.dp)) { movableBox() }
+                    } else {
+                        Box(Modifier.offset(10.dp, 10.dp)) { movableBox() }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(positionCallbackCount).isGreaterThan(0)
+            assertThat(lastPositionInRoot).isEqualTo(Offset(10f, 10f))
+        }
+
+        val initialCount = positionCallbackCount
+
+        rule.runOnIdle { moveContent = true }
+
+        rule.runOnIdle {
+            assertThat(positionCallbackCount).isGreaterThan(initialCount)
+            assertThat(lastPositionInRoot).isEqualTo(Offset(100f, 100f))
+        }
+    }
+
+    @Test
+    fun callbacksAreCalledWhenReused() {
+        var key by mutableStateOf(true)
+        var lastPositionInRoot = Offset.Unspecified
+        var positionCallbackCount = 0
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    ReusableContent(key) {
+                        Box(
+                            Modifier.offset(if (key) 10.dp else 20.dp, if (key) 10.dp else 30.dp)
+                                .size(50.dp)
+                                .onGloballyPositioned { coordinates ->
+                                    lastPositionInRoot = coordinates.positionInRoot()
+                                    positionCallbackCount++
+                                }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(positionCallbackCount).isEqualTo(1)
+            assertThat(lastPositionInRoot).isEqualTo(Offset(10f, 10f))
+        }
+
+        rule.runOnIdle { key = false }
+
+        rule.runOnIdle {
+            assertThat(positionCallbackCount).isEqualTo(2)
+            assertThat(lastPositionInRoot).isEqualTo(Offset(20f, 30f))
+        }
     }
 }
 

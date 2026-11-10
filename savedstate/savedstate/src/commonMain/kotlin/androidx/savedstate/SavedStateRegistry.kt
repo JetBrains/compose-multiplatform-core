@@ -17,86 +17,116 @@
 package androidx.savedstate
 
 import androidx.annotation.MainThread
-import androidx.lifecycle.Lifecycle
 import androidx.savedstate.internal.SavedStateRegistryImpl
 
 /**
- * An interface for plugging components that consumes and contributes to the saved state.
+ * Registry for components that consume and contribute to saved state.
  *
- * This objects lifetime is bound to the lifecycle of owning component: when activity or fragment is
- * recreated, new instance of the object is created as well.
+ * Use this registry to save and restore component state across process death or recreation.
  */
-public expect class SavedStateRegistry internal constructor(impl: SavedStateRegistryImpl) {
+public expect class SavedStateRegistry {
 
-    /** This interface marks a component that contributes to saved state. */
+    /** Creates an empty [SavedStateRegistry]. */
+    public constructor()
+
+    /**
+     * Creates a [SavedStateRegistry] initialized with [initialState].
+     *
+     * @param initialState The initial saved state to restore from.
+     */
+    public constructor(initialState: SavedState?)
+
+    internal constructor(impl: SavedStateRegistryImpl)
+
+    /**
+     * Contributes to the saved state.
+     *
+     * Implementations can optionally implement [SavedStateRestorer] to receive and restore state
+     * during the state restoration phase.
+     */
     public fun interface SavedStateProvider {
         /**
-         * Called to retrieve a state from a component before being killed so later the state can be
-         * received from [consumeRestoredStateForKey]
+         * Called to retrieve the state from a component before it is killed so the state can be
+         * retrieved later from [consumeRestoredStateForKey].
          *
-         * Returns `S` with your saved state.
+         * @return The [SavedState] containing the saved state.
          */
         public fun saveState(): SavedState
     }
 
     /**
-     * Whether the state was restored after creation and can be safely consumed with
-     * [consumeRestoredStateForKey].
+     * Restores state for a component.
      *
-     * [isRestored] == true if state was restored
+     * Implement this interface on a [SavedStateProvider] registered via
+     * [registerSavedStateProvider] to receive restored state automatically.
+     *
+     * The registry will invoke [restoreState] during the restoration phase or immediately upon
+     * registration if the state is already restored.
+     */
+    public fun interface SavedStateRestorer {
+        /**
+         * Called to restore the state of a component.
+         *
+         * @param savedState The [SavedState] containing the previously saved state, or `null` if no
+         *   state was previously saved for this component.
+         */
+        public fun restoreState(savedState: SavedState?)
+    }
+
+    /**
+     * Returns `true` if state has been restored and can be safely consumed with
+     * [consumeRestoredStateForKey], `false` otherwise.
      */
     public val isRestored: Boolean
 
     /**
-     * Consumes saved state previously supplied by [SavedStateProvider] registered via
-     * [registerSavedStateProvider] with the given `key`.
+     * Consumes the saved state previously supplied by a [SavedStateProvider] registered with the
+     * given [key].
      *
-     * This call clears an internal reference to returned saved state, so if you call it second time
-     * in the row it will return `null`.
+     * If the registered [SavedStateProvider] implements [SavedStateRestorer], the state is restored
+     * automatically during restoration, and calls to this method with the same key return `null`.
      *
-     * All unconsumed values will be saved during `onSaveInstanceState(SavedState savedState)`
+     * This call clears the internal reference to the returned saved state. Subsequent calls with
+     * the same key return `null`.
      *
-     * This method can be called after `super.onCreate(savedStateBundle)` of the corresponding
-     * component. Calling it before that will result in `IllegalArgumentException`.
-     * [Lifecycle.Event.ON_CREATE] can be used as a signal that a saved state can be safely
-     * consumed.
+     * All unconsumed values are preserved during state saving.
      *
-     * @param key a key with which [SavedStateProvider] was previously registered.
-     * @return `S` with the previously saved state or {@code null}
+     * @param key The key with which the [SavedStateProvider] was previously registered.
+     * @return The previously saved state, or `null` if none exists or it has already been consumed.
      */
     @MainThread public fun consumeRestoredStateForKey(key: String): SavedState?
 
     /**
-     * Registers a [SavedStateProvider] by the given `key`. This `savedStateProvider` will be called
-     * during state saving phase, returned object will be associated with the given `key` and can be
-     * used after the restoration via [.consumeRestoredStateForKey].
+     * Registers a [SavedStateProvider] with the given [key].
      *
-     * If there is unconsumed value with the same `key`, the value supplied by `savedStateProvider`
-     * will be overridden and will be written to resulting saved state.
+     * This [SavedStateProvider] will be called during state saving. The returned state is
+     * associated with the given [key] and can be consumed after restoration via
+     * [consumeRestoredStateForKey].
      *
-     * If a provider was already registered with the given `key`, an implementation should throw an
-     * [IllegalArgumentException]
+     * If the registered [provider] implements [SavedStateRestorer], its
+     * [SavedStateRestorer.restoreState] method is automatically invoked during state restoration,
+     * or immediately if state has already been restored.
      *
-     * @param key a key with which returned saved state will be associated
-     * @param provider savedStateProvider to get saved state.
+     * If a provider was already registered with the given [key], it is replaced with the new
+     * [provider].
+     *
+     * @param key The key to associate with the provider.
+     * @param provider The [SavedStateProvider] to register.
      */
     @MainThread public fun registerSavedStateProvider(key: String, provider: SavedStateProvider)
 
     /**
-     * Get a previously registered [SavedStateProvider].
+     * Returns the [SavedStateProvider] previously registered with [registerSavedStateProvider], or
+     * `null` if no provider has been registered with the given [key].
      *
-     * @param key The key used to register the [SavedStateProvider] when it was registered with
-     *   registerSavedStateProvider(String, SavedStateProvider).
-     *
-     * Returns the [SavedStateProvider] previously registered with [registerSavedStateProvider] or
-     * null if no provider has been registered with the given key.
+     * @param key The key used to register the [SavedStateProvider].
      */
     public fun getSavedStateProvider(key: String): SavedStateProvider?
 
     /**
-     * Unregisters a component previously registered by the given `key`
+     * Unregisters a component previously registered with the given [key].
      *
-     * @param key a key with which a component was previously registered.
+     * @param key The key with which the component was previously registered.
      */
     @MainThread public fun unregisterSavedStateProvider(key: String)
 }

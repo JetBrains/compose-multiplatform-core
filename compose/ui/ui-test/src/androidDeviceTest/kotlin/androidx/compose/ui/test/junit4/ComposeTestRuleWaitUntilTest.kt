@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.testutils.expectError
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
@@ -29,7 +30,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +39,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalTestApi::class)
 class ComposeTestRuleWaitUntilTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     companion object {
         private const val TestTag = "TestTag"
@@ -152,5 +152,91 @@ class ComposeTestRuleWaitUntilTest {
         ) {
             rule.waitUntilDoesNotExist(hasTestTag(TestTag), timeoutMillis = Timeout)
         }
+    }
+
+    @Test
+    fun waitUntilAtLeastOneExists_withUnmergedTree() {
+        rule.setContent {
+            Box(Modifier.semantics(mergeDescendants = true) {}.testTag("parent")) {
+                Box(Modifier.testTag("child"))
+            }
+        }
+
+        // This should time out because by default it uses merged tree and "child" is merged.
+        expectError<ComposeTimeoutException> {
+            rule.waitUntilAtLeastOneExists(hasTestTag("child"), timeoutMillis = Timeout)
+        }
+
+        // This should succeed because we explicitly use unmerged tree.
+        rule.waitUntilAtLeastOneExists(
+            hasTestTag("child"),
+            timeoutMillis = Timeout,
+            useUnmergedTree = true,
+        )
+    }
+
+    @Test
+    fun waitUntilDoesNotExist_withUnmergedTree() {
+        rule.setContent {
+            Box(Modifier.semantics(mergeDescendants = true) {}.testTag("parent")) {
+                Box(Modifier.testTag("child"))
+            }
+        }
+
+        // This should succeed by default because "child" is not in merged tree.
+        rule.waitUntilDoesNotExist(hasTestTag("child"), timeoutMillis = Timeout)
+
+        // This should throw because "child" IS in unmerged tree.
+        expectError<ComposeTimeoutException> {
+            rule.waitUntilDoesNotExist(
+                hasTestTag("child"),
+                timeoutMillis = Timeout,
+                useUnmergedTree = true,
+            )
+        }
+    }
+
+    @Test
+    fun waitUntilNodeCount_withUnmergedTree() {
+        rule.setContent {
+            Box(Modifier.semantics(mergeDescendants = true) {}.testTag("parent")) {
+                Box(Modifier.testTag("child"))
+                Box(Modifier.testTag("child"))
+            }
+        }
+
+        // This should time out because by default it uses merged tree and "child" is merged.
+        expectError<ComposeTimeoutException> {
+            rule.waitUntilNodeCount(hasTestTag("child"), count = 2, timeoutMillis = Timeout)
+        }
+
+        // This should succeed because we explicitly use unmerged tree.
+        rule.waitUntilNodeCount(
+            hasTestTag("child"),
+            count = 2,
+            timeoutMillis = Timeout,
+            useUnmergedTree = true,
+        )
+    }
+
+    @Test
+    fun waitUntilExactlyOneExists_withUnmergedTree() {
+        rule.setContent {
+            Box(Modifier.semantics(mergeDescendants = true) {}.testTag("parent")) {
+                Box(Modifier.testTag("child"))
+            }
+        }
+
+        // This should time out because by default it uses merged tree and "child" is merged.
+        expectError<ComposeTimeoutException> {
+            rule.waitUntilExactlyOneExists(hasTestTag("child"), timeoutMillis = Timeout)
+        }
+
+        // This should succeed because we explicitly use unmerged tree.
+        rule.waitUntilExactlyOneExists(
+            hasTestTag("child"),
+            timeoutMillis = Timeout,
+            useUnmergedTree = true,
+        )
     }
 }

@@ -30,16 +30,26 @@ public class DisplayBlendMode private constructor(private val value: Int) {
         /** Blending is not supported. */
         @JvmField public val NO_DISPLAY: DisplayBlendMode = DisplayBlendMode(0)
         /**
-         * Virtual content is added to the real world by adding the pixel values for each of Red,
-         * Green, and Blue components. Alpha is ignored. Black pixels will appear transparent.
+         * Blends virtual content with the real world by adding pixel values for RGB components.
+         * Alpha is ignored. Black pixels will appear transparent.
          */
         @JvmField public val ADDITIVE: DisplayBlendMode = DisplayBlendMode(1)
-        /**
-         * Virtual content is added to the real world by alpha blending the pixel values based on
-         * the Alpha component.
-         */
+        /** Alpha-blends pixel values to blend virtual content with the real world. */
         @JvmField public val ALPHA_BLEND: DisplayBlendMode = DisplayBlendMode(2)
     }
+
+    /**
+     * Returns a string representation of [DisplayBlendMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (value) {
+            0 -> "NO_DISPLAY"
+            1 -> "ADDITIVE"
+            2 -> "ALPHA_BLEND"
+            else -> "UNKNOWN($value)"
+        }
 }
 
 /** Contextual label describing the type of detected object. */
@@ -54,6 +64,20 @@ public class AugmentedObjectCategory private constructor(private val value: Int)
         /** Category value indicating the tracked object is believed to be a laptop. */
         @JvmField public val LAPTOP: AugmentedObjectCategory = AugmentedObjectCategory(3)
     }
+
+    /**
+     * Returns a string representation of [AugmentedObjectCategory] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (value) {
+            0 -> "UNKNOWN"
+            1 -> "KEYBOARD"
+            2 -> "MOUSE"
+            3 -> "LAPTOP"
+            else -> "UNKNOWN($value)"
+        }
 }
 
 /** Feature that allows tracking of and provides information about scene planes. */
@@ -65,19 +89,33 @@ public class PlaneTrackingMode private constructor(public val mode: Int) {
          * Horizontal and vertical planes will be tracked. Note that setting this mode will consume
          * additional runtime resources.
          *
+         * Supported device types:
+         * - Immersive
+         * - Mobile
+         *
          * Supported runtimes:
          * - OpenXR
          * - Play Services
          *
          * Required permissions:
          * - [SCENE_UNDERSTANDING_COARSE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE]
-         *   (OpenXR runtimes only)
-         * - [ACCESS_COARSE_LOCATION][android.Manifest.permission.ACCESS_COARSE_LOCATION] (Play
-         *   Services runtimes only)
-         * - [CAMERA][android.Manifest.permission.CAMERA] (Play Services runtimes only)
+         *   (Immersive devices only)
+         * - [CAMERA][android.Manifest.permission.CAMERA] (Mobile devices only)
          */
         @JvmField public val HORIZONTAL_AND_VERTICAL: PlaneTrackingMode = PlaneTrackingMode(1)
     }
+
+    /**
+     * Returns a string representation of [PlaneTrackingMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "HORIZONTAL_AND_VERTICAL"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /** Feature that allows tracking of the user's hands and hand joints. */
@@ -89,6 +127,9 @@ public class HandTrackingMode private constructor(public val mode: Int) {
          * Both the left and right hands will be tracked. Note that setting this mode will consume
          * additional runtime resources.
          *
+         * Supported device types:
+         * - Immersive
+         *
          * Supported runtimes:
          * - OpenXR
          *
@@ -97,6 +138,18 @@ public class HandTrackingMode private constructor(public val mode: Int) {
          */
         @JvmField public val BOTH: HandTrackingMode = HandTrackingMode(1)
     }
+
+    /**
+     * Returns a string representation of [HandTrackingMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "BOTH"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /** Feature that allows tracking of the AR device. */
@@ -108,31 +161,40 @@ public class DeviceTrackingMode private constructor(public val mode: Int) {
          */
         @JvmField public val DISABLED: DeviceTrackingMode = DeviceTrackingMode(0)
         /**
-         * The device pose will be tracked and the last known pose (6dof, including position &
-         * orientation) from the system at the time of runtime update will be provided. Note that
-         * there is generally a delay between the actual device pose and the pose provided by the
-         * system by the time of the update.
+         * Tracks device pose and provides the last known 6DoF (rotation and translation) pose from
+         * the system. Note that there is generally a delay between the actual device pose and the
+         * pose provided by the system by the time of the update.
+         *
+         * Supported device types:
+         * - Immersive
+         * - Mobile
+         * - Projected
          *
          * Supported runtimes:
          * - OpenXR
          * - Play Services
          *
          * Required permissions:
-         * - [CAMERA][android.Manifest.permission.CAMERA] (Play Services runtimes only)
+         * - [CAMERA][android.Manifest.permission.CAMERA] (Mobile devices only)
          */
         @JvmField public val SPATIAL: DeviceTrackingMode = DeviceTrackingMode(1)
 
         /**
-         * The device pose will be tracked and the last known pose from the system at the time of
-         * runtime update will be provided. Note that there is generally a delay between the actual
-         * device pose and the pose provided by the system by the time of the update.
+         * Tracks device pose and provides the last known pose from the system. Note that there is
+         * generally a delay between the actual device pose and the pose provided by the system by
+         * the time of the update.
+         *
+         * Supported device types:
+         * - Immersive
+         * - Mobile
+         * - Projected
          *
          * Supported runtimes:
          * - OpenXR
          * - Play Services
          *
          * Required permissions:
-         * - [CAMERA][android.Manifest.permission.CAMERA] (Play Services runtimes only)
+         * - [CAMERA][android.Manifest.permission.CAMERA] (Mobile devices only)
          */
         // TODO: remove this once we've migrated all 1P apps.
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -146,13 +208,15 @@ public class DeviceTrackingMode private constructor(public val mode: Int) {
         public val SPATIAL_LAST_KNOWN: DeviceTrackingMode = SPATIAL
 
         /**
-         * The device pose will be tracked with 3DoF (rotation only) and the last known pose from
-         * the system at the time of runtime update will be provided. Note that there is generally a
-         * delay between the actual device pose and the pose provided by the system by the time of
-         * the update.
+         * Tracks device pose with 3DoF (rotation only) and provides the last known pose from the
+         * system. Note that there is generally a delay between the actual device pose and the pose
+         * provided by the system by the time of the update.
+         *
+         * Supported device types:
+         * - Projected
          *
          * Supported runtimes:
-         * - Projected
+         * - Play Services
          */
         @ExperimentalInertialTrackingApi
         @JvmField
@@ -164,6 +228,19 @@ public class DeviceTrackingMode private constructor(public val mode: Int) {
         @JvmField
         public val INERTIAL_LAST_KNOWN: DeviceTrackingMode = INERTIAL
     }
+
+    /**
+     * Returns a string representation of [DeviceTrackingMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "SPATIAL"
+            2 -> "INERTIAL"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /** Feature that allows more accurate information about scene depth and meshes. */
@@ -175,28 +252,36 @@ public class DepthEstimationMode private constructor(public val mode: Int) {
         /**
          * Depth estimation will be enabled with raw depth and confidence.
          *
+         * Supported device types:
+         * - Immersive
+         * - Mobile (on supported devices)
+         *
          * Supported runtimes:
          * - OpenXR
          * - Play Services (on supported devices)
          *
          * Required permissions:
          * - [SCENE_UNDERSTANDING_FINE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE]
-         *   (OpenXR runtimes only)
-         * - [CAMERA][android.Manifest.permission.CAMERA] (Play Services runtimes only)
+         *   (Immersive devices only)
+         * - [CAMERA][android.Manifest.permission.CAMERA] (Mobile devices only)
          */
         @JvmField public val RAW_ONLY: DepthEstimationMode = DepthEstimationMode(1)
 
         /**
          * Depth estimation will be enabled with smooth depth and confidence.
          *
+         * Supported device types:
+         * - Immersive
+         * - Mobile (on supported devices)
+         *
          * Supported runtimes:
          * - OpenXR
          * - Play Services (on supported devices)
          *
          * Required permissions:
          * - [SCENE_UNDERSTANDING_FINE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE]
-         *   (OpenXR runtimes only)
-         * - [CAMERA][android.Manifest.permission.CAMERA] (Play Services runtimes only)
+         *   (Immersive devices only)
+         * - [CAMERA][android.Manifest.permission.CAMERA] (Mobile devices only)
          */
         @JvmField public val SMOOTH_ONLY: DepthEstimationMode = DepthEstimationMode(2)
 
@@ -204,14 +289,31 @@ public class DepthEstimationMode private constructor(public val mode: Int) {
          * Depth estimation will be enabled with both raw and smooth depth and confidence. Note that
          * setting this mode will consume additional runtime resources.
          *
+         * Supported device types:
+         * - Mobile (on supported devices)
+         *
          * Supported runtimes:
          * - Play Services (on supported devices)
          *
          * Required permissions:
-         * - [CAMERA][android.Manifest.permission.CAMERA] (Play Services runtimes only)
+         * - [CAMERA][android.Manifest.permission.CAMERA] (Mobile devices only)
          */
         @JvmField public val SMOOTH_AND_RAW: DepthEstimationMode = DepthEstimationMode(3)
     }
+
+    /**
+     * Returns a string representation of [DepthEstimationMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "RAW_ONLY"
+            2 -> "SMOOTH_ONLY"
+            3 -> "SMOOTH_AND_RAW"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /** Feature that allows anchors to be persisted through sessions. */
@@ -222,6 +324,9 @@ public class AnchorPersistenceMode private constructor(public val mode: Int) {
         /**
          * Anchors may be persisted and will be saved in the application's local storage.
          *
+         * Supported device types:
+         * - Immersive
+         *
          * Supported runtimes:
          * - OpenXR
          *
@@ -229,6 +334,18 @@ public class AnchorPersistenceMode private constructor(public val mode: Int) {
          */
         @JvmField public val LOCAL: AnchorPersistenceMode = AnchorPersistenceMode(1)
     }
+
+    /**
+     * Returns a string representation of [AnchorPersistenceMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "LOCAL"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /**
@@ -245,6 +362,9 @@ public class FaceTrackingMode private constructor(public val mode: Int) {
         /**
          * Blend shapes of the user's face will be tracked.
          *
+         * Supported device types:
+         * - Immersive
+         *
          * Supported runtimes:
          * - OpenXR
          *
@@ -256,6 +376,9 @@ public class FaceTrackingMode private constructor(public val mode: Int) {
         /**
          * Face meshes will be tracked using the front-facing camera.
          *
+         * Supported device types:
+         * - Mobile
+         *
          * Supported runtimes:
          * - Play Services
          *
@@ -266,6 +389,19 @@ public class FaceTrackingMode private constructor(public val mode: Int) {
         @JvmField
         public val MESHES: FaceTrackingMode = FaceTrackingMode(2)
     }
+
+    /**
+     * Returns a string representation of [FaceTrackingMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "BLEND_SHAPES"
+            2 -> "MESHES"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /**
@@ -298,9 +434,9 @@ public class GeospatialMode private constructor(public val mode: Int) {
          * The Geospatial API is enabled. `Geospatial` should enter the running state shortly after
          * this mode is set.
          *
-         * Using this mode requires your app do the following, depending on the Runtime:
+         * Using this mode requires your app do the following, depending on the device:
          *
-         * On mobile and projected devices:
+         * On mobile, projected and immersive devices:
          * - Include the
          *   [INTERNET](https://developer.android.com/training/basics/network-ops/connecting)
          *   permission to the app's AndroidManifest
@@ -325,14 +461,21 @@ public class GeospatialMode private constructor(public val mode: Int) {
          * and selected camera support enabling this mode. These checks are done in the call to
          * [Session.configure].
          *
-         * Supported runtimes:
-         * - Play Services (on supported devices)
+         * Supported device types:
+         * - Immersive (on supported devices)
+         * - Mobile (on supported devices)
          * - Projected
+         *
+         * Supported runtimes:
+         * - OpenXR (on supported devices)
+         * - Play Services (on supported devices)
          *
          * Required permissions:
          * - [INTERNET][android.Manifest.permission.INTERNET]
          * - [ACCESS_FINE_LOCATION][android.Manifest.permission.ACCESS_FINE_LOCATION]
-         * - [CAMERA][android.Manifest.permission.CAMERA] (Play Services runtimes only)
+         * - [SCENE_UNDERSTANDING_COARSE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE]
+         *   (Immersive devices only)
+         * - [CAMERA][android.Manifest.permission.CAMERA] (Mobile devices only)
          */
         @JvmField public val SPATIAL: GeospatialMode = GeospatialMode(1)
 
@@ -353,14 +496,30 @@ public class GeospatialMode private constructor(public val mode: Int) {
          * [Session.configure] to [GeospatialMode.INERTIAL] for power savings, and back to
          * [GeospatialMode.SPATIAL] for the accuracy needed.
          *
-         * Supported runtimes:
+         * Supported device types:
          * - Projected
+         *
+         * Supported runtimes:
+         * - Play Services
          *
          * Required permissions:
          * - [ACCESS_FINE_LOCATION][android.Manifest.permission.ACCESS_FINE_LOCATION]
          */
         @JvmField public val INERTIAL: GeospatialMode = GeospatialMode(2)
     }
+
+    /**
+     * Returns a string representation of [GeospatialMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "SPATIAL"
+            2 -> "INERTIAL"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /** Feature that allows tracking of the user's eyes. */
@@ -370,6 +529,9 @@ public class EyeTrackingMode private constructor(public val mode: Int) {
         @JvmField public val DISABLED: EyeTrackingMode = EyeTrackingMode(0)
         /**
          * Enables coarse eye tracking, providing general gaze direction without high precision.
+         *
+         * Supported device types:
+         * - Immersive
          *
          * Supported runtimes:
          * - OpenXR
@@ -381,6 +543,9 @@ public class EyeTrackingMode private constructor(public val mode: Int) {
         /**
          * Enables fine eye tracking, providing more precise gaze direction.
          *
+         * Supported device types:
+         * - Immersive
+         *
          * Supported runtimes:
          * - OpenXR
          *
@@ -389,6 +554,19 @@ public class EyeTrackingMode private constructor(public val mode: Int) {
          */
         @JvmField public val FINE_TRACKING: EyeTrackingMode = EyeTrackingMode(2)
     }
+
+    /**
+     * Returns a string representation of [EyeTrackingMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "COARSE_TRACKING"
+            2 -> "FINE_TRACKING"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /** Declare whether the Session should use the world-facing or user-facing camera. */
@@ -397,6 +575,9 @@ public class CameraFacingDirection private constructor(public val mode: Int) {
     public companion object {
         /**
          * Use the world-facing camera. This is the default behavior across all devices.
+         *
+         * Supported device types:
+         * - Mobile
          *
          * Supported runtimes:
          * - Play Services
@@ -409,6 +590,9 @@ public class CameraFacingDirection private constructor(public val mode: Int) {
         /**
          * Use the user-facing camera.
          *
+         * Supported device types:
+         * - Mobile
+         *
          * Supported runtimes:
          * - Play Services
          *
@@ -417,6 +601,18 @@ public class CameraFacingDirection private constructor(public val mode: Int) {
          */
         @JvmField public val USER: CameraFacingDirection = CameraFacingDirection(1)
     }
+
+    /**
+     * Returns a string representation of [CameraFacingDirection] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "WORLD"
+            1 -> "USER"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /** Feature that allows tracking of and provides information about QR codes. */
@@ -428,6 +624,9 @@ public class QrCodeTrackingMode private constructor(public val mode: Int) {
         /**
          * Used for tracking moving QR codes. It has the highest accuracy, the lowest latency and
          * the highest power consumption.
+         *
+         * Supported device types:
+         * - Immersive
          *
          * Supported runtimes:
          * - OpenXR
@@ -442,6 +641,9 @@ public class QrCodeTrackingMode private constructor(public val mode: Int) {
          * consumption in comparison to dynamic mode. If a static QR code is moving, it will be
          * updated with a much higher latency.
          *
+         * Supported device types:
+         * - Immersive
+         *
          * Supported runtimes:
          * - OpenXR
          *
@@ -450,6 +652,85 @@ public class QrCodeTrackingMode private constructor(public val mode: Int) {
          */
         @JvmField public val STATIC: QrCodeTrackingMode = QrCodeTrackingMode(2)
     }
+
+    /**
+     * Returns a string representation of [QrCodeTrackingMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "DYNAMIC"
+            2 -> "STATIC"
+            else -> "UNKNOWN($mode)"
+        }
+}
+
+/** Type of physical object to be tracked by spatial annotations. */
+@ExperimentalSpatialAnnotationsApi
+public class SpatialAnnotationTrackingMode private constructor(public val mode: Int) {
+    public companion object {
+        /** Spatial annotations will not be tracked. */
+        @JvmField
+        public val DISABLED: SpatialAnnotationTrackingMode = SpatialAnnotationTrackingMode(0)
+
+        /**
+         * Unlocks basic 3D point tracking.
+         *
+         * Supported device types:
+         * - Immersive
+         *
+         * Supported runtimes:
+         * - OpenXR
+         *
+         * Required permissions:
+         * - [SCENE_UNDERSTANDING_FINE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE]
+         */
+        private val POINT: SpatialAnnotationTrackingMode = SpatialAnnotationTrackingMode(1)
+
+        /**
+         * Unlocks 3D quadrilateral tracking, and inherently includes POINT capabilities.
+         *
+         * Supported device types:
+         * - Immersive
+         *
+         * Supported runtimes:
+         * - OpenXR
+         *
+         * Required permissions:
+         * - [SCENE_UNDERSTANDING_FINE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE]
+         */
+        @JvmField public val QUAD: SpatialAnnotationTrackingMode = SpatialAnnotationTrackingMode(2)
+
+        /**
+         * Unlocks high-fidelity 2D segmentation masks, and inherently includes QUAD and POINT
+         * capabilities.
+         *
+         * Supported device types:
+         * - Immersive
+         *
+         * Supported runtimes:
+         * - OpenXR
+         *
+         * Required permissions:
+         * - [SCENE_UNDERSTANDING_FINE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE]
+         */
+        private val MASK: SpatialAnnotationTrackingMode = SpatialAnnotationTrackingMode(3)
+    }
+
+    /**
+     * Returns a string representation of [SpatialAnnotationTrackingMode] for debugging. Note: Not
+     * intended for production use.
+     */
+    override fun toString(): String =
+        when (mode) {
+            0 -> "DISABLED"
+            1 -> "POINT"
+            2 -> "QUAD"
+            3 -> "MASK"
+            else -> "UNKNOWN($mode)"
+        }
 }
 
 /** A device capability that determines what type of rendering is capable on an [XrDevice]. */
@@ -461,6 +742,18 @@ public class RenderingMode private constructor(private val value: Int) {
         /** The device supports binocular (stereoscopic) rendering. */
         @JvmField public val STEREO: RenderingMode = RenderingMode(1)
     }
+
+    /**
+     * Returns a string representation of [RenderingMode] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        when (value) {
+            0 -> "MONO"
+            1 -> "STEREO"
+            else -> "UNKNOWN($value)"
+        }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -490,7 +783,6 @@ public fun DepthEstimationMode.toInternalDepthEstimationMode(): InternalDepthEst
         else -> throw IllegalStateException("Invalid DepthEstimationMode")
     }
 
-@OptIn(PreviewSpatialApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun GeospatialMode.toInternalGeospatialMode(): InternalGeospatialMode =
     when (this) {

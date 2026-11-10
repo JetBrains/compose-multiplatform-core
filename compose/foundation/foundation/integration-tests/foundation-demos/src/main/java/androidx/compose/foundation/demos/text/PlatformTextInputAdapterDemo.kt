@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.Divider
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
@@ -83,9 +84,8 @@ fun PlatformTextInputAdapterDemo() {
     val textFieldState = remember { WackyTextState("") }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row {
-            var value by remember { mutableStateOf("") }
             Text("Standard text field: ")
-            TextField(value = value, onValueChange = { value = it })
+            TextField(rememberTextFieldState())
         }
         Divider()
         Row {
@@ -200,37 +200,36 @@ private class WackyTextFieldModifierNode(private val state: WackyTextState) :
         if (isFocused == focusState.isFocused) return
         isFocused = focusState.isFocused
         if (isFocused) {
-            job =
-                coroutineScope.launch {
+            job = coroutineScope.launch {
 
-                    // In a real app, creating this session would be platform-specific code.
-                    // This will cancel any previous request.
-                    establishTextInputSession {
-                        val imm =
-                            view.context.getSystemService(Context.INPUT_METHOD_SERVICE)
-                                as InputMethodManager
+                // In a real app, creating this session would be platform-specific code.
+                // This will cancel any previous request.
+                establishTextInputSession {
+                    val imm =
+                        view.context.getSystemService(Context.INPUT_METHOD_SERVICE)
+                            as InputMethodManager
 
-                        launch {
-                            snapshotFlow { state.selection }
-                                .collectLatest { selection ->
-                                    imm.updateSelection(view, selection.start, selection.end, 0, 0)
-                                }
-                        }
+                    launch {
+                        snapshotFlow { state.selection }
+                            .collectLatest { selection ->
+                                imm.updateSelection(view, selection.start, selection.end, 0, 0)
+                            }
+                    }
 
-                        startInputMethod { outAttrs ->
-                            Log.d(TAG, "creating input connection for $state")
+                    startInputMethod { outAttrs ->
+                        Log.d(TAG, "creating input connection for $state")
 
-                            outAttrs.initialSelStart = state.buffer.length
-                            outAttrs.initialSelEnd = state.buffer.length
-                            outAttrs.inputType = InputType.TYPE_CLASS_TEXT
-                            EditorInfoCompat.setInitialSurroundingText(outAttrs, state.toString())
-                            outAttrs.imeOptions =
-                                EditorInfo.IME_ACTION_DONE or EditorInfo.IME_FLAG_NO_FULLSCREEN
-                            state.refresh = Unit
-                            WackyInputConnection(state, view)
-                        }
+                        outAttrs.initialSelStart = state.buffer.length
+                        outAttrs.initialSelEnd = state.buffer.length
+                        outAttrs.inputType = InputType.TYPE_CLASS_TEXT
+                        EditorInfoCompat.setInitialSurroundingText(outAttrs, state.toString())
+                        outAttrs.imeOptions =
+                            EditorInfo.IME_ACTION_DONE or EditorInfo.IME_FLAG_NO_FULLSCREEN
+                        state.refresh = Unit
+                        WackyInputConnection(state, view)
                     }
                 }
+            }
         } else {
             job?.cancel()
             job = null

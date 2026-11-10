@@ -29,6 +29,7 @@ import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.creationState
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.graphics.shapes.RoundedPolygon
@@ -47,11 +48,11 @@ internal constructor(
         get() = remoteCanvas.creationState
 
     /** The width of the drawing area as a [RemoteFloat]. */
-    public val width: RemoteFloat
+    public open val width: RemoteFloat
         get() = remoteCanvas.remote.component.width
 
     /** The height of the drawing area as a [RemoteFloat]. */
-    public val height: RemoteFloat
+    public open val height: RemoteFloat
         get() = remoteCanvas.remote.component.height
 
     /** The center of the drawing area as a [RemoteOffset]. */
@@ -67,6 +68,14 @@ internal constructor(
         block()
     }
 
+    /**
+     * Draws a rectangle with the given [paint], [topLeft] offset, and [size].
+     *
+     * @sample androidx.compose.remote.creation.compose.samples.RemoteCanvasRectSample
+     * @param paint The [RemotePaint] to use for drawing the rectangle.
+     * @param topLeft The top left offset of the rectangle.
+     * @param size The size of the rectangle.
+     */
     public fun drawRect(
         paint: RemotePaint?,
         topLeft: RemoteOffset = RemoteOffset.Zero,
@@ -99,17 +108,15 @@ internal constructor(
     }
 
     /** Draws a circle. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun drawCircle(
         paint: RemotePaint?,
-        center: RemoteOffset = this@RemoteDrawScope.center,
         radius: RemoteFloat,
+        center: RemoteOffset = this@RemoteDrawScope.center,
     ) {
         RemoteSize(radius * 2f, radius * 2f)
         remoteCanvas.drawCircle(center.x, center.y, radius, paint)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun drawOval(
         paint: RemotePaint?,
         topLeft: RemoteOffset = RemoteOffset.Zero,
@@ -145,7 +152,6 @@ internal constructor(
     }
 
     /** Draws a line. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun drawLine(paint: RemotePaint?, start: RemoteOffset, end: RemoteOffset) {
         remoteCanvas.drawLine(start.x, start.y, end.x, end.y, paint)
     }
@@ -190,8 +196,18 @@ internal constructor(
 
     /** Draws a path. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun drawPath(
+        path: RemotePath,
+        pathFillType: PathFillType = PathFillType.NonZero,
+        paint: RemotePaint?,
+    ) {
+        remoteCanvas.drawPath(path, pathFillType, paint)
+    }
+
+    /** Draws a path. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun drawPath(path: RemotePath, paint: RemotePaint?) {
-        remoteCanvas.drawPath(path, paint)
+        remoteCanvas.drawPath(path, paint = paint)
     }
 
     /** Draws a rounded polygon. */
@@ -235,12 +251,20 @@ internal constructor(
         text: RemoteString,
         anchorX: RemoteFloat,
         anchorY: RemoteFloat,
+        paint: RemotePaint? = null,
         panX: RemoteFloat = 0f.rf,
         panY: RemoteFloat = 0f.rf,
         flags: Int = 0,
-        paint: RemotePaint?,
     ) {
-        remoteCanvas.drawAnchoredText(text, anchorX, anchorY, panX, panY, flags, paint)
+        remoteCanvas.drawAnchoredText(
+            text = text,
+            anchorX = anchorX,
+            anchorY = anchorY,
+            panx = panX,
+            pany = panY,
+            flags = flags,
+            paint = paint,
+        )
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -325,8 +349,10 @@ internal constructor(
      * @param centerY The y-coordinate of the circle's center.
      * @param radius The radius of the circle.
      * @param startAngle The starting angle for the text.
-     * @param warpRadiusOffset the offset of the text from the circle.
-     * @param paint paint of the text
+     * @param warpRadiusOffset The offset of the text from the circle.
+     * @param paint Paint of the text.
+     * @param alignment The alignment of the text relative to start.
+     * @param placement The placement inside or outside the circle.
      */
     public fun drawTextOnCircle(
         text: RemoteString,
@@ -336,6 +362,8 @@ internal constructor(
         startAngle: RemoteFloat,
         warpRadiusOffset: RemoteFloat,
         paint: RemotePaint? = null,
+        alignment: CircularAlignment = CircularAlignment.Center,
+        placement: CircularPlacement = CircularPlacement.Outside,
     ) {
         remoteCanvas.drawTextOnCircle(
             text,
@@ -344,10 +372,36 @@ internal constructor(
             radius,
             startAngle,
             warpRadiusOffset,
-            DrawTextOnCircle.Alignment.CENTER,
-            DrawTextOnCircle.Placement.OUTSIDE,
+            alignment.toCore(),
+            placement.toCore(),
             paint,
         )
+    }
+
+    /** Alignment of text along a circular path. */
+    public enum class CircularAlignment {
+        Start,
+        Center,
+        End;
+
+        internal fun toCore(): DrawTextOnCircle.Alignment =
+            when (this) {
+                Start -> DrawTextOnCircle.Alignment.START
+                Center -> DrawTextOnCircle.Alignment.CENTER
+                End -> DrawTextOnCircle.Alignment.END
+            }
+    }
+
+    /** Placement of text relative to the circular path. */
+    public enum class CircularPlacement {
+        Outside,
+        Inside;
+
+        internal fun toCore(): DrawTextOnCircle.Placement =
+            when (this) {
+                Outside -> DrawTextOnCircle.Placement.OUTSIDE
+                Inside -> DrawTextOnCircle.Placement.INSIDE
+            }
     }
 
     /** Clips the drawing area to the specified rectangle and executes [block] within it. */

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.ReusableContent
+import androidx.compose.runtime.ReusableContentHost
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,10 +58,7 @@ import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,10 +66,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FocusTargetAttachDetachTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
-
-    @After
-    fun resetTouchMode() = InstrumentationRegistry.getInstrumentation().resetInTouchModeCompat()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun reorderedFocusRequesterModifiers_onFocusChangedInSameModifierChain() {
@@ -1664,6 +1659,33 @@ class FocusTargetAttachDetachTest {
 
         // Act.
         rule.runOnIdle { moveContent = true }
+
+        // Assert.
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
+    }
+
+    @Test
+    fun reusedContent_clearsFocusOnReset() {
+        // Arrange.
+        val focusTarget = FocusTargetNode()
+        val focusRequester = FocusRequester()
+        var active by mutableStateOf(true)
+        rule.setFocusableContent {
+            ReusableContentHost(active) {
+                Box(
+                    Modifier.size(50.dp)
+                        .focusRequester(focusRequester)
+                        .then(elementFor(instance = focusTarget))
+                )
+            }
+        }
+        rule.runOnIdle {
+            focusRequester.requestFocus()
+            assertThat(focusTarget.focusState).isEqualTo(Active)
+        }
+
+        // Act.
+        rule.runOnIdle { active = false }
 
         // Assert.
         rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }

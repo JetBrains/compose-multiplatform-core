@@ -245,11 +245,11 @@ internal class CredentialProviderBeginSignInController(context: Context) :
                 "When attempting to convert get response, " + "null credential found"
             )
         }
-        return GetCredentialResponse(cred)
+        return GetCredentialResponse(listOf(cred))
     }
 
     private fun createGoogleIdCredential(response: SignInCredential): GoogleIdTokenCredential {
-        var cred =
+        val cred =
             GoogleIdTokenCredential.Builder()
                 .setId(response.id)
                 .setIdToken(response.googleIdToken!!)

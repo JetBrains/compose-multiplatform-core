@@ -15,9 +15,15 @@
  */
 package androidx.compose.material3
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -39,6 +45,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsEqualTo
@@ -56,7 +63,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,7 +70,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class SplitButtonTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun filledSplitButton_contentDisplay() {
@@ -691,6 +697,157 @@ class SplitButtonTest {
             64.dp,
             "end padding for leading button",
         )
+    }
+
+    @Test
+    fun splitButton_leadingFillMaxWidth_horizontalScroll_noCrash() {
+        // Make sure that when weight or fillMaxWidth is applied in an infinity width container,
+        // it handles the width correctly
+        rule.setMaterialContent(lightColorScheme()) {
+            Row(Modifier.horizontalScroll(rememberScrollState())) {
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.LeadingButton(
+                            onClick = { /* Do Nothing */ },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Label")
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.TrailingButton(onClick = { /* Do Nothing */ }) {
+                            Icon(
+                                Icons.Outlined.KeyboardArrowDown,
+                                contentDescription = "Trailing Icon",
+                            )
+                        }
+                    },
+                )
+            }
+        }
+
+        rule.onNodeWithText("Label").assertIsDisplayed()
+    }
+
+    @Test
+    fun leadingButton_standalone_doesNotStretchHeight() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.height(200.dp)) {
+                SplitButtonDefaults.LeadingButton(
+                    onClick = {},
+                    modifier = Modifier.testTag("leadingButton"),
+                ) {
+                    Text("Label")
+                }
+            }
+        }
+
+        rule
+            .onNodeWithTag("leadingButton")
+            .assertHeightIsEqualTo(SplitButtonSmallTokens.ContainerHeight)
+    }
+
+    @Test
+    fun trailingButton_standalone_doesNotStretchHeight() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.height(200.dp)) {
+                SplitButtonDefaults.TrailingButton(
+                    onClick = {},
+                    modifier = Modifier.testTag("trailingButton"),
+                ) {
+                    Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null)
+                }
+            }
+        }
+
+        rule
+            .onNodeWithTag("trailingButton")
+            .assertHeightIsEqualTo(SplitButtonSmallTokens.ContainerHeight)
+    }
+
+    @Test
+    fun splitButton_stretchesButtonsToMaxHeight() {
+        val forcedHeight = 100.dp
+        rule.setMaterialContent(lightColorScheme()) {
+            SplitButtonLayout(
+                modifier = Modifier.height(forcedHeight),
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = {},
+                        modifier = Modifier.testTag("leadingButton"),
+                    ) {
+                        Text("Label")
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        onClick = {},
+                        modifier = Modifier.testTag("trailingButton"),
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null)
+                    }
+                },
+            )
+        }
+
+        rule.onNodeWithTag("leadingButton").assertHeightIsEqualTo(forcedHeight)
+        rule.onNodeWithTag("trailingButton").assertHeightIsEqualTo(forcedHeight)
+    }
+
+    @Test
+    fun splitButton_trailingMatchLeadingHeight() {
+        val forcedHeight = 100.dp
+        rule.setMaterialContent(lightColorScheme()) {
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = {},
+                        modifier = Modifier.testTag("leadingButton").height(100.dp),
+                    ) {
+                        Text("Label")
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        onClick = {},
+                        modifier = Modifier.testTag("trailingButton"),
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null)
+                    }
+                },
+            )
+        }
+
+        rule.onNodeWithTag("leadingButton").assertHeightIsEqualTo(forcedHeight)
+        rule.onNodeWithTag("trailingButton").assertHeightIsEqualTo(forcedHeight)
+    }
+
+    @Test
+    fun splitButton_leadingMatchTrailingHeight() {
+        val forcedHeight = 100.dp
+        rule.setMaterialContent(lightColorScheme()) {
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = {},
+                        modifier = Modifier.testTag("leadingButton"),
+                    ) {
+                        Text("Label")
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        onClick = {},
+                        modifier = Modifier.testTag("trailingButton").height(100.dp),
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null)
+                    }
+                },
+            )
+        }
+
+        rule.onNodeWithTag("leadingButton").assertHeightIsEqualTo(forcedHeight)
+        rule.onNodeWithTag("trailingButton").assertHeightIsEqualTo(forcedHeight)
     }
 }
 

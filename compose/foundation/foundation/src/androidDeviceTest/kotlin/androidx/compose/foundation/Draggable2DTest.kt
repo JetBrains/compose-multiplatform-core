@@ -62,7 +62,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert
@@ -75,8 +74,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class Draggable2DTest {
 
-    val testDispatcher = StandardTestDispatcher()
-    @get:Rule val rule = createComposeRule(testDispatcher)
+    @get:Rule val rule = createComposeRule()
 
     private val draggable2DBoxTag = "drag2DTag"
 
@@ -143,13 +141,12 @@ class Draggable2DTest {
             down(center)
             moveBy(Offset(100f, 100f))
         }
-        val prevTotal =
-            rule.runOnIdle {
-                assertThat(total.x).isGreaterThan(0f)
-                assertThat(total.y).isGreaterThan(0f)
-                enabled.value = false
-                total
-            }
+        val prevTotal = rule.runOnIdle {
+            assertThat(total.x).isGreaterThan(0f)
+            assertThat(total.y).isGreaterThan(0f)
+            enabled.value = false
+            total
+        }
         rule.onNodeWithTag(draggable2DBoxTag).performTouchInput { moveBy(Offset(100f, 100f)) }
         rule.runOnIdle { assertThat(total).isEqualTo(prevTotal) }
     }
@@ -380,7 +377,7 @@ class Draggable2DTest {
 
     @Test
     fun draggable2D_resumesNormally_whenInterruptedWithHigherPriority() =
-        runTest(testDispatcher) {
+        runTest(rule.mainClock.scheduler) {
             var total = Offset.Zero
             var dragStopped = 0f
             val state = Draggable2DState { total += it }
@@ -391,12 +388,11 @@ class Draggable2DTest {
                 down(center)
                 moveBy(Offset(100f, 100f))
             }
-            val prevTotal =
-                rule.runOnIdle {
-                    assertThat(total.x).isGreaterThan(0f)
-                    assertThat(total.y).isGreaterThan(0f)
-                    total
-                }
+            val prevTotal = rule.runOnIdle {
+                assertThat(total.x).isGreaterThan(0f)
+                assertThat(total.y).isGreaterThan(0f)
+                total
+            }
             state.drag(MutatePriority.PreventUserInput) { dragBy(Offset(123f, 123f)) }
             rule.runOnIdle {
                 assertThat(total).isEqualTo(prevTotal + Offset(123f, 123f))
@@ -758,8 +754,9 @@ class Draggable2DTest {
                             enabled = enabled.value,
                             state = rememberDraggable2DState {},
                             onDragStopped = { _ ->
-                                runningJob =
-                                    scope.launch { delay(10_000L) } // long running operation
+                                runningJob = scope.launch {
+                                    delay(10_000L)
+                                } // long running operation
                             },
                         )
             )

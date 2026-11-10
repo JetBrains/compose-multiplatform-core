@@ -806,6 +806,16 @@ public class MockRemoteContext extends RemoteContext {
         stringBuilder.append("hapticEffect ").append(type).append("\n");
     }
 
+    @Override
+    public void loadSound(int soundId, byte @NonNull [] data) {
+        stringBuilder.append("loadSound ").append(soundId).append("\n");
+    }
+
+    @Override
+    public void playSound(int soundId) {
+        stringBuilder.append("playSound ").append(soundId).append("\n");
+    }
+
     /**
      * Utility to convert a path of float to a string
      *
@@ -984,6 +994,7 @@ public class MockRemoteContext extends RemoteContext {
     public void overrideInteger(int id, int value) {
         stringBuilder.append("overrideInteger(").append(id).append(")").append(value).append("\n");
         integerCache.put(id, value);
+        mRemoteComposeState.overrideInteger(id, value);
         warnListeners(id);
     }
 
@@ -1096,5 +1107,10 @@ public class MockRemoteContext extends RemoteContext {
                 .append(mode)
                 .append("\n");
         super.setRootContentBehavior(scroll, alignment, sizing, mode);
+    }
+
+    @Override
+    public void clearVariables() {
+        varNamesMap.clear();
     }
 }

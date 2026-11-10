@@ -74,7 +74,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -83,7 +82,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class InterceptPlatformTextInputTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var testNode: TestNode
     private lateinit var coroutineScope: CoroutineScope
@@ -274,18 +273,17 @@ class InterceptPlatformTextInputTest {
         var interceptor by mutableStateOf(interceptor1)
         setContent { InterceptPlatformTextInput(interceptor) { FakeTextField() } }
 
-        val sessionJob =
-            rule.runOnIdle {
-                coroutineScope.launch {
-                    testNode.establishTextInputSession {
-                        try {
-                            startInputMethod(TaggedRequest())
-                        } finally {
-                            downstreamSessionCancelled = true
-                        }
+        val sessionJob = rule.runOnIdle {
+            coroutineScope.launch {
+                testNode.establishTextInputSession {
+                    try {
+                        startInputMethod(TaggedRequest())
+                    } finally {
+                        downstreamSessionCancelled = true
                     }
                 }
             }
+        }
 
         rule.runOnIdle {
             assertTrue(sessionJob.isActive)
@@ -448,15 +446,14 @@ class InterceptPlatformTextInputTest {
             }
         }
 
-        val testJob =
-            rule.runOnIdle {
-                coroutineScope.launch {
-                    testNode.establishTextInputSession {
-                        // This context should be propagated to startInputMethod.
-                        startInputMethod(TaggedRequest("root"))
-                    }
+        val testJob = rule.runOnIdle {
+            coroutineScope.launch {
+                testNode.establishTextInputSession {
+                    // This context should be propagated to startInputMethod.
+                    startInputMethod(TaggedRequest("root"))
                 }
             }
+        }
         // Let the session start.
         rule.runOnIdle { assertThat(requests).containsExactly("one wrapping root").inOrder() }
 
@@ -497,15 +494,14 @@ class InterceptPlatformTextInputTest {
                 InterceptPlatformTextInput(interceptor) { FakeTextField() }
             }
         }
-        val testJob =
-            rule.runOnIdle {
-                coroutineScope.launch {
-                    testNode.establishTextInputSession {
-                        // This context should be propagated to startInputMethod.
-                        startInputMethod(TaggedRequest("root"))
-                    }
+        val testJob = rule.runOnIdle {
+            coroutineScope.launch {
+                testNode.establishTextInputSession {
+                    // This context should be propagated to startInputMethod.
+                    startInputMethod(TaggedRequest("root"))
                 }
             }
+        }
         // Let the session start.
         rule.runOnIdle { assertThat(requests).isEmpty() }
 

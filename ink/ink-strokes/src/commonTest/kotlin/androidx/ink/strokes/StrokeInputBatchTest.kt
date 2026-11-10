@@ -16,13 +16,16 @@
 
 package androidx.ink.strokes
 
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.brush.InputToolType
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
 /** Tests [ImmutableStrokeInputBatch] and [MutableStrokeInputBatch]. */
+@OptIn(InkInternalOnlyApi::class, ExperimentalInkAnimationApi::class)
 class StrokeInputBatchTest {
 
     private val builder = MutableStrokeInputBatch()
@@ -42,6 +45,7 @@ class StrokeInputBatchTest {
     @Test
     fun strokeInputBatchNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
+            @Suppress("UNUSED_VARIABLE")
             val unused =
                 MutableStrokeInputBatch().add(InputToolType.STYLUS, 1f, 2f, 3L).toImmutable()
         }
@@ -124,7 +128,7 @@ class StrokeInputBatchTest {
             assertFailsWith<IllegalArgumentException> { builder.add(badOrientation) }
         assertThat(orientationError.message)
             .contains(
-                "`StrokeInput::orientation` must be -1 or in the range [0, 2 * pi). Got: 3183.1π"
+                "`StrokeInput::orientation` must be -1 or in the range [0, 2 * pi]. Got: 3183.1π"
             )
         assertThat(builder.size).isEqualTo(0)
         assertThat(builder.toImmutable().size).isEqualTo(0)

@@ -23,6 +23,7 @@ import androidx.appfunctions.compiler.core.metadata.AppFunctionMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionNamedDataTypeMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionStringPatternDocument
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 
@@ -33,9 +34,11 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
     doc.createElement(elementName).apply {
         appendChild(doc.createElementWithTextNode("id", id))
 
-        appendChild(
-            doc.createElementWithTextNode("enabledByDefault", isEnabledByDefault.toString())
-        )
+        if (isEnabledByDefault != null) {
+            appendChild(
+                doc.createElementWithTextNode("enabledByDefault", isEnabledByDefault.toString())
+            )
+        }
 
         if (scope != null) {
             appendChild(doc.createElementWithTextNode("scope", scope))
@@ -63,6 +66,19 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
 
         if (deprecation != null) {
             appendChild(deprecation.toXmlElement(doc, "deprecation"))
+        }
+
+        if (accessLevel != null) {
+            appendChild(doc.createElementWithTextNode("accessLevel", accessLevel))
+        }
+
+        if (isCompatEnforcementEnabled != null) {
+            appendChild(
+                doc.createElementWithTextNode(
+                    "isCompatEnforcementEnabled",
+                    isCompatEnforcementEnabled.toString(),
+                )
+            )
         }
     }
 
@@ -120,7 +136,24 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
             appendChild(doc.createElementWithTextNode("enumValues", enumValue))
         }
 
+        for (pattern in patterns) {
+            appendChild(pattern.toXmlElement(doc, "patterns"))
+        }
+        if (format != null) {
+            appendChild(doc.createElementWithTextNode("format", format))
+        }
+
         appendChild(doc.createElementWithTextNode("type", type.toString()))
+    }
+
+private fun AppFunctionStringPatternDocument.toXmlElement(
+    doc: Document,
+    elementName: String,
+): Element =
+    doc.createElement(elementName).apply {
+        appendChild(doc.createElementWithTextNode("id", id))
+        appendChild(doc.createElementWithTextNode("type", type.toString()))
+        appendChild(doc.createElementWithTextNode("value", value))
     }
 
 private fun AppFunctionNamedDataTypeMetadataDocument.toXmlElement(

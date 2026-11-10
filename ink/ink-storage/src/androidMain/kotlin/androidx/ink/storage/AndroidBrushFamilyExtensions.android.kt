@@ -22,6 +22,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.BrushFamily
+import androidx.ink.brush.ExperimentalInkBrushCompatibilityApi
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.brush.Version
 import java.io.ByteArrayOutputStream
@@ -33,7 +34,7 @@ import java.io.OutputStream
 public fun interface BrushFamilyDecodeCallback {
     /**
      * Called for each texture used by a BrushFamily when that BrushFamily is decoded. In the
-     * implementation of this method, the returned String should be mapped to [bitmap] (or a client-
+     * implementation of this method, the returned string should be mapped to [bitmap] (or a client-
      * provided replacement) in the supporting [TextureBitmapStore].
      *
      * @param clientTextureId the ID for this texture in the serialized form of the BrushFamily.
@@ -61,8 +62,9 @@ public fun interface BrushFamilyDecodeCallback {
  *   that always returns `null`.
  * @receiver The [BrushFamily] object to encode.
  */
-public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureBitmapStore): Unit =
+public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureBitmapStore) {
     encode(output, textureBitmapStore.toTexturePngBytesLookup())
+}
 
 /**
  * Write a gzip-compressed `ink.proto.BrushFamily` binary proto message representing the [List] of
@@ -82,10 +84,13 @@ public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureB
  * @receiver The [List] of [BrushFamily] objects to encode.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkBrushCompatibilityApi
 public fun List<BrushFamily>.encodeMultiple(
     output: OutputStream,
     textureBitmapStore: TextureBitmapStore,
-): Unit = encodeMultiple(output, textureBitmapStore.toTexturePngBytesLookup())
+) {
+    encodeMultiple(output, textureBitmapStore.toTexturePngBytesLookup())
+}
 
 /**
  * Read a serialized [BrushFamily] from the given [InputStream] and parse it into a [BrushFamily],
@@ -129,6 +134,7 @@ public fun BrushFamily.Companion.decode(
  *   message, or any of the corresponding [BrushFamily]s are invalid.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkBrushCompatibilityApi
 public fun BrushFamily.Companion.decodeMultiple(
     input: InputStream,
     maxVersion: Version,
@@ -138,6 +144,7 @@ public fun BrushFamily.Companion.decodeMultiple(
 
 /** See [decodeMultiple] above. This overload uses [Version.MAX_SUPPORTED]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkBrushCompatibilityApi
 @SuppressWarnings("ExecutorRegistration")
 public fun BrushFamily.Companion.decodeMultiple(
     input: InputStream,
@@ -236,6 +243,7 @@ public object AndroidBrushFamilySerialization {
      *   [TextureBitmapStore] that always returns `null`.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @JvmStatic
     @Throws(IOException::class)
     public fun encodeMultiple(
@@ -268,6 +276,7 @@ public object AndroidBrushFamilySerialization {
      *   proto message, or any of the corresponding [BrushFamily]s are invalid.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @SuppressWarnings("ExecutorRegistration")
     @JvmStatic
     @Throws(IOException::class)
@@ -279,6 +288,7 @@ public object AndroidBrushFamilySerialization {
 
     /** See [decodeMultiple] above. This overload uses [Version.MAX_SUPPORTED]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @SuppressWarnings("ExecutorRegistration")
     @JvmStatic
     public fun decodeMultiple(

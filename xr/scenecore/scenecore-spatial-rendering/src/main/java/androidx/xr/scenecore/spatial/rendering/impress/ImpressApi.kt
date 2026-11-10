@@ -261,14 +261,33 @@ public interface ImpressApi {
      * Enable reform affordance for a glTF model.
      *
      * @param impressNode The object of Impress node for the instance of the glTF model.
-     * @param enabled If the reform affordance should be added or removed.
-     * @param systemMovable If the system should handle move input events.
+     * @param reformAffordanceMask Mask of reform affordances to set.
      */
-    public fun setGltfReformAffordanceEnabled(
+    public fun setReformAffordanceEnabled(impressNode: ImpressNode, reformAffordanceMask: Int)
+
+    /** Queries for the reform affordance state for the model. */
+    public fun getReformAffordanceState(impressNode: ImpressNode): Int
+
+    /**
+     * Sets the size limits for the reform affordance on an [ImpressNode].
+     *
+     * @param impressNode target [ImpressNode] with the reform affordance.
+     * @param minSize minimum allowed size for the reform affordance in meters in local space.
+     * @param maxSize maximum allowed size for the reform affordance in meters in local space.
+     */
+    public fun setReformAffordanceSizeLimits(
         impressNode: ImpressNode,
-        enabled: Boolean,
-        systemMovable: Boolean,
+        minSize: Float,
+        maxSize: Float,
     )
+
+    /**
+     * Returns the recommended transform for the reform affordance on an [ImpressNode].
+     *
+     * @param impressNode target [ImpressNode] with the reform affordance
+     * @return recommended affordance transform as a [Matrix4]
+     */
+    public fun getRecommendedAffordanceTransform(impressNode: ImpressNode): Matrix4
 
     /**
      * Toggles the interaction affordance on a CustomMesh entity node in Impress.
@@ -280,6 +299,7 @@ public interface ImpressApi {
      * @param systemMovable A Boolean value indicating whether the interaction should be handled by
      *   the system.
      */
+    // TODO (b/520111090): Clean up redundant mesh reform affordance API
     public fun setCustomMeshReformAffordanceEnabled(
         node: ImpressNode,
         enableAffordance: Boolean,
@@ -349,6 +369,15 @@ public interface ImpressApi {
      * @param channel The channel of the animation.
      */
     public fun setGltfModelAnimationSpeed(impressNode: ImpressNode, speed: Float, channel: Int)
+
+    /**
+     * Sets whether a glTF model's animation should loop on a specific channel.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @param loop true if the animation should loop, false otherwise.
+     * @param channel The channel of the animation.
+     */
+    public fun setGltfModelAnimationLoop(impressNode: ImpressNode, loop: Boolean, channel: Int)
 
     /**
      * Returns the number of animations on an instanced glTF model.
@@ -1319,6 +1348,44 @@ public interface ImpressApi {
     ): MeshBuffer
 
     /**
+     * This method dynamically updates the vertex data of a mesh buffer.
+     *
+     * @param meshBufferHandle The native handle of the mesh buffer to update.
+     * @param bufferIndex The index of the vertex buffer to update.
+     * @param vertexData The ByteBuffer containing the new vertex data.
+     * @param vertexDataOffset The starting offset in the ByteBuffer.
+     * @param vertexDataSize The size of the data in the ByteBuffer to update.
+     * @param destOffsetInBytes The starting offset in bytes in the target buffer where the data
+     *   should be written.
+     */
+    public fun updateMeshBufferVertexData(
+        meshBufferHandle: Long,
+        bufferIndex: Int,
+        vertexData: ByteBuffer,
+        vertexDataOffset: Int,
+        vertexDataSize: Int,
+        destOffsetInBytes: Int,
+    )
+
+    /**
+     * This method dynamically updates the index data of a mesh buffer.
+     *
+     * @param meshBufferHandle The native handle of the mesh buffer to update.
+     * @param indexData The ByteBuffer containing the new index data.
+     * @param indexDataOffset The starting offset in the ByteBuffer.
+     * @param indexDataSize The size of the data in the ByteBuffer to update.
+     * @param destOffsetInBytes The starting offset in bytes in the target buffer where the data
+     *   should be written.
+     */
+    public fun updateMeshBufferIndexData(
+        meshBufferHandle: Long,
+        indexData: ByteBuffer,
+        indexDataOffset: Int,
+        indexDataSize: Int,
+        destOffsetInBytes: Int,
+    )
+
+    /**
      * This method destroys a mesh buffer using its native handle.
      *
      * @param meshBufferHandle The native handle of the mesh buffer to be destroyed.
@@ -1361,6 +1428,27 @@ public interface ImpressApi {
      *   halfExtentX, halfExtentY, halfExtentZ).
      */
     public fun getCustomMeshAabb(customMeshHandle: Long, outAabb: FloatArray)
+
+    /**
+     * Sets the axis-aligned bounding box of a custom mesh.
+     *
+     * @param customMeshHandle The native handle of the custom mesh.
+     * @param centerX The x coordinate of the center of the bounding box.
+     * @param centerY The y coordinate of the center of the bounding box.
+     * @param centerZ The z coordinate of the center of the bounding box.
+     * @param halfExtentX The half extent of the bounding box along the x axis.
+     * @param halfExtentY The half extent of the bounding box along the y axis.
+     * @param halfExtentZ The half extent of the bounding box along the z axis.
+     */
+    public fun setCustomMeshAabb(
+        customMeshHandle: Long,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    )
 
     /**
      * This method destroys a custom mesh using its native handle.

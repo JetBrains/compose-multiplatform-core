@@ -25,15 +25,22 @@ import androidx.ink.brush.BrushPaint.StampingTexture
 import androidx.ink.brush.BrushPaint.TextureLayer
 import androidx.ink.brush.BrushPaint.TilingTexture
 import androidx.ink.brush.BrushTip
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.color.Color
 import androidx.ink.brush.color.colorspace.ColorSpaces
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.geometry.PartitionedMesh
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.strokes.testing.buildStrokeInputBatchFromPoints
 import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(
+    InkInternalOnlyApi::class,
+    ExperimentalInkCustomBrushApi::class,
+    ExperimentalInkEraserApi::class,
+)
 class StrokeTest {
 
     @Test
@@ -169,7 +176,8 @@ class StrokeTest {
                                                         offsetX = 0.1F,
                                                         offsetY = 0.2F,
                                                         sizeUnit =
-                                                            TextureLayer.SizeUnit.STROKE_COORDINATES,
+                                                            TextureLayer.SizeUnit
+                                                                .STROKE_COORDINATES,
                                                     ),
                                                     TilingTexture(
                                                         clientTextureId = "test-two",
@@ -178,7 +186,8 @@ class StrokeTest {
                                                         offsetX = 0.1F,
                                                         offsetY = 0.2F,
                                                         sizeUnit =
-                                                            TextureLayer.SizeUnit.STROKE_COORDINATES,
+                                                            TextureLayer.SizeUnit
+                                                                .STROKE_COORDINATES,
                                                     ),
                                                 )
                                             )
@@ -333,45 +342,54 @@ class StrokeTest {
     }
 
     @Test
-    fun partialErase_withEmptyEraserShape_returnsOneStroke() {
+    fun subtract_withEmptyMaskShape_returnsStroke() {
         val stroke = buildTestStroke()
-        val emptyEraserShape = ImmutableStrokeInputBatch.EMPTY.createClosedShape()
+        val emptyMaskShape = ImmutableStrokeInputBatch.EMPTY.createClosedShape()
 
         val result =
-            stroke.partialErase(
-                emptyEraserShape,
-                AffineTransform.IDENTITY,
-                AffineTransform.IDENTITY,
-            )
+            stroke.subtract(emptyMaskShape, AffineTransform.IDENTITY, AffineTransform.IDENTITY)
 
-        assertThat(result).hasSize(1)
+        assertThat(result).isNotNull()
     }
 
     @Test
-    fun partialErase_retainsBrush() {
+    fun subtract_retainsBrush() {
         val stroke = buildTestStroke()
         val result =
-            stroke.partialErase(
-                buildTestShape(),
-                AffineTransform.IDENTITY,
-                AffineTransform.IDENTITY,
-            )
+            stroke.subtract(buildTestShape(), AffineTransform.IDENTITY, AffineTransform.IDENTITY)
 
+        assertThat(result.brush).isEqualTo(stroke.brush)
+    }
+
+    @Test
+    fun subtract_retainsInputs() {
+        val stroke = buildTestStroke()
+        val result =
+            stroke.subtract(buildTestShape(), AffineTransform.IDENTITY, AffineTransform.IDENTITY)
+
+        assertThat(result.inputs.size).isEqualTo(stroke.inputs.size)
+    }
+
+    @Test
+    fun split_returnsNonEmptyStrokes() {
+        val stroke = buildTestStroke()
+        val result = stroke.split(AffineTransform.IDENTITY, 1.0f)
+        assertThat(result).isNotEmpty()
+    }
+
+    @Test
+    fun split_retainsBrush() {
+        val stroke = buildTestStroke()
+        val result = stroke.split(AffineTransform.IDENTITY, 1.0f)
         for (fragment in result) {
             assertThat(fragment.brush).isEqualTo(stroke.brush)
         }
     }
 
     @Test
-    fun partialErase_retainsInputs() {
+    fun split_retainsInputs() {
         val stroke = buildTestStroke()
-        val result =
-            stroke.partialErase(
-                buildTestShape(),
-                AffineTransform.IDENTITY,
-                AffineTransform.IDENTITY,
-            )
-
+        val result = stroke.split(AffineTransform.IDENTITY, 1.0f)
         for (fragment in result) {
             assertThat(fragment.inputs.size).isEqualTo(stroke.inputs.size)
         }

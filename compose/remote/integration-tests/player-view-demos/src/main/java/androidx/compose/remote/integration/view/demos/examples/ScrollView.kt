@@ -27,6 +27,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.RemoteScrollState
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.fillMaxHeight
@@ -34,13 +35,11 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.graphicsLayer
 import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.padding
-import androidx.compose.remote.creation.compose.modifier.rememberRemoteScrollState
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.verticalScroll
 import androidx.compose.remote.creation.compose.modifier.width
 import androidx.compose.remote.creation.compose.shapes.RemoteRectangleShape
 import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
-import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.abs
 import androidx.compose.remote.creation.compose.state.rc
@@ -50,16 +49,15 @@ import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.creation.compose.text.RemoteFontFamily
 import androidx.compose.remote.creation.compose.text.RemoteTypeface
+import androidx.compose.remote.creation.compose.text.RemoteTypeface.Companion.create
 import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import java.text.DecimalFormat
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to drawAnchoredText
 @Composable
 fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 0) {
 
@@ -101,12 +99,12 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
     }
     RemoteColumn(
         modifier =
-            modifier.clip(RemoteRoundedCornerShape(18.rdp)).background(Color(3, 169, 244, 173)),
+            modifier.clip(RemoteRoundedCornerShape(18.rdp)).background(Color(3, 169, 244, 173).rc),
         horizontalAlignment = RemoteAlignment.CenterHorizontally,
         verticalArrangement = RemoteArrangement.Center,
     ) {
         RemoteText(
-            monthNames[month],
+            monthNames[month].rs,
             fontFamily = RemoteFontFamily.Serif,
             fontWeight = FontWeight.Bold,
             fontSize = 32.rsp,
@@ -118,7 +116,9 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
                 if (j == 1 || j == 6) {
                     RemoteBox(
                         modifier =
-                            RemoteModifier.fillMaxHeight().width(1.rdp).background(Color.DarkGray)
+                            RemoteModifier.fillMaxHeight()
+                                .width(1.rdp)
+                                .background(Color.DarkGray.rc)
                     )
                 }
                 var modifier = RemoteModifier.padding(start = 8.rf, end = 8.rf)
@@ -128,14 +128,12 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
                             dayNames[j].rs,
                             40f.rf,
                             20f.rf,
-                            1f.rf,
-                            0f.rf,
                             paint =
                                 RemotePaint().apply {
                                     color = Color.White.rc
-                                    typeface =
-                                        RemoteTypeface.create("default", RemoteTypeface.Style.Bold)
+                                    typeface = create("default", RemoteTypeface.Style.Bold)
                                 },
+                            panX = 1f.rf,
                         )
                     }
                     for (i in 0 until 6) {
@@ -167,9 +165,8 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
                                     "$number".rs,
                                     40f.rf,
                                     20f.rf,
-                                    1f.rf,
-                                    0f.rf,
                                     paint = RemotePaint().apply { color = Color.White.rc },
+                                    panX = 1f.rf,
                                 )
                             }
                         } else {
@@ -178,9 +175,8 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
                                     "$number".rs,
                                     40f.rf,
                                     20f.rf,
-                                    1f.rf,
-                                    0f.rf,
                                     paint = RemotePaint().apply { color = Color.Black.rc },
+                                    panX = 1f.rf,
                                 )
                             }
                         }
@@ -192,14 +188,12 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
 }
 
 @SuppressLint("UnrememberedMutableState")
-@Suppress("RestrictedApiAndroidX")
 @Composable
 @RemoteComposable
 fun ScrollViewDemo() {
     val numElements = 12
-    val scrollState = rememberRemoteScrollState(evenNotches = numElements)
+    val scrollState = remember { RemoteScrollState(notches = numElements) }
     val dimensionCard = 280.rdp
-    val decimalFormat = remember { DecimalFormat("####0.00") }
     RemoteBox(modifier = RemoteModifier, contentAlignment = RemoteAlignment.BottomEnd) {
         val height = dimensionCard.toPx()
         val h2 = 280.rdp
@@ -215,10 +209,8 @@ fun ScrollViewDemo() {
             for (i in 0 until numElements) {
                 val scale =
                     0.8f.rf +
-                        (1.rf - abs(scrollState.positionState - (height * i.toFloat())) / height) *
-                            0.2f
-                val rotation =
-                    (abs(scrollState.positionState - (height * i.toFloat())) / height) * 40f
+                        (1.rf - abs(scrollState.positionState - (height * i.rf)) / height) * 0.2f.rf
+                val rotation = (abs(scrollState.positionState - (height * i.rf)) / height) * 40.rf
                 CanvasCalendarMonth(
                     modifier =
                         RemoteModifier.graphicsLayer(
@@ -233,30 +225,12 @@ fun ScrollViewDemo() {
                 )
             }
         }
-        val debug = false
-        if (debug) {
-            RemoteColumn(
-                verticalArrangement = RemoteArrangement.Center,
-                horizontalAlignment = RemoteAlignment.CenterHorizontally,
-            ) {
-                val blue = RemoteColor(Color.Blue.toArgb())
-                RemoteText(
-                    scrollState.positionState.toRemoteString(decimalFormat),
-                    fontSize = 34.rsp,
-                    color = blue,
-                )
-                RemoteText(height.toRemoteString(decimalFormat), fontSize = 34.rsp, color = blue)
-            }
-        }
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to drawAnchoredText
 @Preview
 @Composable
 private fun CanvasCalendarMonthPreview() = RemoteContentPreview { CanvasCalendarMonth() }
 
-@Suppress("RestrictedApiAndroidX")
-@Preview
-@Composable
-private fun ScrollViewDemoPreview() = RemoteContentPreview { ScrollViewDemo() }
+@Preview @Composable private fun ScrollViewDemoPreview() = RemoteContentPreview { ScrollViewDemo() }

@@ -72,7 +72,9 @@ import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import java.lang.ref.PhantomReference
 import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -497,24 +499,22 @@ class ProcessCameraProviderTest(
     }
 
     class PreviewSurfaceProvider : Preview.SurfaceProvider {
-        var surfaceRequestLatch = CountDownLatch(1)
-        var frameLatch: CountDownLatch? = null
-        val surfaceProviderImpl =
-            SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
-                frameLatch?.countDown()
-            }
-
-        override fun onSurfaceRequested(request: SurfaceRequest) {
-            surfaceProviderImpl.onSurfaceRequested(request)
-            frameLatch = CountDownLatch(1)
-            surfaceRequestLatch.countDown()
+        private val surfaceRequestSemaphore = Semaphore(0)
+        private val frameSemaphore = Semaphore(0)
+        val surfaceProviderImpl = SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
+            frameSemaphore.release()
         }
 
-        fun assertFramesReceivedAfterSurfaceRequested() {
-            assertThat(surfaceRequestLatch?.await(5, TimeUnit.SECONDS)).isTrue()
-            assertThat(frameLatch?.await(5, TimeUnit.SECONDS)).isTrue()
-            frameLatch = null
-            surfaceRequestLatch = CountDownLatch(1)
+        override fun onSurfaceRequested(request: SurfaceRequest) {
+            frameSemaphore.drainPermits()
+            surfaceProviderImpl.onSurfaceRequested(request)
+            surfaceRequestSemaphore.release()
+        }
+
+        fun assertFramesReceivedAfterSurfaceRequested(timeoutSeconds: Long = 10) {
+            assertThat(surfaceRequestSemaphore.tryAcquire(1, timeoutSeconds, TimeUnit.SECONDS))
+                .isTrue()
+            assertThat(frameSemaphore.tryAcquire(1, timeoutSeconds, TimeUnit.SECONDS)).isTrue()
         }
     }
 
@@ -1568,4 +1568,185 @@ class ProcessCameraProviderTest(
         return if (rotationDegrees % 180 != 0) Rational(height(), width())
         else Rational(width(), height())
     }
+
+    @Test
+    fun bindUnbind_useCaseIsGarbageCollected() = runBlocking {
+        ProcessCameraProvider.configureInstance(cameraConfig)
+
+        var useCase: Preview? = Preview.Builder().build()
+        val weakRef = WeakReference(useCase)
+
+        withContext(Dispatchers.Main) {
+            provider = ProcessCameraProvider.getInstance(context).await()
+            lifecycleOwner0.startAndResume()
+            provider.bindToLifecycle(lifecycleOwner0, cameraSelector, useCase!!)
+
+            assertThat(provider.isBound(useCase!!)).isTrue()
+
+            provider.unbindAll()
+            assertThat(provider.isBound(useCase!!)).isFalse()
+        }
+
+        @Suppress("ASSIGNED_VALUE_IS_NEVER_READ")
+        useCase = null
+        GarbageCollectionUtil.runFinalization()
+
+        assertThat(weakRef.get()).isNull()
+    }
+
+    @Test
+    fun supportedLensCategories_query_matchesExpectedIntrinsicZoomRatio() = runBlocking {
+        ProcessCameraProvider.configureInstance(cameraConfig)
+
+        withContext(Dispatchers.Main) {
+            provider = ProcessCameraProvider.getInstance(context).await()
+
+            for (lensFacing in
+                listOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT)) {
+                if (!CameraUtil.hasCameraWithLensFacing(lensFacing)) continue
+
+                val supportedCategories = provider.getSupportedLensCategories(lensFacing)
+                if (supportedCategories.isEmpty()) continue
+
+                val candidateIntrinsicZoomRatios =
+                    provider.availableCameraInfos
+                        .filter { it.lensFacing == lensFacing }
+                        .flatMap {
+                            listOf(it.intrinsicZoomRatio) +
+                                it.physicalCameraInfos.map { p -> p.intrinsicZoomRatio }
+                        }
+                val minIntrinsicZoomRatio = candidateIntrinsicZoomRatios.minOrNull() ?: 1.0f
+                val maxIntrinsicZoomRatio = candidateIntrinsicZoomRatios.maxOrNull() ?: 1.0f
+
+                val getIntrinsicZoomRatio: (Int) -> Float = { category ->
+                    provider
+                        .getCameraInfo(
+                            CameraSelector.Builder()
+                                .requireLensFacing(lensFacing)
+                                .setLensCategory(category)
+                                .build()
+                        )
+                        .intrinsicZoomRatio
+                }
+
+                // Verify optical categories (absolute focal length domains)
+                if (supportedCategories.contains(CameraSelector.LENS_CATEGORY_DEFAULT)) {
+                    assertThat(getIntrinsicZoomRatio(CameraSelector.LENS_CATEGORY_DEFAULT))
+                        .isEqualTo(1.0f)
+                }
+                if (supportedCategories.contains(CameraSelector.LENS_CATEGORY_ULTRA_WIDE)) {
+                    assertThat(getIntrinsicZoomRatio(CameraSelector.LENS_CATEGORY_ULTRA_WIDE))
+                        .isLessThan(1.0f)
+                }
+                if (supportedCategories.contains(CameraSelector.LENS_CATEGORY_TELEPHOTO)) {
+                    assertThat(getIntrinsicZoomRatio(CameraSelector.LENS_CATEGORY_TELEPHOTO))
+                        .isGreaterThan(1.0f)
+                }
+
+                // Verify relative extreme categories (positional ordering)
+                if (supportedCategories.contains(CameraSelector.LENS_CATEGORY_WIDEST_FOV)) {
+                    assertThat(getIntrinsicZoomRatio(CameraSelector.LENS_CATEGORY_WIDEST_FOV))
+                        .isEqualTo(minIntrinsicZoomRatio)
+                }
+                if (supportedCategories.contains(CameraSelector.LENS_CATEGORY_NARROWEST_FOV)) {
+                    assertThat(getIntrinsicZoomRatio(CameraSelector.LENS_CATEGORY_NARROWEST_FOV))
+                        .isEqualTo(maxIntrinsicZoomRatio)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun supportedLensCategories_bindToLifecycle_bindsSuccessfullyAndMatchesCameraInfo() =
+        runBlocking {
+            ProcessCameraProvider.configureInstance(cameraConfig)
+            provider = ProcessCameraProvider.getInstance(context).await()
+
+            for (lensFacing in
+                listOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT)) {
+                if (!CameraUtil.hasCameraWithLensFacing(lensFacing)) continue
+
+                val supportedCategories = provider.getSupportedLensCategories(lensFacing)
+                if (supportedCategories.isEmpty()) continue
+
+                for (category in supportedCategories) {
+                    val selector =
+                        CameraSelector.Builder()
+                            .requireLensFacing(lensFacing)
+                            .setLensCategory(category)
+                            .build()
+                    val cameraInfo = provider.getCameraInfo(selector)
+                    val targetPhysicalId = cameraInfo.cameraSelector.physicalCameraId
+                    val expectedCameraId = (cameraInfo as CameraInfoInternal).cameraId
+                    val expectedIntrinsicZoomRatio = cameraInfo.intrinsicZoomRatio
+
+                    val preview = Preview.Builder().build()
+                    withContext(Dispatchers.Main) {
+                        try {
+                            val camera =
+                                provider.bindToLifecycle(lifecycleOwner0, selector, preview)
+                            assertThat(camera).isNotNull()
+                            assertThat(provider.isBound(preview)).isTrue()
+                            assertThat((camera.cameraInfo as CameraInfoInternal).cameraId)
+                                .isEqualTo(expectedCameraId)
+                            assertThat(camera.cameraInfo.intrinsicZoomRatio)
+                                .isEqualTo(expectedIntrinsicZoomRatio)
+                            assertThat(camera.cameraInfo.cameraSelector.physicalCameraId)
+                                .isEqualTo(targetPhysicalId)
+                            assertThat(preview.physicalCameraId).isEqualTo(targetPhysicalId)
+                        } finally {
+                            provider.unbindAll()
+                        }
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun supportedLensCategories_unsupportedCategory_hasCameraFalseAndThrowsException() =
+        runBlocking {
+            ProcessCameraProvider.configureInstance(cameraConfig)
+            provider = ProcessCameraProvider.getInstance(context).await()
+
+            for (lensFacing in
+                listOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT)) {
+                if (!CameraUtil.hasCameraWithLensFacing(lensFacing)) continue
+
+                val supported = provider.getSupportedLensCategories(lensFacing).toSet()
+                val allCategories =
+                    setOf(
+                        CameraSelector.LENS_CATEGORY_DEFAULT,
+                        CameraSelector.LENS_CATEGORY_ULTRA_WIDE,
+                        CameraSelector.LENS_CATEGORY_TELEPHOTO,
+                        CameraSelector.LENS_CATEGORY_WIDEST_FOV,
+                        CameraSelector.LENS_CATEGORY_NARROWEST_FOV,
+                    )
+                val unsupported = allCategories - supported
+                if (unsupported.isEmpty()) continue
+
+                for (category in unsupported) {
+                    val selector =
+                        CameraSelector.Builder()
+                            .requireLensFacing(lensFacing)
+                            .setLensCategory(category)
+                            .build()
+
+                    assertThat(provider.hasCamera(selector)).isFalse()
+
+                    assertThrows(IllegalArgumentException::class.java) {
+                        provider.getCameraInfo(selector)
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        assertThrows(IllegalArgumentException::class.java) {
+                            provider.bindToLifecycle(
+                                lifecycleOwner0,
+                                selector,
+                                Preview.Builder().build(),
+                            )
+                        }
+                    }
+                }
+            }
+        }
 }

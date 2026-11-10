@@ -43,46 +43,47 @@ import java.util.Objects;
 /**
  * Represents a header for a section within a {@link SectionedItemTemplate}.
  *
- * <p>A section header must include a title. It can also include a start icon, an end icon, and
- * can handle click events.
+ * <p>A section header must include a title. It can also include a start icon, an end icon, and can
+ * handle click events.
  */
 @CarProtocol
 @ExperimentalCarApi
 @RequiresCarApi(9)
 @KeepFields
 public final class SectionHeader {
-    /**
-     * The type of image to display in the section header.
-     */
+    /** The type of image to display in the section header. */
     @RestrictTo(LIBRARY)
     @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_LARGE})
     @Retention(RetentionPolicy.SOURCE)
-    public @interface SectionHeaderImageType {
-    }
+    public @interface SectionHeaderImageType {}
 
-    /**
-     * Represents a small icon to be displayed in the section header.
-     */
+    /** Represents a small icon to be displayed in the section header. */
     public static final int IMAGE_TYPE_SMALL = 1;
 
-    /**
-     * Represents a large sized image to be displayed in the section header.
-     */
+    /** Represents a large sized image to be displayed in the section header. */
     public static final int IMAGE_TYPE_LARGE = 2;
 
     private final @NonNull CarText mTitle;
+    private final @Nullable CarText mHeadline;
     private final @Nullable CarText mSubtitle;
     private final @Nullable CarIcon mStartIcon;
-    @SectionHeaderImageType
-    private final int mStartIconType;
+    @SectionHeaderImageType private final int mStartIconType;
     private final @Nullable CarIcon mEndIcon;
     private final @Nullable OnClickDelegate mOnClickDelegate;
 
-    /**
-     * Returns the title of the header.
-     */
+    /** Returns the title of the header. */
     public @NonNull CarText getTitle() {
         return mTitle;
+    }
+
+    /**
+     * Returns the headline of the header, or {@code null} if none is set.
+     *
+     * @see Builder#setHeadline(CharSequence)
+     * @see Builder#setHeadline(CarText)
+     */
+    public @Nullable CarText getHeadline() {
+        return mHeadline;
     }
 
     /**
@@ -125,8 +126,8 @@ public final class SectionHeader {
     }
 
     /**
-     * Returns the {@link OnClickDelegate} to handle click events on the header, or {@code null}
-     * if the header is not clickable.
+     * Returns the {@link OnClickDelegate} to handle click events on the header, or {@code null} if
+     * the header is not clickable.
      */
     public @Nullable OnClickDelegate getOnClickDelegate() {
         return mOnClickDelegate;
@@ -134,15 +135,32 @@ public final class SectionHeader {
 
     @Override
     public @NonNull String toString() {
-        return "SectionHeader { title: " + mTitle + ", subtitle: " + mSubtitle
-                + ", startIcon: " + mStartIcon + ", startIconType: " + mStartIconType
-                + ", endIcon: " + mEndIcon + ", hasClickListener: " + (mOnClickDelegate != null)
+        return "SectionHeader { headline: "
+                + mHeadline
+                + ", title: "
+                + mTitle
+                + ", subtitle: "
+                + mSubtitle
+                + ", startIcon: "
+                + mStartIcon
+                + ", startIconType: "
+                + mStartIconType
+                + ", endIcon: "
+                + mEndIcon
+                + ", hasClickListener: "
+                + (mOnClickDelegate != null)
                 + " }";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mTitle, mSubtitle, mStartIcon, mStartIconType, mEndIcon,
+        return Objects.hash(
+                mHeadline,
+                mTitle,
+                mSubtitle,
+                mStartIcon,
+                mStartIconType,
+                mEndIcon,
                 mOnClickDelegate == null);
     }
 
@@ -155,7 +173,8 @@ public final class SectionHeader {
             return false;
         }
         SectionHeader otherHeader = (SectionHeader) other;
-        return Objects.equals(mTitle, otherHeader.mTitle)
+        return Objects.equals(mHeadline, otherHeader.mHeadline)
+                && Objects.equals(mTitle, otherHeader.mTitle)
                 && Objects.equals(mSubtitle, otherHeader.mSubtitle)
                 && Objects.equals(mStartIcon, otherHeader.mStartIcon)
                 && mStartIconType == otherHeader.mStartIconType
@@ -165,6 +184,7 @@ public final class SectionHeader {
 
     SectionHeader(Builder builder) {
         mTitle = requireNonNull(builder.mTitle);
+        mHeadline = builder.mHeadline;
         mSubtitle = builder.mSubtitle;
         mStartIcon = builder.mStartIcon;
         mStartIconType = builder.mStartIconType;
@@ -175,6 +195,7 @@ public final class SectionHeader {
     /** Constructs an empty instance, used by serialization code. */
     private SectionHeader() {
         mTitle = CarText.create("");
+        mHeadline = null;
         mSubtitle = null;
         mStartIcon = null;
         mStartIconType = IMAGE_TYPE_SMALL;
@@ -184,63 +205,107 @@ public final class SectionHeader {
 
     /** A builder of {@link SectionHeader}. */
     public static final class Builder {
-        @NonNull
-        CarText mTitle;
-        @Nullable
-        CarText mSubtitle;
-        @Nullable
-        CarIcon mStartIcon;
-        @SectionHeaderImageType
-        int mStartIconType = IMAGE_TYPE_SMALL;
-        @Nullable
-        CarIcon mEndIcon;
-        @Nullable
-        OnClickDelegate mOnClickDelegate;
+        @NonNull CarText mTitle;
+        @Nullable CarText mHeadline;
+        @Nullable CarText mSubtitle;
+        @Nullable CarIcon mStartIcon;
+        @SectionHeaderImageType int mStartIconType = IMAGE_TYPE_SMALL;
+        @Nullable CarIcon mEndIcon;
+        @Nullable OnClickDelegate mOnClickDelegate;
 
         /**
-         * Sets the subtitle of the header.
+         * Sets the headline of the header.
          *
-         * <p>The subtitle must be a plain string with no spans other than those supported by
-         * {@link CarTextConstraints#TEXT_WITH_COLORS}.
+         * <p>The headline appears above the title as an eyebrow or overline. It must be a plain
+         * string with no spans other than those supported by {@link CarTextConstraints#TEXT_ONLY}.
          *
-         * @param subtitle the subtitle to set
-         * @throws NullPointerException     if {@code subtitle} is {@code null}
-         * @throws IllegalArgumentException if {@code subtitle} contains unsupported spans
+         * <p>A section header cannot have both a headline and a subtitle. If both are set, {@link
+         * #build()} will throw an {@link IllegalStateException}.
+         *
+         * @param headline the headline to set
+         * @throws IllegalArgumentException if {@code headline} contains spans unsupported by
+         * {@link CarTextConstraints#TEXT_ONLY}
          * @see CarText
          */
         @CanIgnoreReturnValue
-        public @NonNull Builder setSubtitle(@NonNull CharSequence subtitle) {
-            mSubtitle = CarText.create(subtitle);
-            CarTextConstraints.TEXT_WITH_COLORS.validateOrThrow(mSubtitle);
+        public @NonNull Builder setHeadline(@Nullable CharSequence headline) {
+            if (headline == null) {
+                mHeadline = null;
+            } else {
+                mHeadline = CarText.create(headline);
+                CarTextConstraints.TEXT_ONLY.validateOrThrow(mHeadline);
+            }
+            return this;
+        }
+
+        /**
+         * Sets the headline of the header.
+         *
+         * <p>The headline appears above the title as an eyebrow or overline. It must be a plain
+         * string with no spans other than those supported by {@link CarTextConstraints#TEXT_ONLY}.
+         *
+         * <p>A section header cannot have both a headline and a subtitle. If both are set, {@link
+         * #build()} will throw an {@link IllegalStateException}.
+         *
+         * @param headline the headline to set
+         * @throws IllegalArgumentException if {@code headline} contains spans unsupported by
+         * {@link CarTextConstraints#TEXT_ONLY}
+         * @see CarText
+         */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setHeadline(@Nullable CarText headline) {
+            if (headline != null) {
+                CarTextConstraints.TEXT_ONLY.validateOrThrow(headline);
+            }
+            mHeadline = headline;
             return this;
         }
 
         /**
          * Sets the subtitle of the header.
          *
-         * <p>The subtitle must be a plain string with no spans other than those supported by
-         * {@link CarTextConstraints#TEXT_WITH_COLORS}.
+         * <p>The subtitle appears below the title. It must be a plain string with no spans other
+         * than those supported by {@link CarTextConstraints#TEXT_WITH_COLORS}.
+         *
+         * <p>A section header cannot have both a headline and a subtitle. If both are set, {@link
+         * #build()} will throw an {@link IllegalStateException}.
          *
          * @param subtitle the subtitle to set
-         * @throws NullPointerException     if {@code subtitle} is {@code null}
-         * @throws IllegalArgumentException if {@code subtitle} contains unsupported spans
+         * @throws IllegalArgumentException if {@code headline} contains spans unsupported, by
+         * {@link CarTextConstraints#TEXT_WITH_COLORS}
          * @see CarText
          */
         @CanIgnoreReturnValue
-        public @NonNull Builder setSubtitle(@NonNull CarText subtitle) {
-            CarTextConstraints.TEXT_WITH_COLORS.validateOrThrow(requireNonNull(subtitle));
+        public @NonNull Builder setSubtitle(@Nullable CharSequence subtitle) {
+            if (subtitle == null) {
+                mSubtitle = null;
+            } else {
+                mSubtitle = CarText.create(subtitle);
+                CarTextConstraints.TEXT_WITH_COLORS.validateOrThrow(mSubtitle);
+            }
+            return this;
+        }
+
+        /**
+         * Sets the subtitle of the header.
+         *
+         * <p>The subtitle appears below the title. It must be a plain string with no spans other
+         * than those supported by {@link CarTextConstraints#TEXT_WITH_COLORS}.
+         *
+         * <p>A section header cannot have both a headline and a subtitle. If both are set, {@link
+         * #build()} will throw an {@link IllegalStateException}.
+         *
+         * @param subtitle the subtitle to set
+         * @throws IllegalArgumentException if {@code headline} contains spans unsupported, by
+         * {@link CarTextConstraints#TEXT_WITH_COLORS}
+         * @see CarText
+         */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setSubtitle(@Nullable CarText subtitle) {
+            if (subtitle != null) {
+                CarTextConstraints.TEXT_WITH_COLORS.validateOrThrow(subtitle);
+            }
             mSubtitle = subtitle;
-            return this;
-        }
-
-        /**
-         * Clears the subtitle of the header.
-         *
-         * @return this builder to help chaining
-         */
-        @CanIgnoreReturnValue
-        public @NonNull Builder clearSubtitle() {
-            mSubtitle = null;
             return this;
         }
 
@@ -249,11 +314,10 @@ public final class SectionHeader {
          *
          * <p>Only custom icon types (e.g. {@link CarIcon#TYPE_CUSTOM}) are supported.
          *
-         * @param startIcon     the {@link CarIcon} to display before the title
-         * @throws NullPointerException     if {@code startIcon} is {@code null}
-         * @throws IllegalArgumentException if {@code startIcon} is not a custom icon, or if it
-         *                                  does not meet the {@link CarIconConstraints#DEFAULT}
-         *                                  constraints
+         * @param startIcon the {@link CarIcon} to display before the title
+         * @throws NullPointerException if {@code startIcon} is {@code null}
+         * @throws IllegalArgumentException if {@code startIcon} is not a custom icon, or if it does
+         *     not meet the {@link CarIconConstraints#UNCONSTRAINED} constraints
          */
         @CanIgnoreReturnValue
         public @NonNull Builder setStartIcon(@NonNull CarIcon startIcon) {
@@ -265,22 +329,21 @@ public final class SectionHeader {
          *
          * <p>Only custom icon types (e.g. {@link CarIcon#TYPE_CUSTOM}) are supported.
          *
-         * @param startIcon     the {@link CarIcon} to display before the title
+         * @param startIcon the {@link CarIcon} to display before the title
          * @param startIconType the type of image to display. See {@link SectionHeader} for
-         *                      supported image types (e.g. {@link SectionHeader#IMAGE_TYPE_SMALL}).
-         * @throws NullPointerException     if {@code startIcon} is {@code null}
-         * @throws IllegalArgumentException if {@code startIcon} is not a custom icon, or if it
-         *                                  does not meet the {@link CarIconConstraints#DEFAULT}
-         *                                  constraints
+         *     supported image types (e.g. {@link SectionHeader#IMAGE_TYPE_SMALL}).
+         * @throws NullPointerException if {@code startIcon} is {@code null}
+         * @throws IllegalArgumentException if {@code startIcon} is not a custom icon, or if it does
+         *     not meet the {@link CarIconConstraints#UNCONSTRAINED} constraints
          */
         @CanIgnoreReturnValue
-        public @NonNull Builder setStartIcon(@NonNull CarIcon startIcon,
-                @SectionHeaderImageType int startIconType) {
+        public @NonNull Builder setStartIcon(
+                @NonNull CarIcon startIcon, @SectionHeaderImageType int startIconType) {
             requireNonNull(startIcon);
             if (startIcon.getType() != CarIcon.TYPE_CUSTOM) {
                 throw new IllegalArgumentException("Only custom icon types are supported");
             }
-            CarIconConstraints.DEFAULT.validateOrThrow(startIcon);
+            CarIconConstraints.UNCONSTRAINED.validateOrThrow(startIcon);
             mStartIcon = startIcon;
             mStartIconType = startIconType;
             return this;
@@ -291,11 +354,10 @@ public final class SectionHeader {
          *
          * <p>Only custom icon types (e.g. {@link CarIcon#TYPE_CUSTOM}) are supported.
          *
-         * @param endIcon     the {@link CarIcon} to display after the title
-         * @throws NullPointerException     if {@code endIcon} is {@code null}
-         * @throws IllegalArgumentException if {@code endIcon} is not a custom icon, or if it
-         *                                  does not meet the {@link CarIconConstraints#DEFAULT}
-         *                                  constraints
+         * @param endIcon the {@link CarIcon} to display after the title
+         * @throws NullPointerException if {@code endIcon} is {@code null}
+         * @throws IllegalArgumentException if {@code endIcon} is not a custom icon, or if it does
+         *     not meet the {@link CarIconConstraints#UNCONSTRAINED} constraints
          */
         @CanIgnoreReturnValue
         public @NonNull Builder setEndIcon(@NonNull CarIcon endIcon) {
@@ -303,7 +365,7 @@ public final class SectionHeader {
             if (endIcon.getType() != CarIcon.TYPE_CUSTOM) {
                 throw new IllegalArgumentException("Only custom icon types are supported");
             }
-            CarIconConstraints.DEFAULT.validateOrThrow(endIcon);
+            CarIconConstraints.UNCONSTRAINED.validateOrThrow(endIcon);
             mEndIcon = endIcon;
             return this;
         }
@@ -325,19 +387,23 @@ public final class SectionHeader {
         /**
          * Builds the {@link SectionHeader}.
          *
-         * @throws IllegalStateException if a title has not been set
+         * @throws IllegalStateException if both headline and subtitle are set
          */
         public @NonNull SectionHeader build() {
+            if (mHeadline != null && mSubtitle != null) {
+                throw new IllegalStateException(
+                        "Both headline and subtitle cannot be set on a SectionHeader");
+            }
             return new SectionHeader(this);
         }
 
         /**
          * Returns a {@link Builder} instance configured with the given {@code title}.
          *
-         * <p>The title must be a plain string with no spans other than those supported by
-         * {@link CarTextConstraints#TEXT_ONLY}.
+         * <p>The title must be a plain string with no spans other than those supported by {@link
+         * CarTextConstraints#TEXT_ONLY}.
          *
-         * @throws NullPointerException     if {@code title} is {@code null}
+         * @throws NullPointerException if {@code title} is {@code null}
          * @throws IllegalArgumentException if {@code title} contains unsupported spans
          * @see CarText
          */
@@ -348,10 +414,10 @@ public final class SectionHeader {
         /**
          * Returns a {@link Builder} instance configured with the given {@code title}.
          *
-         * <p>The title must be a plain string with no spans other than those supported by
-         * {@link CarTextConstraints#TEXT_ONLY}.
+         * <p>The title must be a plain string with no spans other than those supported by {@link
+         * CarTextConstraints#TEXT_ONLY}.
          *
-         * @throws NullPointerException     if {@code title} is {@code null}
+         * @throws NullPointerException if {@code title} is {@code null}
          * @throws IllegalArgumentException if {@code title} contains unsupported spans
          */
         public Builder(@NonNull CarText title) {

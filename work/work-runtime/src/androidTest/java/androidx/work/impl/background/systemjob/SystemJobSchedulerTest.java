@@ -50,6 +50,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.work.Configuration;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.RunnableScheduler;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManagerTest;
 import androidx.work.impl.WorkDatabase;
@@ -126,7 +127,8 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
                         mJobScheduler,
                         new SystemJobInfoConverter(context, configuration.getClock(),
                                 configuration.isMarkingJobsAsImportantWhileForeground()
-                        )));
+                        ),
+                        mock(RunnableScheduler.class)));
 
         doNothing().when(mSystemJobScheduler).scheduleInternal(any(WorkSpec.class), anyInt());
     }
@@ -271,6 +273,8 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
         allJobInfos.add(validJob);
         allJobInfos.add(invalidJob);
         when(mJobScheduler.getAllPendingJobs()).thenReturn(allJobInfos);
+        when(mWorkDatabase.systemIdInfoDao().getWorkSpecIds())
+                .thenReturn(java.util.Collections.singletonList(TEST_ID));
 
         Context mockContext = mock(Context.class);
         when(mockContext.getPackageName()).thenReturn(
@@ -280,6 +284,34 @@ public class SystemJobSchedulerTest extends WorkManagerTest {
 
         verify(mJobScheduler).cancel(invalidJob.getId());
         verify(mJobScheduler, never()).cancel(validJob.getId());
+    }
+
+    @Test
+    @LargeTest
+    @SdkSuppress(maxSdkVersion = 33)
+    public void testSystemJobScheduler_cancelsJobsNotInDatabase() {
+        List<JobInfo> allJobInfos = new ArrayList<>(1);
+
+        PersistableBundle extras = new PersistableBundle();
+        extras.putString(EXTRA_WORK_SPEC_ID, "unknown_work_spec_id");
+
+        JobInfo orphanedJob = mock(JobInfo.class);
+        when(orphanedJob.getId()).thenReturn(-1);
+        when(orphanedJob.getService()).thenReturn(mJobServiceComponent);
+        when(orphanedJob.getExtras()).thenReturn(extras);
+
+        allJobInfos.add(orphanedJob);
+        when(mJobScheduler.getAllPendingJobs()).thenReturn(allJobInfos);
+        when(mWorkDatabase.systemIdInfoDao().getWorkSpecIds())
+                .thenReturn(java.util.Collections.singletonList(TEST_ID));
+
+        Context mockContext = mock(Context.class);
+        when(mockContext.getPackageName()).thenReturn(
+                ApplicationProvider.getApplicationContext().getPackageName());
+        when(mockContext.getSystemService(Context.JOB_SCHEDULER_SERVICE)).thenReturn(mJobScheduler);
+        SystemJobScheduler.reconcileJobs(mockContext, mWorkDatabase);
+
+        verify(mJobScheduler).cancel(orphanedJob.getId());
     }
 
     private void addToWorkSpecDao(WorkSpec workSpec) {

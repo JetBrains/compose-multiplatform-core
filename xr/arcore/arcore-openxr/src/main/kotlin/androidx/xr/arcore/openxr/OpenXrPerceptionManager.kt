@@ -29,15 +29,25 @@ import androidx.xr.arcore.runtime.HitResult
 import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.Plane
 import androidx.xr.arcore.runtime.RenderViewpoint
+import androidx.xr.arcore.runtime.SpatialAnnotationId
+import androidx.xr.arcore.runtime.SpatialAnnotationImageFormat
+import androidx.xr.arcore.runtime.SpatialAnnotationQuadAlignment
 import androidx.xr.arcore.runtime.Trackable
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.ExperimentalSpatialAnnotationsApi
 import androidx.xr.runtime.EyeTrackingMode
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quad
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import java.nio.ByteBuffer
 import java.util.Arrays
 import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Implementation of the perception capabilities of a runtime using OpenXR.
@@ -158,7 +168,6 @@ internal class OpenXrPerceptionManager(private val timeSource: OpenXrTimeSource)
     internal var depthEstimationMode = DepthEstimationMode.DISABLED
 
     internal var eyeTrackingMode = EyeTrackingMode.DISABLED
-
     private var lastUpdateXrTime: Long = 0L
 
     /**
@@ -288,8 +297,118 @@ internal class OpenXrPerceptionManager(private val timeSource: OpenXrTimeSource)
         }
     }
 
+    internal fun updateSpatialAnnotations(xrTime: Long) {
+        // Add new spatial annotations to the list of trackables.
+        for ((id, config) in xrResources.annotationConfigs.entries) {
+            var trackable = xrResources.trackablesMap[config.handle] as? OpenXrSpatialAnnotation
+            if (trackable == null) {
+                trackable = OpenXrSpatialAnnotation(config.handle, id, config.alignment)
+                xrResources.addTrackable(config.handle, trackable)
+                xrResources.addUpdatable(trackable as Updatable)
+            }
+        }
+
+        // Remove spatial annotations that are no longer tracked.
+        val activeHandles = xrResources.annotationConfigs.values.map { it.handle }.toSet()
+        for ((key, value) in xrResources.trackablesMap.toMap()) {
+            if (
+                value is OpenXrSpatialAnnotation &&
+                    (!activeHandles.contains(key) || value.trackingState == TrackingState.STOPPED)
+            ) {
+                xrResources.removeUpdatable(value as Updatable)
+                xrResources.removeTrackable(key)
+            }
+        }
+    }
+
+    override suspend fun startSpatialAnnotationTracking(
+        imageBuffer: ByteBuffer,
+        imageSize: IntSize2d,
+        rowStride: Int,
+        format: SpatialAnnotationImageFormat,
+        alignment: SpatialAnnotationQuadAlignment,
+        quads: Map<SpatialAnnotationId, Quad>,
+        timestampNanos: Long,
+    ): Unit = suspendCancellableCoroutine { continuation ->
+        val keys = quads.keys.toList()
+        val quadsExtents =
+            quads.values
+                .flatMap { quad ->
+                    val uL = quad.upperLeft
+                    val uR = quad.upperRight
+                    val lR = quad.lowerRight
+                    val lL = quad.lowerLeft
+                    listOf(uL.x, uL.y, uR.x, uR.y, lR.x, lR.y, lL.x, lL.y)
+                }
+                .toFloatArray()
+
+        // TODO(b/559357621): Add RGBA support in the native code.
+        // TODO(b/560289167): Investigate coroutines teardown issue.
+        nativeStartSpatialAnnotationTracking(
+            imageBuffer,
+            imageSize.width,
+            imageSize.height,
+            rowStride,
+            format.value,
+            alignment.value,
+            quadsExtents,
+            timestampNanos,
+        ) { handles ->
+            if (continuation.isActive && !isPerceptionManagerCleared) {
+                if (handles?.size == keys.size) {
+                    // Re-tracking an already-tracked ID replaces its handle; stop the old one so
+                    // it isn't leaked natively.
+                    // TODO(b/568087383): Native returns handles in completion order, not quad
+                    //  order, so handles[index] may not correspond to keys[index].
+                    val replacedHandles = keys.mapIndexedNotNull { index, key ->
+                        xrResources.addAnnotationHandle(key, handles[index], alignment)
+                    }
+                    if (replacedHandles.isNotEmpty()) {
+                        nativeStopSpatialAnnotationTracking(replacedHandles.toLongArray())
+                    }
+                    continuation.resume(Unit)
+                } else {
+                    // TODO(b/568088408): Stop the handles that did succeed on a partial failure
+                    //  so they aren't leaked natively.
+                    continuation.resumeWithException(
+                        IllegalStateException("Failed to start spatial annotation tracking.")
+                    )
+                }
+            } else {
+                if (!isPerceptionManagerCleared && handles != null && handles.isNotEmpty()) {
+                    nativeStopSpatialAnnotationTracking(handles)
+                }
+            }
+        }
+    }
+
+    @ExperimentalSpatialAnnotationsApi
+    override fun stopSpatialAnnotationTracking(ids: List<SpatialAnnotationId>) {
+        // If no IDs are provided, default to stopping all active spatial annotations (used when
+        // stopping tracking for all annotations, disabling tracking mode, or during teardown).
+        val targetIds = ids.ifEmpty { xrResources.annotationConfigs.keys.toList() }
+        val handlesToStop = targetIds.mapNotNull { xrResources.removeAnnotationHandle(it) }
+        if (handlesToStop.isNotEmpty()) {
+            nativeStopSpatialAnnotationTracking(handlesToStop.toLongArray())
+        }
+    }
+
+    /**
+     * Indicates whether this perception manager and its tracking resources have been cleared during
+     * runtime teardown.
+     */
+    @Volatile
+    internal var isPerceptionManagerCleared: Boolean = false
+        private set
+
+    @OptIn(ExperimentalSpatialAnnotationsApi::class)
     internal fun clear() {
-        xrResources.clear()
+        isPerceptionManagerCleared = true
+        try {
+            stopSpatialAnnotationTracking(emptyList())
+        } finally {
+            xrResources.clear()
+        }
     }
 
     private fun toHitResult(hitData: HitData, origin: Vector3): HitResult {
@@ -354,4 +473,18 @@ internal class OpenXrPerceptionManager(private val timeSource: OpenXrTimeSource)
     private external fun nativeGetQrCodes(): LongArray
 
     private external fun nativeIsQrCodeSizeEstimationSupported(): Boolean
+
+    private external fun nativeStartSpatialAnnotationTracking(
+        imageBuffer: ByteBuffer,
+        width: Int,
+        height: Int,
+        rowStride: Int,
+        format: Int,
+        alignment: Int,
+        quadsExtents: FloatArray,
+        timestampNanos: Long,
+        callback: (LongArray?) -> Unit,
+    )
+
+    private external fun nativeStopSpatialAnnotationTracking(handles: LongArray)
 }

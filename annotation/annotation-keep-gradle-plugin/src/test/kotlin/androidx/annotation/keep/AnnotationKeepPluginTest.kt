@@ -17,8 +17,8 @@
 package androidx.annotation.keep
 
 import androidx.testutils.gradle.ProjectSetupRule
+import com.google.common.truth.Truth.assertThat
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.junit.Rule
 import org.junit.Test
 
@@ -27,75 +27,176 @@ class AnnotationKeepPluginTest {
     @get:Rule val projectSetup = ProjectSetupRule()
 
     @Test
-    fun basicUsageTest() {
-        applyPlugin()
+    fun tasks() {
+        projectSetup.setupAndroidLibrary()
+        val result = projectSetup.createRunner("tasks").build()
+        assertThat(result.output)
+            .contains(
+                "releaseKeepRulesTransformAar - Transforms the release AAR to inject keep rules."
+            )
+        assertThat(result.output)
+            .contains("debugKeepRulesTransformAar - Transforms the debug AAR to inject keep rules.")
     }
 
-    private fun applyPlugin() {
-        // Runs ./gradlew tasks after the Plugin has been applied.
-        setup()
-        // There is some ambiguity when using the `withPluginClassPath` API.
-        // Implementation details of the Plugin might end up overriding things that are added to
-        // The plugins {} block. But, this is acceptable for the test given our implementation
-        // does not do those atypical things.
-        @Suppress("WithPluginClasspathUsage")
-        GradleRunner.create()
-            .withProjectDir(/* projectDir= */ projectSetup.rootDir)
-            .withPluginClasspath()
-            .withArguments("tasks")
-            .build()
-    }
-
-    private fun setup() {
+    @Test
+    fun applicationRegistersExtractKeepRulesTask() {
         val projectRoot = projectSetup.rootDir
-        // Copy Fixture
-        val projectDirectory = File("$TEST_DATA/basic-keep-plugin-example")
-        projectDirectory.copyRecursively(target = projectRoot)
-        // Repositories Block
-        val resolvers =
-            projectSetup.allRepositoryPaths.joinToString(separator = System.lineSeparator()) {
-                """
-                    |maven {
-                    | url "$it"
-                    |}
-                """
-                    .trimMargin()
-            }
-        val repositories =
-            """
-            |repositories {
-            |  $resolvers
-            |}
-            """
-                .trimMargin()
-
         val buildScript =
             """
                 |plugins {
-                |  id("com.android.library")
+                |  id("com.android.application")
                 |  id("androidx.annotation.keep")
                 |}
                 |
-                |$repositories
-                |${projectSetup.androidProject}
-                |
-                |dependencies {
-                |  // TODO: We need to be able to provision a dependency here.
-                |  // This has not been published yet, so we need to do that first.
-                |  // implementation(project(":annotation:annotation-keep"))
+                |repositories {
+                |  ${projectSetup.resolvers}
                 |}
                 |
+                |${projectSetup.androidProject}
+                |
                 |android {
-                |  namespace = "androidx.keep.annotation.plugin.example"
+                |  namespace = "androidx.keep.annotation.plugin.app.example"
                 |}
                 """
                 .trimMargin()
 
-        // Write build.gradle
         File(projectRoot, "build.gradle").writeText(buildScript)
+        File(projectRoot, "settings.gradle")
+            .writeText("rootProject.name = 'android-app-keep-example'")
+
+        val result = projectSetup.createRunner("tasks").build()
+
+        assertThat(result.output)
+            .contains(
+                "debugExtractKeepRules - Extracts keep rules from annotations for the debug variant."
+            )
+        assertThat(result.output)
+            .contains(
+                "releaseExtractKeepRules - Extracts keep rules from annotations for the release variant."
+            )
     }
 
-    companion object {
-        private const val TEST_DATA = "src/test/testData"
+    @Test
+    fun kotlinMultiplatformLibraryRegistersTransformAarTask() {
+        val projectRoot = projectSetup.rootDir
+        val buildScript =
+            """
+                |plugins {
+                |  id("org.jetbrains.kotlin.multiplatform")
+                |  id("com.android.kotlin.multiplatform.library")
+                |  id("androidx.annotation.keep")
+                |}
+                |
+                |repositories {
+                |  ${projectSetup.resolvers}
+                |}
+                |
+                |kotlin {
+                |  androidLibrary {
+                |    namespace = "androidx.keep.annotation.plugin.kmp.example"
+                |    compileSdk = ${projectSetup.props.compileSdk}
+                |  }
+                |}
+                """
+                .trimMargin()
+
+        File(projectRoot, "build.gradle").writeText(buildScript)
+        File(projectRoot, "settings.gradle")
+            .writeText("rootProject.name = 'kmp-library-keep-example'")
+
+        val result = projectSetup.createRunner("tasks").build()
+
+        assertThat(result.output)
+            .contains(
+                "androidMainKeepRulesTransformAar - Transforms the androidMain AAR to inject keep rules."
+            )
+    }
+
+    @Test
+    fun registerJavaArchiveTransform() {
+        val projectRoot = projectSetup.rootDir
+        val buildScript =
+            """
+                |plugins {
+                |  id("java-library")
+                |  id("androidx.annotation.keep")
+                |}
+                |
+                |repositories {
+                |  ${projectSetup.resolvers}
+                |}
+                |
+                |def jarTask = tasks.named("jar", Jar)
+                |def transformTask = annotationKeep.registerJavaArchiveTransform(
+                |  "keepRulesTransformJar",
+                |  jarTask.flatMap { it.archiveFile },
+                |  jarTask.flatMap { it.archiveFileName }.map { it.replace(".jar", "-keepRules.jar") }
+                |)
+                |def customTransformTask = annotationKeep.registerJavaArchiveTransform(
+                |  "customKeepRulesTransformJar",
+                |  jarTask.flatMap { it.archiveFile },
+                |  jarTask.flatMap { it.archiveFileName }.map { it.replace(".jar", "-custom.jar") }
+                |)
+                |
+                |tasks.register("verifyArtifacts") {
+                |  dependsOn(transformTask, customTransformTask)
+                |  doLast {
+                |    def apiArtifacts = configurations.apiElements.outgoing.artifacts.files.files
+                |    def runtimeArtifacts = configurations.runtimeElements.outgoing.artifacts.files.files
+                |    def originalJar = jarTask.get().archiveFile.get().asFile
+                |    def transformedJar = transformTask.get().outputJar.get().asFile
+                |    def customTransformedJar = customTransformTask.get().outputJar.get().asFile
+                |
+                |    assert apiArtifacts.contains(originalJar) : "apiElements should retain the original jar"
+                |    assert !apiArtifacts.contains(transformedJar) : "apiElements should not contain the transformed jar"
+                |    assert !apiArtifacts.contains(customTransformedJar) : "apiElements should not contain the custom transformed jar"
+                |    assert runtimeArtifacts.contains(originalJar) : "runtimeElements should retain the original jar"
+                |    assert !runtimeArtifacts.contains(transformedJar) : "runtimeElements should not contain the transformed jar"
+                |    assert !runtimeArtifacts.contains(customTransformedJar) : "runtimeElements should not contain the custom transformed jar"
+                |    assert transformedJar.exists() : "Transformed jar should exist"
+                |    assert transformedJar.name.endsWith("-keepRules.jar") : "Transformed jar should end with -keepRules.jar"
+                |    assert customTransformedJar.exists() : "Custom transformed jar should exist"
+                |    assert customTransformedJar.name.endsWith("-custom.jar") : "Custom jar should end with -custom.jar"
+                |  }
+                |}
+                """
+                .trimMargin()
+
+        File(projectRoot, "build.gradle").writeText(buildScript)
+        File(projectRoot, "settings.gradle").writeText("rootProject.name = 'java-keep-example'")
+        val javaSrcDir = File(projectRoot, "src/main/java/example")
+        javaSrcDir.mkdirs()
+        File(javaSrcDir, "Example.java")
+            .writeText(
+                """
+                package example;
+                public class Example {
+                    public void hello() {}
+                }
+                """
+                    .trimIndent()
+            )
+
+        val result =
+            projectSetup.createRunner("verifyArtifacts", "--no-configuration-cache").build()
+
+        assertThat(result.output).contains("BUILD SUCCESSFUL")
+
+        val tasksResult = projectSetup.createRunner("tasks").build()
+
+        assertThat(tasksResult.output)
+            .contains(
+                "keepRulesTransformJar - Transforms the keepRulesTransformJar JAR to inject keep rules."
+            )
+        assertThat(tasksResult.output)
+            .contains(
+                "customKeepRulesTransformJar - Transforms the customKeepRulesTransformJar JAR to inject keep rules."
+            )
+
+        // Also test that keepRulesTransformJar executes cleanly with configuration cache
+        val ccResult =
+            projectSetup.createRunner("keepRulesTransformJar", "--configuration-cache").build()
+
+        assertThat(ccResult.output).contains("BUILD SUCCESSFUL")
     }
 }

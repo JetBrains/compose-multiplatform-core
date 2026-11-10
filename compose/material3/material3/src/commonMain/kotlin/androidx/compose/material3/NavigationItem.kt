@@ -16,6 +16,7 @@
 
 package androidx.compose.material3
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.indication
@@ -81,16 +82,18 @@ import kotlin.math.roundToInt
 
 /** Class that describes the different supported icon positions of the navigation item. */
 @JvmInline
-value class NavigationItemIconPosition private constructor(private val value: Int) {
-    companion object {
+public value class NavigationItemIconPosition private constructor(private val value: Int) {
+    public companion object {
         /* The icon is positioned on top of the label. */
-        val Top = NavigationItemIconPosition(0)
+        public val Top: NavigationItemIconPosition
+            get() = NavigationItemIconPosition(0)
 
         /* The icon is positioned at the start of the label. */
-        val Start = NavigationItemIconPosition(1)
+        public val Start: NavigationItemIconPosition
+            get() = NavigationItemIconPosition(1)
     }
 
-    override fun toString() =
+    public override fun toString(): String =
         when (this) {
             Top -> "Top"
             Start -> "Start"
@@ -102,7 +105,10 @@ value class NavigationItemIconPosition private constructor(private val value: In
  * Represents the colors of the various elements of a navigation item.
  *
  * @param selectedIconColor the color to use for the icon when the item is selected.
- * @param selectedTextColor the color to use for the text label when the item is selected.
+ * @param selectedTextColorTopIconPosition the color to use for the text label when the item is
+ *   selected and is in the Top icon position configuration.
+ * @param selectedTextColorStartIconPosition the color to use for the text label when the item is
+ *   selected and is in the Start icon position configuration.
  * @param selectedIndicatorColor the color to use for the indicator when the item is selected.
  * @param unselectedIconColor the color to use for the icon when the item is unselected.
  * @param unselectedTextColor the color to use for the text label when the item is unselected.
@@ -111,38 +117,113 @@ value class NavigationItemIconPosition private constructor(private val value: In
  * @constructor create an instance with arbitrary colors.
  */
 @Immutable
-class NavigationItemColors
-constructor(
-    val selectedIconColor: Color,
-    val selectedTextColor: Color,
-    val selectedIndicatorColor: Color,
-    val unselectedIconColor: Color,
-    val unselectedTextColor: Color,
-    val disabledIconColor: Color,
-    val disabledTextColor: Color,
+public class NavigationItemColors
+public constructor(
+    public val selectedIconColor: Color,
+    public val selectedTextColorTopIconPosition: Color,
+    public val selectedTextColorStartIconPosition: Color,
+    public val selectedIndicatorColor: Color,
+    public val unselectedIconColor: Color,
+    public val unselectedTextColor: Color,
+    public val disabledIconColor: Color,
+    public val disabledTextColor: Color,
 ) {
-    /**
-     * Returns a copy of this NavigationItemColors, optionally overriding some of the values. This
-     * uses the Color.Unspecified to mean “use the value from the source”.
-     */
-    fun copy(
+
+    @Deprecated(
+        message =
+            "Use the NavigationItemColors constructor that takes selectedTextColorTopIconPosition " +
+                "and selectedTextColorStartIconPosition",
+        replaceWith =
+            ReplaceWith(
+                "NavigationItemColors(selectedIconColor, selectedTextColorTopIconPosition, " +
+                    "selectedTextColorStartIconPosition, selectedIndicatorColor, " +
+                    "unselectedIconColor, unselectedTextColor, disabledIconColor, " +
+                    "disabledTextColor)"
+            ),
+        level = DeprecationLevel.WARNING,
+    )
+    public constructor(
+        selectedIconColor: Color,
+        selectedTextColor: Color,
+        selectedIndicatorColor: Color,
+        unselectedIconColor: Color,
+        unselectedTextColor: Color,
+        disabledIconColor: Color,
+        disabledTextColor: Color,
+    ) : this(
+        selectedIconColor = selectedIconColor,
+        selectedTextColorTopIconPosition = selectedTextColor,
+        selectedTextColorStartIconPosition = selectedTextColor,
+        selectedIndicatorColor = selectedIndicatorColor,
+        unselectedIconColor = unselectedIconColor,
+        unselectedTextColor = unselectedTextColor,
+        disabledIconColor = disabledIconColor,
+        disabledTextColor = disabledTextColor,
+    )
+
+    @Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    public fun copy(
         selectedIconColor: Color = this.selectedIconColor,
-        selectedTextColor: Color = this.selectedTextColor,
+        selectedTextColor: Color = Color.Unspecified,
         selectedIndicatorColor: Color = this.selectedIndicatorColor,
         unselectedIconColor: Color = this.unselectedIconColor,
         unselectedTextColor: Color = this.unselectedTextColor,
         disabledIconColor: Color = this.disabledIconColor,
         disabledTextColor: Color = this.disabledTextColor,
-    ) =
+    ): NavigationItemColors =
         NavigationItemColors(
-            selectedIconColor.takeOrElse { this.selectedIconColor },
-            selectedTextColor.takeOrElse { this.selectedTextColor },
-            selectedIndicatorColor.takeOrElse { this.selectedIndicatorColor },
-            unselectedIconColor.takeOrElse { this.unselectedIconColor },
-            unselectedTextColor.takeOrElse { this.unselectedTextColor },
-            disabledIconColor.takeOrElse { this.disabledIconColor },
-            disabledTextColor.takeOrElse { this.disabledTextColor },
+            selectedIconColor = selectedIconColor.takeOrElse { this.selectedIconColor },
+            selectedTextColorTopIconPosition =
+                selectedTextColor.takeOrElse { this.selectedTextColorTopIconPosition },
+            selectedTextColorStartIconPosition =
+                selectedTextColor.takeOrElse { this.selectedTextColorStartIconPosition },
+            selectedIndicatorColor =
+                selectedIndicatorColor.takeOrElse { this.selectedIndicatorColor },
+            unselectedIconColor = unselectedIconColor.takeOrElse { this.unselectedIconColor },
+            unselectedTextColor = unselectedTextColor.takeOrElse { this.unselectedTextColor },
+            disabledIconColor = disabledIconColor.takeOrElse { this.disabledIconColor },
+            disabledTextColor = disabledTextColor.takeOrElse { this.disabledTextColor },
         )
+
+    /**
+     * Returns a copy of this NavigationItemColors, optionally overriding some of the values. This
+     * uses the Color.Unspecified to mean “use the value from the source”.
+     */
+    public fun copy(
+        selectedIconColor: Color = this.selectedIconColor,
+        selectedTextColorTopIconPosition: Color = this.selectedTextColorTopIconPosition,
+        selectedTextColorStartIconPosition: Color = this.selectedTextColorStartIconPosition,
+        selectedIndicatorColor: Color = this.selectedIndicatorColor,
+        unselectedIconColor: Color = this.unselectedIconColor,
+        unselectedTextColor: Color = this.unselectedTextColor,
+        disabledIconColor: Color = this.disabledIconColor,
+        disabledTextColor: Color = this.disabledTextColor,
+    ): NavigationItemColors =
+        NavigationItemColors(
+            selectedIconColor = selectedIconColor.takeOrElse { this.selectedIconColor },
+            selectedTextColorTopIconPosition =
+                selectedTextColorTopIconPosition.takeOrElse {
+                    this.selectedTextColorTopIconPosition
+                },
+            selectedTextColorStartIconPosition =
+                selectedTextColorStartIconPosition.takeOrElse {
+                    this.selectedTextColorStartIconPosition
+                },
+            selectedIndicatorColor =
+                selectedIndicatorColor.takeOrElse { this.selectedIndicatorColor },
+            unselectedIconColor = unselectedIconColor.takeOrElse { this.unselectedIconColor },
+            unselectedTextColor = unselectedTextColor.takeOrElse { this.unselectedTextColor },
+            disabledIconColor = disabledIconColor.takeOrElse { this.disabledIconColor },
+            disabledTextColor = disabledTextColor.takeOrElse { this.disabledTextColor },
+        )
+
+    @Deprecated(
+        message = "Use selectedTextColorTopIconPosition instead",
+        replaceWith = ReplaceWith("selectedTextColorTopIconPosition"),
+        level = DeprecationLevel.WARNING,
+    )
+    public val selectedTextColor: Color
+        get() = selectedTextColorTopIconPosition
 
     /**
      * Represents the icon color for this item, depending on whether it is [selected].
@@ -151,7 +232,7 @@ constructor(
      * @param enabled whether the item is enabled
      */
     @Stable
-    fun iconColor(selected: Boolean, enabled: Boolean): Color {
+    public fun iconColor(selected: Boolean, enabled: Boolean): Color {
         return when {
             !enabled -> disabledIconColor
             selected -> selectedIconColor
@@ -159,17 +240,33 @@ constructor(
         }
     }
 
+    @Deprecated(
+        message = "Use the overload that takes isIconPositionTop instead",
+        replaceWith = ReplaceWith("textColor(selected, enabled, true)"),
+        level = DeprecationLevel.HIDDEN,
+    )
+    @Stable
+    public fun textColor(selected: Boolean, enabled: Boolean): Color {
+        return textColor(selected = selected, enabled = enabled, isIconPositionTop = true)
+    }
+
     /**
      * Represents the text color for this item, depending on whether it is [selected].
      *
      * @param selected whether the item is selected
      * @param enabled whether the item is enabled
+     * @param isIconPositionTop whether the icon is at the top position
      */
     @Stable
-    fun textColor(selected: Boolean, enabled: Boolean): Color {
+    public fun textColor(
+        selected: Boolean,
+        enabled: Boolean,
+        isIconPositionTop: Boolean = true,
+    ): Color {
         return when {
             !enabled -> disabledTextColor
-            selected -> selectedTextColor
+            selected && !isIconPositionTop -> selectedTextColorStartIconPosition
+            selected && isIconPositionTop -> selectedTextColorTopIconPosition
             else -> unselectedTextColor
         }
     }
@@ -180,7 +277,9 @@ constructor(
 
         if (selectedIconColor != other.selectedIconColor) return false
         if (unselectedIconColor != other.unselectedIconColor) return false
-        if (selectedTextColor != other.selectedTextColor) return false
+        if (selectedTextColorTopIconPosition != other.selectedTextColorTopIconPosition) return false
+        if (selectedTextColorStartIconPosition != other.selectedTextColorStartIconPosition)
+            return false
         if (unselectedTextColor != other.unselectedTextColor) return false
         if (selectedIndicatorColor != other.selectedIndicatorColor) return false
         if (disabledIconColor != other.disabledIconColor) return false
@@ -192,7 +291,8 @@ constructor(
     override fun hashCode(): Int {
         var result = selectedIconColor.hashCode()
         result = 31 * result + unselectedIconColor.hashCode()
-        result = 31 * result + selectedTextColor.hashCode()
+        result = 31 * result + selectedTextColorTopIconPosition.hashCode()
+        result = 31 * result + selectedTextColorStartIconPosition.hashCode()
         result = 31 * result + unselectedTextColor.hashCode()
         result = 31 * result + selectedIndicatorColor.hashCode()
         result = 31 * result + disabledIconColor.hashCode()
@@ -211,15 +311,16 @@ constructor(
  * @param labelTextStyle the text style of the label of this item
  * @param indicatorShape the shape of the indicator when the item is selected
  * @param indicatorWidth the width of the indicator when the item is selected
- * @param indicatorHorizontalPadding the horizontal padding of the indicator
- * @param indicatorVerticalPadding the vertical padding of the indicator
+ * @param indicatorPadding the padding values of the indicator
  * @param indicatorToLabelVerticalPadding the padding between the indicator and the label when there
  *   is a top icon for this item (the iconPosition is Top)
  * @param startIconToLabelHorizontalPadding the padding between the start icon and the label of the
  *   item (the iconPosition is Start)
- * @param topIconItemVerticalPadding the vertical padding of the item when the iconPosition is Top
- * @param colors [NavigationItemColors] that will be used to resolve the colors used for this item
- *   in different states
+ * @param topIconItemPadding the padding of the item when the iconPosition is Top
+ * @param startIconItemPadding the padding of the item when the iconPosition is Start
+ * @param textColor the color of this item's label
+ * @param iconColor the color of this item's icon
+ * @param indicatorColor the color of this item's selected indicator
  * @param modifier the [Modifier] to be applied to this item
  * @param enabled controls the enabled state of this item. When `false`, this component will not
  *   respond to user input, and it will appear visually disabled and disabled to accessibility
@@ -238,19 +339,20 @@ internal fun NavigationItem(
     labelTextStyle: TextStyle,
     indicatorShape: Shape,
     indicatorWidth: Dp,
-    indicatorHorizontalPadding: Dp,
-    indicatorVerticalPadding: Dp,
+    indicatorPadding: PaddingValues,
     indicatorToLabelVerticalPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
-    topIconItemVerticalPadding: Dp,
-    colors: NavigationItemColors,
+    topIconItemPadding: PaddingValues,
+    startIconItemPadding: PaddingValues,
+    textColor: Color,
+    iconColor: Color,
+    indicatorColor: Color,
     modifier: Modifier,
     enabled: Boolean,
     label: @Composable (() -> Unit)?,
     iconPosition: NavigationItemIconPosition,
     interactionSource: MutableInteractionSource,
 ) {
-    val iconColor = colors.iconColor(selected = selected, enabled = enabled)
     val styledIcon: @Composable () -> Unit = {
         CompositionLocalProvider(LocalContentColor provides iconColor, content = icon)
     }
@@ -258,7 +360,16 @@ internal fun NavigationItem(
         if (label == null) {
             null
         } else {
-            { StyledLabel(selected, labelTextStyle, colors, enabled, label) }
+            {
+                StyledLabel(
+                    selected = selected,
+                    labelTextStyle = labelTextStyle,
+                    color = textColor,
+                    enabled = enabled,
+                    animateColor = false,
+                    content = label,
+                )
+            }
         }
 
     var itemWidth by remember { mutableIntStateOf(0) }
@@ -304,17 +415,17 @@ internal fun NavigationItem(
 
         NavigationItemLayout(
             interactionSource = offsetInteractionSource ?: interactionSource,
-            indicatorColor = colors.selectedIndicatorColor,
+            indicatorColor = indicatorColor,
             indicatorShape = indicatorShape,
             icon = styledIcon,
             iconPosition = iconPosition,
             label = styledLabel,
             indicatorAnimationProgress = { indicatorAnimationProgress.value.coerceAtLeast(0f) },
-            indicatorHorizontalPadding = indicatorHorizontalPadding,
-            indicatorVerticalPadding = indicatorVerticalPadding,
+            indicatorPadding = indicatorPadding,
             indicatorToLabelVerticalPadding = indicatorToLabelVerticalPadding,
             startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-            topIconItemVerticalPadding = topIconItemVerticalPadding,
+            topIconItemPadding = topIconItemPadding,
+            startIconItemPadding = startIconItemPadding,
         )
     }
 }
@@ -336,17 +447,18 @@ internal fun AnimatedNavigationItem(
     startIconLabelTextStyle: TextStyle,
     indicatorPadding: PaddingValues,
     topIconIndicatorToLabelVerticalPadding: Dp,
-    noLabelIndicatorPadding: Dp,
+    noLabelIndicatorPadding: PaddingValues,
     startIconToLabelHorizontalPadding: Dp,
     itemHorizontalPadding: Dp,
-    colors: NavigationItemColors,
+    textColor: Color,
+    iconColor: Color,
+    indicatorColor: Color,
     modifier: Modifier,
     enabled: Boolean,
     label: @Composable (() -> Unit)?,
     iconPosition: NavigationItemIconPosition,
     interactionSource: MutableInteractionSource,
 ) {
-    val iconColor = colors.iconColor(selected = selected, enabled = enabled)
     val styledIcon: @Composable () -> Unit = {
         CompositionLocalProvider(LocalContentColor provides iconColor, content = icon)
     }
@@ -392,8 +504,9 @@ internal fun AnimatedNavigationItem(
                     StyledLabel(
                         selected = selected,
                         labelTextStyle = textStyle,
-                        colors = colors,
+                        color = textColor,
                         enabled = enabled,
+                        animateColor = true,
                         content = label,
                     )
                 }
@@ -423,7 +536,7 @@ internal fun AnimatedNavigationItem(
 
         AnimatedNavigationItemLayout(
             interactionSource = offsetInteractionSource ?: interactionSource,
-            indicatorColor = colors.selectedIndicatorColor,
+            indicatorColor = indicatorColor,
             indicatorShape = indicatorShape,
             indicatorAnimationProgress = { indicatorAnimationProgress.value.coerceAtLeast(0f) },
             icon = styledIcon,
@@ -448,11 +561,11 @@ private fun NavigationItemLayout(
     iconPosition: NavigationItemIconPosition,
     label: @Composable (() -> Unit)?,
     indicatorAnimationProgress: () -> Float,
-    indicatorHorizontalPadding: Dp,
-    indicatorVerticalPadding: Dp,
+    indicatorPadding: PaddingValues,
     indicatorToLabelVerticalPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
-    topIconItemVerticalPadding: Dp,
+    topIconItemPadding: PaddingValues,
+    startIconItemPadding: PaddingValues,
 ) {
     Layout(
         modifier = Modifier.badgeBounds(),
@@ -474,17 +587,17 @@ private fun NavigationItemLayout(
                 TopIconOrIconOnlyMeasurePolicy(
                     label != null,
                     indicatorAnimationProgress,
-                    indicatorHorizontalPadding,
-                    indicatorVerticalPadding,
+                    indicatorPadding,
                     indicatorToLabelVerticalPadding,
-                    topIconItemVerticalPadding,
+                    topIconItemPadding,
+                    0.dp,
                 )
             } else {
                 StartIconMeasurePolicy(
                     indicatorAnimationProgress,
-                    indicatorHorizontalPadding,
-                    indicatorVerticalPadding,
+                    indicatorPadding,
                     startIconToLabelHorizontalPadding,
+                    startIconItemPadding,
                 )
             },
     )
@@ -502,7 +615,7 @@ private fun AnimatedNavigationItemLayout(
     label: @Composable (() -> Unit)?,
     indicatorPadding: PaddingValues,
     topIconIndicatorToLabelVerticalPadding: Dp,
-    noLabelIndicatorPadding: Dp,
+    noLabelIndicatorPadding: PaddingValues,
     startIconToLabelHorizontalPadding: Dp,
     itemHorizontalPadding: Dp,
 ) {
@@ -537,10 +650,10 @@ private fun AnimatedNavigationItemLayout(
                 TopIconOrIconOnlyMeasurePolicy(
                     hasLabel = false,
                     indicatorAnimationProgress = indicatorAnimationProgress,
-                    indicatorHorizontalPadding = noLabelIndicatorPadding,
-                    indicatorVerticalPadding = noLabelIndicatorPadding,
+                    indicatorPadding = noLabelIndicatorPadding,
                     indicatorToLabelVerticalPadding = 0.dp,
-                    topIconItemVerticalPadding = 0.dp,
+                    topIconItemPadding = PaddingValues(0.dp),
+                    itemHorizontalPadding = itemHorizontalPadding,
                 )
             },
     )
@@ -549,10 +662,10 @@ private fun AnimatedNavigationItemLayout(
 private class TopIconOrIconOnlyMeasurePolicy(
     val hasLabel: Boolean,
     val indicatorAnimationProgress: () -> Float,
-    val indicatorHorizontalPadding: Dp,
-    val indicatorVerticalPadding: Dp,
+    val indicatorPadding: PaddingValues,
     val indicatorToLabelVerticalPadding: Dp,
-    val topIconItemVerticalPadding: Dp,
+    val topIconItemPadding: PaddingValues,
+    val itemHorizontalPadding: Dp,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
@@ -560,19 +673,24 @@ private class TopIconOrIconOnlyMeasurePolicy(
     ): MeasureResult {
         @Suppress("NAME_SHADOWING") val indicatorAnimationProgress = indicatorAnimationProgress()
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+        val indicatorHorizontalPadding =
+            indicatorPadding.calculateStartPadding(layoutDirection) +
+                indicatorPadding.calculateEndPadding(layoutDirection)
+        val indicatorVerticalPadding =
+            indicatorPadding.calculateTopPadding() + indicatorPadding.calculateBottomPadding()
         // When measuring icon, account for the indicator in its constraints.
         val iconPlaceable =
             measurables
                 .fastFirst { it.layoutId == IconLayoutIdTag }
                 .measure(
                     looseConstraints.offset(
-                        horizontal = -(indicatorHorizontalPadding * 2).roundToPx(),
-                        vertical = -(indicatorVerticalPadding * 2).roundToPx(),
+                        horizontal = -indicatorHorizontalPadding.roundToPx(),
+                        vertical = -indicatorVerticalPadding.roundToPx(),
                     )
                 )
         // Next, when measuring the indicator and ripple, still need to obey looseConstraints.
-        val totalIndicatorWidth = iconPlaceable.width + (indicatorHorizontalPadding * 2).roundToPx()
-        val indicatorHeight = iconPlaceable.height + (indicatorVerticalPadding * 2).roundToPx()
+        val totalIndicatorWidth = iconPlaceable.width + indicatorHorizontalPadding.roundToPx()
+        val indicatorHeight = iconPlaceable.height + indicatorVerticalPadding.roundToPx()
         val animatedIndicatorWidth = (totalIndicatorWidth * indicatorAnimationProgress).roundToInt()
         val indicatorRipplePlaceable =
             measurables
@@ -612,11 +730,21 @@ private class TopIconOrIconOnlyMeasurePolicy(
                 indicatorPlaceable,
                 constraints,
                 indicatorToLabelVerticalPadding,
-                indicatorVerticalPadding,
-                topIconItemVerticalPadding,
+                indicatorPadding.calculateTopPadding(),
+                indicatorPadding.calculateBottomPadding(),
+                topIconItemPadding.calculateTopPadding(),
+                topIconItemPadding.calculateBottomPadding(),
+                topIconItemPadding.calculateStartPadding(layoutDirection),
+                topIconItemPadding.calculateEndPadding(layoutDirection),
             )
         } else {
-            placeIcon(iconPlaceable, indicatorRipplePlaceable, indicatorPlaceable, constraints)
+            placeIcon(
+                iconPlaceable,
+                indicatorRipplePlaceable,
+                indicatorPlaceable,
+                itemHorizontalPadding,
+                constraints,
+            )
         }
     }
 
@@ -631,8 +759,10 @@ private class TopIconOrIconOnlyMeasurePolicy(
                 .fastFirstOrNull { it.layoutId == LabelLayoutIdTag }
                 ?.maxIntrinsicHeight(width) ?: 0
         val paddings =
-            (topIconItemVerticalPadding * 2 +
-                    indicatorVerticalPadding * 2 +
+            (topIconItemPadding.calculateTopPadding() +
+                    topIconItemPadding.calculateBottomPadding() +
+                    indicatorPadding.calculateTopPadding() +
+                    indicatorPadding.calculateBottomPadding() +
                     indicatorToLabelVerticalPadding)
                 .roundToPx()
 
@@ -642,9 +772,9 @@ private class TopIconOrIconOnlyMeasurePolicy(
 
 private class StartIconMeasurePolicy(
     val indicatorAnimationProgress: () -> Float,
-    val indicatorHorizontalPadding: Dp,
-    val indicatorVerticalPadding: Dp,
+    val indicatorPadding: PaddingValues,
     val startIconToLabelHorizontalPadding: Dp,
+    val startIconItemPadding: PaddingValues,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
@@ -667,13 +797,17 @@ private class StartIconMeasurePolicy(
                     )
                 )
 
+        val indicatorHorizontalPadding =
+            indicatorPadding.calculateStartPadding(layoutDirection) +
+                indicatorPadding.calculateEndPadding(layoutDirection)
+        val indicatorVerticalPadding =
+            indicatorPadding.calculateTopPadding() + indicatorPadding.calculateBottomPadding()
         val totalIndicatorWidth =
             iconPlaceable.width +
                 labelPlaceable.width +
-                (startIconToLabelHorizontalPadding + indicatorHorizontalPadding * 2).roundToPx()
+                (startIconToLabelHorizontalPadding + indicatorHorizontalPadding).roundToPx()
         val indicatorHeight =
-            max(iconPlaceable.height, labelPlaceable.height) +
-                (indicatorVerticalPadding * 2).roundToPx()
+            max(iconPlaceable.height, labelPlaceable.height) + indicatorVerticalPadding.roundToPx()
         val animatedIndicatorWidth = (totalIndicatorWidth * indicatorAnimationProgress).roundToInt()
         // When measuring the indicator and ripple, still need to obey looseConstraints.
         val indicatorRipplePlaceable =
@@ -700,6 +834,7 @@ private class StartIconMeasurePolicy(
             indicatorPlaceable,
             constraints,
             startIconToLabelHorizontalPadding,
+            startIconItemPadding,
         )
     }
 
@@ -712,7 +847,12 @@ private class StartIconMeasurePolicy(
         val labelWidth =
             measurables.fastFirst { it.layoutId == LabelLayoutIdTag }.maxIntrinsicWidth(height)
         val paddings =
-            (indicatorHorizontalPadding * 2 + startIconToLabelHorizontalPadding).roundToPx()
+            (indicatorPadding.calculateStartPadding(layoutDirection) +
+                    indicatorPadding.calculateEndPadding(layoutDirection) +
+                    startIconToLabelHorizontalPadding +
+                    startIconItemPadding.calculateStartPadding(layoutDirection) +
+                    startIconItemPadding.calculateEndPadding(layoutDirection))
+                .roundToPx()
 
         return iconWidth + labelWidth + paddings
     }
@@ -725,7 +865,12 @@ private class StartIconMeasurePolicy(
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicHeight(width)
         val labelHeight =
             measurables.fastFirst { it.layoutId == LabelLayoutIdTag }.maxIntrinsicHeight(width)
-        val paddings = (indicatorVerticalPadding * 2).roundToPx()
+        val paddings =
+            (indicatorPadding.calculateTopPadding() +
+                    indicatorPadding.calculateBottomPadding() +
+                    startIconItemPadding.calculateStartPadding(layoutDirection) +
+                    startIconItemPadding.calculateEndPadding(layoutDirection))
+                .roundToPx()
 
         return max(iconHeight, labelHeight) + paddings
     }
@@ -859,9 +1004,13 @@ private fun MeasureScope.placeIcon(
     iconPlaceable: Placeable,
     indicatorRipplePlaceable: Placeable,
     indicatorPlaceable: Placeable,
+    itemHorizontalPadding: Dp,
     constraints: Constraints,
 ): MeasureResult {
-    val width = constraints.constrainWidth(indicatorRipplePlaceable.width)
+    val width =
+        constraints.constrainWidth(
+            indicatorRipplePlaceable.width + (itemHorizontalPadding * 2).roundToPx()
+        )
     val height = constraints.constrainHeight(indicatorRipplePlaceable.height)
 
     val indicatorX = (width - indicatorPlaceable.width) / 2
@@ -888,8 +1037,12 @@ private fun MeasureScope.placeIcon(
  * @param constraints constraints of the item
  * @param indicatorToLabelVerticalPadding the padding between the bottom of the indicator and the
  *   top of the label
- * @param indicatorVerticalPadding vertical padding of the indicator
- * @param topIconItemVerticalPadding vertical padding of the item
+ * @param indicatorPaddingTop top vertical padding of the indicator
+ * @param indicatorPaddingBottom bottom vertical padding of the indicator
+ * @param topIconItemTopPadding top padding of the item
+ * @param topIconItemBottomPadding bottom padding of the item
+ * @param topIconItemStartPadding start padding of the item
+ * @param topIconItemEndPadding end padding of the item
  */
 private fun MeasureScope.placeLabelAndTopIcon(
     labelPlaceable: Placeable,
@@ -898,8 +1051,12 @@ private fun MeasureScope.placeLabelAndTopIcon(
     indicatorPlaceable: Placeable,
     constraints: Constraints,
     indicatorToLabelVerticalPadding: Dp,
-    indicatorVerticalPadding: Dp,
-    topIconItemVerticalPadding: Dp,
+    indicatorPaddingTop: Dp,
+    indicatorPaddingBottom: Dp,
+    topIconItemTopPadding: Dp,
+    topIconItemBottomPadding: Dp,
+    topIconItemStartPadding: Dp,
+    topIconItemEndPadding: Dp,
 ): MeasureResult {
     val width =
         constraints.constrainWidth(maxOf(labelPlaceable.width, indicatorRipplePlaceable.width))
@@ -909,27 +1066,30 @@ private fun MeasureScope.placeLabelAndTopIcon(
             labelPlaceable.height
     val height =
         constraints.constrainHeight(
-            (contentHeight + topIconItemVerticalPadding.toPx() * 2).roundToInt()
+            (contentHeight + topIconItemTopPadding.toPx() + topIconItemBottomPadding.toPx())
+                .roundToInt()
         )
 
-    val iconY = (topIconItemVerticalPadding + indicatorVerticalPadding).roundToPx()
+    val iconY = (topIconItemTopPadding + indicatorPaddingTop).roundToPx()
     val iconX = (width - iconPlaceable.width) / 2
     val indicatorX = (width - indicatorPlaceable.width) / 2
-    val indicatorY = iconY - indicatorVerticalPadding.roundToPx()
+    val indicatorY = iconY - indicatorPaddingTop.roundToPx()
     val labelX = (width - labelPlaceable.width) / 2
     // Label should be fixed padding below icon.
     val labelY =
         iconY +
             iconPlaceable.height +
-            (indicatorVerticalPadding + indicatorToLabelVerticalPadding).roundToPx()
+            (indicatorPaddingBottom + indicatorToLabelVerticalPadding).roundToPx()
     val rippleX = (width - indicatorRipplePlaceable.width) / 2
     val rippleY = indicatorY
 
-    return layout(width, height) {
-        indicatorPlaceable.placeRelative(indicatorX, indicatorY)
-        labelPlaceable.placeRelative(labelX, labelY)
-        iconPlaceable.placeRelative(iconX, iconY)
-        indicatorRipplePlaceable.placeRelative(rippleX, rippleY)
+    val startPaddingX = topIconItemStartPadding.roundToPx()
+    val contentWidth = width + startPaddingX + topIconItemEndPadding.roundToPx()
+    return layout(contentWidth, height) {
+        indicatorPlaceable.placeRelative(startPaddingX + indicatorX, indicatorY)
+        labelPlaceable.placeRelative(startPaddingX + labelX, labelY)
+        iconPlaceable.placeRelative(startPaddingX + iconX, iconY)
+        indicatorRipplePlaceable.placeRelative(startPaddingX + rippleX, rippleY)
     }
 }
 
@@ -951,26 +1111,34 @@ private fun MeasureScope.placeLabelAndStartIcon(
     indicatorPlaceable: Placeable,
     constraints: Constraints,
     startIconToLabelHorizontalPadding: Dp,
+    startIconItemPadding: PaddingValues,
 ): MeasureResult {
-    val width = constraints.constrainWidth(indicatorRipplePlaceable.width)
-    val height = constraints.constrainHeight(indicatorRipplePlaceable.height)
+    val contentWidth = constraints.constrainWidth(indicatorRipplePlaceable.width)
+    val contentHeight = constraints.constrainHeight(indicatorRipplePlaceable.height)
 
-    val indicatorX = (width - indicatorPlaceable.width) / 2
-    val indicatorY = (height - indicatorPlaceable.height) / 2
-    val iconY = (height - iconPlaceable.height) / 2
-    val labelY = (height - labelPlaceable.height) / 2
+    val indicatorX = (contentWidth - indicatorPlaceable.width) / 2
+    val indicatorY = (contentHeight - indicatorPlaceable.height) / 2
+    val iconY = (contentHeight - iconPlaceable.height) / 2
+    val labelY = (contentHeight - labelPlaceable.height) / 2
     val itemContentWidth =
         iconPlaceable.width + startIconToLabelHorizontalPadding.roundToPx() + labelPlaceable.width
-    val iconX = (width - itemContentWidth) / 2
+    val iconX = (contentWidth - itemContentWidth) / 2
     val labelX = iconX + iconPlaceable.width + startIconToLabelHorizontalPadding.roundToPx()
-    val rippleX = (width - indicatorRipplePlaceable.width) / 2
-    val rippleY = (height - indicatorRipplePlaceable.height) / 2
+    val rippleX = (contentWidth - indicatorRipplePlaceable.width) / 2
+    val rippleY = (contentHeight - indicatorRipplePlaceable.height) / 2
 
+    val startPadding = startIconItemPadding.calculateStartPadding(layoutDirection).roundToPx()
+    val endPadding = startIconItemPadding.calculateEndPadding(layoutDirection).roundToPx()
+    val topPadding = startIconItemPadding.calculateTopPadding().roundToPx()
+    val bottomPadding = startIconItemPadding.calculateBottomPadding().roundToPx()
+
+    val width = contentWidth + startPadding + endPadding
+    val height = contentHeight + topPadding + bottomPadding
     return layout(width, height) {
-        indicatorPlaceable.placeRelative(indicatorX, indicatorY)
-        labelPlaceable.placeRelative(labelX, labelY)
-        iconPlaceable.placeRelative(iconX, iconY)
-        indicatorRipplePlaceable.placeRelative(rippleX, rippleY)
+        indicatorPlaceable.placeRelative(startPadding + indicatorX, topPadding + indicatorY)
+        labelPlaceable.placeRelative(startPadding + labelX, topPadding + labelY)
+        iconPlaceable.placeRelative(startPadding + iconX, topPadding + iconY)
+        indicatorRipplePlaceable.placeRelative(startPadding + rippleX, topPadding + rippleY)
     }
 }
 
@@ -1076,11 +1244,18 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
 private fun StyledLabel(
     selected: Boolean,
     labelTextStyle: TextStyle,
-    colors: NavigationItemColors,
+    color: Color,
     enabled: Boolean,
+    animateColor: Boolean,
     content: @Composable () -> Unit,
 ) {
-    val textColor = colors.textColor(selected = selected, enabled = enabled)
+    val textColor =
+        if (animateColor) {
+            val colorAnimationSpec = MotionSchemeKeyTokens.DefaultEffects.value<Color>()
+            animateColorAsState(targetValue = color, animationSpec = colorAnimationSpec).value
+        } else {
+            color
+        }
     ProvideContentColorTextStyle(
         contentColor = textColor,
         textStyle = labelTextStyle,
@@ -1170,4 +1345,5 @@ private const val IndicatorLayoutIdTag: String = "indicator"
 private const val IconLayoutIdTag: String = "icon"
 private const val LabelLayoutIdTag: String = "label"
 
-private val IndicatorVerticalOffset: Dp = 12.dp
+private val IndicatorVerticalOffset: Dp
+    get() = 12.dp

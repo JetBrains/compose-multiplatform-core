@@ -60,8 +60,8 @@ internal constructor(
          *
          * @param session the [Session] to subscribe to
          * @return a [StateFlow] that emits a collection of AugmentedObjects
-         * @throws IllegalStateException if the given [Session]'s [Config.augmentedObjectCategories]
-         *   is empty
+         * @throws [IllegalStateException] if the given [Session]'s
+         *   [Config.augmentedObjectCategories] is empty
          * @sample androidx.xr.arcore.samples.getAugmentedObjects
          */
         @JvmStatic
@@ -99,7 +99,7 @@ internal constructor(
      * @property centerPose the [Pose] determined to represent the center of this object
      * @property extents the dimensions of the object, axis aligned relative to the center pose,
      *   representing the full length of the specific axis
-     * @property owner self-reference to the object that owns this state.
+     * @property owner self-reference to the object that owns this state
      */
     public class State
     internal constructor(
@@ -127,6 +127,14 @@ internal constructor(
                 extents == other.extents &&
                 owner == other.owner
         }
+
+        /**
+         * Returns a string representation of [AugmentedObject.State] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String =
+            "State(trackingState=$trackingState, category=$category, centerPose=$centerPose, extents=$extents)"
     }
 
     private val _state =
@@ -157,4 +165,11 @@ internal constructor(
             )
         )
     }
+
+    /**
+     * Returns a string representation of [AugmentedObject] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "AugmentedObject(state=${state.value})"
 }

@@ -19,17 +19,18 @@ package androidx.xr.compose.testapp.mediaplayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -42,7 +43,7 @@ import androidx.xr.compose.unit.DpVolumeSize
 class MediaPlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContent { IntegrationTestsAppTheme { TestVideoPlayer() } }
     }
 
@@ -68,11 +69,13 @@ class MediaPlayerActivity : ComponentActivity() {
     private fun VideoPlayerXR() {
         val context = LocalContext.current
         val videoUri = "file:///android_asset/videos/sample_video.mp4"
-        val mediaItem = MediaItem.fromUri(videoUri)
-        val player = ExoPlayer.Builder(context).build()
-        player.setMediaItem(mediaItem)
-        val playerView = PlayerView(context)
-        playerView.player = player
+        val mediaItem = remember(videoUri) { MediaItem.fromUri(videoUri) }
+        val player =
+            remember(context) {
+                ExoPlayer.Builder(context.applicationContext).build().apply {
+                    setMediaItem(mediaItem)
+                }
+            }
 
         LaunchedEffect(player) {
             player.prepare()
@@ -81,6 +84,19 @@ class MediaPlayerActivity : ComponentActivity() {
 
         DisposableEffect(player) { onDispose { player.release() } }
 
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = { playerView })
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    this.player = player
+                }
+            },
+            update = { playerView ->
+                playerView.player = player
+            },
+            onRelease = { playerView ->
+                playerView.player = null
+            },
+        )
     }
 }

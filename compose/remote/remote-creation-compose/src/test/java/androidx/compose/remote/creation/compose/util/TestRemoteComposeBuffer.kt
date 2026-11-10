@@ -1514,8 +1514,18 @@ internal class TestRemoteComposeBuffer : RemoteComposeBuffer() {
         visibilityEasingType: Int,
         enterAnimation: Int,
         exitAnimation: Int,
+        enterFunctionId: Int,
+        exitFunctionId: Int,
     ) {
-        calls.add("addAnimationSpecModifier($animationId)")
+        if (enterFunctionId == -1 && exitFunctionId == -1) {
+            calls.add(
+                "addAnimationSpecModifier($animationId, ${format(motionDuration)}, $motionEasingType, ${format(visibilityDuration)}, $visibilityEasingType, $enterAnimation, $exitAnimation)"
+            )
+        } else {
+            calls.add(
+                "addAnimationSpecModifier($animationId, ${format(motionDuration)}, $motionEasingType, ${format(visibilityDuration)}, $visibilityEasingType, $enterAnimation, $exitAnimation, $enterFunctionId, $exitFunctionId)"
+            )
+        }
         super.addAnimationSpecModifier(
             animationId,
             motionDuration,
@@ -1524,6 +1534,8 @@ internal class TestRemoteComposeBuffer : RemoteComposeBuffer() {
             visibilityEasingType,
             enterAnimation,
             exitAnimation,
+            enterFunctionId,
+            exitFunctionId,
         )
     }
 

@@ -27,7 +27,6 @@ import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameCapture
 import androidx.camera.camera2.pipe.FrameMetadata
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.Request
@@ -38,6 +37,7 @@ import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
 import androidx.camera.camera2.testing.FakeCameraGraphSession.RequestStatus.ABORTED
 import androidx.camera.camera2.testing.FakeCameraGraphSession.RequestStatus.FAILED
 import androidx.camera.camera2.testing.FakeCameraGraphSession.RequestStatus.TOTAL_CAPTURE_DONE
+import androidx.camera.common.CameraFrameNumber
 import java.util.concurrent.Semaphore
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
@@ -140,13 +140,13 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         submittedRequests.addAll(requests)
     }
 
-    override fun capture(request: Request): FrameCapture {
+    fun capture(request: Request): FrameCapture {
         val capture = FakeFrameCapture(request)
         submit(request)
         return capture
     }
 
-    override fun capture(requests: List<Request>): List<FrameCapture> {
+    fun capture(requests: List<Request>): List<FrameCapture> {
         val captures = requests.map { FakeFrameCapture(it) }
         submit(requests)
         return captures
@@ -214,12 +214,16 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         last().listeners.forEach { listener ->
             when (status) {
                 TOTAL_CAPTURE_DONE ->
-                    listener.onTotalCaptureResult(requestMetadata, FrameNumber(0), FakeFrameInfo())
+                    listener.onTotalCaptureResult(
+                        requestMetadata,
+                        CameraFrameNumber(0),
+                        FakeFrameInfo(),
+                    )
                 FAILED ->
                     listener.onFailed(
                         requestMetadata,
-                        FrameNumber(0),
-                        FakeRequestFailure(requestMetadata, FrameNumber(0)),
+                        CameraFrameNumber(0),
+                        FakeRequestFailure(requestMetadata, CameraFrameNumber(0)),
                     )
                 ABORTED -> listener.onRequestSequenceAborted(requestMetadata)
             }

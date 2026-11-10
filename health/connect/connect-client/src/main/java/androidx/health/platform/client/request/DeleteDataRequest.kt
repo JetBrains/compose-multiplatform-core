@@ -23,9 +23,9 @@ import androidx.health.platform.client.proto.RequestProto
 
 /** Internal parcelable for IPC calls. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-class DeleteDataRequest(
-    val uids: List<RequestProto.DataTypeIdPair>,
-    val clientIds: List<RequestProto.DataTypeIdPair>,
+public class DeleteDataRequest(
+    public val uids: List<RequestProto.DataTypeIdPair>,
+    public val clientIds: List<RequestProto.DataTypeIdPair>,
 ) : ProtoParcelable<RequestProto.DeleteDataRequest>() {
     override val proto: RequestProto.DeleteDataRequest
         get() {
@@ -36,13 +36,12 @@ class DeleteDataRequest(
                 .build()
         }
 
-    companion object {
+    public companion object {
         @JvmField
-        val CREATOR: Parcelable.Creator<DeleteDataRequest> =
-            ProtoParcelable.newCreator {
-                val proto = RequestProto.DeleteDataRequest.parseFrom(it)
-                fromProto(proto)
-            }
+        public val CREATOR: Parcelable.Creator<DeleteDataRequest> = ProtoParcelable.newCreator {
+            val proto = RequestProto.DeleteDataRequest.parseFrom(it)
+            fromProto(proto)
+        }
 
         internal fun fromProto(proto: RequestProto.DeleteDataRequest): DeleteDataRequest {
             return DeleteDataRequest(proto.uidsList, proto.clientIdsList)

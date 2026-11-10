@@ -58,7 +58,7 @@ class SupportedCameraOperationsTest {
         )
         shadowCharacteristics.set(
             CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES,
-            arrayOf(
+            intArrayOf(
                 CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE,
                 CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA,
             ),
@@ -176,7 +176,8 @@ class SupportedCameraOperationsTest {
     fun supportedCameraOperations_extensionStrengthIsEnabled() {
         testSupportedCameraOperation(
             supportedCaptureRequestKeys = listOf(CaptureRequest.EXTENSION_STRENGTH),
-            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_EXTENSION_STRENGTH),
+            expectSupportedOperations =
+                setOf(AdapterCameraInfo.CAMERA_OPERATION_EXTENSION_STRENGTH),
         )
     }
 }

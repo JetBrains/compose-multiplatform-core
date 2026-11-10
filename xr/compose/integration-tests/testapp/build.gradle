@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import androidx.build.AndroidXConfig
 import androidx.build.ApkCopyHelperKt
 
 plugins {
@@ -25,7 +24,7 @@ plugins {
 
 android {
     namespace = "androidx.xr.compose.testapp"
-    compileSdk { version = release(37) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     defaultConfig {
         minSdk { version = release(34) }
     }
@@ -37,6 +36,7 @@ android {
         }
     }
 }
+
 
 dependencies {
     // Project dependencies
@@ -58,13 +58,15 @@ dependencies {
     implementation(project(":compose:ui:ui-tooling-preview"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:foundation:foundation"))
+    implementation(project(":navigation:navigation-compose"))
+    implementation(project(":fragment:fragment-compose"))
 
     // External dependencies (Binary)
     implementation("androidx.activity:activity-compose:1.10.0")
     implementation("androidx.annotation:annotation:1.9.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.fragment:fragment-ktx:1.8.1")
     implementation("androidx.media3:media3-exoplayer:1.6.0")
     implementation("androidx.media3:media3-ui:1.5.0")
@@ -88,6 +90,7 @@ dependencies {
     androidTestImplementation(project(":xr:testutils"))
 
     // Recommended project dependencies for tests to fix AOSP presubmit
+    androidTestImplementation(project(":compose:animation:animation-core"))
     androidTestImplementation(project(":compose:runtime:runtime-annotation"))
     androidTestImplementation(project(":compose:runtime:runtime-saveable"))
     androidTestImplementation(project(":compose:runtime:runtime"))
@@ -98,7 +101,7 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui-util"))
     androidTestImplementation(project(":compose:ui:ui"))
 
-    androidTestImplementation(project(":tracing:tracing"))
+    androidTestImplementation("androidx.tracing:tracing:2.0.1")
 
     androidTestUtil(libs.testOrchestrator)
 }

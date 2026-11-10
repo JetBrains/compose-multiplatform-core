@@ -19,7 +19,6 @@ package androidx.benchmark.macro
 import android.os.Build
 import android.util.Log
 import androidx.annotation.IntRange
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.benchmark.Arguments
 import androidx.benchmark.DeviceInfo
@@ -65,74 +64,68 @@ import org.junit.AssumptionViolatedException
  * [`cmd compile`](https://source.android.com/devices/tech/dalvik/jit-compiler#force-compilation-of-a-specific-package)
  * to compile the target app).
  */
-sealed class CompilationMode {
+public sealed class CompilationMode {
     internal fun resetAndCompile(
         scope: MacrobenchmarkScope,
         allowCompilationSkipping: Boolean = true,
         warmupBlock: () -> Unit,
     ) {
         val packageName = scope.packageName
-        if (Build.VERSION.SDK_INT >= 24) {
-            if (Arguments.enableCompilation || !allowCompilationSkipping) {
-                Log.d(TAG, "Clearing ART profiles for $packageName")
-                // The compilation mode chooses whether a reset is required or not.
-                // Currently the only compilation mode that does not perform a reset is
-                // CompilationMode.Ignore.
-                if (shouldReset()) {
-                    // Package reset enabled
-                    Log.d(TAG, "Resetting profiles for $packageName")
-                    // It's not possible to reset the compilation profile on `user` builds.
-                    // The flag `enablePackageReset` can be set to `true` on `userdebug` builds in
-                    // order to speed-up the profile reset. When set to false, reset is performed
-                    // uninstalling and reinstalling the app.
-                    if (Build.VERSION.SDK_INT >= 34) {
-                        // Starting API 34, --reset restores the state of the compiled code based
-                        // on prior install state. This means, e.g. if AGP version 8.3+ installs a
-                        // DM alongside the APK, reset != clear.
-                        // Use --verify to replace the contents of the odex file with that of an
-                        // empty file.
-                        cmdPackageCompile(packageName, "verify")
-                        // This does not clear the state of the `cur` and `ref` profiles.
-                        // To do that we also need to call `pm art clear-app-profiles <package>`.
-                        // pm art clear-app-profiles returns a "Profiles cleared"
-                        // to stdout upon success. Otherwise it includes an Error: <error reason>.
-                        val output =
-                            Shell.executeScriptCaptureStdout(
-                                "pm art clear-app-profiles $packageName"
-                            )
+        if (Arguments.enableCompilation || !allowCompilationSkipping) {
+            Log.d(TAG, "Clearing ART profiles for $packageName")
+            // The compilation mode chooses whether a reset is required or not.
+            // Currently the only compilation mode that does not perform a reset is
+            // CompilationMode.Ignore.
+            if (shouldReset()) {
+                // Package reset enabled
+                Log.d(TAG, "Resetting profiles for $packageName")
+                // It's not possible to reset the compilation profile on `user` builds.
+                // The flag `enablePackageReset` can be set to `true` on `userdebug` builds in
+                // order to speed-up the profile reset. When set to false, reset is performed
+                // uninstalling and reinstalling the app.
+                if (Build.VERSION.SDK_INT >= 34) {
+                    // Starting API 34, --reset restores the state of the compiled code based
+                    // on prior install state. This means, e.g. if AGP version 8.3+ installs a
+                    // DM alongside the APK, reset != clear.
+                    // Use --verify to replace the contents of the odex file with that of an
+                    // empty file.
+                    cmdPackageCompile(packageName, "verify")
+                    // This does not clear the state of the `cur` and `ref` profiles.
+                    // To do that we also need to call `pm art clear-app-profiles <package>`.
+                    // pm art clear-app-profiles returns a "Profiles cleared"
+                    // to stdout upon success. Otherwise it includes an Error: <error reason>.
+                    val output =
+                        Shell.executeScriptCaptureStdout("pm art clear-app-profiles $packageName")
 
-                        check(output.trim() == "Profiles cleared") {
-                            compileResetErrorString(packageName, output, DeviceInfo.isEmulator)
-                        }
-                    } else if (Shell.isSessionRooted()) {
-                        cmdPackageCompileReset(packageName)
-                    } else {
-                        // User builds pre-U. Kick off a full uninstall-reinstall
-                        Log.d(TAG, "Reinstalling $packageName")
-                        reinstallPackage(packageName)
+                    check(output.trim() == "Profiles cleared") {
+                        compileResetErrorString(packageName, output, DeviceInfo.isEmulator)
                     }
+                } else if (Shell.isSessionRooted()) {
+                    cmdPackageCompileReset(packageName)
+                } else {
+                    // User builds pre-U. Kick off a full uninstall-reinstall
+                    Log.d(TAG, "Reinstalling $packageName")
+                    reinstallPackage(packageName)
                 }
-
-                // Write skip file to stop profile installer from interfering with the benchmark
-                writeProfileInstallerSkipFile(scope)
-
-                if (
-                    DeviceInfo.poisonTheRuntimeImage && !poisonedRuntimeImages.contains(packageName)
-                ) {
-                    // Sleep to allow runtime image to be flushed from profile install broadcast
-                    // above, which will produce a near-useless runtime image, and allow us to
-                    // measure worst case `CompilationMode.None`/`verify` perf
-                    DeviceInfo.sleepToAwaitRuntimeImageFlush()
-
-                    // save package name as once it's poisoned, we don't need to re-poison
-                    // unless it's reinstalled
-                    poisonedRuntimeImages.add(packageName)
-                }
-
-                compileImpl(scope, warmupBlock)
-            } else {
-                Log.d(TAG, "Compilation is disabled, skipping compilation of $packageName")
             }
+
+            // Write skip file to stop profile installer from interfering with the benchmark
+            writeProfileInstallerSkipFile(scope)
+
+            if (DeviceInfo.poisonTheRuntimeImage && !poisonedRuntimeImages.contains(packageName)) {
+                // Sleep to allow runtime image to be flushed from profile install broadcast
+                // above, which will produce a near-useless runtime image, and allow us to
+                // measure worst case `CompilationMode.None`/`verify` perf
+                DeviceInfo.sleepToAwaitRuntimeImageFlush()
+
+                // save package name as once it's poisoned, we don't need to re-poison
+                // unless it's reinstalled
+                poisonedRuntimeImages.add(packageName)
+            }
+
+            compileImpl(scope, warmupBlock)
+        } else {
+            Log.d(TAG, "Compilation is disabled, skipping compilation of $packageName")
         }
     }
 
@@ -141,7 +134,7 @@ sealed class CompilationMode {
      * work on older APIs without root.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun reinstallPackage(packageName: String) {
+    public fun reinstallPackage(packageName: String) {
         inMemoryTrace("reinstallPackage") {
             val copiedApkPaths = copiedApkPaths(packageName)
             try {
@@ -166,24 +159,23 @@ sealed class CompilationMode {
      * after uninstall.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun copiedApkPaths(packageName: String): String {
+    public fun copiedApkPaths(packageName: String): String {
         // Copy APKs to /data/local/temp
         val apkPaths = Shell.pmPath(packageName)
 
-        val tempApkPaths: List<String> =
-            apkPaths.mapIndexed { index, apkPath ->
-                val tempApkPath =
-                    "/data/local/tmp/$packageName-$index-${System.currentTimeMillis()}.apk"
-                Log.d(TAG, "Copying APK $apkPath to $tempApkPath")
-                Shell.cp(from = apkPath, to = tempApkPath)
-                tempApkPath
-            }
+        val tempApkPaths: List<String> = apkPaths.mapIndexed { index, apkPath ->
+            val tempApkPath =
+                "/data/local/tmp/$packageName-$index-${System.currentTimeMillis()}.apk"
+            Log.d(TAG, "Copying APK $apkPath to $tempApkPath")
+            Shell.cp(from = apkPath, to = tempApkPath)
+            tempApkPath
+        }
         return tempApkPaths.joinToString(" ")
     }
 
     /** Uninstalls an app package by using `pm uninstall` under the hood. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun uninstallPackage(packageName: String) {
+    public fun uninstallPackage(packageName: String) {
         Log.d(TAG, "Uninstalling $packageName")
         val output = Shell.executeScriptCaptureStdout("pm uninstall $packageName")
         check(output.trim() == "Success") { "Unable to uninstall $packageName ($output)" }
@@ -194,7 +186,7 @@ sealed class CompilationMode {
      * `/data/local/tmp` from a pre-existing install session.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun installPackageFromPaths(packageName: String, copiedApkPaths: String) {
+    public fun installPackageFromPaths(packageName: String, copiedApkPaths: String) {
         Log.d(TAG, "Installing $packageName")
         val builder = StringBuilder("pm install")
         // Provide a `-t` argument to `pm install` to ensure test packages are
@@ -235,10 +227,9 @@ sealed class CompilationMode {
         scope.killProcess()
     }
 
-    @RequiresApi(24)
     internal abstract fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit)
 
-    @RequiresApi(24) internal abstract fun shouldReset(): Boolean
+    internal abstract fun shouldReset(): Boolean
 
     internal open fun requiresClearArtRuntimeImage(): Boolean = false
 
@@ -250,8 +241,7 @@ sealed class CompilationMode {
      * (such as will `StartupMode.COLD`), as app code is jitted.
      */
     @Suppress("CanSealedSubClassBeObject")
-    @RequiresApi(24)
-    class None : CompilationMode() {
+    public class None : CompilationMode() {
 
         override fun toString(): String = "None"
 
@@ -277,7 +267,7 @@ sealed class CompilationMode {
     // Leaving possibility for future configuration
     @ExperimentalMacrobenchmarkApi
     @Suppress("CanSealedSubClassBeObject")
-    class Ignore : CompilationMode() {
+    public class Ignore : CompilationMode() {
         override fun toString(): String = "Ignore"
 
         override fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit) {
@@ -300,10 +290,9 @@ sealed class CompilationMode {
      * have the ProfileInstaller library included, and have been built by AGP 7.0+ to package the
      * baseline profile in the APK.
      */
-    @RequiresApi(24)
-    class Partial
+    public class Partial
     @JvmOverloads
-    constructor(
+    public constructor(
         /**
          * Controls whether a Baseline Profile should be used to partially pre compile the app.
          *
@@ -311,13 +300,13 @@ sealed class CompilationMode {
          *
          * @see BaselineProfileMode
          */
-        val baselineProfileMode: BaselineProfileMode = BaselineProfileMode.Require,
+        public val baselineProfileMode: BaselineProfileMode = BaselineProfileMode.Require,
 
         /**
          * If greater than 0, your macrobenchmark will run an extra [warmupIterations] times before
          * compilation, to prepare
          */
-        @IntRange(from = 0) val warmupIterations: Int = 0,
+        @IntRange(from = 0) public val warmupIterations: Int = 0,
     ) : CompilationMode() {
         init {
             require(warmupIterations >= 0) {
@@ -390,14 +379,11 @@ sealed class CompilationMode {
      * compiled ahead-of-time.
      */
     @Suppress("CanSealedSubClassBeObject") // Leaving possibility for future configuration
-    class Full : CompilationMode() {
+    public class Full : CompilationMode() {
         override fun toString(): String = "Full"
 
         override fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit) {
-            if (Build.VERSION.SDK_INT >= 24) {
-                cmdPackageCompile(scope.packageName, "speed")
-            }
-            // Noop on older versions: apps are fully compiled at install time on API 23 and below
+            cmdPackageCompile(scope.packageName, "speed")
         }
 
         override fun shouldReset(): Boolean = true
@@ -412,7 +398,7 @@ sealed class CompilationMode {
      * TODO: migrate this to an internal-only flag on [None] instead
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    object Interpreted : CompilationMode() {
+    public object Interpreted : CompilationMode() {
         override fun toString(): String = "Interpreted"
 
         override fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit) {
@@ -422,7 +408,7 @@ sealed class CompilationMode {
         override fun shouldReset(): Boolean = true
     }
 
-    companion object {
+    public companion object {
 
         /**
          * Represents the default compilation mode for the platform, on an end user's device.
@@ -439,18 +425,9 @@ sealed class CompilationMode {
          * an app's BaselineProfile can be correctly used.
          */
         @JvmField
-        val DEFAULT: CompilationMode =
-            if (Build.VERSION.SDK_INT >= 24) {
-                Partial(
-                    baselineProfileMode = BaselineProfileMode.UseIfAvailable,
-                    warmupIterations = 0,
-                )
-            } else {
-                // API 23 is always fully compiled
-                Full()
-            }
+        public val DEFAULT: CompilationMode =
+            Partial(baselineProfileMode = BaselineProfileMode.UseIfAvailable, warmupIterations = 0)
 
-        @RequiresApi(24)
         internal fun cmdPackageCompile(packageName: String, compileArgument: String) {
             val stdout =
                 Shell.executeScriptCaptureStdout(
@@ -461,7 +438,6 @@ sealed class CompilationMode {
             }
         }
 
-        @RequiresApi(24)
         internal fun cmdPackageCompileReset(packageName: String) {
             // cmd package compile --reset returns a "Success" or a "Failure" to stdout.
             // Rather than rely on exit codes which are not always correct, we
@@ -476,7 +452,7 @@ sealed class CompilationMode {
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // enable testing
-        fun compileResetErrorString(
+        public fun compileResetErrorString(
             packageName: String,
             output: String,
             isEmulator: Boolean,
@@ -511,7 +487,7 @@ sealed class CompilationMode {
  * Used by jetpack-internal benchmarks to skip CompilationModes that would self-suppress.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun CompilationMode.isSupportedWithVmSettings(): Boolean {
+public fun CompilationMode.isSupportedWithVmSettings(): Boolean {
     // Only check for supportedVmSettings when CompilationMode.Interpreted is being requested.
     // More context: b/248085179
     val interpreted = this == CompilationMode.Interpreted

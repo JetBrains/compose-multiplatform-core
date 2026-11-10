@@ -739,7 +739,7 @@ public class NotificationCompat {
     public static final String EXTRA_AUDIO_CONTENTS_URI = "android.audioContents";
 
     /**
-     * {@link #extras} key: an arraylist of {@link android.app.Notification.ProgressStyle.Segment}
+     * {@link Notification#extras} key: an arraylist of {@link android.app.Notification.ProgressStyle.Segment}
      * bundles provided by a
      * {@link android.app.Notification.ProgressStyle} notification as supplied to
      * {@link ProgressStyle#setProgressSegments}
@@ -750,7 +750,7 @@ public class NotificationCompat {
     public static final String EXTRA_PROGRESS_SEGMENTS = "android.progressSegments";
 
     /**
-     * {@link #extras} key: an arraylist of {@link ProgressStyle.Point}
+     * {@link Notification#extras} key: an arraylist of {@link ProgressStyle.Point}
      * bundles provided by a
      * {@link android.app.Notification.ProgressStyle} notification as supplied to
      * {@link ProgressStyle#setProgressPoints}
@@ -761,7 +761,7 @@ public class NotificationCompat {
     public static final String EXTRA_PROGRESS_POINTS = "android.progressPoints";
 
     /**
-     * {@link #extras} key: whether the progress bar should be styled by its progress as
+     * {@link Notification#extras} key: whether the progress bar should be styled by its progress as
      * supplied to {@link ProgressStyle#setStyledByProgress}.
      * This extra is a boolean.
      */
@@ -769,7 +769,7 @@ public class NotificationCompat {
     public static final String EXTRA_STYLED_BY_PROGRESS = "android.styledByProgress";
 
     /**
-     * {@link #extras} key: this is an {@link IconCompat} of an image to be
+     * {@link Notification#extras} key: this is an {@link IconCompat} of an image to be
      * shown as progress bar progress tracker icon in {@link ProgressStyle}, supplied to
      *{@link ProgressStyle#setProgressTrackerIcon(IconCompat)}.
      */
@@ -777,7 +777,7 @@ public class NotificationCompat {
     public static final String EXTRA_PROGRESS_TRACKER_ICON = "android.progressTrackerIcon";
 
     /**
-     * {@link #extras} key: this is an {@link IconCompat} of an image to be
+     * {@link Notification#extras} key: this is an {@link IconCompat} of an image to be
      * shown at the beginning of the progress bar in {@link ProgressStyle}, supplied to
      *{@link ProgressStyle#setProgressStartIcon(IconCompat)}.
      */
@@ -785,7 +785,7 @@ public class NotificationCompat {
     public static final String EXTRA_PROGRESS_START_ICON = "android.progressStartIcon";
 
     /**
-     * {@link #extras} key: this is an {@link IconCompat} of an image to be
+     * {@link Notification#extras} key: this is an {@link IconCompat} of an image to be
      * shown at the end of the progress bar in {@link ProgressStyle}, supplied to
      *{@link ProgressStyle#setProgressEndIcon(IconCompat)}.
      */
@@ -793,8 +793,8 @@ public class NotificationCompat {
     public static final String EXTRA_PROGRESS_END_ICON = "android.progressEndIcon";
 
     /**
-     * {@link #extras} key: requests that the notification card show the
-     * {@link #getSmallIcon() small icon} instead of the launcher app icon.
+     * {@link Notification#extras} key: requests that the notification card show the
+     * {@link Notification#getSmallIcon() small icon} instead of the launcher app icon.
      */
     @SuppressLint("ActionValue")
     public static final String EXTRA_PREFER_SMALL_ICON = "android.app.preferSmallIcon";
@@ -10431,8 +10431,8 @@ public class NotificationCompat {
      * <p>To create a notification with Projected extensions:
      * <ol>
      * <li>Create a {@link NotificationCompat.Builder} for the notification.
-     * <li>Create an {@code ProjectedExtender}.
-     * <li>Set projection-specific properties using the {@code set} methods on the
+     * <li>Create a {@code ProjectedExtender}.
+     * <li>Set projection-specific properties using the {@code add} and {@code set} methods on the
      * {@code ProjectedExtender}.
      * <li>Call {@link NotificationCompat.Builder#extend} to apply the extensions to
      * the notification.
@@ -10445,17 +10445,31 @@ public class NotificationCompat {
      *     .setSmallIcon(R.drawable.ic_notification);
      *
      * ProjectedExtender projectedExtender = new ProjectedExtender()
-     *     .setContentIntent(projectedTapIntent);
+     *     .setContentIntent(projectedTapIntent)
+     *     .addAction(projectedAction);
      *
      * builder.extend(projectedExtender);
      * notificationManager.notify(NOTIFICATION_ID, builder.build());
+     * </pre>
+     *
+     * <p>Projected extensions can be accessed on an existing notification by using the
+     * {@code ProjectedExtender(Notification)} constructor, and then using the {@code get} methods
+     * to access values.
+     *
+     * <pre class="prettyprint">
+     * NotificationCompat.ProjectedExtender projectedExtender =
+     *     new NotificationCompat.ProjectedExtender(notification);
+     * List&lt;NotificationCompat.Action&gt; actions = projectedExtender.getActions();
      * </pre>
      */
     public static final class ProjectedExtender implements Extender {
         static final String EXTRA_PROJECTED_EXTENDER = "android.projected.EXTENSIONS";
         static final String KEY_CONTENT_INTENT = "content_intent";
+        static final String KEY_ACTIONS = "actions";
 
         private PendingIntent mContentIntent;
+        private final ArrayList<Action> mActions = new ArrayList<>();
+        private boolean mHasActions = false;
 
         /**
          * Create a {@link ProjectedExtender} with default options.
@@ -10476,6 +10490,16 @@ public class NotificationCompat {
             if (projectedBundle != null) {
                 mContentIntent = BundleCompat.getParcelable(projectedBundle, KEY_CONTENT_INTENT,
                         PendingIntent.class);
+                ArrayList<Notification.Action> actions = BundleCompat.getParcelableArrayList(
+                        projectedBundle, KEY_ACTIONS, Notification.Action.class);
+                if (actions != null) {
+                    mHasActions = true;
+                    for (Notification.Action action : actions) {
+                        if (action != null) {
+                            mActions.add(getActionCompatFromAction(action));
+                        }
+                    }
+                }
             }
         }
 
@@ -10505,7 +10529,95 @@ public class NotificationCompat {
         }
 
         /**
-         * Applies the Project extensions to the notification builder. This method is
+         * Add an action to this notification on projected devices.
+         *
+         * <p>When projected actions are added using this method, they are displayed instead of the
+         * main notification actions (added via {@link NotificationCompat.Builder#addAction}) when
+         * the notification is presented on a projected device. If no projected actions are set
+         * (and {@link #clearActions()} is not called), the projected device may display compatible
+         * actions from the main notification by default.
+         *
+         * @param action The action to add.
+         * @return This {@code ProjectedExtender} object for chaining.
+         * @see NotificationCompat.Action
+         */
+        public @NonNull ProjectedExtender addAction(@NonNull Action action) {
+            mHasActions = true;
+            mActions.add(action);
+            return this;
+        }
+
+        /**
+         * Adds multiple actions to this notification on projected devices.
+         *
+         * <p>When projected actions are added using this method, they are displayed instead of the
+         * main notification actions (added via {@link NotificationCompat.Builder#addAction}) when
+         * the notification is presented on a projected device. If no projected actions are set
+         * (and {@link #clearActions()} is not called), the projected device may display compatible
+         * actions from the main notification by default.
+         *
+         * @param actions The list of actions to add.
+         * @return This {@code ProjectedExtender} object for chaining.
+         * @see NotificationCompat.Action
+         */
+        public @NonNull ProjectedExtender addActions(@NonNull List<Action> actions) {
+            mHasActions = true;
+            mActions.addAll(actions);
+            return this;
+        }
+
+        /**
+         * Clear all projected actions from this extender.
+         *
+         * <p>Calling this method sets the projected actions to an empty list and marks
+         * {@link #hasActions()} as {@code true}, which prevents the projected device from using the
+         * main notification actions so that no actions are displayed on a projected device.
+         *
+         * @return This {@code ProjectedExtender} object for chaining.
+         * @see #addAction
+         * @see #hasActions
+         */
+        public @NonNull ProjectedExtender clearActions() {
+            mHasActions = true;
+            mActions.clear();
+            return this;
+        }
+
+        /**
+         * Returns whether projected actions have been explicitly set or cleared on this extender
+         * (via {@link #addAction}, {@link #addActions}, or {@link #clearActions}).
+         *
+         * <p>If this returns {@code false}, no projected actions have been configured and the
+         * projected device may display compatible actions from the main notification by default.
+         * If this returns {@code true}, the projected device should display the actions returned by
+         * {@link #getActions()} instead of the main notification actions (or display no actions if
+         * {@link #getActions()} is empty, such as after calling {@link #clearActions()}).
+         *
+         * @return {@code true} if projected actions were explicitly set or cleared, {@code false}
+         *         otherwise.
+         */
+        public boolean hasActions() {
+            return mHasActions;
+        }
+
+        /**
+         * Get the projected actions present on this notification.
+         *
+         * <p>If {@link #hasActions()} returns {@code false}, this returns an empty list and the
+         * projected device may display compatible actions from the main notification by default.
+         * If {@link #hasActions()} returns {@code true} and this returns an empty list (for
+         * example, after calling {@link #clearActions()}), no actions are displayed on the
+         * projected device.
+         *
+         * @return List of projected actions, or an empty list if none are present.
+         * @see #hasActions()
+         */
+        public @NonNull List<Action> getActions() {
+            return mActions;
+        }
+
+        /**
+         * Applies the Projected extensions to the notification builder. This method is
          * called by the {@link NotificationCompat.Builder#extend} method and should not
          * be called directly.
          *
@@ -10518,6 +10630,16 @@ public class NotificationCompat {
             Bundle projectedBundle = new Bundle();
             if (mContentIntent != null) {
                 projectedBundle.putParcelable(KEY_CONTENT_INTENT, mContentIntent);
+            }
+            if (mHasActions) {
+                ArrayList<Parcelable> parcelables = new ArrayList<>(mActions.size());
+                for (Action action : mActions) {
+                    if (action != null) {
+                        parcelables.add(
+                                NotificationCompatBuilder.getActionFromActionCompat(action));
+                    }
+                }
+                projectedBundle.putParcelableArrayList(KEY_ACTIONS, parcelables);
             }
             builder.getExtras().putBundle(EXTRA_PROJECTED_EXTENDER, projectedBundle);
             return builder;

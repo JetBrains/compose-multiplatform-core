@@ -284,6 +284,9 @@ internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
         val rootView = activity.findViewById(android.R.id.content) as ViewGroup
         rootView.removeAllViews()
 
+        // Run and remove outOfFrameExecutor callbacks
+        owner?.runAndClearPendingCallbacks()
+
         // Dispatcher will clean up the cancelled coroutines when it advances to them
         testCoroutineDispatcher.scheduler.advanceUntilIdle()
 
@@ -331,6 +334,14 @@ internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
 
     override fun getCoroutineLaunchedCount(): Int {
         return continuationCountInterceptor.continuationCount - InternallyLaunchedCoroutines
+    }
+
+    override fun setAccessibilityEnabled(enabled: Boolean) {
+        owner?.forceAccessibilityForTesting(enabled)
+    }
+
+    override fun updateSemantics() {
+        owner?.updateSemanticsForTest()
     }
 }
 

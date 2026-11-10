@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarColors
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -43,15 +42,7 @@ import androidx.compose.material3.FloatingToolbarDefaults.verticalExitTransition
 import androidx.compose.material3.FloatingToolbarHorizontalFabPosition
 import androidx.compose.material3.FloatingToolbarScrollBehavior
 import androidx.compose.material3.FloatingToolbarVerticalFabPosition
-import androidx.compose.material3.HorizontalFloatingToolbarOverride
-import androidx.compose.material3.HorizontalFloatingToolbarOverrideScope
-import androidx.compose.material3.HorizontalFloatingToolbarWithFabOverride
-import androidx.compose.material3.HorizontalFloatingToolbarWithFabOverrideScope
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.VerticalFloatingToolbarOverride
-import androidx.compose.material3.VerticalFloatingToolbarOverrideScope
-import androidx.compose.material3.VerticalFloatingToolbarWithFabOverride
-import androidx.compose.material3.VerticalFloatingToolbarWithFabOverrideScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
@@ -63,9 +54,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.tokens.XrTokens
-import androidx.xr.compose.spatial.ContentEdge
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterDefaults
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
+import androidx.xr.compose.unit.DpVolumeOffset
 
 /**
  * A horizontal floating toolbar displays navigation and key actions in a [Row]. It can be
@@ -90,10 +83,10 @@ import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
  *
  * TODO(kmost): Add a @sample tag and create a new sample project for XR.
  */
-@ExperimentalMaterial3XrApi
 @ExperimentalMaterial3ExpressiveApi
+@ExperimentalMaterial3XrApi
 @Composable
-public fun HorizontalFloatingToolbar(
+public fun SpatialHorizontalFloatingToolbar(
     expanded: Boolean,
     modifier: Modifier = Modifier,
     colors: FloatingToolbarColors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
@@ -103,13 +96,10 @@ public fun HorizontalFloatingToolbar(
     trailingContent: @Composable (RowScope.() -> Unit)? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    HorizontalOrbiter(LocalHorizontalFloatingToolbarOrbiterProperties.current) {
+    HorizontalOrbiter(LocalSpatialHorizontalFloatingToolbarOrbiterProperties.current) {
         Row(
             modifier =
-                Modifier.then(
-                        scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
-                            ?: Modifier
-                    )
+                Modifier.then(scrollBehavior?.floatingScrollBehaviorModifier ?: Modifier)
                     .heightIn(min = XrFloatingToolbarTokens.HorizontalToolbarContainerHeight)
                     .background(color = colors.toolbarContainerColor)
                     .padding(contentPadding),
@@ -185,10 +175,10 @@ public fun HorizontalFloatingToolbar(
  * @param content the main content of this floating toolbar. The default layout here is a [Row], so
  *   content inside will be placed horizontally.
  */
-@ExperimentalMaterial3XrApi
 @ExperimentalMaterial3ExpressiveApi
+@ExperimentalMaterial3XrApi
 @Composable
-public fun HorizontalFloatingToolbar(
+public fun SpatialHorizontalFloatingToolbar(
     expanded: Boolean,
     floatingActionButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -201,17 +191,14 @@ public fun HorizontalFloatingToolbar(
     content: @Composable RowScope.() -> Unit,
 ) {
     HorizontalOrbiter(
-        LocalHorizontalFloatingToolbarOrbiterProperties.current.copy(
+        LocalSpatialHorizontalFloatingToolbarOrbiterProperties.current.copy(
             shape = SpatialRoundedCornerShape(CornerSize(percent = 0))
         )
     ) {
         Row(
             modifier =
                 Modifier.heightIn(XrFloatingToolbarTokens.HorizontalToolbarContainerHeight)
-                    .then(
-                        scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
-                            ?: Modifier
-                    ),
+                    .then(scrollBehavior?.floatingScrollBehaviorModifier ?: Modifier),
             horizontalArrangement = Arrangement.spacedBy(XrFloatingToolbarTokens.ToolbarToFabGap),
         ) {
             val expandedState by rememberUpdatedState(expanded)
@@ -292,7 +279,7 @@ public fun HorizontalFloatingToolbar(
 @ExperimentalMaterial3ExpressiveApi
 @ExperimentalMaterial3XrApi
 @Composable
-public fun VerticalFloatingToolbar(
+public fun SpatialVerticalFloatingToolbar(
     expanded: Boolean,
     modifier: Modifier = Modifier,
     colors: FloatingToolbarColors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
@@ -302,14 +289,11 @@ public fun VerticalFloatingToolbar(
     trailingContent: @Composable (ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val orbiterProperties = LocalVerticalFloatingToolbarOrbiterProperties.current
+    val orbiterProperties = LocalSpatialVerticalFloatingToolbarOrbiterProperties.current
     VerticalOrbiter(properties = orbiterProperties) {
         Column(
             modifier =
-                Modifier.then(
-                        scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
-                            ?: Modifier
-                    )
+                Modifier.then(scrollBehavior?.floatingScrollBehaviorModifier ?: Modifier)
                     .widthIn(min = XrFloatingToolbarTokens.VerticalToolbarContainerWidth)
                     .background(color = colors.toolbarContainerColor)
                     .padding(contentPadding),
@@ -376,7 +360,7 @@ public fun VerticalFloatingToolbar(
 @ExperimentalMaterial3ExpressiveApi
 @ExperimentalMaterial3XrApi
 @Composable
-public fun VerticalFloatingToolbar(
+public fun SpatialVerticalFloatingToolbar(
     expanded: Boolean,
     floatingActionButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -389,17 +373,14 @@ public fun VerticalFloatingToolbar(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     VerticalOrbiter(
-        LocalVerticalFloatingToolbarOrbiterProperties.current.copy(
+        LocalSpatialVerticalFloatingToolbarOrbiterProperties.current.copy(
             shape = SpatialRoundedCornerShape(CornerSize(percent = 0))
         )
     ) {
         Column(
             modifier =
                 Modifier.widthIn(XrFloatingToolbarTokens.VerticalToolbarContainerWidth)
-                    .then(
-                        scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
-                            ?: Modifier
-                    ),
+                    .then(scrollBehavior?.floatingScrollBehaviorModifier ?: Modifier),
             verticalArrangement = Arrangement.spacedBy(XrFloatingToolbarTokens.ToolbarToFabGap),
         ) {
             val expandedState by rememberUpdatedState(expanded)
@@ -461,142 +442,58 @@ private object XrFloatingToolbarTokens {
     val ToolbarToFabGap = 8.dp
 }
 
-/** [HorizontalFloatingToolbarOverride] that uses the XR-specific [HorizontalFloatingToolbar]. */
-@OptIn(
-    ExperimentalMaterial3ComponentOverrideApi::class,
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3XrApi::class,
-)
-internal object XrHorizontalFloatingToolbarOverride : HorizontalFloatingToolbarOverride {
-    @Composable
-    override fun HorizontalFloatingToolbarOverrideScope.HorizontalFloatingToolbar() {
-        HorizontalFloatingToolbar(
-            expanded = isExpanded,
-            modifier = modifier,
-            colors = colors,
-            contentPadding = contentPadding,
-            scrollBehavior = scrollBehavior,
-            leadingContent = leadingContent,
-            trailingContent = trailingContent,
-            content = content,
-        )
-    }
-}
-
 /**
- * [HorizontalFloatingToolbarWithFabOverride] that uses the XR-specific [HorizontalFloatingToolbar],
- * with a floating action button (FAB).
- */
-@OptIn(
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class,
-    ExperimentalMaterial3XrApi::class,
-)
-internal object XrHorizontalFloatingToolbarWithFabOverride :
-    HorizontalFloatingToolbarWithFabOverride {
-    @Composable
-    override fun HorizontalFloatingToolbarWithFabOverrideScope.HorizontalFloatingToolbarWithFab() {
-        HorizontalFloatingToolbar(
-            expanded = isExpanded,
-            floatingActionButton = floatingActionButton,
-            modifier = modifier,
-            colors = colors,
-            contentPadding = contentPadding,
-            scrollBehavior = scrollBehavior,
-            shape = shape,
-            floatingActionButtonPosition = floatingActionButtonPosition,
-            content = content,
-        )
-    }
-}
-
-/** [VerticalFloatingToolbarOverride] that uses the XR-specific [VerticalFloatingToolbar]. */
-@OptIn(
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class,
-    ExperimentalMaterial3XrApi::class,
-)
-internal object XrVerticalFloatingToolbarOverride : VerticalFloatingToolbarOverride {
-    @Composable
-    override fun VerticalFloatingToolbarOverrideScope.VerticalFloatingToolbar() {
-        VerticalFloatingToolbar(
-            expanded = isExpanded,
-            modifier = modifier,
-            colors = colors,
-            contentPadding = contentPadding,
-            leadingContent = leadingContent,
-            trailingContent = trailingContent,
-            content = content,
-        )
-    }
-}
-
-/**
- * [VerticalFloatingToolbarWithFabOverride] that uses the XR-specific [VerticalFloatingToolbar],
- * with a floating action button (FAB).
- */
-@OptIn(
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class,
-    ExperimentalMaterial3XrApi::class,
-)
-internal object XrVerticalFloatingToolbarWithFabOverride : VerticalFloatingToolbarWithFabOverride {
-    @Composable
-    override fun VerticalFloatingToolbarWithFabOverrideScope.VerticalFloatingToolbarWithFab() {
-        VerticalFloatingToolbar(
-            expanded = isExpanded,
-            floatingActionButton = floatingActionButton,
-            modifier = modifier,
-            colors = colors,
-            contentPadding = contentPadding,
-            scrollBehavior = scrollBehavior,
-            shape = shape,
-            floatingActionButtonPosition = floatingActionButtonPosition,
-            content = content,
-        )
-    }
-}
-
-/**
- * The default [HorizontalOrbiterProperties] used by [HorizontalFloatingToolbar] if none is
- * specified in [LocalHorizontalFloatingToolbarOrbiterProperties].
+ * The default [OrbiterProperties] used by [SpatialHorizontalFloatingToolbar] if none is specified
+ * in [LocalSpatialHorizontalFloatingToolbarOrbiterProperties].
  */
 @OptIn(ExperimentalMaterial3XrApi::class)
-public val DefaultHorizontalFloatingToolbarOrbiterProperties: HorizontalOrbiterProperties =
-    HorizontalOrbiterProperties(
-        position = ContentEdge.Horizontal.Bottom,
-        offset = XrFloatingToolbarTokens.OrbiterOffset,
-        offsetType = OrbiterOffsetType.InnerEdge,
-        alignment = Alignment.CenterHorizontally,
+public val DefaultSpatialHorizontalFloatingToolbarOrbiterProperties: OrbiterProperties =
+    OrbiterProperties(
+        position =
+            OrbiterPosition.BottomCenter(
+                EdgeAlignment.Outside,
+                offset =
+                    DpVolumeOffset(
+                        0.dp,
+                        -XrFloatingToolbarTokens.OrbiterOffset,
+                        OrbiterDefaults.Elevation,
+                    ),
+            ),
         shape = XrTokens.ContainerShape,
     )
 
-/** The [HorizontalOrbiterProperties] used by [HorizontalFloatingToolbar]. */
+/** The [OrbiterProperties] used by [SpatialHorizontalFloatingToolbar]. */
 @OptIn(ExperimentalMaterial3XrApi::class)
-public val LocalHorizontalFloatingToolbarOrbiterProperties:
-    ProvidableCompositionLocal<HorizontalOrbiterProperties> =
+public val LocalSpatialHorizontalFloatingToolbarOrbiterProperties:
+    ProvidableCompositionLocal<OrbiterProperties> =
     compositionLocalOf {
-        DefaultHorizontalFloatingToolbarOrbiterProperties
+        DefaultSpatialHorizontalFloatingToolbarOrbiterProperties
     }
 
 /**
- * The default [VerticalOrbiterProperties] used by [VerticalFloatingToolbar] if none is specified in
- * [LocalVerticalFloatingToolbarOrbiterProperties].
+ * The default [OrbiterProperties] used by [SpatialVerticalFloatingToolbar] if none is specified in
+ * [LocalSpatialVerticalFloatingToolbarOrbiterProperties].
  */
 @OptIn(ExperimentalMaterial3XrApi::class)
-public val DefaultVerticalFloatingToolbarOrbiterProperties: VerticalOrbiterProperties =
-    VerticalOrbiterProperties(
-        position = ContentEdge.Vertical.End,
-        offset = XrFloatingToolbarTokens.OrbiterOffset,
-        offsetType = OrbiterOffsetType.InnerEdge,
-        alignment = Alignment.CenterVertically,
+public val DefaultSpatialVerticalFloatingToolbarOrbiterProperties: OrbiterProperties =
+    OrbiterProperties(
+        position =
+            OrbiterPosition.CenterEnd(
+                EdgeAlignment.Outside,
+                offset =
+                    DpVolumeOffset(
+                        x = XrFloatingToolbarTokens.OrbiterOffset,
+                        0.dp,
+                        OrbiterDefaults.Elevation,
+                    ),
+            ),
         shape = XrTokens.ContainerShape,
     )
 
-/** The [VerticalOrbiterProperties] used by [VerticalFloatingToolbar]. */
+/** The [OrbiterProperties] used by [SpatialVerticalFloatingToolbar]. */
 @OptIn(ExperimentalMaterial3XrApi::class)
-public val LocalVerticalFloatingToolbarOrbiterProperties:
-    ProvidableCompositionLocal<VerticalOrbiterProperties> =
+public val LocalSpatialVerticalFloatingToolbarOrbiterProperties:
+    ProvidableCompositionLocal<OrbiterProperties> =
     compositionLocalOf {
-        DefaultVerticalFloatingToolbarOrbiterProperties
+        DefaultSpatialVerticalFloatingToolbarOrbiterProperties
     }

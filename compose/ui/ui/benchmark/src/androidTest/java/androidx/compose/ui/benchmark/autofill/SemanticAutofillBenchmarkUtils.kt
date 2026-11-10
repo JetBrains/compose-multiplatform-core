@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/556234973
+
 package androidx.compose.ui.benchmark.autofill
 
 import androidx.compose.foundation.layout.Column

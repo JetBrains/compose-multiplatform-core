@@ -68,7 +68,6 @@ import com.google.common.truth.Truth
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -79,7 +78,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class GraphicsLayerTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
     private lateinit var activity: TestActivity
     private lateinit var density: Density
@@ -141,11 +140,10 @@ class GraphicsLayerTest {
     @Test
     fun layerModifier_scaleChange() {
         val scale = mutableStateOf(1f)
-        val layerModifier =
-            Modifier.graphicsLayer {
-                scaleX = scale.value
-                scaleY = scale.value
-            }
+        val layerModifier = Modifier.graphicsLayer {
+            scaleX = scale.value
+            scaleY = scale.value
+        }
         rule.setContent {
             FixedSize(size = 30, modifier = Modifier.background(Color.Blue)) {
                 FixedSize(
@@ -212,7 +210,8 @@ class GraphicsLayerTest {
                 @Composable {
                     FixedSize(
                         size = 10,
-                        modifier = Modifier.graphicsLayer().padding(10).background(innerColor.value),
+                        modifier =
+                            Modifier.graphicsLayer().padding(10).background(innerColor.value),
                     ) {}
                 }
             }

@@ -31,7 +31,6 @@ plugins {
 
 android {
     defaultConfig {
-
         // The package name is passed to the app as an instrumentation runner argument.
         // Set default target package at runtime. This could also be set by baseline profile
         // gradle plugin, but that's not used here.
@@ -81,7 +80,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Benchmark - Macrobenchmark JUnit4"
-    legacyDisableKotlinStrictApiMode = true
     deviceTests {
         targetAppProject = project(":benchmark:integration-tests:macrobenchmark-target")
         targetAppVariant = "release"

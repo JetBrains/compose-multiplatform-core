@@ -298,7 +298,6 @@ public class SignInTemplateDemoScreen extends Screen {
     private Template getProviderSignInTemplate() {
         IconCompat providerIcon = IconCompat.createWithResource(getCarContext(),
                 R.drawable.ic_googleg);
-        CarColor noTint = CarColor.createCustom(Color.TRANSPARENT, Color.TRANSPARENT);
 
         SpannableStringBuilder title = new SpannableStringBuilder()
                 .append(
@@ -312,9 +311,7 @@ public class SignInTemplateDemoScreen extends Screen {
                 new Action.Builder()
                         .setTitle(title)
                         .setBackgroundColor(CarColor.createCustom(Color.WHITE, Color.WHITE))
-                        .setIcon(new CarIcon.Builder(providerIcon)
-                                .setTint(noTint)
-                                .build())
+                        .setIcon(CarIcon.createOriginalIcon(providerIcon))
                         .setOnClickListener(ParkedOnlyOnClickListener.create(
                                 this::performSignInWithGoogleFlow)).build());
 

@@ -75,6 +75,7 @@ import androidx.wear.compose.material3.samples.ButtonLargeIconSample
 import androidx.wear.compose.material3.samples.ButtonSample
 import androidx.wear.compose.material3.samples.ChildButtonSample
 import androidx.wear.compose.material3.samples.CompactButtonSample
+import androidx.wear.compose.material3.samples.CompactButtonWithContentSample
 import androidx.wear.compose.material3.samples.CompactButtonWithOnLongClickSample
 import androidx.wear.compose.material3.samples.FilledTonalButtonSample
 import androidx.wear.compose.material3.samples.FilledVariantButtonSample
@@ -193,7 +194,7 @@ fun ButtonDemo() {
             )
         }
         item { ListHeader { Text("3 Slot Button") } }
-        item { ButtonSample(modifier = Modifier.fillMaxWidth()) }
+        item { ButtonSample() }
         item {
             Button(
                 onClick = { /* Do something */ },
@@ -637,6 +638,8 @@ fun CompactButtonDemo() {
                 Text("Child", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
+        item { ListHeader { Text("Content slot") } }
+        item { CompactButtonWithContentSample() }
         item { ListHeader { Text("Icon only") } }
         item {
             CompactButton(

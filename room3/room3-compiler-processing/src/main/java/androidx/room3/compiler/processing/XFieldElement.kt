@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,27 @@
 
 package androidx.room3.compiler.processing
 
-import androidx.room3.compiler.processing.ksp.KspFileMemberContainer
-import androidx.room3.compiler.processing.ksp.synthetic.KspSyntheticFileMemberContainer
-
-/** Field in an [XTypeElement]. */
+/** Field backing an [XPropertyElement]. */
 interface XFieldElement : XVariableElement, XHasModifiers {
-    /**
-     * The element that declared this field. For fields declared in classes, this will be an
-     * [XTypeElement].
-     *
-     * For fields declared as top level properties in Kotlin:
-     * * When running with KAPT, the value will be an [XTypeElement].
-     * * When running with KSP, the value will **NOT** be an [XTypeElement]. It will be an
-     *   [KspSyntheticFileMemberContainer] if this property is coming from the classpath or
-     *   [KspFileMemberContainer] if this property is in source. If you need the generated synthetic
-     *   java class name, you can use [XMemberContainer.asClassName] property.
-     */
-    override val enclosingElement: XMemberContainer
-
-    override val fallbackLocationText: String
-        get() = "$name in ${enclosingElement.fallbackLocationText}"
+    /** The property that owns this field. */
+    val owner: XPropertyElement
 
     /** The descriptor of this field in JVM. */
     val jvmDescriptor: String
 
-    /**
-     * Returns the getter method associated with this field or `null` if there isn't one.
-     *
-     * Note: This is expected to be `null` for java source, or if the field isn't associated with a
-     * kotlin property.
-     */
-    val getter: XMethodElement?
+    override val enclosingElement: XMemberContainer
 
-    /**
-     * Returns the setter method associated with this field or `null` if there isn't one.
-     *
-     * Note: This is expected to be `null` for java source, or if the field isn't associated with a
-     * kotlin property.
-     */
+    @Deprecated(
+        "Moved to owner property.",
+        replaceWith = ReplaceWith(expression = "this.owner.getter"),
+    )
+    val getter: XMethodElement?
+        get() = owner.getter
+
+    @Deprecated(
+        "Moved to owner property.",
+        replaceWith = ReplaceWith(expression = "this.owner.setter"),
+    )
     val setter: XMethodElement?
+        get() = owner.setter
 }

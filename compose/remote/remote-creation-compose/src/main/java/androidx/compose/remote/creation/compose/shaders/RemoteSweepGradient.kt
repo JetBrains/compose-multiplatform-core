@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-
 package androidx.compose.remote.creation.compose.shaders
 
 import androidx.annotation.RestrictTo
@@ -24,7 +22,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -55,7 +52,7 @@ import androidx.compose.ui.util.fastMap
 public fun RemoteBrush.Companion.sweepGradient(
     vararg colorStops: Pair<RemoteFloat, RemoteColor>,
     center: RemoteOffset? = null,
-): RemoteBrush =
+): RemoteShaderBrush =
     RemoteSweepGradient(
         colors = List(colorStops.size) { i -> colorStops[i].second },
         stops = List(colorStops.size) { i -> colorStops[i].first },
@@ -83,7 +80,7 @@ public fun RemoteBrush.Companion.sweepGradient(
 public fun RemoteBrush.Companion.sweepGradient(
     colors: List<RemoteColor>,
     center: RemoteOffset? = null,
-): RemoteBrush = RemoteSweepGradient(colors = colors, stops = null, center = center)
+): RemoteShaderBrush = RemoteSweepGradient(colors = colors, stops = null, center = center)
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Immutable
@@ -91,7 +88,7 @@ public data class RemoteSweepGradient(
     private val colors: List<RemoteColor>,
     private val stops: List<RemoteFloat>? = null,
     private val center: RemoteOffset? = null,
-) : RemoteBrush() {
+) : RemoteShaderBrush() {
 
     override fun RemoteStateScope.createShader(size: RemoteSize): RemoteShader {
         val realCenter = center ?: size.center
@@ -113,7 +110,6 @@ public class RemoteSweepShader(
     public var colors: List<RemoteColor>,
     public var positions: List<RemoteFloat>?,
 ) : RemoteShader() {
-    override var remoteMatrix3x3: RemoteMatrix3x3? = null
 
     override fun apply(creationState: RemoteComposeCreationState, paintBundle: PaintBundle) {
         var mask = 0

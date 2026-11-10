@@ -35,6 +35,7 @@ import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowBuild
+import org.robolectric.shadows.ShadowSystemProperties
 
 @RunWith(AndroidJUnit4::class)
 class ServiceLoaderExtTest {
@@ -87,6 +88,33 @@ class ServiceLoaderExtTest {
             .setSystemFeature(FEATURE_XR_API_OPENXR, /* supported= */ true)
 
         assertThat(getDeviceContextFeatures(context)).contains(Feature.OPEN_XR)
+    }
+
+    @Test
+    fun getDeviceContextFeatures_withForceOpenXrPropOne_addsOpenXr() {
+        ShadowBuild.setFingerprint("a_real_device")
+        ShadowSystemProperties.override(FORCE_OPENXR_PROPERTY, "1")
+
+        assertThat(getDeviceContextFeatures(ApplicationProvider.getApplicationContext()))
+            .contains(Feature.OPEN_XR)
+    }
+
+    @Test
+    fun getDeviceContextFeatures_withForceOpenXrPropTrue_addsOpenXr() {
+        ShadowBuild.setFingerprint("a_real_device")
+        ShadowSystemProperties.override(FORCE_OPENXR_PROPERTY, "true")
+
+        assertThat(getDeviceContextFeatures(ApplicationProvider.getApplicationContext()))
+            .contains(Feature.OPEN_XR)
+    }
+
+    @Test
+    fun getDeviceContextFeatures_withForceOpenXrPropDisabled_doesNotAddOpenXr() {
+        ShadowBuild.setFingerprint("a_real_device")
+        ShadowSystemProperties.override(FORCE_OPENXR_PROPERTY, "0")
+
+        assertThat(getDeviceContextFeatures(ApplicationProvider.getApplicationContext()))
+            .doesNotContain(Feature.OPEN_XR)
     }
 
     @Test
@@ -173,5 +201,23 @@ class ServiceLoaderExtTest {
             }
 
         assertThat(selectProvider(listOf(unsupportedProvider), emptySet())).isNull()
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.S]) // API 31 (Android S)
+    // RequiredDisplayCategory was introudced in API 34, any API below this would work
+    fun isProjectedActivity_withMissingApi_doesNotCrashAndReturnsFalse() {
+        val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+        val activityInfo = ActivityInfo()
+        activityInfo.packageName = activity.packageName
+        activityInfo.name = activity.componentName.className
+        val packageInfo = PackageInfo()
+        packageInfo.packageName = activity.packageName
+        packageInfo.activities = arrayOf(activityInfo)
+
+        shadowOf(activity.packageManager).installPackage(packageInfo)
+        val result = isProjectedActivity(activity)
+
+        assertThat(result).isFalse()
     }
 }

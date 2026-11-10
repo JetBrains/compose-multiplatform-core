@@ -25,9 +25,10 @@ import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.state.MutableRemoteString
 import androidx.compose.remote.creation.compose.state.rc
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteString
 import androidx.compose.remote.testing.util.GoldenScreenshotNameTestRule
+import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -38,7 +39,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -52,8 +52,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @RunWith(AndroidJUnit4::class)
 class RemoteSharedTestRuleScreenshotTest {
-    private val composeTestRule: ComposeContentTestRule =
-        createComposeRule(StandardTestDispatcher())
+    private val composeTestRule: ComposeContentTestRule = createComposeRule()
     private val remoteContentTestRule = RemoteContentTestRule(composeTestRule)
     private val remoteDocContentTestRule = RemoteDocContentTestRule(composeTestRule)
 
@@ -71,9 +70,9 @@ class RemoteSharedTestRuleScreenshotTest {
     @Test
     fun content() {
         remoteContentTestRule.setContent(createCreationDisplayInfo(context)) {
-            val text = rememberMutableRemoteString("Initial")
+            val text = remember { MutableRemoteString("Initial") }
             RemoteBox(
-                modifier = RemoteModifier.fillMaxSize().background(Color.White),
+                modifier = RemoteModifier.fillMaxSize().background(Color.White.rc),
                 contentAlignment = RemoteAlignment.Center,
             ) {
                 RemoteText(text, color = Color.Black.rc)

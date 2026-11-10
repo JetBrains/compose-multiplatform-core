@@ -23,25 +23,30 @@ import androidx.xr.arcore.runtime.AnchorInvalidUuidException
 import androidx.xr.arcore.runtime.ConversationState
 import androidx.xr.arcore.runtime.HitResult
 import androidx.xr.arcore.runtime.PerceptionManager
+import androidx.xr.arcore.runtime.SpatialAnnotationId
+import androidx.xr.arcore.runtime.SpatialAnnotationImageFormat
+import androidx.xr.arcore.runtime.SpatialAnnotationQuadAlignment
 import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.ExperimentalInertialTrackingApi
+import androidx.xr.runtime.ExperimentalSpatialAnnotationsApi
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
-import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.QrCodeTrackingMode
+import androidx.xr.runtime.SpatialAnnotationTrackingMode
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quad
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
+import java.nio.ByteBuffer
 import java.util.UUID
 
 internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
-    private val nativeAnchorPointer: Long = 1234567890L
     private val nativeAnchorToken: IBinder = Binder()
     private val fakeArDevice = FakeRuntimeArDevice()
     private val fakeLeftEye = FakeRuntimeEye()
@@ -115,8 +120,7 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
                 pose,
                 anchorHolder = this,
                 isTrackingAvailable = isCameraTracking,
-                nativePointer = nativeAnchorPointer,
-                nativeAnchorToken,
+                anchorToken = nativeAnchorToken,
             )
         anchors.add(anchor)
         return anchor
@@ -157,8 +161,7 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
                 persistedAnchorUUIDs[uuid]!!,
                 anchorHolder = this,
                 isTrackingAvailable = isCameraTracking,
-                nativePointer = nativeAnchorPointer,
-                nativeAnchorToken,
+                anchorToken = nativeAnchorToken,
             )
         return anchor
     }
@@ -189,14 +192,14 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
     }
 
     /** Sets TrackingStates to STOPPED for any corresponding config mode that has been disabled. */
-    @OptIn(PreviewSpatialApi::class, ExperimentalInertialTrackingApi::class)
     @SuppressWarnings("RestrictedApiAndroidX")
+    @OptIn(ExperimentalSpatialAnnotationsApi::class)
     internal fun updateTrackingStates(config: Config) {
         fakeArDevice.trackingState =
             when (config.deviceTracking) {
+                DeviceTrackingMode.DISABLED -> TrackingState.PAUSED
                 DeviceTrackingMode.SPATIAL -> TrackingState.TRACKING
-                DeviceTrackingMode.INERTIAL -> TrackingState.TRACKING_DEGRADED
-                else -> TrackingState.PAUSED
+                else -> TrackingState.TRACKING // ASSUMED INERTIAL
             }
         if (config.planeTracking == PlaneTrackingMode.DISABLED) {
             trackables.filterIsInstance<FakeRuntimePlane>().forEach {
@@ -215,6 +218,11 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
         }
         if (config.qrCodeTracking == QrCodeTrackingMode.DISABLED) {
             trackables.filterIsInstance<FakeRuntimeQrCode>().forEach {
+                it.trackingState = TrackingState.STOPPED
+            }
+        }
+        if (config.getSpatialAnnotationTracking() == SpatialAnnotationTrackingMode.DISABLED) {
+            trackables.filterIsInstance<FakeRuntimeSpatialAnnotation>().forEach {
                 it.trackingState = TrackingState.STOPPED
             }
         }
@@ -237,5 +245,40 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
         if (config.geospatial == GeospatialMode.DISABLED) {
             fakeGeospatial.state = androidx.xr.arcore.runtime.Geospatial.State.NOT_RUNNING
         }
+    }
+
+    @OptIn(ExperimentalSpatialAnnotationsApi::class)
+    override suspend fun startSpatialAnnotationTracking(
+        imageBuffer: ByteBuffer,
+        imageSize: IntSize2d,
+        rowStride: Int,
+        format: SpatialAnnotationImageFormat,
+        alignment: SpatialAnnotationQuadAlignment,
+        quads: Map<SpatialAnnotationId, Quad>,
+        timestampNanos: Long,
+    ) {
+        quads.forEach { (id, quad) ->
+            trackables.add(
+                FakeRuntimeSpatialAnnotation(
+                    id = id,
+                    trackingState = TrackingState.TRACKING,
+                    alignment = alignment,
+                    pose = Pose(),
+                    quad = quad,
+                )
+            )
+        }
+
+        FakePerceptionRuntime.allowOneMoreCallToUpdate()
+    }
+
+    override fun stopSpatialAnnotationTracking(ids: List<SpatialAnnotationId>) {
+        trackables
+            .filterIsInstance<FakeRuntimeSpatialAnnotation>()
+            .filter { ids.isEmpty() || it.id in ids }
+            .forEach {
+                it.trackingState = TrackingState.STOPPED
+                FakePerceptionRuntime.allowOneMoreCallToUpdate()
+            }
     }
 }

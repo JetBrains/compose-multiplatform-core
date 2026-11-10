@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -57,26 +58,16 @@ internal fun XrSettingsPane(
             modifier = Modifier.padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            ListItem(
-                headlineContent = {
-                    SpaceToggleButton(
-                        Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp)
-                    )
-                }
-            )
-            ListItem(
-                headlineContent = {
-                    NavigationSuiteTypeDropdown(selectedNavSuiteType, onNavSuiteTypeChanged)
-                }
-            )
-            ListItem(
-                headlineContent = {
-                    XrNavigationOrbiterPositionDropdown(
-                        selectedOrbiterPosition,
-                        onOrbiterPositionChanged,
-                    )
-                }
-            )
+            ListItem {
+                SpaceToggleButton(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp))
+            }
+            ListItem { NavigationSuiteTypeDropdown(selectedNavSuiteType, onNavSuiteTypeChanged) }
+            ListItem {
+                XrNavigationOrbiterPositionDropdown(
+                    selectedOrbiterPosition,
+                    onOrbiterPositionChanged,
+                )
+            }
         }
     }
 }
@@ -144,7 +135,7 @@ private fun <T> SimpleDropdown(
     itemLabel: (T) -> String,
     onSelectedChange: (T) -> Unit,
 ) {
-    var state = rememberTextFieldState(itemLabel(selectedItem))
+    val state = rememberTextFieldState(itemLabel(selectedItem))
     Column {
         Text(text = dropdownLabel, style = MaterialTheme.typography.labelMedium)
         ExposedDropdownMenuBox(

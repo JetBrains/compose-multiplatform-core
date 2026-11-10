@@ -27,11 +27,14 @@ import androidx.car.app.model.Action
 import androidx.car.app.model.Background
 import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
+import androidx.car.app.model.CarIconStyle
 import androidx.car.app.model.CarProgressBar
+import androidx.car.app.model.CarProgressBarStyle
 import androidx.car.app.model.CondensedItem
 import androidx.car.app.model.CondensedItemStyle
 import androidx.car.app.model.CondensedSection
 import androidx.car.app.model.Header
+import androidx.car.app.model.SectionHeader
 import androidx.car.app.model.SectionedItemTemplate
 import androidx.car.app.model.Shape
 import androidx.car.app.model.Template
@@ -49,30 +52,32 @@ class CondensedItemDemoScreen(carContext: CarContext) : Screen(carContext) {
 
     override fun onGetTemplate(): Template {
         val mediaIcon =
-            CarIcon.Builder(
-                    IconCompat.createWithResource(carContext, R.drawable.test_android_media)
-                )
-                .build()
+            CarIcon.createOriginalIcon(
+                IconCompat.createWithResource(carContext, R.drawable.test_android_media)
+            )
         val playIcon = CarIcon.MEDIA_PLAYBACK
         val arrowIcon =
-            CarIcon.Builder(
-                    IconCompat.createWithResource(carContext, android.R.drawable.ic_media_play)
-                )
-                .build()
+            CarIcon.createTintedIcon(
+                IconCompat.createWithResource(carContext, android.R.drawable.ic_media_play)
+            )
 
         val grayColor = Color.rgb(60, 62, 65)
         val grayBackground =
             Background.Builder().setColor(CarColor.createCustom(grayColor, grayColor)).build()
 
         // 1. Road Trip Section
-        val roadTripSectionBuilder = CondensedSection.Builder().setTitle("Road Trip")
+        val roadTripSectionBuilder =
+            CondensedSection.Builder()
+                .setSectionHeader(
+                    SectionHeader.Builder("Road Trip").setHeadline("Made for You").build()
+                )
         for (i in 1..6) {
             roadTripSectionBuilder.addItem(
                 CondensedItem.Builder()
                     .setTitle("90s Road Trip")
                     .setText("Playlist • Media")
                     .setLeadingImage(mediaIcon, CondensedItem.IMAGE_TYPE_LARGE)
-                    .setTrailingImage(arrowIcon, CondensedItem.IMAGE_TYPE_ICON)
+                    .setTrailingImage(arrowIcon, CondensedItem.IMAGE_TYPE_SMALL)
                     .setOnClickListener { showToast("Clicked Road Trip Item $i") }
                     .build()
             )
@@ -163,17 +168,17 @@ class CondensedItemDemoScreen(carContext: CarContext) : Screen(carContext) {
                 )
                 .addItem(
                     buildSizeShapeItem(
-                        "None + Small",
+                        "None + Medium",
                         Shape.NONE,
-                        CondensedItem.IMAGE_TYPE_SMALL,
+                        CondensedItem.IMAGE_TYPE_MEDIUM,
                         mediaIcon,
                     )
                 )
                 .addItem(
                     buildSizeShapeItem(
-                        "None + Icon",
+                        "None + Small",
                         Shape.NONE,
-                        CondensedItem.IMAGE_TYPE_ICON,
+                        CondensedItem.IMAGE_TYPE_SMALL,
                         mediaIcon,
                     )
                 )
@@ -188,17 +193,17 @@ class CondensedItemDemoScreen(carContext: CarContext) : Screen(carContext) {
                 )
                 .addItem(
                     buildSizeShapeItem(
-                        "Full + Small",
+                        "Full + Medium",
                         Shape.CORNER_FULL,
-                        CondensedItem.IMAGE_TYPE_SMALL,
+                        CondensedItem.IMAGE_TYPE_MEDIUM,
                         mediaIcon,
                     )
                 )
                 .addItem(
                     buildSizeShapeItem(
-                        "Full + Icon",
+                        "Full + Small",
                         Shape.CORNER_FULL,
-                        CondensedItem.IMAGE_TYPE_ICON,
+                        CondensedItem.IMAGE_TYPE_SMALL,
                         mediaIcon,
                     )
                 )
@@ -213,17 +218,17 @@ class CondensedItemDemoScreen(carContext: CarContext) : Screen(carContext) {
                 )
                 .addItem(
                     buildSizeShapeItem(
-                        "Medium + Small",
+                        "Medium + Medium",
                         Shape.CORNER_MEDIUM,
-                        CondensedItem.IMAGE_TYPE_SMALL,
+                        CondensedItem.IMAGE_TYPE_MEDIUM,
                         mediaIcon,
                     )
                 )
                 .addItem(
                     buildSizeShapeItem(
-                        "Medium + Icon",
+                        "Medium + Small",
                         Shape.CORNER_MEDIUM,
-                        CondensedItem.IMAGE_TYPE_ICON,
+                        CondensedItem.IMAGE_TYPE_SMALL,
                         mediaIcon,
                     )
                 )
@@ -320,12 +325,16 @@ class CondensedItemDemoScreen(carContext: CarContext) : Screen(carContext) {
                     CondensedItem.Builder()
                         .setTitle("Custom Alpha Tint")
                         .setLeadingImage(
-                            CarIcon.Builder(mediaIcon)
-                                .setTint(
-                                    CarColor.createCustom(
-                                        Color.argb(100, 0, 255, 0),
-                                        Color.argb(100, 0, 255, 0),
-                                    )
+                            CarIcon.Builder(
+                                    mediaIcon.icon!!,
+                                    CarIconStyle.Builder(CarIconStyle.TINTED)
+                                        .setTint(
+                                            CarColor.createCustom(
+                                                Color.argb(100, 0, 255, 0),
+                                                Color.argb(100, 0, 255, 0),
+                                            )
+                                        )
+                                        .build(),
                                 )
                                 .build()
                         )
@@ -371,7 +380,7 @@ class CondensedItemDemoScreen(carContext: CarContext) : Screen(carContext) {
     private fun buildColorItem(title: String, color: CarColor, icon: CarIcon): CondensedItem {
         return CondensedItem.Builder()
             .setTitle(title)
-            .setTrailingImage(icon, CondensedItem.IMAGE_TYPE_ICON)
+            .setTrailingImage(icon, CondensedItem.IMAGE_TYPE_SMALL)
             .setStyle(
                 CondensedItemStyle.Builder()
                     .setShape(Shape.CORNER_MEDIUM)
@@ -399,7 +408,11 @@ class CondensedItemDemoScreen(carContext: CarContext) : Screen(carContext) {
     private fun buildProgressItem(title: String, progress: Float, color: CarColor): CondensedItem {
         return CondensedItem.Builder()
             .setTitle(title)
-            .setProgressBar(CarProgressBar.Builder(progress).setColor(color).build())
+            .setProgressBar(
+                CarProgressBar.Builder(progress)
+                    .setStyle(CarProgressBarStyle.Builder().setColor(color).build())
+                    .build()
+            )
             .setOnClickListener { showToast("Clicked $title") }
             .build()
     }

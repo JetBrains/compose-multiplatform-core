@@ -21,7 +21,6 @@ import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -62,10 +61,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
  * ensure the integration-layer logger is working, not just a log from the core camera-pipe library.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(
-    minSdk = Build.VERSION_CODES.M,
-    shadows = [TestShadowCameraManager::class, TestShadowCameraDeviceImpl::class],
-)
+@Config(minSdk = 24, shadows = [TestShadowCameraManager::class, TestShadowCameraDeviceImpl::class])
 class Camera2LoggerIntegrationTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
@@ -129,12 +125,9 @@ class Camera2LoggerIntegrationTest {
 
         // Assert: Check that the specific integration-layer log is PRESENT
         val allLogs = ShadowLog.getLogs()
-        val attachLogFound =
-            allLogs.any {
-                it.tag == CXCP_TAG &&
-                    it.type == Log.DEBUG &&
-                    it.msg.contains(INTEGRATION_LOG_MARKER)
-            }
+        val attachLogFound = allLogs.any {
+            it.tag == CXCP_TAG && it.type == Log.DEBUG && it.msg.contains(INTEGRATION_LOG_MARKER)
+        }
 
         assertWithMessage("Expected integration-layer '$INTEGRATION_LOG_MARKER' log to be visible")
             .that(attachLogFound)
@@ -153,12 +146,9 @@ class Camera2LoggerIntegrationTest {
 
         // Assert: Check that the specific integration-layer log is ABSENT
         val allLogs = ShadowLog.getLogs()
-        val attachLogFound =
-            allLogs.any {
-                it.tag == CXCP_TAG &&
-                    it.type == Log.DEBUG &&
-                    it.msg.contains(INTEGRATION_LOG_MARKER)
-            }
+        val attachLogFound = allLogs.any {
+            it.tag == CXCP_TAG && it.type == Log.DEBUG && it.msg.contains(INTEGRATION_LOG_MARKER)
+        }
 
         assertWithMessage("Expected integration-layer '$INTEGRATION_LOG_MARKER' log to be hidden")
             .that(attachLogFound)
@@ -178,12 +168,9 @@ class Camera2LoggerIntegrationTest {
         // Assert: Check that the specific integration-layer log is PRESENT
         // The default level is DEBUG, so DEBUG logs should be visible.
         val allLogs = ShadowLog.getLogs()
-        val attachLogFound =
-            allLogs.any {
-                it.tag == CXCP_TAG &&
-                    it.type == Log.DEBUG &&
-                    it.msg.contains(INTEGRATION_LOG_MARKER)
-            }
+        val attachLogFound = allLogs.any {
+            it.tag == CXCP_TAG && it.type == Log.DEBUG && it.msg.contains(INTEGRATION_LOG_MARKER)
+        }
 
         assertWithMessage(
                 "Expected integration-layer '$INTEGRATION_LOG_MARKER' DEBUG log to be visible by default"

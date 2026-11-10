@@ -16,10 +16,12 @@
 
 package androidx.ink.brush
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(InkInternalOnlyApi::class)
 class InputToolTypeTest {
 
     @Test
@@ -37,5 +39,11 @@ class InputToolTypeTest {
         assertThat(InputToolType.fromInt(2)).isEqualTo(InputToolType.TOUCH)
         assertThat(InputToolType.fromInt(3)).isEqualTo(InputToolType.STYLUS)
         assertFailsWith<IllegalStateException> { InputToolType.fromInt(4) }
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(InputToolType.STYLUS.calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
     }
 }

@@ -50,7 +50,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import junit.framework.TestCase.assertEquals
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,7 +57,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 26)
 class TextFieldsSemanticAutofillTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     // ============================================================================================
     // Tests to verify legacy TextField populating and filling.
@@ -66,6 +65,7 @@ class TextFieldsSemanticAutofillTest {
 
     @Test
     @SmallTest
+    @Suppress("DEPRECATION") // b/552879150
     fun performAutofill_credentials_BTF() {
         // Arrange.
         lateinit var view: View
@@ -117,6 +117,7 @@ class TextFieldsSemanticAutofillTest {
     // Tests to verify TextField populating and filling.
     // ============================================================================================
 
+    @Suppress("DEPRECATION")
     @Test
     @SmallTest
     fun performAutofill_credentials_legacyTF() {
@@ -153,6 +154,7 @@ class TextFieldsSemanticAutofillTest {
         assertEquals(usernameInput, "testUsername")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @SmallTest
     fun performAutofill_credentials_outlinedTF() {
@@ -189,6 +191,7 @@ class TextFieldsSemanticAutofillTest {
         assertEquals(usernameInput, "testUsername")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @SmallTest
     @SdkSuppress(minSdkVersion = 26)
@@ -236,6 +239,7 @@ class TextFieldsSemanticAutofillTest {
         rule.onNodeWithTag(usernameTag).captureToImage().assertContainsColor(customHighlightColor)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @SmallTest
     @SdkSuppress(minSdkVersion = 26)
@@ -287,6 +291,7 @@ class TextFieldsSemanticAutofillTest {
             .assertContainsColor(gradientEndColor)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @SmallTest
     @SdkSuppress(minSdkVersion = 26)

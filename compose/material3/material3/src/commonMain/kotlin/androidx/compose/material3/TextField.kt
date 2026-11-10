@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.material3
 
 import androidx.compose.animation.VectorConverter
@@ -201,7 +203,7 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TextField(
+public fun TextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -361,7 +363,7 @@ fun TextField(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TextField(
+public fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -511,7 +513,7 @@ fun TextField(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TextField(
+public fun TextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -837,4 +839,5 @@ internal class IndicatorLineNode(
 
 /** Padding from text field top to label top, and from input field bottom to text field bottom */
 /*@VisibleForTesting*/
-internal val TextFieldWithLabelVerticalPadding = 8.dp
+internal val TextFieldWithLabelVerticalPadding
+    get() = 8.dp

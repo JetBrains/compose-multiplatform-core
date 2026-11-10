@@ -108,20 +108,18 @@ internal fun translateComposition(
         // multi-sized RemoteViews (a RemoteViews that contains either landscape & portrait RVs or
         // multiple RVs mapped by size).
         val sizeMode = (children.first() as EmittableSizeBox).sizeMode
-        val views =
-            children.map { child ->
-                val size = (child as EmittableSizeBox).size
-                val remoteViewsInfo =
-                    createRootView(translationContext, child.modifier, rootViewIndex)
-                val rv =
-                    remoteViewsInfo.remoteViews.apply {
-                        translateChild(
-                            translationContext.forRootAndSize(root = remoteViewsInfo, size),
-                            child,
-                        )
-                    }
-                size.toSizeF() to rv
-            }
+        val views = children.map { child ->
+            val size = (child as EmittableSizeBox).size
+            val remoteViewsInfo = createRootView(translationContext, child.modifier, rootViewIndex)
+            val rv =
+                remoteViewsInfo.remoteViews.apply {
+                    translateChild(
+                        translationContext.forRootAndSize(root = remoteViewsInfo, size),
+                        child,
+                    )
+                }
+            size.toSizeF() to rv
+        }
         return when (sizeMode) {
             is SizeMode.Single -> views.single().second
             is SizeMode.Responsive,
@@ -308,7 +306,13 @@ private fun RemoteViews.translateEmittableBox(
             element.contentAlignment.horizontal,
             element.contentAlignment.vertical,
         )
-    applyModifiers(translationContext, this, element.modifier, viewDef)
+    applyModifiers(
+        translationContext,
+        this,
+        element.modifier,
+        viewDef,
+        shouldOptimizeVisibility = true,
+    )
     element.children.forEach {
         it.modifier = it.modifier.then(AlignmentModifier(element.contentAlignment))
     }
@@ -338,7 +342,13 @@ private fun RemoteViews.translateEmittableRow(
         viewDef.mainViewId,
         Alignment(element.horizontalAlignment, element.verticalAlignment).toGravity(),
     )
-    applyModifiers(translationContext.canUseSelectableGroup(), this, element.modifier, viewDef)
+    applyModifiers(
+        translationContext.canUseSelectableGroup(),
+        this,
+        element.modifier,
+        viewDef,
+        shouldOptimizeVisibility = true,
+    )
     setChildren(translationContext, viewDef, element.children)
     if (element.modifier.isSelectableGroup) checkSelectableGroupChildren(element.children)
 }
@@ -366,7 +376,13 @@ private fun RemoteViews.translateEmittableColumn(
         viewDef.mainViewId,
         Alignment(element.horizontalAlignment, element.verticalAlignment).toGravity(),
     )
-    applyModifiers(translationContext.canUseSelectableGroup(), this, element.modifier, viewDef)
+    applyModifiers(
+        translationContext.canUseSelectableGroup(),
+        this,
+        element.modifier,
+        viewDef,
+        shouldOptimizeVisibility = true,
+    )
     setChildren(translationContext, viewDef, element.children)
     if (element.modifier.isSelectableGroup) checkSelectableGroupChildren(element.children)
 }
@@ -400,7 +416,13 @@ private fun RemoteViews.translateEmittableAndroidRemoteViews(
             }
         }
     val viewDef = insertView(translationContext, LayoutType.Frame, element.modifier)
-    applyModifiers(translationContext, this, element.modifier, viewDef)
+    applyModifiers(
+        translationContext,
+        this,
+        element.modifier,
+        viewDef,
+        shouldOptimizeVisibility = false,
+    )
     removeAllViews(viewDef.mainViewId)
     addChildView(viewDef.mainViewId, rv, stableId = 0)
 }
@@ -427,7 +449,13 @@ private fun RemoteViews.translateEmittableButton(
     if (element.modifier.findModifier<PaddingModifier>() == null) {
         element.modifier = element.modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     }
-    applyModifiers(translationContext, this, element.modifier, viewDef)
+    applyModifiers(
+        translationContext,
+        this,
+        element.modifier,
+        viewDef,
+        shouldOptimizeVisibility = true,
+    )
 }
 
 private fun RemoteViews.translateEmittableSpacer(
@@ -435,7 +463,13 @@ private fun RemoteViews.translateEmittableSpacer(
     element: EmittableSpacer,
 ) {
     val viewDef = insertView(translationContext, LayoutType.Frame, element.modifier)
-    applyModifiers(translationContext, this, element.modifier, viewDef)
+    applyModifiers(
+        translationContext,
+        this,
+        element.modifier,
+        viewDef,
+        shouldOptimizeVisibility = true,
+    )
 }
 
 // Sets the emittables as children to the view. This first remove any previously added view, the

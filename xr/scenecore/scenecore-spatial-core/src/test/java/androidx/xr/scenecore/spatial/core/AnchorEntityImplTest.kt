@@ -15,7 +15,6 @@
  */
 package androidx.xr.scenecore.spatial.core
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.SystemClock
 import androidx.lifecycle.Lifecycle
@@ -58,7 +57,6 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     override val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
     private val anchorStateListener = mock<AnchorEntity.OnStateChangedListener>()
@@ -259,7 +257,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     @Test
     fun anchorEntityGetActivitySpaceScale_returnsInverseOfActivitySpace() {
         val activitySpaceScale = 5f
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.fromScale(activitySpaceScale))
+        activitySpace.setPlatformReferenceSpaceTransform(Matrix4.fromScale(activitySpaceScale))
         val anchorEntity = createAnchorEntityWithArCoreAnchor()
         assertVector3(anchorEntity.activitySpaceScale, Vector3.One)
     }
@@ -268,27 +266,27 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     fun getActivitySpacePose_unanchored_returnsIdentityPose() {
         val anchorEntity = createUnanchoredAnchorEntity()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
+        activitySpace.setPlatformReferenceSpaceTransform(Matrix4.Identity)
+        anchorEntity.setPlatformReferenceSpaceTransform(Matrix4.fromPose(pose))
 
         assertPose(anchorEntity.activitySpacePose, Pose())
     }
 
     @Test
-    fun getActivitySpacePose_noActivitySpaceOpenXrReferenceSpacePose_returnsIdentityPose() {
+    fun getActivitySpacePose_noActivitySpacePlatformReferenceSpacePose_returnsIdentityPose() {
         val anchorEntity = createAnchorEntityWithArCoreAnchor()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
+        anchorEntity.setPlatformReferenceSpaceTransform(Matrix4.fromPose(pose))
         assertPose(anchorEntity.activitySpacePose, Pose())
     }
 
     @Test
-    fun getActivitySpacePose_noAnchorOpenXrReferenceSpacePose_returnsIdentityPose() {
+    fun getActivitySpacePose_noAnchorPlatformReferenceSpacePose_returnsIdentityPose() {
         val anchorEntity = createAnchorEntityWithArCoreAnchor()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
+        activitySpace.setPlatformReferenceSpaceTransform(Matrix4.fromPose(pose))
 
-        // anchorEntity.setOpenXrReferenceSpacePose(..) is not called to set the underlying pose.
+        // anchorEntity.setPlatformReferenceSpacePose(..) is not called to set the underlying pose.
         assertPose(anchorEntity.activitySpacePose, Pose())
     }
 
@@ -296,10 +294,10 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     fun getActivitySpacePose_whenAtSamePose_returnsIdentityPose() {
         val anchorEntity = createAnchorEntityWithArCoreAnchor()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
-        activitySpace.setOpenXrReferenceSpaceTransform(
+        activitySpace.setPlatformReferenceSpaceTransform(
             Matrix4.fromTrs(pose.translation, pose.rotation, Vector3(2f, 2f, 2f))
         )
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
+        anchorEntity.setPlatformReferenceSpaceTransform(Matrix4.fromPose(pose))
 
         assertPose(anchorEntity.activitySpacePose, Pose())
     }
@@ -308,8 +306,8 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     fun getActivitySpacePose_returnsDifferencePose() {
         val anchorEntity = createAnchorEntityWithArCoreAnchor()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
+        activitySpace.setPlatformReferenceSpaceTransform(Matrix4.Identity)
+        anchorEntity.setPlatformReferenceSpaceTransform(Matrix4.fromPose(pose))
 
         assertPose(anchorEntity.activitySpacePose, pose)
     }
@@ -319,8 +317,8 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
         val anchorEntity = createAnchorEntityWithArCoreAnchor()
         val activitySpaceQuaternion = Quaternion.fromEulerAngles(Vector3(0f, 0f, 90f))
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
-        activitySpace.setOpenXrReferenceSpaceTransform(
+        anchorEntity.setPlatformReferenceSpaceTransform(Matrix4.fromPose(pose))
+        activitySpace.setPlatformReferenceSpaceTransform(
             Matrix4.fromTrs(
                 Vector3(2f, 3f, 4f),
                 activitySpaceQuaternion,
@@ -339,8 +337,8 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     fun transformPoseTo_withActivitySpace_returnsTransformedPose() {
         val anchorEntity = createAnchorEntityWithArCoreAnchor()
         val pose = Pose(Vector3(1f, 2f, 3f), Quaternion.Identity)
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
+        activitySpace.setPlatformReferenceSpaceTransform(Matrix4.Identity)
+        anchorEntity.setPlatformReferenceSpaceTransform(Matrix4.fromPose(pose))
 
         val anchorOffset =
             Pose(Vector3(10f, 0f, 0f), Quaternion.fromEulerAngles(Vector3(0f, 0f, 90f)))
@@ -359,10 +357,10 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
         val pose = Pose(Vector3(1f, 2f, 3f), Quaternion.Identity)
         val childPose = Pose(Vector3(-1f, -2f, -3f), Quaternion.Identity)
 
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
+        activitySpace.setPlatformReferenceSpaceTransform(Matrix4.Identity)
         activitySpace.addChild(childEntity1)
         childEntity1.setPose(childPose)
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
+        anchorEntity.setPlatformReferenceSpaceTransform(Matrix4.fromPose(pose))
 
         assertPose(
             activitySpace.transformPoseTo(Pose(), anchorEntity),
@@ -456,5 +454,31 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
             .isEqualTo(anchor.anchorToken)
         Truth.assertThat(NodeRepository.getInstance().getParent(anchorEntity.getNode()))
             .isEqualTo(activitySpace.getNode())
+    }
+
+    private fun createAnchorWithNullToken(): Anchor {
+        val anchor = (Anchor.create(session, Pose.Identity) as AnchorCreateSuccess).anchor
+        val field = Anchor::class.java.getDeclaredField("anchorToken")
+        field.isAccessible = true
+        field.set(anchor, null)
+        return anchor
+    }
+
+    @Test
+    fun setAnchor_nullAnchorToken_updatesStateToErrorAndReturnsFalse() {
+        val anchorEntity = createUnanchoredAnchorEntity()
+        anchorEntity.setOnStateChangedListener(anchorStateListener)
+        verify(anchorStateListener, never()).onStateChanged(AnchorEntity.State.ERROR)
+
+        val anchor = createAnchorWithNullToken()
+        Truth.assertThat(anchor.anchorToken).isNull()
+
+        val result = anchorEntity.setAnchor(anchor)
+
+        Truth.assertThat(result).isFalse()
+        Truth.assertThat(anchorEntity.state).isEqualTo(AnchorEntity.State.ERROR)
+        verify(anchorStateListener).onStateChanged(AnchorEntity.State.ERROR)
+        Truth.assertThat(NodeRepository.getInstance().getAnchorId(anchorEntity.getNode())).isNull()
+        Truth.assertThat(NodeRepository.getInstance().getParent(anchorEntity.getNode())).isNull()
     }
 }

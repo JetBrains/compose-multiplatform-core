@@ -32,10 +32,10 @@ plugins {
 dependencies {
     // Add dependencies here
     implementation("androidx.compose.ui:ui-unit:1.8.0")
-    implementation("androidx.compose.material3:material3:1.4.0")
-    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0")
-    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.2.0")
-    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.5.0-alpha17")
+    implementation(project(":compose:material3:material3"))
+    implementation(project(":compose:material3:adaptive:adaptive"))
+    implementation(project(":compose:material3:adaptive:adaptive-layout"))
+    implementation(project(":compose:material3:material3-adaptive-navigation-suite"))
     implementation(project(":xr:compose:compose"))
     implementation("androidx.activity:activity:1.9.3")
 
@@ -45,17 +45,15 @@ dependencies {
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.truth)
-    testImplementation("androidx.compose.ui:ui-test:1.11.0-beta02")
-    testImplementation("androidx.compose.ui:ui-test-junit4:1.11.0-beta02")
-    testImplementation("androidx.compose.ui:ui-test-manifest:1.11.0-beta02")
+    testImplementation("androidx.compose.ui:ui-test:1.11.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4:1.11.0")
+    testImplementation("androidx.compose.ui:ui-test-manifest:1.11.0")
     testImplementation(project(":xr:compose:compose-testing"))
+    testImplementation(project(":xr:scenecore:scenecore-testing"))
 }
 
 android {
-    compileSdk { version = release(36) }
-    defaultConfig {
-        minSdk { version = release(24) }
-    }
+    compileSdk { version = release(37) }
     namespace = "androidx.xr.compose.material3"
 }
 

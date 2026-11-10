@@ -20,7 +20,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -37,12 +36,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ContentEdge
+import androidx.core.view.WindowCompat
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
@@ -60,11 +62,13 @@ import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.components.TopBarWithBackArrow
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple80
+import androidx.xr.compose.unit.DpVolumeOffset
+import kotlinx.coroutines.launch
 
 class Animation : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContent { IntegrationTestsAppTheme { ValueBasedAnimationsApp() } }
     }
 
@@ -75,26 +79,34 @@ class Animation : ComponentActivity() {
     @Composable
     @SubspaceComposable
     private fun ValueBasedAnimationsApp() {
-        MainPanelContent()
+        val coroutineScope = rememberCoroutineScope()
+        val animatedAlpha = remember { Animatable(1.0f) }
+        val (showSidePanel, updateShowSidePanel) = remember { mutableStateOf(false) }
+        val toggleSidePanel: () -> Unit = { updateShowSidePanel(!showSidePanel) }
+
+        MainPanelContent(
+            onFadeInClick = {
+                coroutineScope.launch {
+                    animatedAlpha.snapTo(0.1f)
+                    animatedAlpha.animateTo(1.0f, animationSpec = tween(2000))
+                }
+            }
+        )
 
         Subspace {
-            val (showSidePanel, updateShowSidePanel) = remember { mutableStateOf(false) }
-            val toggleSidePanel: () -> Unit = { updateShowSidePanel(!showSidePanel) }
             val desiredWidth = 300.dp
             val desiredHeight = 150.dp
             val zOffset = (-30).dp
 
             SpatialRow {
-                val animatedAlpha = remember { Animatable(0.5f) }
                 val mainPanelAnimatedScale = remember { Animatable(1.0f) }
 
-                LaunchedEffect(Unit) { animatedAlpha.animateTo(1.0f, animationSpec = tween(2000)) }
                 LaunchedEffect(showSidePanel) {
                     if (showSidePanel) {
                         mainPanelAnimatedScale.animateTo(0.01f, animationSpec = tween(10))
                         mainPanelAnimatedScale.animateTo(2.0f, animationSpec = tween(2000))
                         mainPanelAnimatedScale.animateTo(1.0f, animationSpec = tween(2000))
-                    } else {
+                    } else if (mainPanelAnimatedScale.value != 1.0f) {
                         mainPanelAnimatedScale.animateTo(1.0f, animationSpec = tween(500))
                     }
                 }
@@ -152,7 +164,7 @@ class Animation : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun MainPanelContent() {
+    private fun MainPanelContent(onFadeInClick: () -> Unit) {
         CommonTestScaffold(
             title = getString(R.string.value_based_animation_test),
             showBottomBar = true,
@@ -167,6 +179,7 @@ class Animation : ComponentActivity() {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(text = "Main Panel Content", fontSize = 20.sp)
+                CUJButton("Fade in panels", onFadeInClick)
                 CUJButton("Show sample animations") { startActivity<SampleAnimations>() }
             }
         }
@@ -194,7 +207,13 @@ class Animation : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Orbiter(position = ContentEdge.Top, offset = 5.dp) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.TopCenter(
+                                    EdgeAlignment.Outside,
+                                    offset = DpVolumeOffset(y = 5.dp),
+                                )
+                        ) {
                             Text(
                                 text = text,
                                 fontSize = 20.sp,

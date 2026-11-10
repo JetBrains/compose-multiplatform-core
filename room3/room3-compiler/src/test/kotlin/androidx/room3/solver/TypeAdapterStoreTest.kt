@@ -28,6 +28,7 @@ import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.compiler.processing.util.runProcessorTest
 import androidx.room3.ext.CommonTypeNames
+import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.RoomTypeNames.STRING_UTIL
 import androidx.room3.ext.implementsEqualsAndHashcode
 import androidx.room3.parser.SQLTypeAffinity
@@ -215,7 +216,7 @@ class TypeAdapterStoreTest {
                 )
             val subject = invocation.processingEnv.requireTypeElement("EntityWithValueClass")
             results =
-                subject.getAllFieldsIncludingPrivateSupers().associate { field ->
+                subject.getAllPropertiesIncludingPrivateSupers().associate { field ->
                     val columnAdapter =
                         typeAdapterStore.findColumnTypeAdapter(
                             out = field.type,
@@ -365,6 +366,27 @@ class TypeAdapterStoreTest {
             val adapter =
                 store.findColumnTypeAdapter(
                     out = uuid,
+                    affinity = null,
+                    skipDefaultConverter = false,
+                )
+
+            assertThat(adapter).isNotNull()
+            assertThat(adapter).isInstanceOf<UuidColumnTypeAdapter>()
+        }
+    }
+
+    @Test
+    fun testKotlinUuidCompilesWithoutError() {
+        runProcessorTest { invocation ->
+            val store =
+                TypeAdapterStore.create(
+                    Context(invocation.processingEnv),
+                    BuiltInConverterFlags.DEFAULT,
+                )
+            val uuidKt = invocation.processingEnv.requireType(KotlinTypeNames.UUID)
+            val adapter =
+                store.findColumnTypeAdapter(
+                    out = uuidKt,
                     affinity = null,
                     skipDefaultConverter = false,
                 )
@@ -688,7 +710,7 @@ class TypeAdapterStoreTest {
                 )
             val subject = invocation.processingEnv.requireTypeElement("Subject")
             val results =
-                subject.getAllFieldsIncludingPrivateSupers().associate { field ->
+                subject.getAllPropertiesIncludingPrivateSupers().associate { field ->
                     val binder =
                         typeAdapterStore.findStatementValueBinder(
                             input = field.type,
@@ -862,7 +884,7 @@ class TypeAdapterStoreTest {
                 )
         ) { invocation ->
             val subjectTypeElement = invocation.processingEnv.requireTypeElement("foo.bar.Subject")
-            subjectTypeElement.getAllFieldsIncludingPrivateSupers().forEach { field ->
+            subjectTypeElement.getAllPropertiesIncludingPrivateSupers().forEach { field ->
                 assertThat(field.type.implementsEqualsAndHashcode()).isTrue()
             }
         }
@@ -887,9 +909,98 @@ class TypeAdapterStoreTest {
         runKspTest(sources = listOf(source)) { invocation ->
             val subjectTypeElement = invocation.processingEnv.requireTypeElement("Subject")
 
-            subjectTypeElement.getDeclaredFields().forEach {
+            subjectTypeElement.getDeclaredProperties().forEach {
                 assertThat(it.type.implementsEqualsAndHashcode()).isTrue()
             }
+        }
+    }
+
+    @Test
+    fun testExtensionFunction_objectConverter() =
+        checkExtensionFunctionConverter(
+            converterDeclaration = "object PointConverter",
+            expectedTarget = "foo.bar.PointConverter",
+        )
+
+    @Test
+    fun testExtensionFunction_classConverter() =
+        checkExtensionFunctionConverter(
+            converterDeclaration = "class PointConverter",
+            expectedTarget = "__pointConverter",
+        )
+
+    @Test
+    fun testExtensionFunction_providedConverter() =
+        checkExtensionFunctionConverter(
+            converterDeclaration = "@ProvidedColumnTypeConverter\nclass PointConverter",
+            expectedTarget = "__pointConverter()",
+        )
+
+    private fun checkExtensionFunctionConverter(
+        converterDeclaration: String,
+        expectedTarget: String,
+    ) {
+        val point =
+            Source.kotlin(
+                "foo/bar/Point.kt",
+                """
+                package foo.bar
+                import androidx.room3.*
+
+                class Point(val x: Int)
+
+                $converterDeclaration {
+                    @ColumnTypeConverter
+                    fun Point.toInt(): Int = this.x
+
+                    @ColumnTypeConverter
+                    fun Int.toPoint(): Point = Point(this)
+                }
+                """
+                    .trimIndent(),
+            )
+        runKspTest(sources = listOf(point)) { invocation ->
+            val context = Context(invocation.processingEnv)
+            val converters =
+                CustomColumnConverterProcessor(
+                        context = context,
+                        element =
+                            invocation.processingEnv.requireTypeElement("foo.bar.PointConverter"),
+                    )
+                    .process()
+                    .map(::CustomColumnTypeConverterWrapper)
+            val store = TypeAdapterStore.create(context, BuiltInConverterFlags.DEFAULT, converters)
+            val pointType = invocation.processingEnv.requireType("foo.bar.Point")
+            val adapter = store.findColumnTypeAdapter(pointType, null, skipDefaultConverter = false)
+            assertThat(adapter, notNullValue())
+            assertThat(adapter, instanceOf(CompositeAdapter::class.java))
+
+            val bindScope = testCodeGenScope()
+            adapter!!.bindToStmt("stmt", "41", "fooVar", bindScope)
+            assertThat(
+                bindScope.generate().toString(CodeLanguage.KOTLIN).trim(),
+                `is`(
+                    """
+                    val ${tmp(0)}: kotlin.Int = $expectedTarget.run { fooVar.toInt() }
+                    stmt.bindLong(41, ${tmp(0)}.toLong())
+                    """
+                        .trimIndent()
+                ),
+            )
+
+            val cursorScope = testCodeGenScope()
+            adapter.readFromStatement("res", "curs", "11", cursorScope)
+            assertThat(
+                cursorScope.generate().toString(CodeLanguage.KOTLIN).trim(),
+                `is`(
+                    """
+                    val ${tmp(0)}: kotlin.Int
+                    ${tmp(0)} = curs.getLong(11).toInt()
+                    res = $expectedTarget.run { ${tmp(0)}.toPoint() }
+                    """
+                        .trimIndent()
+                ),
+            )
         }
     }
 

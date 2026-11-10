@@ -16,8 +16,10 @@
 
 package androidx.appsearch.localstorage.usagereporting;
 
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSession;
@@ -36,9 +38,8 @@ import org.jspecify.annotations.Nullable;
  *  search action
  *  -->
  * {@link GenericDocument}, which contains getters for search action properties.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SearchActionGenericDocument extends TakenActionGenericDocument {
     private static final String PROPERTY_PATH_QUERY = "query";
@@ -59,6 +60,7 @@ public class SearchActionGenericDocument extends TakenActionGenericDocument {
     }
 
     /** Builder for {@link SearchActionGenericDocument}. */
+    @OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
     public static final class Builder extends TakenActionGenericDocument.Builder<Builder> {
         /**
          * Creates a new {@link SearchActionGenericDocument.Builder}.

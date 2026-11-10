@@ -101,6 +101,38 @@ internal fun KClass<out Record>.toPlatformRecordClass(): Class<out PlatformRecor
 }
 
 @SuppressLint("NewApi") // Guarded by sdk extension check
+internal fun Class<out PlatformRecord>.toSdkRecordClass(): KClass<out Record>? {
+    return toSdkRecordClassExt16()
+        ?: toSdkRecordClassExt15()
+        ?: toSdkRecordClassExt13()
+        ?: PLATFORM_TO_SDK_RECORD_CLASS[this]
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+private fun Class<out PlatformRecord>.toSdkRecordClassExt13(): KClass<out Record>? {
+    if (!isAtLeastSdkExtension13()) {
+        return null
+    }
+    return PLATFORM_TO_SDK_RECORD_CLASS_EXT_13[this]
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+private fun Class<out PlatformRecord>.toSdkRecordClassExt15(): KClass<out Record>? {
+    if (!isAtLeastSdkExtension15()) {
+        return null
+    }
+    return PLATFORM_TO_SDK_RECORD_CLASS_EXT_15[this]
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
+private fun Class<out PlatformRecord>.toSdkRecordClassExt16(): KClass<out Record>? {
+    if (!isAtLeastSdkExtension16()) {
+        return null
+    }
+    return PLATFORM_TO_SDK_RECORD_CLASS_EXT_16[this]
+}
+
+@SuppressLint("NewApi") // Guarded by sdk extension check
 private fun KClass<out Record>.toPlatformRecordClassExt13(): Class<out PlatformRecord>? {
     if (!isAtLeastSdkExtension13()) {
         return null
@@ -125,7 +157,7 @@ private fun KClass<out Record>.toPlatformRecordClassExt16(): Class<out PlatformR
 }
 
 @SuppressLint("NewApi")
-fun Record.toPlatformRecord(): PlatformRecord {
+public fun Record.toPlatformRecord(): PlatformRecord {
     return toPlatformRecordExt16()
         ?: toPlatformRecordExt15()
         ?: toPlatformRecordExt13()
@@ -204,7 +236,7 @@ private fun Record.toPlatformRecordExt16(): PlatformRecord? {
     }
 }
 
-fun PlatformRecord.toSdkRecord(): Record {
+public fun PlatformRecord.toSdkRecord(): Record {
     return toSdkRecordExt16()
         ?: toSdkRecordExt15()
         ?: toSdkRecordExt13()
@@ -895,7 +927,7 @@ private fun ExerciseSessionRecord.toPlatformExerciseSessionRecord(): PlatformExe
             }
             if (isAtLeastSdkExtension21()) {
                 rateOfPerceivedExertion?.let {
-                    val unused = setRateOfPerceivedExertion(it)
+                    @Suppress("UNUSED_VARIABLE") val unused = setRateOfPerceivedExertion(it)
                 }
             }
         }
@@ -926,19 +958,20 @@ private fun ExerciseRoute.toPlatformExerciseRoute() =
     )
 
 @SuppressLint("NewApi") // Guarded by sdk extension check
-fun ExerciseSegment.toPlatformExerciseSegment() =
+public fun ExerciseSegment.toPlatformExerciseSegment():
+    android.health.connect.datatypes.ExerciseSegment =
     PlatformExerciseSegmentBuilder(startTime, endTime, segmentType.toPlatformExerciseSegmentType())
         .setRepetitionsCount(repetitions)
         .apply {
             if (isAtLeastSdkExtension21()) {
                 weight?.let {
-                    val unused = setWeight(it.toPlatformMass())
+                    @Suppress("UNUSED_VARIABLE") val unused = setWeight(it.toPlatformMass())
                 }
                 setIndex?.let {
-                    val unused = setSetIndex(it)
+                    @Suppress("UNUSED_VARIABLE") val unused = setSetIndex(it)
                 }
                 rateOfPerceivedExertion?.let {
-                    val unused = setRateOfPerceivedExertion(it)
+                    @Suppress("UNUSED_VARIABLE") val unused = setRateOfPerceivedExertion(it)
                 }
             }
         }

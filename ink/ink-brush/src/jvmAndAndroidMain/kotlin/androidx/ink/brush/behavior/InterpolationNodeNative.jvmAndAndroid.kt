@@ -16,10 +16,12 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object InterpolationNodeNative {
     init {
         NativeLoader.load()
@@ -28,4 +30,7 @@ actual internal object InterpolationNodeNative {
     @UsedByNative actual external fun create(interpolation: Int): Long
 
     @UsedByNative actual external fun getInterpolationInt(nativePointer: Long): Int
+
+    @UsedByNative
+    actual external fun getInterpolationMinimumRequiredVersion(interpolationInt: Int): Int
 }

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +24,8 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,8 +42,8 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -51,7 +54,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ComposeViewTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
     fun composeViewIsTransitionGroup() {
@@ -312,10 +315,9 @@ class ComposeViewTest {
         rule.setContent { view = LocalView.current }
         rule.waitForIdle()
         val composeViewContext = rule.runOnUiThread { ComposeViewContext(view) }
-        val composeView =
-            rule.runOnUiThread {
-                ComposeView(view.context).also { it.createComposition(composeViewContext) }
-            }
+        val composeView = rule.runOnUiThread {
+            ComposeView(view.context).also { it.createComposition(composeViewContext) }
+        }
         var isComposed by mutableStateOf(false)
         rule.runOnUiThread { composeView.setContent { Box { isComposed = true } } }
         rule.waitForIdle()
@@ -336,13 +338,12 @@ class ComposeViewTest {
         rule.waitForIdle()
         val composeViewContext = rule.runOnUiThread { view.findViewTreeComposeViewContext()!! }
         var isComposed by mutableStateOf(false)
-        composeView =
-            rule.runOnUiThread {
-                ComposeView(view.context).also {
-                    it.createComposition(composeViewContext)
-                    it.setContent { isComposed = true }
-                }
+        composeView = rule.runOnUiThread {
+            ComposeView(view.context).also {
+                it.createComposition(composeViewContext)
+                it.setContent { isComposed = true }
             }
+        }
         rule.waitForIdle()
         assertThat(isComposed).isTrue()
         assertThat(composeViewContext.viewCount).isEqualTo(2)
@@ -373,13 +374,12 @@ class ComposeViewTest {
         rule.waitForIdle()
         val composeViewContext = rule.runOnUiThread { view.findViewTreeComposeViewContext()!! }
         var isComposed by mutableStateOf(false)
-        composeView =
-            rule.runOnUiThread {
-                ComposeView(view.context).also {
-                    it.createComposition(composeViewContext)
-                    it.setContent { isComposed = true }
-                }
+        composeView = rule.runOnUiThread {
+            ComposeView(view.context).also {
+                it.createComposition(composeViewContext)
+                it.setContent { isComposed = true }
             }
+        }
         rule.waitForIdle()
         // Adding the ComposeView to the hierarchy shouldn't add to the view count
         addComposeView = true
@@ -513,13 +513,12 @@ class ComposeViewTest {
             }
         }
         val composeViewContext = rule.runOnUiThread { view.findViewTreeComposeViewContext()!! }
-        childView =
-            rule.runOnUiThread {
-                ComposeView(rule.activity).also {
-                    it.setContent { Box(Modifier.fillMaxSize()) }
-                    it.createComposition(composeViewContext)
-                }
+        childView = rule.runOnUiThread {
+            ComposeView(rule.activity).also {
+                it.setContent { Box(Modifier.fillMaxSize()) }
+                it.createComposition(composeViewContext)
             }
+        }
         rule.waitForIdle()
         addView = true
         rule.waitForIdle()
@@ -535,8 +534,9 @@ class ComposeViewTest {
     }
 
     @Test
-    fun changedCoroutineContextThrows() {
+    fun disposedCompositionOnContextChange() {
         lateinit var composeView: AndroidComposeView
+        var initialCompositionCount = 0
         rule.setContent {
             AndroidView(
                 factory = {
@@ -544,40 +544,51 @@ class ComposeViewTest {
                         it.setContent {
                             composeView = LocalView.current as AndroidComposeView
                             Box(Modifier.fillMaxSize())
+                            remember<Int> { initialCompositionCount++ }
                         }
                     }
                 }
             )
         }
-        val coroutineContext = runBlocking { coroutineContext }
         rule.runOnIdle {
+            initialCompositionCount = 0
             val oldCVC = composeView.composeViewContext
-            try {
-                composeView.composeViewContext =
-                    ComposeViewContext(
-                        oldCVC.view,
-                        Recomposer(coroutineContext),
-                        oldCVC.lifecycleOwner,
-                        oldCVC.savedStateRegistryOwner,
-                        oldCVC.viewModelStoreOwner,
-                    )
-                fail("IllegalArgumentException is expected")
-            } catch (_: IllegalArgumentException) {
-                // expected result
-            }
+            val wrapper = (composeView.parent as ComposeView)
+            wrapper.composeViewContext =
+                ComposeViewContext(
+                    oldCVC.view,
+                    oldCVC.compositionContext,
+                    oldCVC.lifecycleOwner,
+                    oldCVC.savedStateRegistryOwner,
+                    oldCVC.viewModelStoreOwner,
+                )
         }
+
+        rule.runOnIdle { assertThat(initialCompositionCount).isEqualTo(1) }
     }
 
     @Test
-    fun changedCoroutineContextAfterDispose() {
+    fun reattachingComposeViewUpdatesCoroutineContext() {
         lateinit var androidComposeView: AndroidComposeView
         lateinit var composeView: ComposeView
         var isComposed by mutableStateOf(false)
+        val job1 = Job()
+        val coroutineContext1 = Dispatchers.Main + job1
+        val recomposer1 = Recomposer(coroutineContext1)
+        val attachedView = rule.activity.window.decorView
         rule.setContent {
             AndroidView(
                 factory = {
                     ComposeView(rule.activity).also {
                         composeView = it
+                        it.composeViewContext =
+                            ComposeViewContext(
+                                attachedView,
+                                recomposer1,
+                                rule.activity,
+                                rule.activity,
+                                rule.activity,
+                            )
                         it.setContent {
                             androidComposeView = LocalView.current as AndroidComposeView
                             Box(Modifier.fillMaxSize())
@@ -587,22 +598,86 @@ class ComposeViewTest {
                 }
             )
         }
-        val coroutineContext = runBlocking { coroutineContext }
+
+        rule.runOnIdle {
+            assertThat(isComposed).isTrue()
+            assertThat(androidComposeView.coroutineContext)
+                .isEqualTo(recomposer1.effectCoroutineContext)
+            assertThat(androidComposeView.coroutineContext[Job]!!.isActive).isTrue()
+            job1.cancel()
+            assertThat(androidComposeView.coroutineContext[Job]!!.isCancelled).isTrue()
+        }
+
+        val job2 = Job()
+        val coroutineContext2 = Dispatchers.Main + job2
+        val recomposer2 = Recomposer(coroutineContext2)
         rule.runOnIdle {
             val oldCVC = androidComposeView.composeViewContext
-            composeView.disposeComposition()
-            isComposed = false
-            androidComposeView.composeViewContext =
+            composeView.composeViewContext =
                 ComposeViewContext(
                     oldCVC.view,
-                    Recomposer(coroutineContext),
+                    recomposer2,
                     oldCVC.lifecycleOwner,
                     oldCVC.savedStateRegistryOwner,
                     oldCVC.viewModelStoreOwner,
                 )
         }
 
-        rule.runOnIdle { assertThat(isComposed).isTrue() }
+        rule.runOnIdle {
+            assertThat(androidComposeView.coroutineContext)
+                .isEqualTo(recomposer2.effectCoroutineContext)
+            assertThat(androidComposeView.coroutineContext[Job]!!.isCancelled).isFalse()
+        }
+    }
+
+    @Test
+    fun reattachingComposeViewAfterDisposeRecreatesComposition() {
+        var wrapper: ComposeView? = null
+        var isComposed = false
+        var launchedEffectRan = false
+        var addView by mutableStateOf(true)
+
+        rule.setContent {
+            if (addView) {
+                AndroidView(
+                    factory = {
+                        wrapper
+                            ?: ComposeView(it).also { cv ->
+                                wrapper = cv
+                                cv.setContent {
+                                    isComposed = true
+                                    LaunchedEffect(Unit) {
+                                        launchedEffectRan = true
+                                    }
+                                }
+                            }
+                    }
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(isComposed).isTrue()
+            assertThat(launchedEffectRan).isTrue()
+            assertThat(wrapper!!.hasComposition).isTrue()
+        }
+
+        // Detach from hierarchy -> composition disposed by
+        // DisposeOnDetachedFromWindowOrReleasedFromPool
+        addView = false
+        rule.runOnIdle {
+            assertThat(wrapper!!.hasComposition).isFalse()
+            isComposed = false
+            launchedEffectRan = false
+        }
+
+        // Reattach to hierarchy
+        addView = true
+        rule.runOnIdle {
+            assertThat(wrapper!!.hasComposition).isTrue()
+            assertThat(isComposed).isTrue()
+            assertThat(launchedEffectRan).isTrue()
+        }
     }
 
     @Test
@@ -656,6 +731,149 @@ class ComposeViewTest {
         rule.runOnIdle {
             // expect an IllegalStateException because view isn't attached
             createdComposeView.setContent {}
+        }
+    }
+
+    @Test
+    fun createCompositionFromBackgroundThread() {
+        val attachedView = View(rule.activity)
+        rule.runOnUiThread { rule.activity.setContentView(attachedView) }
+        rule.waitForIdle()
+        val composeViewContext = rule.runOnUiThread { ComposeViewContext(attachedView) }
+        val composeView = ComposeView(rule.activity)
+        var isComposed = false
+        composeView.setContent {
+            Box(Modifier.fillMaxSize())
+            isComposed = true
+        }
+
+        // Call createComposition from a background thread
+        val thread = kotlin.concurrent.thread { composeView.createComposition(composeViewContext) }
+        thread.join()
+
+        rule.waitForIdle()
+        assertThat(isComposed).isTrue()
+    }
+
+    @Test
+    fun createCompositionFromBackgroundThread_withComposeViewContextProperty() {
+        val attachedView = View(rule.activity)
+        rule.runOnUiThread { rule.activity.setContentView(attachedView) }
+        rule.waitForIdle()
+        val composeViewContext = rule.runOnUiThread { ComposeViewContext(attachedView) }
+        val composeView = ComposeView(rule.activity)
+        composeView.composeViewContext = composeViewContext
+        var isComposed = false
+        composeView.setContent {
+            Box(Modifier.fillMaxSize())
+            isComposed = true
+        }
+
+        val thread = kotlin.concurrent.thread { composeView.createComposition() }
+        thread.join()
+
+        rule.waitForIdle()
+        assertThat(isComposed).isTrue()
+    }
+
+    @Test
+    fun createCompositionFromBackgroundThread_attachedView() {
+        val composeView = ComposeView(rule.activity)
+        rule.runOnUiThread { rule.activity.setContentView(composeView) }
+        rule.waitForIdle()
+        var isComposed = false
+        composeView.setContent {
+            Box(Modifier.fillMaxSize())
+            isComposed = true
+        }
+
+        val thread = kotlin.concurrent.thread { composeView.createComposition() }
+        thread.join()
+
+        rule.waitForIdle()
+        assertThat(isComposed).isTrue()
+    }
+
+    @Test
+    fun concurrentCreateCompositionFromMultipleThreads() {
+        val attachedView = View(rule.activity)
+        rule.runOnUiThread { rule.activity.setContentView(attachedView) }
+        rule.waitForIdle()
+        val composeViewContext = rule.runOnUiThread { ComposeViewContext(attachedView) }
+        val composeView = ComposeView(rule.activity)
+        var composeCount = 0
+        composeView.setContent {
+            composeCount++
+            Box(Modifier.fillMaxSize())
+        }
+
+        val threadCount = 10
+        val threads =
+            (0 until threadCount).map {
+                kotlin.concurrent.thread { composeView.createComposition(composeViewContext) }
+            }
+        threads.forEach { it.join() }
+
+        rule.waitForIdle()
+        assertThat(composeCount).isGreaterThan(0)
+    }
+
+    @Test
+    fun createCompositionReentrancyDoesNotThrow() {
+        val attachedView = View(rule.activity)
+        rule.runOnUiThread { rule.activity.setContentView(attachedView) }
+        rule.waitForIdle()
+        val composeViewContext = rule.runOnUiThread { ComposeViewContext(attachedView) }
+        val composeView = ComposeView(rule.activity)
+        var composeCount = 0
+        composeView.setContent {
+            composeCount++
+            // Trigger re-entrant composition creation attempt from inside Content
+            composeView.createComposition(composeViewContext)
+            Box(Modifier.fillMaxSize())
+        }
+
+        rule.runOnUiThread { composeView.createComposition(composeViewContext) }
+        rule.waitForIdle()
+        assertThat(composeCount).isGreaterThan(0)
+    }
+
+    @Test
+    fun reentrantOnMeasureDuringCompositionCreationDoesNotFail() {
+        val attachedView = View(rule.activity)
+        rule.runOnUiThread { rule.activity.setContentView(attachedView) }
+        rule.waitForIdle()
+        val composeViewContext = rule.runOnUiThread { ComposeViewContext(attachedView) }
+
+        class ReentrantComposeView(context: Context) : AbstractComposeView(context) {
+            var composeCount = 0
+
+            @Composable
+            override fun Content() {
+                composeCount++
+                // trigger onMeasure re-entrancy while creatingComposition is active
+                measure(
+                    View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+                )
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        val reentrantView = ReentrantComposeView(rule.activity)
+        rule.runOnUiThread { reentrantView.createComposition(composeViewContext) }
+        rule.waitForIdle()
+        assertThat(reentrantView.composeCount).isGreaterThan(0)
+    }
+
+    @Test
+    fun addViewDirectlyThrowsUnsupportedOperationException() {
+        val composeView = ComposeView(rule.activity)
+        try {
+            composeView.addView(View(rule.activity))
+            fail("Expected UnsupportedOperationException")
+        } catch (_: UnsupportedOperationException) {
+            // Expected
         }
     }
 }

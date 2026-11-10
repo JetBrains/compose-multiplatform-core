@@ -19,7 +19,6 @@ package androidx.xr.compose.testapp.modechange
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,10 +36,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.Subspace
@@ -51,6 +52,7 @@ import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple40
 import androidx.xr.compose.testapp.ui.theme.PurpleGrey80
+import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
@@ -62,7 +64,7 @@ class ModeChange : ComponentActivity() {
     @Suppress("deprecation")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
 
         lifecycleScope.launch {
             val sessionResult = Session.create(context = this@ModeChange)
@@ -145,8 +147,13 @@ class ModeChange : ComponentActivity() {
             contentAlignment = Alignment.Center,
         ) {
             Column {
-                @Suppress("DEPRECATION")
-                Orbiter(position = ContentEdge.Top, offset = 5.dp) {
+                Orbiter(
+                    position =
+                        OrbiterPosition.TopCenter(
+                            EdgeAlignment.Outside,
+                            offset = DpVolumeOffset(y = 5.dp),
+                        )
+                ) {
                     Text(
                         text = orbiterText,
                         fontSize = 20.sp,

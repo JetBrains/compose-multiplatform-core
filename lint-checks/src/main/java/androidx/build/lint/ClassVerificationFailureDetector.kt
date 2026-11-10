@@ -63,7 +63,7 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.util.childrenOfType
 import com.intellij.psi.util.findParentInFile
-import org.jetbrains.kotlin.analysis.utils.printer.parentOfType
+import com.intellij.psi.util.parentOfType
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtClassBody
@@ -156,8 +156,9 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
         else ApiLevelRequirement(apiLevel)
     }
 
-    private fun isPlatformClass(className: String): Boolean =
-        PLATFORM_PACKAGES.any { className.startsWith(it) }
+    private fun isPlatformClass(className: String): Boolean = PLATFORM_PACKAGES.any {
+        className.startsWith(it)
+    }
 
     private sealed interface ApiRequirement {
         val wrapperClassName: String
@@ -1130,7 +1131,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
 
             val typeParamsStr =
                 if (method.typeParameters.isNotEmpty()) {
-                    "<${method.typeParameters.joinToString(", ") { param -> "${param.name}" }}> "
+                    "<${method.typeParameters.joinToString(", ") { param -> param.name.toString() }}> "
                 } else {
                     ""
                 }
@@ -1158,19 +1159,18 @@ ${wrapperMethodBody.prependIndent("                            ")}
                         }
                     Pair(typeToUse, param.name)
                 }
-            val paramStrings =
-                paramsWithTypes.map { (type, name) ->
-                    val typeText = type.canonicalTextForLanguage(isKotlin)
-                    if (isKotlin) {
-                        if (type is PsiEllipsisType) {
-                            "vararg $name: ${type.componentType.canonicalTextForLanguage(isKotlin)}"
-                        } else {
-                            "$name: $typeText"
-                        }
+            val paramStrings = paramsWithTypes.map { (type, name) ->
+                val typeText = type.canonicalTextForLanguage(isKotlin)
+                if (isKotlin) {
+                    if (type is PsiEllipsisType) {
+                        "vararg $name: ${type.componentType.canonicalTextForLanguage(isKotlin)}"
                     } else {
-                        "$typeText $name"
+                        "$name: $typeText"
                     }
+                } else {
+                    "$typeText $name"
                 }
+            }
             val typedParamsStr = (listOfNotNull(hostParam) + paramStrings).joinToString(", ")
 
             val paramTypes =
@@ -1178,7 +1178,7 @@ ${wrapperMethodBody.prependIndent("                            ")}
                     paramsWithTypes.map { (type, _) -> type }
 
             val namedParamsStr =
-                method.parameters.joinToString(separator = ", ") { param -> "${param.name}" }
+                method.parameters.joinToString(separator = ", ") { param -> param.name.toString() }
 
             val methodName: String
             var wrapperMethodName: String

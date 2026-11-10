@@ -59,7 +59,10 @@ import java.util.Collections
  * @throws IllegalArgumentException If the [title] is empty
  * @see android.service.credentials.BeginGetCredentialResponse for more usage details.
  */
-class AuthenticationAction(val title: CharSequence, val pendingIntent: PendingIntent) {
+public class AuthenticationAction(
+    public val title: CharSequence,
+    public val pendingIntent: PendingIntent,
+) {
     init {
         require(title.isNotEmpty()) { "title must not be empty" }
     }
@@ -73,10 +76,11 @@ class AuthenticationAction(val title: CharSequence, val pendingIntent: PendingIn
      *   [PendingIntent.FLAG_MUTABLE] to allow the Android system to attach the final request, and
      *   NOT with flag [PendingIntent.FLAG_ONE_SHOT] as it can be invoked multiple times
      */
-    class Builder
+    @SuppressLint("EmptyBuilder")
+    public class Builder
     constructor(private val title: CharSequence, private val pendingIntent: PendingIntent) {
         /** Builds an instance of [AuthenticationAction] */
-        fun build(): AuthenticationAction {
+        public fun build(): AuthenticationAction {
             return AuthenticationAction(title, pendingIntent)
         }
     }
@@ -92,7 +96,7 @@ class AuthenticationAction(val title: CharSequence, val pendingIntent: PendingIn
         }
     }
 
-    companion object {
+    public companion object {
         private const val TAG = "AuthenticationAction"
         private const val SLICE_SPEC_REVISION = 0
         private const val SLICE_SPEC_TYPE = "AuthenticationAction"
@@ -106,7 +110,7 @@ class AuthenticationAction(val title: CharSequence, val pendingIntent: PendingIn
         @RequiresApi(28)
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        fun toSlice(authenticationAction: AuthenticationAction): Slice {
+        public fun toSlice(authenticationAction: AuthenticationAction): Slice {
             val title = authenticationAction.title
             val pendingIntent = authenticationAction.pendingIntent
             val sliceBuilder =
@@ -133,7 +137,7 @@ class AuthenticationAction(val title: CharSequence, val pendingIntent: PendingIn
         @SuppressLint("WrongConstant") // custom conversion between jetpack and framework
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        fun fromSlice(slice: Slice): AuthenticationAction? {
+        public fun fromSlice(slice: Slice): AuthenticationAction? {
             var title: CharSequence? = null
             var pendingIntent: PendingIntent? = null
 
@@ -165,7 +169,7 @@ class AuthenticationAction(val title: CharSequence, val pendingIntent: PendingIn
          */
         @JvmStatic
         @RequiresApi(34)
-        fun fromAction(
+        public fun fromAction(
             authenticationAction: android.service.credentials.Action
         ): AuthenticationAction? {
             if (Build.VERSION.SDK_INT >= 34) {

@@ -64,7 +64,7 @@ class ImportCredentialsRequestTest {
 
         try {
             // Act
-            val request = ImportCredentialsRequest(types, extensions)
+            ImportCredentialsRequest(types, extensions)
             Assert.fail()
         } catch (e: IllegalArgumentException) {}
     }
@@ -133,5 +133,18 @@ class ImportCredentialsRequestTest {
         assertThat(reconstructed.credentialTypes).isEqualTo(original.credentialTypes)
         assertThat(reconstructed.knownExtensions).isEqualTo(original.knownExtensions)
         assertThat(reconstructed.requestJson).isEqualTo(original.requestJson)
+    }
+
+    @Test
+    fun testCreateFrom_invalidJson_returnsNull() {
+        val result = ImportCredentialsRequest.createFrom("{ invalid json")
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun testCreateFrom_emptyTypesJson_returnsNull() {
+        // credentialTypes cannot be empty per constructor validation
+        val result = ImportCredentialsRequest.createFrom("{\"credentialTypes\":[]}")
+        assertThat(result).isNull()
     }
 }

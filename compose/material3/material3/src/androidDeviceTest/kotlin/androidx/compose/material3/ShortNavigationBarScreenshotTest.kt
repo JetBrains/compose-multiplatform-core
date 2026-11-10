@@ -22,6 +22,7 @@ import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
@@ -50,7 +51,6 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,7 +60,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ShortNavigationBarScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -132,7 +132,7 @@ class ShortNavigationBarScreenshotTest {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             scope = rememberCoroutineScope()
             Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
-                ShortNavigationBar {
+                ShortNavigationBar(windowInsets = NoWindowInsets) {
                     ShortNavigationBarItem(
                         selected = true,
                         onClick = {},
@@ -304,7 +304,10 @@ class ShortNavigationBarScreenshotTest {
         composeTestRule.setContentWithSimulatedSize(600.dp, 100.dp, lightColorScheme()) {
             scope = rememberCoroutineScope()
             Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
-                ShortNavigationBar(arrangement = ShortNavigationBarArrangement.Centered) {
+                ShortNavigationBar(
+                    arrangement = ShortNavigationBarArrangement.Centered,
+                    windowInsets = NoWindowInsets,
+                ) {
                     ShortNavigationBarItem(
                         selected = true,
                         onClick = {},
@@ -411,6 +414,86 @@ class ShortNavigationBarScreenshotTest {
         )
     }
 
+    @Test
+    fun withStyle_equalWeightArrangement_lightTheme() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var scope: CoroutineScope
+
+        composeTestRule.setMaterialContent(lightColorScheme()) {
+            scope = rememberCoroutineScope()
+            DefaultStyleableShortNavigationBar(interactionSource)
+        }
+
+        assertShortNavigationBarMatches(
+            scope = scope,
+            interactionSource = interactionSource,
+            interaction = null,
+            goldenIdentifier = "shortNavigationBar_withStyle_equalWeightArrangement_lightTheme",
+        )
+    }
+
+    @Test
+    fun withStyle_equalWeightArrangement_darkTheme() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var scope: CoroutineScope
+
+        composeTestRule.setMaterialContent(darkColorScheme()) {
+            scope = rememberCoroutineScope()
+            DefaultStyleableShortNavigationBar(interactionSource)
+        }
+
+        assertShortNavigationBarMatches(
+            scope = scope,
+            interactionSource = interactionSource,
+            interaction = null,
+            goldenIdentifier = "shortNavigationBar_withStyle_equalWeightArrangement_darkTheme",
+        )
+    }
+
+    @Test
+    fun withStyle_centeredArrangement_lightTheme() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var scope: CoroutineScope
+
+        composeTestRule.setContentWithSimulatedSize(600.dp, 100.dp, lightColorScheme()) {
+            scope = rememberCoroutineScope()
+            DefaultStyleableShortNavigationBar(
+                interactionSource = interactionSource,
+                arrangement = ShortNavigationBarArrangement.Centered,
+                iconPosition = NavigationItemIconPosition.Start,
+            )
+        }
+
+        assertShortNavigationBarMatches(
+            scope = scope,
+            interactionSource = interactionSource,
+            interaction = null,
+            goldenIdentifier = "shortNavigationBar_withStyle_centeredArrangement_lightTheme",
+        )
+    }
+
+    @Test
+    fun withStyle_centeredArrangement_darkTheme() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var scope: CoroutineScope
+
+        composeTestRule.setContentWithSimulatedSize(600.dp, 100.dp, darkColorScheme()) {
+            scope = rememberCoroutineScope()
+            DefaultStyleableShortNavigationBar(
+                interactionSource = interactionSource,
+                arrangement = ShortNavigationBarArrangement.Centered,
+                iconPosition = NavigationItemIconPosition.Start,
+            )
+        }
+
+        assertShortNavigationBarMatches(
+            scope = scope,
+            interactionSource = interactionSource,
+            interaction = null,
+            goldenIdentifier = "shortNavigationBar_withStyle_centeredArrangement_darkTheme",
+        )
+    }
+
     /**
      * Asserts that the [ShortNavigationBar] matches the screenshot with identifier
      * [goldenIdentifier].
@@ -467,7 +550,7 @@ private fun DefaultShortNavigationBar(
     iconPosition: NavigationItemIconPosition = NavigationItemIconPosition.Top,
 ) {
     Box(modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
-        ShortNavigationBar(arrangement = arrangement) {
+        ShortNavigationBar(arrangement = arrangement, windowInsets = NoWindowInsets) {
             ShortNavigationBarItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 iconPosition = iconPosition,
@@ -485,6 +568,44 @@ private fun DefaultShortNavigationBar(
                 onClick = {},
             )
             ShortNavigationBarItem(
+                icon = { Icon(Icons.Filled.Favorite, null) },
+                iconPosition = iconPosition,
+                selected = false,
+                label = { Text("Label") },
+                enabled = !setUnselectedItemsAsDisabled,
+                onClick = {},
+            )
+        }
+    }
+}
+
+@Composable
+private fun DefaultStyleableShortNavigationBar(
+    interactionSource: MutableInteractionSource,
+    modifier: Modifier = Modifier,
+    setUnselectedItemsAsDisabled: Boolean = false,
+    arrangement: ShortNavigationBarArrangement = ShortNavigationBarArrangement.EqualWeight,
+    iconPosition: NavigationItemIconPosition = NavigationItemIconPosition.Top,
+) {
+    Box(modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
+        StyleableShortNavigationBar(arrangement = arrangement, windowInsets = NoWindowInsets) {
+            StyleableShortNavigationBarItem(
+                icon = { Icon(Icons.Filled.Favorite, null) },
+                iconPosition = iconPosition,
+                selected = true,
+                label = { Text("Label") },
+                onClick = {},
+                interactionSource = interactionSource,
+            )
+            StyleableShortNavigationBarItem(
+                icon = { Icon(Icons.Filled.Favorite, null) },
+                iconPosition = iconPosition,
+                selected = false,
+                label = { Text("Label") },
+                enabled = !setUnselectedItemsAsDisabled,
+                onClick = {},
+            )
+            StyleableShortNavigationBarItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 iconPosition = iconPosition,
                 selected = false,
@@ -521,3 +642,5 @@ private fun ComposeContentTestRule.setContentWithSimulatedSize(
 }
 
 private const val Tag = "ShortNavigationBar"
+
+private val NoWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)

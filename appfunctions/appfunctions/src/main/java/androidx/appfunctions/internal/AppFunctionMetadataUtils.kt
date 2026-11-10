@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalAppFunctionsApi::class)
 
 package androidx.appfunctions.internal
 
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.appfunctions.ExperimentalAppFunctionsApi
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal object AppFunctionMetadataUtils {
 
     /**
@@ -34,6 +35,7 @@ internal object AppFunctionMetadataUtils {
      * no inventory is present it queries AppSearch to find the metadata using
      * [AppSearchAppFunctionReader].
      */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     suspend fun getAppFunctionMetadata(
         context: Context,
         inventory: AppFunctionInventory?,
@@ -53,7 +55,10 @@ internal object AppFunctionMetadataUtils {
                         components = inventory.componentsMetadata,
                     ),
                 description = compileTimeAppFunctionMetadata.description,
-                isEnabled = compileTimeAppFunctionMetadata.isEnabledByDefault,
+                scope = compileTimeAppFunctionMetadata.scope,
+                accessLevel = compileTimeAppFunctionMetadata.accessLevel,
+                isCompatEnforcementEnabled =
+                    compileTimeAppFunctionMetadata.isCompatEnforcementEnabled,
             )
         }
 

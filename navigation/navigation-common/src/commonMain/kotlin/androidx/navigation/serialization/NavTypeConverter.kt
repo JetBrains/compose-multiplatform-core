@@ -26,6 +26,7 @@ import androidx.savedstate.read
 import androidx.savedstate.write
 import kotlin.reflect.KType
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
 import kotlinx.serialization.serializerOrNull
@@ -64,7 +65,7 @@ private enum class InternalType {
  *
  * Returns [UNKNOWN] type if the argument does not have built-in NavType support.
  */
-internal fun SerialDescriptor.getNavType(): NavType<*> {
+internal fun SerialDescriptor.getNavType(serializer: KSerializer<*>? = null): NavType<*> {
     val type =
         when (this.toInternalType()) {
             InternalType.INT -> NavType.IntType
@@ -102,22 +103,22 @@ internal fun SerialDescriptor.getNavType(): NavType<*> {
                     InternalType.LONG -> NavType.LongListType
                     InternalType.STRING -> NavType.StringListType
                     InternalType.STRING_NULLABLE -> InternalNavType.StringNullableListType
-                    InternalType.ENUM -> parseEnumList()
+                    InternalType.ENUM -> parseEnumList(serializer)
                     else -> UNKNOWN
                 }
             }
-            InternalType.ENUM -> parseEnum()
-            InternalType.ENUM_NULLABLE -> parseNullableEnum()
+            InternalType.ENUM -> parseEnum(serializer)
+            InternalType.ENUM_NULLABLE -> parseNullableEnum(serializer)
             else -> UNKNOWN
         }
     return type
 }
 
-internal expect fun SerialDescriptor.parseEnum(): NavType<*>
+internal expect fun SerialDescriptor.parseEnum(serializer: KSerializer<*>?): NavType<*>
 
-internal expect fun SerialDescriptor.parseNullableEnum(): NavType<*>
+internal expect fun SerialDescriptor.parseNullableEnum(serializer: KSerializer<*>?): NavType<*>
 
-internal expect fun SerialDescriptor.parseEnumList(): NavType<*>
+internal expect fun SerialDescriptor.parseEnumList(serializer: KSerializer<*>?): NavType<*>
 
 /**
  * Convert SerialDescriptor to an InternalCommonType.
@@ -196,8 +197,9 @@ internal object InternalNavType {
                 else IntType.put(bundle, key, value)
             }
 
-            override fun get(bundle: SavedState, key: String): Int? =
-                bundle.read { if (contains(key) && !isNull(key)) getInt(key) else null }
+            override fun get(bundle: SavedState, key: String): Int? = bundle.read {
+                if (contains(key) && !isNull(key)) getInt(key) else null
+            }
 
             override fun parseValue(value: String): Int? {
                 return if (value == "null") null else IntType.parseValue(value)
@@ -214,8 +216,9 @@ internal object InternalNavType {
                 else BoolType.put(bundle, key, value)
             }
 
-            override fun get(bundle: SavedState, key: String): Boolean? =
-                bundle.read { if (contains(key) && !isNull(key)) getBoolean(key) else null }
+            override fun get(bundle: SavedState, key: String): Boolean? = bundle.read {
+                if (contains(key) && !isNull(key)) getBoolean(key) else null
+            }
 
             override fun parseValue(value: String): Boolean? {
                 return if (value == "null") null else BoolType.parseValue(value)
@@ -231,8 +234,9 @@ internal object InternalNavType {
                 bundle.write { putDouble(key, value) }
             }
 
-            override fun get(bundle: SavedState, key: String): Double =
-                bundle.read { getDouble(key) }
+            override fun get(bundle: SavedState, key: String): Double = bundle.read {
+                getDouble(key)
+            }
 
             override fun parseValue(value: String): Double = value.toDouble()
         }
@@ -247,8 +251,9 @@ internal object InternalNavType {
                 else DoubleType.put(bundle, key, value)
             }
 
-            override fun get(bundle: SavedState, key: String): Double? =
-                bundle.read { if (contains(key) && !isNull(key)) getDouble(key) else null }
+            override fun get(bundle: SavedState, key: String): Double? = bundle.read {
+                if (contains(key) && !isNull(key)) getDouble(key) else null
+            }
 
             override fun parseValue(value: String): Double? {
                 return if (value == "null") null else DoubleType.parseValue(value)
@@ -265,8 +270,9 @@ internal object InternalNavType {
                 else FloatType.put(bundle, key, value)
             }
 
-            override fun get(bundle: SavedState, key: String): Float? =
-                bundle.read { if (contains(key) && !isNull(key)) getFloat(key) else null }
+            override fun get(bundle: SavedState, key: String): Float? = bundle.read {
+                if (contains(key) && !isNull(key)) getFloat(key) else null
+            }
 
             override fun parseValue(value: String): Float? {
                 return if (value == "null") null else FloatType.parseValue(value)
@@ -283,8 +289,9 @@ internal object InternalNavType {
                 else LongType.put(bundle, key, value)
             }
 
-            override fun get(bundle: SavedState, key: String): Long? =
-                bundle.read { if (contains(key) && !isNull(key)) getLong(key) else null }
+            override fun get(bundle: SavedState, key: String): Long? = bundle.read {
+                if (contains(key) && !isNull(key)) getLong(key) else null
+            }
 
             override fun parseValue(value: String): Long? {
                 return if (value == "null") null else LongType.parseValue(value)
@@ -300,8 +307,9 @@ internal object InternalNavType {
                 bundle.write { putString(key, value) }
             }
 
-            override fun get(bundle: SavedState, key: String): String =
-                bundle.read { if (contains(key) && !isNull(key)) getString(key) else "null" }
+            override fun get(bundle: SavedState, key: String): String = bundle.read {
+                if (contains(key) && !isNull(key)) getString(key) else "null"
+            }
 
             // "null" is still parsed as "null"
             override fun parseValue(value: String): String = value
@@ -323,12 +331,11 @@ internal object InternalNavType {
             }
 
             @Suppress("UNCHECKED_CAST")
-            override fun get(bundle: SavedState, key: String): Array<String?>? =
-                bundle.read {
-                    if (contains(key) && !isNull(key)) {
-                        getStringArray(key).map { StringType.parseValue(it) }.toTypedArray()
-                    } else null
-                }
+            override fun get(bundle: SavedState, key: String): Array<String?>? = bundle.read {
+                if (contains(key) && !isNull(key)) {
+                    getStringArray(key).map { StringType.parseValue(it) }.toTypedArray()
+                } else null
+            }
 
             // match String? behavior where null -> null, and "null" -> null
             override fun parseValue(value: String): Array<String?> =
@@ -360,12 +367,11 @@ internal object InternalNavType {
                 }
             }
 
-            override fun get(bundle: SavedState, key: String): List<String?>? =
-                bundle.read {
-                    if (contains(key) && !isNull(key)) {
-                        getStringArray(key).toList().map { StringType.parseValue(it) }
-                    } else null
-                }
+            override fun get(bundle: SavedState, key: String): List<String?>? = bundle.read {
+                if (contains(key) && !isNull(key)) {
+                    getStringArray(key).toList().map { StringType.parseValue(it) }
+                } else null
+            }
 
             override fun parseValue(value: String): List<String?> {
                 return listOf(StringType.parseValue(value))
@@ -396,8 +402,9 @@ internal object InternalNavType {
                 bundle.write { if (value == null) putNull(key) else putDoubleArray(key, value) }
             }
 
-            override fun get(bundle: SavedState, key: String): DoubleArray? =
-                bundle.read { if (contains(key) && !isNull(key)) getDoubleArray(key) else null }
+            override fun get(bundle: SavedState, key: String): DoubleArray? = bundle.read {
+                if (contains(key) && !isNull(key)) getDoubleArray(key) else null
+            }
 
             override fun parseValue(value: String): DoubleArray =
                 doubleArrayOf(DoubleType.parseValue(value))
@@ -428,10 +435,9 @@ internal object InternalNavType {
                 }
             }
 
-            override fun get(bundle: SavedState, key: String): List<Double>? =
-                bundle.read {
-                    if (contains(key) && !isNull(key)) getDoubleArray(key).toList() else null
-                }
+            override fun get(bundle: SavedState, key: String): List<Double>? = bundle.read {
+                if (contains(key) && !isNull(key)) getDoubleArray(key).toList() else null
+            }
 
             override fun parseValue(value: String): List<Double> =
                 listOf(DoubleType.parseValue(value))

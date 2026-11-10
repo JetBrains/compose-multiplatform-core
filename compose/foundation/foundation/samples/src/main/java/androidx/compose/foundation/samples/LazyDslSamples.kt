@@ -34,12 +34,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -53,6 +54,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -83,6 +85,43 @@ fun LazyRowSample() {
         item { Text("Single item") }
 
         itemsIndexed(itemsIndexedList) { index, item -> Text("Item at index $index is $item") }
+    }
+}
+
+@Sampled
+@Composable
+fun LazyListCacheWindowSample() {
+    val itemsList = (0..100).toList()
+
+    LazyColumn(cacheWindow = LazyLayoutCacheWindow(aheadFraction = 0.5f, behindFraction = 0.2f)) {
+        items(itemsList) { item -> Text("Item $item") }
+    }
+}
+
+@Sampled
+@Composable
+fun LazyListPrefetchStrategyMigrationSample() {
+    val itemsList = (0..100).toList()
+    val state = rememberLazyListState()
+
+    // Migrating from LazyListPrefetchStrategy (which scheduled prefetching for individual items):
+    // Use LazyLayoutCacheWindow to dynamically calculate the prefetch cache window in pixels based
+    // on average item size from LazyListState layoutInfo.
+    val customCacheWindow =
+        remember(state) {
+            object : LazyLayoutCacheWindow {
+                override fun Density.calculateAheadWindow(viewport: Int): Int {
+                    val visibleItems = state.layoutInfo.visibleItemsInfo
+                    if (visibleItems.isEmpty()) return 0
+                    val averageItemHeight = visibleItems.sumOf { it.size } / visibleItems.size
+                    // Prefetch 1 item ahead based on average item size
+                    return averageItemHeight
+                }
+            }
+        }
+
+    LazyColumn(state = state, cacheWindow = customCacheWindow) {
+        items(itemsList) { item -> Text("Item $item") }
     }
 }
 
@@ -245,6 +284,22 @@ fun LazyListCustomScrollUsingLazyLayoutScrollScopeSample() {
             items(itemsList) {
                 Box(Modifier.padding(2.dp).background(Color.Red).size(45.dp)) {
                     Text(it.toString())
+                }
+            }
+        }
+    }
+}
+
+@Sampled
+@Preview
+@Composable
+fun LazyColumnWithLazyRowsSample() {
+    LazyColumn {
+        items(100) { row ->
+            val color = if (row % 2 == 0) Color.Red else Color.Blue
+            LazyRow(modifier = Modifier.background(color).padding(2.dp)) {
+                items(20) { column ->
+                    Box(Modifier.size(64.dp).padding(2.dp)) { Text("row=$row column=$column") }
                 }
             }
         }

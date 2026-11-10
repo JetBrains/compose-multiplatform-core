@@ -17,7 +17,6 @@
 package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import kotlin.math.abs
 
 /**
@@ -120,7 +119,6 @@ public abstract class Parallelogram internal constructor() {
      * [Parallelogram] is immutable, the returned [ImmutableParallelogram] will be the same
      * instance.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract fun toImmutable(): ImmutableParallelogram
 
     /**
@@ -341,14 +339,13 @@ public abstract class Parallelogram internal constructor() {
         /**
          * Returns a string representation for [parallelogram] using its [Parallelogram] properties.
          */
-        internal fun string(parallelogram: Parallelogram): String =
-            parallelogram.run {
-                "Parallelogram(center=$center, " +
-                    "width=$width, " +
-                    "height=$height, " +
-                    "rotationDegrees=$rotationDegrees, " +
-                    "skew=$skew)"
-            }
+        internal fun string(parallelogram: Parallelogram): String = parallelogram.run {
+            "Parallelogram(center=$center, " +
+                "width=$width, " +
+                "height=$height, " +
+                "rotationDegrees=$rotationDegrees, " +
+                "skew=$skew)"
+        }
     }
 }
 

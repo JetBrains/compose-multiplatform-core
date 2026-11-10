@@ -33,7 +33,7 @@ import okio.BufferedSource
  * [DataStoreFactory#create][androidx.datastore.core.DataStoreFactory.create] function.
  */
 @OptIn(ExperimentalSerializationApi::class)
-actual object PreferencesSerializer : OkioSerializer<Preferences> {
+public actual object PreferencesSerializer : OkioSerializer<Preferences> {
     internal const val fileExtension = "preferences_pb"
 
     actual override val defaultValue: Preferences
@@ -44,7 +44,11 @@ actual object PreferencesSerializer : OkioSerializer<Preferences> {
             try {
                 ProtoBuf.decodeFromByteArray(source.readByteArray())
             } catch (e: SerializationException) {
-                throw CorruptionException("Unable to parse preferences proto.", e)
+                throw CorruptionException(
+                    "Unable to parse preferences proto. Consider providing a " +
+                        "CorruptionHandler to the DataStore factory to handle such scenarios.",
+                    e,
+                )
             }
 
         val mutablePreferences = mutablePreferencesOf()

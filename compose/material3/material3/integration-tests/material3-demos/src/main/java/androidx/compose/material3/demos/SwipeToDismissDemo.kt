@@ -81,7 +81,6 @@ fun SwipeToDismissDemo() {
     LazyColumn {
         items(items) { item ->
             var unread by remember { mutableStateOf(false) }
-            val scope = rememberCoroutineScope()
 
             val dismissState =
                 rememberSwipeToDismissBoxState(
@@ -137,7 +136,7 @@ fun SwipeToDismissDemo() {
             ) {
                 Card {
                     ListItem(
-                        headlineContent = {
+                        content = {
                             Text(item, fontWeight = if (unread) FontWeight.Bold else null)
                         },
                         modifier =

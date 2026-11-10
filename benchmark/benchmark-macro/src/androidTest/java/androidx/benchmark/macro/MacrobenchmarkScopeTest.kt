@@ -174,6 +174,27 @@ class MacrobenchmarkScopeTest {
 
     @SdkSuppress(minSdkVersion = 24)
     @Test
+    fun killProcessAndFlushArtProfiles_dotProcess_noBroadcast() {
+        assumeTrue(DeviceInfo.isRooted)
+        val scope = MacrobenchmarkScope(Packages.TARGET, launchWithClearTask = true)
+        try {
+            scope.killProcess()
+            scope.pressHome()
+            scope.startActivityAndWait(Intent("${Packages.TARGET}.DOT_PROCESS_ACTIVITY"))
+            assertEquals(
+                listOf("${Packages.TARGET}.dotprocess"),
+                Shell.getRunningProcessesForPackage(Packages.TARGET),
+            )
+            scope.killProcessAndFlushArtProfiles(allowFlushWithBroadcast = false)
+            assertTrue(scope.hasFlushedArtProfiles)
+            assertFalse(Shell.isPackageAlive(Packages.TARGET))
+        } finally {
+            scope.killProcess()
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = 24)
+    @Test
     fun compile_speedProfile_noLaunch() {
         // Emulator api 30 does not have dex2oat (b/264938965)
         assumeTrue(Build.VERSION.SDK_INT != Build.VERSION_CODES.R)
@@ -286,24 +307,23 @@ class MacrobenchmarkScopeTest {
 
     @Test
     fun measureBlock_methodTracing() {
-        // Our API 23 emulators seem to be misconfigured b/438214932
-        assumeTrue(!isEmulator || SDK_INT != 23)
+        // Our API 23 and 24 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT > 24)
         val scope =
             MacrobenchmarkScope(
                 Packages.TEST, // self-instrumenting macrobench, so don't kill the process!
                 launchWithClearTask = true,
             )
-        scope.fileLabel = "TEST-UNIQUE-NAME"
+        scope.fileLabel = "TEST-UNIQUE-NAME-methodTracing"
         scope.startMethodTracing()
         // Launch first activity, and validate it is displayed
         scope.startActivityAndWait(ConfigurableActivity.createIntent("InitialText"))
         assertTrue(scope.device.hasObject(By.text("InitialText")))
         val testOutputs = scope.stopMethodTracing()
-        val trace =
-            testOutputs.singleOrNull { file ->
-                file.outputRelativePath.endsWith(".trace") &&
-                    file.outputRelativePath.contains("-methodTracing-")
-            }
+        val trace = testOutputs.singleOrNull { file ->
+            file.outputRelativePath.endsWith(".trace") &&
+                file.outputRelativePath.contains("-methodTracing-")
+        }
         // One method trace should have been created
         assertNotNull(trace)
         assertTrue(trace.outputRelativePath.startsWith("TEST-UNIQUE-NAME-methodTracing-"))
@@ -311,10 +331,10 @@ class MacrobenchmarkScopeTest {
 
     @Test
     fun multipleMethodTraces_onProcessStartStop() {
-        // Our API 23 emulators seem to be misconfigured b/438214932
-        assumeTrue(!isEmulator || SDK_INT != 23)
+        // Our API 23 and 24 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT > 24)
         val scope = MacrobenchmarkScope(Packages.TARGET, launchWithClearTask = true)
-        scope.fileLabel = "TEST-UNIQUE-NAME"
+        scope.fileLabel = "TEST-UNIQUE-NAME-methodTracing"
         scope.startMethodTracing()
         scope.startActivityAndWait()
         scope.killProcess()
@@ -322,11 +342,10 @@ class MacrobenchmarkScopeTest {
         scope.killProcess()
         val testOutputs = scope.stopMethodTracing()
         // We should have 2 method traces
-        val traces =
-            testOutputs.filter { file ->
-                file.outputRelativePath.endsWith(".trace") &&
-                    file.outputRelativePath.contains("-methodTracing-")
-            }
+        val traces = testOutputs.filter { file ->
+            file.outputRelativePath.endsWith(".trace") &&
+                file.outputRelativePath.contains("-methodTracing-")
+        }
         assertEquals(traces.size, 2)
     }
 

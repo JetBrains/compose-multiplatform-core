@@ -21,16 +21,19 @@ import androidx.ink.brush.BrushPaint.StampingTexture
 import androidx.ink.brush.BrushPaint.TextureLayer
 import androidx.ink.brush.BrushPaint.TilingTexture
 import androidx.ink.geometry.Angle
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(InkInternalOnlyApi::class, ExperimentalInkAnimationApi::class)
 class BrushPaintTest {
 
     @Test
     fun brushPaintNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
+            @Suppress("UNUSED_VARIABLE")
             val unused =
                 BrushPaint(
                     textureLayers = listOf(makeTestTextureLayer()),
@@ -348,6 +351,7 @@ class BrushPaintTest {
                 animationRows = 3,
                 animationColumns = 4,
                 animationDurationMillis = 5000,
+                animationRepeatMode = TextureLayer.AnimationRepeatMode.REVERSE,
                 blendMode = TextureLayer.BlendMode.SRC_IN,
             )
 
@@ -360,6 +364,7 @@ class BrushPaintTest {
                     animationRows = 3,
                     animationColumns = 4,
                     animationDurationMillis = 5000,
+                    animationRepeatMode = TextureLayer.AnimationRepeatMode.REVERSE,
                     blendMode = TextureLayer.BlendMode.SRC_IN,
                 )
             )
@@ -372,6 +377,10 @@ class BrushPaintTest {
         assertThat(layer).isNotEqualTo(layer.copy(animationRows = 6))
         assertThat(layer).isNotEqualTo(layer.copy(animationColumns = 7))
         assertThat(layer).isNotEqualTo(layer.copy(animationDurationMillis = 8000))
+        assertThat(layer)
+            .isNotEqualTo(
+                layer.copy(animationRepeatMode = TextureLayer.AnimationRepeatMode.RESTART)
+            )
         assertThat(layer).isNotEqualTo(layer.copy(blendMode = TextureLayer.BlendMode.MODULATE))
     }
 
@@ -433,6 +442,7 @@ class BrushPaintTest {
                 animationRows = 3,
                 animationColumns = 4,
                 animationDurationMillis = 5000,
+                animationRepeatMode = TextureLayer.AnimationRepeatMode.REVERSE,
                 blendMode = TextureLayer.BlendMode.SRC_IN,
             )
         val changedAnimationRows = originalLayer.copy(animationRows = 9)
@@ -449,6 +459,7 @@ class BrushPaintTest {
                     animationRows = 9, // Changed
                     animationColumns = 4,
                     animationDurationMillis = 5000,
+                    animationRepeatMode = TextureLayer.AnimationRepeatMode.REVERSE,
                     blendMode = TextureLayer.BlendMode.SRC_IN,
                 )
             )
@@ -543,6 +554,56 @@ class BrushPaintTest {
 
     // endregion
 
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(BrushPaint().calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
+        assertThat(
+                BrushPaint(colorFunctions = listOf(ColorFunction.HueOffset(180.0f)))
+                    .calculateMinimumRequiredVersion()
+            )
+            .isEqualTo(Version.DEVELOPMENT)
+        assertThat(TextureLayer.BlendMode.MODULATE.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
+        assertThat(TextureLayer.Wrap.REPEAT.calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
+        assertThat(TilingTexture.Origin.STROKE_SPACE_ORIGIN.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
+        assertThat(TextureLayer.SizeUnit.BRUSH_SIZE.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
+        assertThat(TextureLayer.AnimationRepeatMode.RESTART.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
+        assertThat(TextureLayer.AnimationRepeatMode.REVERSE.calculateMinimumRequiredVersion())
+            .isEqualTo(Version.DEVELOPMENT)
+        assertThat(
+                TilingTexture(
+                        clientTextureId = TEST_TEXTURE_ID,
+                        sizeX = 256F,
+                        sizeY = 256F,
+                        offsetX = 0.8f,
+                        offsetY = 0.9f,
+                        rotationDegrees = Angle.HALF_TURN_DEGREES,
+                        sizeUnit = TextureLayer.SizeUnit.STROKE_COORDINATES,
+                        origin = TilingTexture.Origin.FIRST_STROKE_INPUT,
+                        wrapX = TextureLayer.Wrap.CLAMP,
+                        wrapY = TextureLayer.Wrap.MIRROR,
+                    )
+                    .calculateMinimumRequiredVersion()
+            )
+            .isEqualTo(Version.V0)
+        assertThat(makeTestTextureLayer().calculateMinimumRequiredVersion())
+            .isEqualTo(Version.DEVELOPMENT)
+        assertThat(ColorFunction.ChromaMultiplier(0.5f).calculateMinimumRequiredVersion())
+            .isEqualTo(Version.DEVELOPMENT)
+        assertThat(ColorFunction.OpacityMultiplier(0.5f).calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
+        assertThat(ColorFunction.HueOffset(180.0f).calculateMinimumRequiredVersion())
+            .isEqualTo(Version.DEVELOPMENT)
+        assertThat(ColorFunction.LightnessOffset(0.5f).calculateMinimumRequiredVersion())
+            .isEqualTo(Version.DEVELOPMENT)
+        assertThat(ColorFunction.ReplaceColor.withColorLong(1).calculateMinimumRequiredVersion())
+            .isEqualTo(Version.V0)
+    }
+
     private fun makeTestTextureLayer() =
         StampingTexture(
             clientTextureId = TEST_TEXTURE_ID,
@@ -550,6 +611,7 @@ class BrushPaintTest {
             animationRows = 3,
             animationColumns = 4,
             animationDurationMillis = 5000,
+            animationRepeatMode = TextureLayer.AnimationRepeatMode.REVERSE,
             blendMode = TextureLayer.BlendMode.SRC_IN,
         )
 

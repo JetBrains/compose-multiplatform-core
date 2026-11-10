@@ -24,6 +24,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.INT
 import static java.lang.Math.floor;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -242,6 +243,8 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
         }
         if (Float.isNaN(mFontSize)) {
             context.listensTo(Utils.idFromNan(mFontSize), this);
+        } else if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+            context.listensTo(RemoteContext.ID_DENSITY, this);
         }
         if (Float.isNaN(mFontWeight)) {
             context.listensTo(Utils.idFromNan(mFontWeight), this);
@@ -263,8 +266,16 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
                 applyStyle((TextStyle) styleObj);
             }
         }
+        float prevFontSize = mFontSizeValue;
         mFontSizeValue =
                 Float.isNaN(mFontSize) ? context.getFloat(Utils.idFromNan(mFontSize)) : mFontSize;
+        if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP
+                && !Float.isNaN(mFontSize)) {
+            mFontSizeValue *= context.getDensity();
+        }
+        if (prevFontSize != mFontSizeValue && mComputedTextLayout != null) {
+            invalidateMeasure();
+        }
         mFontWeightValue =
                 Float.isNaN(mFontWeight)
                         ? context.getFloat(Utils.idFromNan(mFontWeight))
@@ -282,7 +293,8 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
 
         String cachedString = context.getText(mTextId);
         if (cachedString != null && cachedString.equalsIgnoreCase(mCachedString) && mType != -1) {
-            if (mMeasureFontSize != mFontSizeValue || mMeasureFontWeight != mFontWeightValue) {
+            if ((!mAutosize && mMeasureFontSize != mFontSizeValue)
+                    || mMeasureFontWeight != mFontWeightValue) {
                 invalidateMeasure();
             }
             return;
@@ -516,41 +528,42 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             return;
         }
         int length = mCachedString.length();
-        if (mComputedTextLayout != null) {
-            if (mOverflow != OVERFLOW_VISIBLE) {
-                context.save();
-                context.clipRect(
-                        0f,
-                        0f,
-                        mWidth - mPaddingLeft - mPaddingRight,
-                        mHeight - mPaddingTop - mPaddingBottom);
-                context.translate(getScrollX(), getScrollY());
-                context.drawComplexText(mComputedTextLayout);
-                context.restore();
-            } else {
-                context.drawComplexText(mComputedTextLayout);
-            }
-        } else {
-            float px = mTextX;
-            switch (mTextAlignValue) {
-                case TEXT_ALIGN_CENTER:
-                    px = (mWidth - mPaddingLeft - mPaddingRight - mTextW) / 2f;
-                    break;
-                case TEXT_ALIGN_RIGHT:
-                case TEXT_ALIGN_END:
-                    px = (mWidth - mPaddingLeft - mPaddingRight - mTextW);
-                    break;
-                case TEXT_ALIGN_LEFT:
-                case TEXT_ALIGN_START:
-                default:
-            }
+        float contentW = mWidth - mPaddingLeft - mPaddingRight;
+        float px = 0f;
+        switch (mTextAlignValue) {
+            case TEXT_ALIGN_CENTER:
+                px = (contentW - mTextW) / 2f;
+                break;
+            case TEXT_ALIGN_RIGHT:
+            case TEXT_ALIGN_END:
+                px = contentW - mTextW;
+                break;
+            case TEXT_ALIGN_LEFT:
+            case TEXT_ALIGN_START:
+            default:
+                px = 0f;
+        }
 
-            if (mOverflow != OVERFLOW_VISIBLE || mTextW > (mWidth - mPaddingLeft - mPaddingRight)) {
+        if (mComputedTextLayout != null) {
+            context.save();
+            if (mOverflow != OVERFLOW_VISIBLE) {
+                context.clipRect(
+                        0f,
+                        0f,
+                        contentW,
+                        mHeight - mPaddingTop - mPaddingBottom);
+            }
+            context.translate(getScrollX() + px, getScrollY());
+            context.drawComplexText(mComputedTextLayout);
+            context.restore();
+        } else {
+            px += mTextX;
+            if (mOverflow != OVERFLOW_VISIBLE || mTextW > contentW) {
                 context.save();
                 context.clipRect(
                         0f,
                         0f,
-                        mWidth - mPaddingLeft - mPaddingRight,
+                        contentW,
                         mHeight - mPaddingTop - mPaddingBottom);
                 context.translate(getScrollX(), getScrollY());
                 context.drawTextRun(mTextId, 0, length, 0, 0, px, mTextY, false);
@@ -735,9 +748,8 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
                     current += stepSize;
                 }
             }
-            mFontSizeValue = current;
             mMeasureFontSize = current;
-            mPaint.setTextSize(mFontSizeValue);
+            mPaint.setTextSize(mMeasureFontSize);
             context.replacePaint(mPaint);
             textLayout(context, maxWidth, maxHeight, bounds, true, false);
         } else {

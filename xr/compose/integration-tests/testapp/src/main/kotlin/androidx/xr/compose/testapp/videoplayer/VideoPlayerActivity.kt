@@ -45,6 +45,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.media3.common.C
@@ -77,8 +77,8 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.size
-import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.common.isDrmSupported
 import androidx.xr.compose.testapp.common.isMvHevcSupported
@@ -101,7 +101,6 @@ import androidx.xr.scenecore.Texture
 import androidx.xr.scenecore.scene
 import java.io.File
 import java.nio.file.Paths
-import kotlinx.coroutines.launch
 
 private const val TAG = "JXR-SurfaceEntity-VideoPlayerActivity"
 
@@ -130,30 +129,48 @@ class VideoPlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lifecycleScope.launch {
-            val sessionResult = Session.create(context = this@VideoPlayerActivity)
-            if (sessionResult is SessionCreateSuccess) {
-                session = sessionResult.session
-                session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
-                session.configure(
-                    Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
-                )
-                arDevice = ArDevice.getInstance(session)
+        setContent {
+            var sessionCreated by remember { mutableStateOf(false) }
 
-                checkExternalStoragePermission()
-
-                // Load texture
-                alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
-
-                setContent {
-                    if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                        SpatialVideoPlayerUi()
-                    } else {
-                        VideoPlayerUi()
-                    }
+            if (sessionCreated) {
+                if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
+                    SpatialVideoPlayerUi()
+                } else {
+                    VideoPlayerUi()
                 }
-            } else {
-                finish()
+            }
+
+            LaunchedEffect(Unit) {
+                val sessionResult = Session.create(context = this@VideoPlayerActivity)
+                if (sessionResult is SessionCreateSuccess) {
+                    session = sessionResult.session
+                    session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+                    session.configure(
+                        Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
+                    )
+                    arDevice = ArDevice.getInstance(session)
+
+                    checkExternalStoragePermission()
+
+                    // Load texture if available
+                    val texturePath = Paths.get("textures", "alpha_mask.png")
+                    val assetExists = runCatching {
+                        assets.open(texturePath.toString()).close()
+                    }
+                        .isSuccess
+
+                    if (assetExists) {
+                        try {
+                            alphaMaskTexture = Texture.create(session, texturePath)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to load alpha mask texture: $texturePath", e)
+                        }
+                    }
+
+                    sessionCreated = true
+                } else {
+                    finish()
+                }
             }
         }
     }
@@ -163,9 +180,7 @@ class VideoPlayerActivity : ComponentActivity() {
         Subspace {
             SpatialColumn {
                 SpatialPanel(
-                    modifier =
-                        SubspaceModifier.size(DpVolumeSize(960.dp, 720.dp, 0.dp))
-                            .transformingMovable()
+                    modifier = SubspaceModifier.size(DpVolumeSize(960.dp, 720.dp, 0.dp)).movable()
                 ) {
                     VideoPlayerTestActivityUI(true, getString(R.string.video_player_test))
                 }
@@ -180,6 +195,7 @@ class VideoPlayerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        exoPlayer?.clearVideoSurface()
         exoPlayer?.release()
         exoPlayer = null
         if (alphaMaskTexture != null) {
@@ -224,13 +240,14 @@ class VideoPlayerActivity : ComponentActivity() {
 
     fun initializeExoPlayer(context: Context): ExoPlayer {
         if (exoPlayer == null) {
-            exoPlayer = ExoPlayer.Builder(context).build()
+            exoPlayer = ExoPlayer.Builder(context.applicationContext).build()
         }
         return exoPlayer!!
     }
 
     fun destroySurfaceEntity() {
         videoPlaying = false
+        exoPlayer?.clearVideoSurface()
         exoPlayer?.release()
         exoPlayer = null
         surfaceEntity!!.parent = null
@@ -475,6 +492,7 @@ class VideoPlayerActivity : ComponentActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     private fun FeatherRadius() {
         var featherRadiusX by remember { mutableFloatStateOf(0.0f) }

@@ -17,7 +17,9 @@
 package androidx.pdf.view
 
 import android.animation.ValueAnimator
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Configuration.ORIENTATION_UNDEFINED
@@ -60,6 +62,8 @@ import androidx.core.util.Pools
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.core.view.ViewCompat
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.Highlight
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfFeature
 import androidx.pdf.PdfPoint
@@ -69,7 +73,6 @@ import androidx.pdf.content.ExternalLink
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
 import androidx.pdf.exceptions.RequestFailedException
-import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.formfilling.FormFillingEditTextState
 import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
@@ -99,6 +102,7 @@ import androidx.pdf.view.fastscroll.getDimensions
 import androidx.pdf.view.layout.PageLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import java.util.LinkedList
+import java.util.Locale
 import java.util.Queue
 import java.util.concurrent.Executors
 import kotlin.math.abs
@@ -300,16 +304,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             selectionStateManager?.isImageSelectionEnabled = value
         }
 
-    private var ocrProvider: OcrProvider? = null
+    @OptIn(ExperimentalPdfApi::class) private var ocrProvider: OcrProvider? = null
 
     /**
      * Sets the [OcrProvider] used for recognizing text in image-based PDF content.
      *
-     * When set, it enables text selection within images by delegating OCR processing to the
-     * provided engine.
+     * When set, it enables text selection within images by delegating OCR (Optical Character
+     * Recognition) processing to the provided engine.
+     *
+     * The caller retains ownership of the [OcrProvider] and is responsible for calling
+     * [OcrProvider.close] when it is no longer needed.
      *
      * @param ocrProvider the [OcrProvider] to use for text recognition
      */
+    @ExperimentalPdfApi
     public fun setOcrProvider(ocrProvider: OcrProvider?) {
         checkMainThread()
         if (this@PdfView.ocrProvider == ocrProvider) return
@@ -751,7 +759,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private var pdfAutofillHandler: PdfAutofillHandler? = null
         get() {
-            if (!PdfFeatureFlags.isAutofillEnabled) return null
             return field ?: PdfAutofillHandler(this, ::pdfToViewPoint).also { field = it }
         }
 
@@ -942,7 +949,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         AccessibilityManager.AccessibilityStateChangeListener { isEnabled ->
             isAccessibilityEnabled = isEnabled
         }
-    private var selectionStateManager: SelectionStateManager? = null
+    @get:VisibleForTesting
+    @set:VisibleForTesting
+    internal var selectionStateManager: SelectionStateManager? = null
     private val selectionRenderer = SelectionRenderer(context)
 
     // True if the zoom was calculated before the layouting completed and needs to be recalculated
@@ -951,6 +960,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     /** Selects all text on the current selected page range asynchronously. */
     internal fun selectAllText() {
         if (pdfDocument?.isFeatureSupported(PdfFeature.TEXT_SELECTION) == true) {
+            selectionStateManager?.maybeHideActionMode()
             selectionStateManager?.selectAllText()
         }
     }
@@ -1169,12 +1179,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 toViewCoord(
                     pageLocation.left + pdfPoint.x,
                     zoom,
-                    scroll = if (accountForScroll) scrollX else 0,
+                    scroll = if (accountForScroll) scrollX - paddingLeft else -paddingLeft,
                 ),
                 toViewCoord(
                     pageLocation.top + pdfPoint.y,
                     zoom,
-                    scroll = if (accountForScroll) scrollY else 0,
+                    scroll = if (accountForScroll) scrollY - paddingTop else -paddingTop,
                 ),
             )
         return ret
@@ -1413,6 +1423,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         )
     }
 
+    internal fun isLinkAt(event: MotionEvent): Boolean {
+        val localPageLayoutManager = pageLayoutManager ?: return false
+        val touchPoint =
+            localPageLayoutManager.getPdfPointAt(
+                toContentX(event.x),
+                toContentY(event.y),
+                getVisibleAreaInContentCoords(),
+            ) ?: return false
+
+        val links = pageManager?.getPageLinks(touchPoint.pageNum) ?: return false
+
+        val allLinks = links.gotoLinks + links.externalLinks
+        return allLinks.any { link -> link.bounds.any { it.contains(touchPoint.x, touchPoint.y) } }
+    }
+
     private fun scrollAsYouSelect() {
         prevDragEvent?.let { event ->
             if (event.y > height * SCROLL_SELECTION_TOLERANCE_RATIO) {
@@ -1604,9 +1629,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         state.paginationModel = pageLayoutManager?.paginationModel
         state.layoutStrategy = pageLayoutManager?.layoutStrategy
         state.pdfFormFillingState = pageLayoutManager?.pdfFormFillingState
-        state.selectionModel = selectionStateManager?.selectionModel?.value
+        val isChangingConfigurations = context.findActivity()?.isChangingConfigurations == true
+        state.selectionModel =
+            selectionStateManager?.selectionModel?.value?.let {
+                if (isChangingConfigurations) it else it.toPlaceholder()
+            }
         state.pdfFormFillingEditTextState = getFormFillingEditTextState()
-
         return state
     }
 
@@ -1735,6 +1763,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * We are not be able to restore our previous state if it pertains to a different document, or
      * if it is missing critical data like page layout information.
      */
+    @OptIn(ExperimentalPdfApi::class)
     private fun maybeRestoreState(): Boolean {
         val localStateToRestore = stateToRestore ?: return false
         val localPdfDocument = pdfDocument ?: return false
@@ -1961,17 +1990,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             currentSelection !is ImageSelection && selectionActionModeCallback?.actionMode == null
         ) {
             val previousJob = selectionMenuJob
-            selectionMenuJob =
-                backgroundScope.launch {
-                    previousJob?.cancelAndJoin()
-                    val menuItems =
-                        selectionMenuManager.getSelectionMenuItems(localCurrentSelection)
-                    selectionActionModeCallback =
-                        SelectionActionModeCallback(this@PdfView, menuItems)
-                    withContext(mainDispatcher) {
-                        startActionMode(selectionActionModeCallback, ActionMode.TYPE_FLOATING)
-                    }
+            selectionMenuJob = backgroundScope.launch {
+                previousJob?.cancelAndJoin()
+                val menuItems = selectionMenuManager.getSelectionMenuItems(localCurrentSelection)
+                selectionActionModeCallback = SelectionActionModeCallback(this@PdfView, menuItems)
+                withContext(mainDispatcher) {
+                    startActionMode(selectionActionModeCallback, ActionMode.TYPE_FLOATING)
                 }
+            }
         }
     }
 
@@ -2023,6 +2049,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     /** Start using the [PdfDocument] to present PDF content */
     // Display.width and height are deprecated in favor of WindowMetrics, but in this case we
     // actually want to use the size of the display and not the size of the window.
+    @OptIn(ExperimentalPdfApi::class)
     private fun onDocumentSet() {
         val localPdfDocument = pdfDocument ?: return
 
@@ -2650,6 +2677,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         override fun onLongPress(e: MotionEvent) {
             super.onLongPress(e)
+            this@PdfView.requestFocus()
             val localPageLayoutManager = pageLayoutManager ?: return super.onLongPress(e)
             val touchPoint =
                 localPageLayoutManager.getPdfPointAt(
@@ -2724,6 +2752,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            this@PdfView.requestFocus()
             commitFormFillingEditText()
             selectionStateManager?.clearCurrentSelection()
             val localPageLayoutManager = pageLayoutManager ?: return super.onSingleTapConfirmed(e)
@@ -2808,18 +2837,26 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         val externalLink = ExternalLink(uri)
         if (linkClickListener?.onLinkClicked(externalLink) == true) {
             return true
-        } else {
-            try {
-                val intent = Intent(Intent.ACTION_VIEW, externalLink.uri)
-                context.startActivity(intent)
-                return true
-            } catch (_: Exception) {
-                return false
-            }
+        }
+
+        val scheme = externalLink.uri.scheme?.lowercase(Locale.ROOT)
+        if (scheme !in DEFAULT_ALLOWED_LINK_SCHEMES) {
+            return false
+        }
+        return try {
+            val intent =
+                Intent(Intent.ACTION_VIEW, externalLink.uri).addCategory(Intent.CATEGORY_BROWSABLE)
+            context.startActivity(intent)
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 
     public companion object {
+        private val DEFAULT_ALLOWED_LINK_SCHEMES =
+            setOf("http", "https", "mailto", "tel", "sms", "smsto", "geo")
+
         /** The PdfView is not currently being affected by an outside input, e.g. user touch */
         public const val GESTURE_STATE_IDLE: Int = 0
 
@@ -2913,6 +2950,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 "Property must be set on the main thread"
             }
         }
+
+        internal tailrec fun Context.findActivity(): Activity? =
+            when (this) {
+                is Activity -> this
+                is ContextWrapper -> baseContext.findActivity()
+                else -> null
+            }
 
         /**
          * Converts a one-dimensional coordinate in View space (scaled, offset by scroll position)

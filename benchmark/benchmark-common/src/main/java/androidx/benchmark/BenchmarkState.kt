@@ -17,14 +17,51 @@
 package androidx.benchmark
 
 import androidx.annotation.RestrictTo
+import java.util.ArrayDeque
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.LockSupport
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import kotlin.coroutines.intrinsics.createCoroutineUnintercepted
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Runnable
+
+private class LoopDispatcher : CoroutineDispatcher() {
+    private val queue = ArrayDeque<Runnable>()
+    private var parkedThread: Thread? = null
+
+    override fun dispatch(context: CoroutineContext, block: Runnable) {
+        synchronized(queue) {
+            queue.add(block)
+            parkedThread?.let { LockSupport.unpark(it) }
+        }
+    }
+
+    fun runQueue() {
+        while (true) {
+            val next = synchronized(queue) { queue.poll() } ?: break
+            next.run()
+        }
+    }
+
+    fun waitForRunnable() {
+        synchronized(queue) {
+            if (queue.isNotEmpty()) return
+            parkedThread = Thread.currentThread()
+        }
+        try {
+            while (true) {
+                synchronized(queue) { if (queue.isNotEmpty()) return }
+                LockSupport.park()
+            }
+        } finally {
+            synchronized(queue) { parkedThread = null }
+        }
+    }
+}
 
 /**
  * This function is used to allow BenchmarkState to provide its non-suspending keepRunning(), but
@@ -43,7 +80,8 @@ import kotlin.coroutines.resume
 private fun createSuspendedLoop(
     block: suspend SuspendedLoopTrigger.() -> Unit
 ): SuspendedLoopTrigger {
-    val suspendedLoopTrigger = SuspendedLoopTrigger()
+    val dispatcher = LoopDispatcher()
+    val suspendedLoopTrigger = SuspendedLoopTrigger(dispatcher)
     suspendedLoopTrigger.nextStep =
         block.createCoroutineUnintercepted(
             receiver = suspendedLoopTrigger,
@@ -64,10 +102,11 @@ private fun createSuspendedLoop(
  * measureRepeated, but this code will remain (ideally without significant change) to support the
  * BenchmarkState API in the long term.
  */
-private class SuspendedLoopTrigger : Continuation<Unit> {
+private class SuspendedLoopTrigger(private val dispatcher: LoopDispatcher) : Continuation<Unit> {
     @JvmField var nextStep: Continuation<Unit>? = null
     private var next: Int = -1
     private var done: Boolean = false
+    private var awaitingLoops = false
 
     /**
      * Schedule the loop manager Yields a value of loops to be run by the user of the
@@ -75,6 +114,7 @@ private class SuspendedLoopTrigger : Continuation<Unit> {
      */
     suspend fun awaitLoops(loopCount: Int) {
         next = loopCount
+        awaitingLoops = true
         suspendCoroutineUninterceptedOrReturn { c ->
             nextStep = c
             COROUTINE_SUSPENDED
@@ -84,12 +124,20 @@ private class SuspendedLoopTrigger : Continuation<Unit> {
     /** Gets the number of loops to run before calling [getNextLoopCount] again */
     fun getNextLoopCount(): Int {
         if (done) return 0
+        awaitingLoops = false
         nextStep!!.resume(Unit)
-        return next
+        dispatcher.runQueue()
+
+        while (!done && !awaitingLoops) {
+            dispatcher.waitForRunnable()
+            dispatcher.runQueue()
+        }
+
+        return if (done) 0 else next
     }
 
     override val context: CoroutineContext
-        get() = EmptyCoroutineContext
+        get() = dispatcher
 
     override fun resumeWith(result: Result<Unit>) {
         result.getOrThrow() // just rethrow exception if it is there
@@ -120,16 +168,18 @@ private class SuspendedLoopTrigger : Continuation<Unit> {
  *
  * Note that BenchmarkState does not give access to Perfetto traces.
  */
-class BenchmarkState
+public class BenchmarkState
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 constructor(testDefinition: TestDefinition, private val config: MicrobenchmarkConfig) {
     // Secondary explicit constructor allows for internal usage without experimental config opt in
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    constructor(testDefinition: TestDefinition) : this(testDefinition, MicrobenchmarkConfig())
+    public constructor(
+        testDefinition: TestDefinition
+    ) : this(testDefinition, MicrobenchmarkConfig())
 
     @JvmField
     @PublishedApi // Previously used by [BenchmarkState.keepRunningInline()]
-    internal var iterationsRemaining = 0
+    internal var iterationsRemaining: Int = 0
 
     /** Ideally we'd call into the top level function, but it's non-suspending */
     private var internalIter = createSuspendedLoop {
@@ -148,13 +198,15 @@ constructor(testDefinition: TestDefinition, private val config: MicrobenchmarkCo
         )
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) @JvmField var scope: MicrobenchmarkScope? = null
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @JvmField
+    public var scope: MicrobenchmarkScope? = null
 
-    fun pauseTiming() {
+    public fun pauseTiming() {
         scope!!.pauseMeasurement()
     }
 
-    fun resumeTiming() {
+    public fun resumeTiming() {
         scope!!.resumeMeasurement()
     }
 
@@ -168,7 +220,7 @@ constructor(testDefinition: TestDefinition, private val config: MicrobenchmarkCo
         return false
     }
 
-    fun keepRunning(): Boolean {
+    public fun keepRunning(): Boolean {
         if (iterationsRemaining > 0) {
             iterationsRemaining--
             return true
@@ -178,18 +230,17 @@ constructor(testDefinition: TestDefinition, private val config: MicrobenchmarkCo
 
     // Note: Constants left here to avoid churn, but should eventually be moved out to more
     // appropriate locations
-    companion object {
+    public companion object {
         internal const val TAG = "Benchmark"
 
         /**
-         * Conservative estimate for how much method tracing slows down runtime - how much longer
-         * will `methodTrace {x()}` be than `x()` for nontrivial workloads.
+         * Conservative fallback estimate for how much method tracing slows down runtime - how much
+         * longer will `methodTrace {x()}` be than `x()` on uncalibrated devices or older ART
+         * versions without low-overhead wall-clock tracing (`0x10` flag).
          *
-         * This is a conservative estimate, better version of this would account for OS/Art version
-         *
-         * Value derived from observed numbers on bramble API 31 (600-800x slowdown)
+         * Value derived from observed numbers on bramble API 31 (600-800x slowdown).
          */
-        internal const val METHOD_TRACING_ESTIMATED_SLOWDOWN_FACTOR = 1000
+        internal const val GENERIC_METHOD_TRACING_ESTIMATED_SLOWDOWN_FACTOR = 1000
 
         /**
          * Maximum duration to trace on main thread to avoid ANRs

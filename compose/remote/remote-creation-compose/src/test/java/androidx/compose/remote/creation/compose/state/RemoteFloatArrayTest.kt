@@ -20,6 +20,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.state.RemoteFloat.Companion.createNamedRemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteInt.Companion.createNamedRemoteInt
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
@@ -77,19 +79,41 @@ class RemoteFloatArrayTest {
     }
 
     @Test
+    fun namedArrayDeref_fetchesValueFromArray() {
+        val namedArray =
+            RemoteFloatArray.createNamedRemoteFloatArray("data", floatArrayOf(10f, 20f, 30f))
+        val result = namedArray[1.rf]
+        val resultId = result.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getFloat(resultId)).isEqualTo(20f)
+    }
+
+    @Test
     fun toDebugString_creation() {
         val remoteFloatArray = RemoteFloatArray(listOf(1.rf, 2.rf, 3.rf))
         assertThat(remoteFloatArray.toDebugString()).isEqualTo("arrayOf(1.0, 2.0, 3.0)")
     }
 
     @Test
+    fun toDebugString_named() {
+        val namedArray =
+            RemoteFloatArray.createNamedRemoteFloatArray("data", floatArrayOf(10f, 20f))
+        assertThat(namedArray.toDebugString()).isEqualTo("user:data")
+
+        val result = namedArray[0]
+        assertThat(result.toDebugString()).isEqualTo("user:data[0.0]")
+    }
+
+    @Test
     fun toDebugString_indexing() {
         val remoteFloatArray = RemoteFloatArray(listOf(1.rf, 2.rf, 3.rf))
-        val idx = RemoteFloat.createNamedRemoteFloat("idx", 1f)
+        val idx = createNamedRemoteFloat("idx", 1f)
         val result = remoteFloatArray[idx]
         assertThat(result.toDebugString()).isEqualTo("arrayOf(1.0, 2.0, 3.0)[user:idx]")
 
-        val intIdx = RemoteInt.createNamedRemoteInt("i", 1)
+        val intIdx = createNamedRemoteInt("i", 1)
         assertThat(remoteFloatArray[intIdx].toDebugString())
             .isEqualTo("arrayOf(1.0, 2.0, 3.0)[user:i]")
     }

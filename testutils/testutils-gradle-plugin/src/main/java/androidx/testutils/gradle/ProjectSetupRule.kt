@@ -149,9 +149,7 @@ class ProjectSetupRule(parentFolder: File? = null) : ExternalResource() {
     fun getLibraryLatestVersionInLocalRepo(path: String): String {
         val metadataFile =
             File(props.tipOfTreeMavenRepoPath).resolve(path).resolve("maven-metadata.xml")
-        check(metadataFile.exists()) {
-            "Cannot find room metadata file in ${metadataFile.absolutePath}"
-        }
+        check(metadataFile.exists()) { "Cannot find metadata file in ${metadataFile.absolutePath}" }
         check(metadataFile.isFile) { "Metadata file should be a file but it is not." }
         val xmlDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(metadataFile)
         val latestVersionNode =
@@ -207,10 +205,11 @@ class ProjectSetupRule(parentFolder: File? = null) : ExternalResource() {
 
     private fun writeGradleProperties() {
         gradlePropertiesFile.writer().use {
-            val props = Properties()
-            props.setProperty("android.useAndroidX", "true")
-            props.setProperty("org.gradle.configuration-cache", "true")
-            props.store(it, null)
+            val properties = Properties()
+            properties.setProperty("android.useAndroidX", "true")
+            properties.setProperty("org.gradle.configuration-cache", "true")
+            properties.setProperty("androidx.ndkVersion", props.ndkVersion)
+            properties.store(it, null)
         }
     }
 }
@@ -225,6 +224,7 @@ data class ProjectProps(
     val kgpVersion: String,
     val kgpDependency: String,
     val kspVersion: String,
+    val ndkVersion: String,
     val rootProjectPath: String,
     val tipOfTreeMavenRepoPath: String,
     val agpDependency: String,
@@ -280,6 +280,7 @@ data class ProjectProps(
                     "org.jetbrains.kotlin:kotlin-gradle-plugin:" +
                         properties.getProperty("kgpVersion"),
                 kspVersion = properties.getProperty("kspVersion"),
+                ndkVersion = properties.getProperty("ndkVersion"),
                 agpDependency = properties.getProperty("agpDependency"),
                 prebuiltsPath = properties.getOptionalCanonicalPath("prebuiltsRelativePath"),
                 gradlePrebuiltsPath =

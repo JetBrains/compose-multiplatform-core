@@ -28,18 +28,22 @@ import androidx.ink.brush.behavior.SourceNode.Source
 import androidx.ink.brush.behavior.TargetNode
 import androidx.ink.brush.behavior.TargetNode.Target
 import androidx.ink.brush.behavior.ToolTypeFilterNode
+import androidx.ink.brush.samples.createParallelogramBrushTip
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 
+@OptIn(InkInternalOnlyApi::class, ExperimentalInkAnimationApi::class)
 class BrushCoatTest {
 
     @Test
     fun brushCoatNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
+            @Suppress("UNUSED_VARIABLE")
             val unused =
                 BrushCoat(
-                    tip = BrushTip(),
+                    tip = createParallelogramBrushTip(),
                     paintPreferences =
                         listOf(BrushPaint(), BrushPaint(selfOverlap = SelfOverlap.DISCARD)),
                 )
@@ -48,7 +52,7 @@ class BrushCoatTest {
 
     @Test
     fun constructor_usesPassedInTip() {
-        val tip = BrushTip()
+        val tip = createParallelogramBrushTip()
         val brushCoat = BrushCoat(tip = tip)
         assertThat(brushCoat.tip).isSameInstanceAs(tip)
     }
@@ -132,6 +136,12 @@ class BrushCoatTest {
         assertThat(coat).isEqualTo(BrushCoat(customTip, customPaint))
     }
 
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(BrushCoat().calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
+    }
+
     /** Brush behavior with every field different from default values. */
     private val customBehavior =
         BrushBehavior(
@@ -141,8 +151,8 @@ class BrushCoatTest {
                 targetModifierRangeEnd = 1.7f,
                 input =
                     DampingNode(
-                        dampingSource = ProgressDomain.TIME_IN_SECONDS,
-                        dampingGap = 0.001f,
+                        dampOver = ProgressDomain.TIME_IN_SECONDS,
+                        strength = 0.001f,
                         input =
                             ResponseNode(
                                 responseCurve = EasingFunction.Predefined.EASE_IN_OUT,

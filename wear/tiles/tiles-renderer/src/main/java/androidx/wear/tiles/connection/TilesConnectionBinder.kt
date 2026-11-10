@@ -125,7 +125,13 @@ internal class TilesConnectionBinder(
         return when {
             cachedTileProvider?.asBinder()?.isBinderAlive == true -> cachedTileProvider
             cachedConnectBinderJob != null -> cachedConnectBinderJob.await()
-            else -> connectToService()
+            else -> {
+                // Clean up the dead connection before reconnecting.
+                if (cachedTileProvider != null) {
+                    disconnectFromService()
+                }
+                connectToService()
+            }
         }
     }
 
@@ -142,14 +148,16 @@ internal class TilesConnectionBinder(
                                 name: ComponentName?,
                                 service: IBinder?,
                             ) {
+                                if (continuation.isCompleted) {
+                                    return
+                                }
                                 val boundTileProvider = TileProvider.Stub.asInterface(service)
                                 continuation.resume(boundTileProvider)
                             }
 
                             override fun onServiceDisconnected(name: ComponentName?) {
                                 // This is called when the remote side hangs up, but will be
-                                // dispatched
-                                // from an unknown thread. Ignore it for now.
+                                // dispatched from an unknown thread. Ignore it for now.
                             }
                         }
 

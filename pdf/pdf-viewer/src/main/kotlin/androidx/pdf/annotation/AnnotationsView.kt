@@ -27,7 +27,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.ColorInt
 import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.annotation.AnnotationsView.AnnotationMode.Highlight
 import androidx.pdf.annotation.AnnotationsView.AnnotationMode.Select
 import androidx.pdf.annotation.content.KeyedPdfAnnotation
@@ -47,7 +47,7 @@ import androidx.pdf.annotation.highlights.InProgressHighlightsView
  * This inherits [ViewGroup] but does not support adding arbitrary children via [addView] or in a
  * layout.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@ExperimentalPdfApi
 public class AnnotationsView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
@@ -59,17 +59,24 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private val inProgressHighlightsView: InProgressHighlightsView
 
     private var annotationsLocator: AnnotationsLocator? = null
+    private var annotations: SparseArray<PageAnnotationsData> = SparseArray()
+
+    /** Provides page information from view coordinates */
+    internal var pageInfoProvider: PageInfoProvider
 
     private var textBoundsProvider: TextBoundsProvider? = null
 
     init {
         setWillNotDraw(false)
 
+        pageInfoProvider = PageInfoProvider()
         inProgressHighlightsView =
             InProgressHighlightsView(context).apply {
                 layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
                 visibility = GONE
             }
+        inProgressHighlightsView.pageInfoProvider = pageInfoProvider
+        annotationsLocator = AnnotationsLocator(context, pageInfoProvider)
         addViewInternal(inProgressHighlightsView)
     }
 
@@ -118,16 +125,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     /**
-     * Represents of page annotations that will be rendered on the view. The collection is
-     * referenced by the page number (0-indexed).
-     */
-    public var annotations: SparseArray<PageAnnotationsData> = SparseArray()
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    /**
      * The current interaction mode, determining how touch events are handled for annotations.
      *
      * Set to [AnnotationMode.Select] to enable selecting existing annotations, or
@@ -147,16 +144,26 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             }
         }
 
-    /** Provides page information from view coordinates */
-    public var pageInfoProvider: PageInfoProvider? = null
-        set(value) {
-            field = value
-            inProgressHighlightsView.pageInfoProvider = value
-
-            if (value != null) {
-                annotationsLocator = AnnotationsLocator(context, pageInfoProvider = value)
-            }
-        }
+    /**
+     * Updates both the content and the layout positioning of the annotations in a single atomic
+     * operation.
+     *
+     * @param pdfViewportState The latest layout snapshot (zoom, scroll, and pagebounds) from the
+     *   PDF renderer.
+     * @param annotations A [SparseArray] indexed with page num containing the list of
+     *   [KeyedPdfAnnotation] objects to be rendered.
+     */
+    @MainThread
+    public fun updateDisplayState(
+        pdfViewportState: PdfViewportState,
+        annotations: SparseArray<List<KeyedPdfAnnotation>>,
+    ) {
+        checkMainThread()
+        pageInfoProvider.setPageBounds(pdfViewportState.pageBounds)
+        pageInfoProvider.setZoom(pdfViewportState.zoom)
+        this.annotations = extractVisiblePageAnnotations(pdfViewportState, annotations)
+        invalidate()
+    }
 
     /**
      * Sets the [TextBoundsProvider] used to retrieve text boundary information during highlighting.
@@ -211,6 +218,22 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private var annotationDrawerFactory: PdfAnnotationDrawerFactory =
         PdfAnnotationDrawerFactoryImpl(pdfObjectDrawerFactory)
 
+    private fun extractVisiblePageAnnotations(
+        pdfViewportState: PdfViewportState,
+        annotations: SparseArray<List<KeyedPdfAnnotation>>,
+    ): SparseArray<PageAnnotationsData> {
+        val newAnnotationsData = SparseArray<PageAnnotationsData>()
+        val firstVisiblePage = pdfViewportState.firstVisiblePage
+        val lastVisiblePage = firstVisiblePage + pdfViewportState.visiblePagesCount - 1
+
+        for (pageNum in firstVisiblePage..lastVisiblePage) {
+            val pageAnnotations = annotations.get(pageNum) ?: emptyList()
+            val transform = pageInfoProvider.getPageInfo(pageNum)?.pageToViewTransform ?: Matrix()
+            newAnnotationsData.put(pageNum, PageAnnotationsData(pageAnnotations, transform))
+        }
+        return newAnnotationsData
+    }
+
     /**
      * Configures the highlighter.
      *
@@ -232,7 +255,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         PdfDocumentAnnotationsDrawerImpl(annotationDrawerFactory).draw(annotations, canvas)
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        if (event == null) return false
         return when (interactionMode) {
             is Select -> {
                 val localAnnotationsLocator = annotationsLocator
@@ -241,9 +265,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                         localAnnotationsLocator.findAnnotations(annotations, event)
                     if (foundAnnotations.isNotEmpty()) {
                         onAnnotationLocatedListeners.forEach {
-                            val event =
-                                LocatedAnnotations(x = event.x, y = event.y, foundAnnotations)
-                            it.onAnnotationsLocated(event)
+                            it.onAnnotationsLocated(x = event.x, y = event.y, foundAnnotations)
                         }
                         return true
                     }
@@ -260,25 +282,70 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         }
     }
 
-    /**
-     * Holds all annotations for a single PDF page and their transformation matrix.
-     *
-     * @property keyedAnnotations List of [PdfAnnotation]s on the page.
-     * @property transform [Matrix] to apply when drawing these annotations.
-     */
-    public data class PageAnnotationsData(
-        val keyedAnnotations: List<KeyedPdfAnnotation>,
-        val transform: Matrix,
-    )
-
     /** Defines the current interaction mode of the [AnnotationsView]. */
-    public abstract class AnnotationMode {
+    public abstract class AnnotationMode internal constructor() {
         /** Mode for selecting existing annotations (e.g. erase, drag, scale). */
-        public class Select : AnnotationMode()
+        public object Select : AnnotationMode()
 
         /** Mode for creating new highlight annotations. */
         public class Highlight(@get:ColorInt @param:ColorInt public val color: Int) :
             AnnotationMode()
+    }
+
+    /**
+     * Callback interface for gesture coordination events.
+     *
+     * These signals allow the host to coordinate the touch event stream between different
+     * simultaneous interactions.
+     */
+    public interface OnGestureClaimListener {
+        /**
+         * Called when the view 'claims' the current gesture stream.
+         *
+         * The host should typically use this signal to cancel any other 'shadow' or simultaneous
+         * interactions that are currently tracking this gesture.
+         */
+        public fun onGestureClaimed()
+
+        /**
+         * Called when the view 'abandons' its interest in the current gesture.
+         *
+         * The host can use this signal to allow other interactions to continue exclusively.
+         */
+        public fun onGestureAbandoned()
+    }
+
+    /** Callback interface for events related to the creation and modification of annotations. */
+    public interface OnAnnotationEditListener {
+
+        /**
+         * Called when an in-progress interaction successfully produces a finalized [PdfAnnotation].
+         *
+         * @param annotation The finalized [PdfAnnotation] object containing the metadata generated
+         *   by the user's interaction.
+         */
+        public fun onAnnotationCreated(annotation: PdfAnnotation)
+
+        /**
+         * Called when a failure occurs during the creation or modification of an annotation.
+         *
+         * @param throwable The underlying cause of the failure.
+         */
+        public fun onAnnotationError(throwable: Throwable)
+    }
+
+    /** Callback interface for annotation hit events. */
+    public fun interface OnAnnotationLocatedListener {
+        /**
+         * Called when one or more annotations are successfully located at a specific touch
+         * location.
+         *
+         * @param x The x-coordinate of the touch event in view coordinates.
+         * @param y The y-coordinate of the touch event in view coordinates.
+         * @param annotations The list of [KeyedPdfAnnotation] objects found at the (x, y) location,
+         *   typically ordered by visual stacking order (Z-index) (top-bottom).
+         */
+        public fun onAnnotationsLocated(x: Float, y: Float, annotations: List<KeyedPdfAnnotation>)
     }
 
     public companion object {
@@ -290,8 +357,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 }
 
-/** Callback interface for annotation hit events. */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-public interface OnAnnotationLocatedListener {
-    public fun onAnnotationsLocated(locatedAnnotations: LocatedAnnotations)
-}
+/**
+ * Holds all annotations for a single PDF page and their transformation matrix.
+ *
+ * @property keyedAnnotations List of [PdfAnnotation]s on the page.
+ * @property transform [Matrix] to apply when drawing these annotations.
+ */
+internal data class PageAnnotationsData(
+    val keyedAnnotations: List<KeyedPdfAnnotation>,
+    val transform: Matrix,
+)

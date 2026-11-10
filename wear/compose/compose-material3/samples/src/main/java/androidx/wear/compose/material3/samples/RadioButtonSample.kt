@@ -20,7 +20,9 @@ import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -73,7 +75,7 @@ fun RadioButtonSample() {
 @Preview
 @Composable
 fun SplitRadioButtonSample() {
-    Column(modifier = Modifier.selectableGroup()) {
+    Column(modifier = Modifier.selectableGroup().padding(horizontal = 10.dp)) {
         var selectedButton by remember { mutableStateOf(0) }
         // SplitRadioButton uses the Radio selection control by default.
         SplitRadioButton(
@@ -81,10 +83,9 @@ fun SplitRadioButtonSample() {
             selected = selectedButton == 0,
             onSelectionClick = { selectedButton = 0 },
             selectionContentDescription = "First",
-            onContainerClick = {
-                /* Do something */
-            },
+            onContainerClick = { /* Do something */ },
             containerClickLabel = "click",
+            modifier = Modifier.fillMaxWidth(),
             enabled = true,
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -93,10 +94,9 @@ fun SplitRadioButtonSample() {
             selected = selectedButton == 1,
             onSelectionClick = { selectedButton = 1 },
             selectionContentDescription = "Second",
-            onContainerClick = {
-                /* Do something */
-            },
+            onContainerClick = { /* Do something */ },
             containerClickLabel = "click",
+            modifier = Modifier.fillMaxWidth(),
             enabled = true,
         )
     }

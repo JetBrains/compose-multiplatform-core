@@ -81,11 +81,13 @@ public interface PdfDocumentRenderer : AutoCloseable {
 
     public fun <T> withPage(pageNum: Int, block: (PdfPage) -> T): T? {
         var page: PdfPage? = null
-        var results: T?
+        val results: T?
 
         try {
             page = this.openPage(pageNum, useCache = false)
             results = block(page)
+        } catch (_: RendererClosedException) {
+            return null
         } finally {
             this.releasePage(page, pageNum)
         }
@@ -93,3 +95,11 @@ public interface PdfDocumentRenderer : AutoCloseable {
         return results
     }
 }
+
+/**
+ * Exception thrown when an operation is attempted on a [PdfDocumentRenderer] that has already been
+ * closed.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public class RendererClosedException(message: String = "Document renderer is already closed") :
+    IllegalStateException(message)

@@ -38,7 +38,8 @@ import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.allCaps
 import androidx.compose.foundation.text.input.forEachChange
-import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.maxLengthReject
+import androidx.compose.foundation.text.input.maxLengthTrim
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
@@ -48,18 +49,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.intl.Locale
 import androidx.core.text.isDigitsOnly
 
 @Composable
 fun BasicTextFieldInputTransformationDemos() {
     Column(Modifier.imePadding().verticalScroll(rememberScrollState())) {
         TagLine(tag = "allCaps")
-        FilterDemo(filter = InputTransformation.allCaps(Locale.current))
+        FilterDemo(filter = InputTransformation.allCaps(LocalLocale.current))
 
-        TagLine(tag = "maxLength(5)")
-        FilterDemo(filter = InputTransformation.maxLength(5))
+        TagLine(tag = "maxLengthTrim(5)")
+        FilterDemo(filter = InputTransformation.maxLengthTrim(5))
+
+        TagLine(tag = "maxLengthReject(5)")
+        FilterDemo(filter = InputTransformation.maxLengthReject(5))
 
         TagLine(tag = "Digits Only BasicTextField")
         DigitsOnlyDemo()
@@ -141,11 +145,11 @@ private fun ChangeFilterDemo() {
     Column {
         Row(horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Filter enabled?")
+            val locale = LocalLocale.current
             Switch(
                 checked = filter != null,
                 onCheckedChange = {
-                    filter =
-                        if (filter == null) InputTransformation.allCaps(Locale.current) else null
+                    filter = if (filter == null) InputTransformation.allCaps(locale) else null
                 },
             )
         }

@@ -24,7 +24,6 @@ import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
-import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
@@ -54,13 +53,12 @@ import kotlinx.coroutines.delay
 /**
  * Implementation of the [androidx.xr.arcore.runtime.PerceptionRuntime] interface using ARCore.
  *
- * @property context The [Context] instance
+ * @property context the [Context] instance
  * @property perceptionManager that manages the perception capabilities of a runtime using ARCore
  * @property timeSource the [ArCoreTimeSource] instance
  * @property config the current [Config] of the session
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@OptIn(ExperimentalInertialTrackingApi::class)
 public class ArCoreRuntime
 internal constructor(
     private val context: Context,
@@ -115,7 +113,6 @@ internal constructor(
         return timeSource.markNow()
     }
 
-    @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
     @SuppressWarnings("RestrictedApiAndroidX")
     override fun configure(config: Config) {
         val arConfig = _session.config

@@ -36,7 +36,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +44,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LazyGridSlotsReuseTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     val itemsSizePx = 30f
     val itemsSizeDp = with(rule.density) { itemsSizePx.toDp() }
@@ -260,19 +259,17 @@ class LazyGridSlotsReuseTest {
         var counter0 = 0
         var counter1 = 0
 
-        val measureCountModifier0 =
-            Modifier.layout { measurable, constraints ->
-                counter0++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
-            }
+        val measureCountModifier0 = Modifier.layout { measurable, constraints ->
+            counter0++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
+        }
 
-        val measureCountModifier1 =
-            Modifier.layout { measurable, constraints ->
-                counter1++
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
-            }
+        val measureCountModifier1 = Modifier.layout { measurable, constraints ->
+            counter1++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
+        }
 
         rule.setContent {
             state = rememberLazyGridState()

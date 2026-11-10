@@ -16,6 +16,7 @@
 package androidx.compose.remote.core;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.AddMesh2D;
 import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.BitmapFontData;
 import androidx.compose.remote.core.operations.BitmapTextMeasure;
@@ -44,6 +45,7 @@ import androidx.compose.remote.core.operations.DrawBitmapTextAnchored;
 import androidx.compose.remote.core.operations.DrawCircle;
 import androidx.compose.remote.core.operations.DrawContent;
 import androidx.compose.remote.core.operations.DrawLine;
+import androidx.compose.remote.core.operations.DrawMesh2D;
 import androidx.compose.remote.core.operations.DrawOval;
 import androidx.compose.remote.core.operations.DrawPath;
 import androidx.compose.remote.core.operations.DrawRect;
@@ -55,6 +57,7 @@ import androidx.compose.remote.core.operations.DrawTextOnCircle;
 import androidx.compose.remote.core.operations.DrawTextOnPath;
 import androidx.compose.remote.core.operations.DrawToBitmap;
 import androidx.compose.remote.core.operations.DrawTweenPath;
+import androidx.compose.remote.core.operations.EventActionOperation;
 import androidx.compose.remote.core.operations.FloatConstant;
 import androidx.compose.remote.core.operations.FloatExpression;
 import androidx.compose.remote.core.operations.FloatFunctionCall;
@@ -65,6 +68,7 @@ import androidx.compose.remote.core.operations.Header;
 import androidx.compose.remote.core.operations.IdLookup;
 import androidx.compose.remote.core.operations.ImageAttribute;
 import androidx.compose.remote.core.operations.IntegerExpression;
+import androidx.compose.remote.core.operations.MatrixFromMesh2D;
 import androidx.compose.remote.core.operations.MatrixFromPath;
 import androidx.compose.remote.core.operations.MatrixRestore;
 import androidx.compose.remote.core.operations.MatrixRotate;
@@ -83,11 +87,14 @@ import androidx.compose.remote.core.operations.PathCreate;
 import androidx.compose.remote.core.operations.PathData;
 import androidx.compose.remote.core.operations.PathExpression;
 import androidx.compose.remote.core.operations.PathTween;
+import androidx.compose.remote.core.operations.PlaySound;
 import androidx.compose.remote.core.operations.ReferencedOperations;
 import androidx.compose.remote.core.operations.Rem;
 import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.RootContentDescription;
 import androidx.compose.remote.core.operations.Skip;
+import androidx.compose.remote.core.operations.SoundData;
+import androidx.compose.remote.core.operations.SoundExpression;
 import androidx.compose.remote.core.operations.TextAttribute;
 import androidx.compose.remote.core.operations.TextData;
 import androidx.compose.remote.core.operations.TextFromFloat;
@@ -189,6 +196,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 /** Provides an abstract buffer to encode/decode RemoteCompose operations */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -208,8 +216,9 @@ public class RemoteComposeBuffer {
     protected int mLastComponentId = 0;
     private int mGeneratedComponentId = -1;
     protected int mApiLevel = CoreDocument.DOCUMENT_API_LEVEL;
-    private final java.util.Stack<Integer> mPatternDefineOffsets = new java.util.Stack<>();
+    private final Stack<Integer> mPatternDefineOffsets = new Stack<>();
     protected int mProfileMask = 0;
+    protected boolean mIsCustomMap = false;
 
     Operations.UniqueIntMap<CompanionOperation> mMap = new Operations.UniqueIntMap<>();
 
@@ -1018,6 +1027,9 @@ public class RemoteComposeBuffer {
     /**
      * inflate the buffer into a list of operations
      *
+     * <p>If the header has the {@link Header#COMPRESS} flag, the buffer contents are first replaced
+     * by the decompressed document.
+     *
      * @param operations the operations list to add to
      */
     public void inflateFromBuffer(
@@ -1030,6 +1042,11 @@ public class RemoteComposeBuffer {
                 try {
                     Header header = Header.readDirect(mBuffer);
                     profiles = header.getProfiles();
+                    Object compression = header.get(Header.COMPRESS);
+                    if (compression != null
+                            && !Integer.valueOf(Header.COMPRESSION_NONE).equals(compression)) {
+                        decompress();
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -1039,7 +1056,11 @@ public class RemoteComposeBuffer {
                 // Invalid API level (or invalid Header)
                 return;
             }
-            mMap = Operations.getOperations(mApiLevel, profiles);
+            // Read the api and profile from the document and use that unless it's previously been
+            // specifically overridden.
+            if (!mIsCustomMap) {
+                setVersion(mApiLevel, profiles, (Set<Integer>) null);
+            }
         }
         if (mMap == null) {
             // Invalid operations map
@@ -1055,6 +1076,18 @@ public class RemoteComposeBuffer {
             }
             companion.read(wrapped, operations);
         }
+    }
+
+    /**
+     * Replaces the buffer contents with the decompressed document, so later inflations (e.g. {@link
+     * CoreDocument#reinflate()}) read it directly instead of decompressing again.
+     */
+    private void decompress() throws IOException {
+        byte[] document = Header.decompressDocument(mBuffer.mBuffer, mBuffer.mSize);
+        mBuffer.mBuffer = document;
+        mBuffer.mMaxSize = document.length;
+        mBuffer.mSize = document.length;
+        mBuffer.setIndex(0);
     }
 
     /**
@@ -1790,12 +1823,37 @@ public class RemoteComposeBuffer {
      */
     public void addModifierBorder(
             float borderWidth, float borderRoundedCorner, int color, int shape) {
+        addModifierBorder(borderWidth, borderRoundedCorner, color, shape, true);
+    }
+
+    /**
+     * Add a border modifier
+     *
+     * @param borderWidth the border width
+     * @param borderRoundedCorner the rounded corner radius if the shape is ROUNDED_RECT
+     * @param color the color of the border
+     * @param shape the shape of the border
+     * @param useLegacy flag for enabling legacy border drawing
+     */
+    public void addModifierBorder(
+            float borderWidth, float borderRoundedCorner, int color, int shape, boolean useLegacy) {
         float r = (color >> 16 & 0xff) / 255.0f;
         float g = (color >> 8 & 0xff) / 255.0f;
         float b = (color & 0xff) / 255.0f;
         float a = (color >> 24 & 0xff) / 255.0f;
         BorderModifierOperation.apply(
-                mBuffer, 0, 0, 0, 0, borderWidth, borderRoundedCorner, r, g, b, a, shape);
+                mBuffer,
+                0,
+                0,
+                useLegacy ? 0 : 1,
+                0,
+                borderWidth,
+                borderRoundedCorner,
+                r,
+                g,
+                b,
+                a,
+                shape);
     }
 
     /**
@@ -1808,12 +1866,29 @@ public class RemoteComposeBuffer {
      */
     public void addModifierDynamicBorder(
             float borderWidth, float borderRoundedCorner, int colorId, int shape) {
+        addModifierDynamicBorder(borderWidth, borderRoundedCorner, colorId, shape, true);
+    }
 
+    /**
+     * Add a border modifier
+     *
+     * @param borderWidth the border width
+     * @param borderRoundedCorner the rounded corner radius if the shape is ROUNDED_RECT
+     * @param colorId the color of the border
+     * @param shape the shape of the border
+     * @param useLegacy flag for enabling legacy border drawing
+     */
+    public void addModifierDynamicBorder(
+            float borderWidth,
+            float borderRoundedCorner,
+            int colorId,
+            int shape,
+            boolean useLegacy) {
         BorderModifierOperation.apply(
                 mBuffer,
                 BorderModifierOperation.COLOR_REF,
                 colorId,
-                0,
+                useLegacy ? 0 : 1,
                 0,
                 borderWidth,
                 borderRoundedCorner,
@@ -2605,6 +2680,46 @@ public class RemoteComposeBuffer {
         return imageId;
     }
 
+    /**
+     * Create an offscreen bitmap buffer whose dimensions are dynamically sized to a target
+     * component.
+     *
+     * @param imageId the image id
+     * @return the image id
+     */
+    public int createOffscreenBitmap(int imageId) {
+        return createOffscreenBitmap(imageId, 0);
+    }
+
+    /**
+     * Create an offscreen bitmap buffer whose dimensions are dynamically sized to the specified
+     * component.
+     *
+     * @param imageId the image id
+     * @param componentId the component id (or 0 to use the active component)
+     * @return the image id
+     */
+    public int createOffscreenBitmap(int imageId, int componentId) {
+        byte[] payload =
+                componentId != 0
+                        ? new byte[] {
+                            (byte) (componentId >> 24),
+                            (byte) (componentId >> 16),
+                            (byte) (componentId >> 8),
+                            (byte) componentId
+                        }
+                        : new byte[0];
+        BitmapData.apply(
+                mBuffer,
+                imageId,
+                BitmapData.TYPE_RAW8888,
+                (short) 1,
+                BitmapData.ENCODING_COMPONENT_OFFSCREEN_BUFFER,
+                (short) 1,
+                payload);
+        return imageId;
+    }
+
     /** */
     public void drawOnBitmap(int imageId, int mode, int color) {
         DrawToBitmap.apply(mBuffer, imageId, mode, color);
@@ -2672,6 +2787,43 @@ public class RemoteComposeBuffer {
     }
 
     /**
+     * Store raw SC-format sound data under the given ID.
+     *
+     * @param soundId the ID to register the sound under
+     * @param data SC-format audio bytes
+     * @return the soundId
+     */
+    public int addSound(int soundId, byte @NonNull [] data) {
+        SoundData.apply(mBuffer, soundId, data);
+        return soundId;
+    }
+
+    /**
+     * Store a sound synthesis expression under the given ID.
+     *
+     * @param id expression ID
+     * @param params synthesis params float array
+     * @param leftVolume left-channel volume
+     * @param rightVolume right-channel volume
+     * @param rate playback rate
+     * @return the id
+     */
+    public int addSoundExpression(
+            int id, float @NonNull [] params, float leftVolume, float rightVolume, float rate) {
+        SoundExpression.apply(mBuffer, id, leftVolume, rightVolume, rate, params);
+        return id;
+    }
+
+    /**
+     * Write a PLAY_SOUND operation.
+     *
+     * @param soundExpressionId the ID of the SoundExpression to play
+     */
+    public void playSound(int soundExpressionId) {
+        PlaySound.apply(mBuffer, soundExpressionId);
+    }
+
+    /**
      * Add a conditional operation
      *
      * @param type type of comparison
@@ -2684,6 +2836,29 @@ public class RemoteComposeBuffer {
 
     /** Ends the current conditional operation stared by {@link #addConditionalOperations}. */
     public void endConditionalOperations() {
+        addContainerEnd();
+    }
+
+    /**
+     * Starts an event actions block.
+     *
+     * @param type the event type
+     * @param filter the filter metadata
+     * @param flags the routing flags
+     * @param dataIds optional target payload data mapping IDs
+     * @param condition optional conditional float expression RPN stream
+     */
+    public void startEventActions(
+            int type,
+            int filter,
+            int flags,
+            int @Nullable [] dataIds,
+            float @Nullable [] condition) {
+        EventActionOperation.apply(mBuffer, type, filter, flags, dataIds, condition);
+    }
+
+    /** Ends the current event actions block. */
+    public void endEventActions() {
         addContainerEnd();
     }
 
@@ -2782,19 +2957,73 @@ public class RemoteComposeBuffer {
         Skip.applyEndSkip(mBuffer, offset);
     }
 
-    /** Set current version of the buffer (typically for writing) */
-    public void setVersion(int documentApiLevel, int profiles) {
-        mApiLevel = documentApiLevel;
-        mProfileMask = profiles;
-        mBuffer.setVersion(documentApiLevel, profiles);
-    }
-
-    /** Set current version of the buffer (typically for writing) */
+    /**
+     * Set current version of the buffer.
+     *
+     * @param documentApiLevel the API level of the document
+     * @param profileMask the profile mask used
+     * @param supportedOperations the set of allowed operation IDs. If null, operations known for
+     *     this version and profile will be used by default.
+     */
     public void setVersion(
-            int documentApiLevel, int profileMask, @NonNull Set<Integer> supportedOperations) {
+            int documentApiLevel,
+            int profileMask,
+            @Nullable Set<@NonNull Integer> supportedOperations) {
         mApiLevel = documentApiLevel;
         mProfileMask = profileMask;
-        mBuffer.setValidOperations(supportedOperations);
+        if (supportedOperations != null) {
+            // When explicit supported operations are provided, look up companion operation
+            // readers for each opcode across registered operations and build a custom map.
+            Operations.UniqueIntMap<CompanionOperation> allOps =
+                    Operations.getAllKnownOperations(documentApiLevel);
+            Operations.UniqueIntMap<CompanionOperation> filteredMap =
+                    new Operations.UniqueIntMap<>();
+            if (allOps != null) {
+                for (Integer opId : supportedOperations) {
+                    if (opId != null) {
+                        int opcode = opId;
+                        CompanionOperation companion = allOps.get(opcode);
+                        if (companion != null) {
+                            filteredMap.put(opcode, companion);
+                        }
+                    }
+                }
+            }
+            mMap = filteredMap;
+            mIsCustomMap = true;
+            mBuffer.setValidOperations(supportedOperations);
+        } else {
+            // Default behavior: look up operation companion readers defined for profile bitmask.
+            Operations.UniqueIntMap<CompanionOperation> map =
+                    Operations.getOperations(documentApiLevel, profileMask);
+            if (map != null) {
+                mMap = map;
+                supportedOperations = map.keySet();
+            }
+            if (supportedOperations != null) {
+                mBuffer.setValidOperations(supportedOperations);
+            }
+        }
+    }
+
+    /**
+     * Set current version of the buffer with custom operation implementations.
+     *
+     * <p>This allows providing custom operation mappings for inflation.
+     *
+     * @param documentApiLevel the API level of the document
+     * @param profileMask the profile mask used
+     * @param customMap custom operations map to use
+     */
+    public void setVersion(
+            int documentApiLevel,
+            int profileMask,
+            Operations.@NonNull UniqueIntMap<CompanionOperation> customMap) {
+        mApiLevel = documentApiLevel;
+        mProfileMask = profileMask;
+        mMap = customMap;
+        mIsCustomMap = true;
+        mBuffer.setValidOperations(customMap.keySet());
     }
 
     /**
@@ -2869,6 +3098,117 @@ public class RemoteComposeBuffer {
             float count,
             int flags) {
         PathExpression.apply(mBuffer, id, expressionX, expressionY, start, end, count, flags);
+    }
+
+    /**
+     * Define a 2D vertex mesh.
+     *
+     * @param meshId the id the mesh is stored under
+     * @param type how the vertex data is supplied
+     * @param layout the domain topology
+     * @param uCount grid resolution along u
+     * @param vCount grid resolution along v
+     * @param flags reserved
+     * @param aux layout dependent, e.g. a path id for PATH_STRIP
+     * @param expressions the RPN expression groups, for the expression type
+     * @param indices the triangle list, for the literal types
+     * @param verts x,y pairs, for the literal types
+     * @param uv u,v pairs, for the literal types
+     * @param colors packed ARGB per vertex, for the literal types
+     */
+    public void addMesh2D(
+            int meshId,
+            int type,
+            int layout,
+            int uCount,
+            int vCount,
+            int flags,
+            int aux,
+            float @Nullable [] @Nullable [] expressions,
+            int @Nullable [] indices,
+            float @Nullable [] verts,
+            float @Nullable [] uv,
+            int @Nullable [] colors) {
+        AddMesh2D.apply(
+                mBuffer,
+                meshId,
+                type,
+                layout,
+                uCount,
+                vCount,
+                flags,
+                aux,
+                expressions,
+                indices,
+                verts,
+                uv,
+                colors);
+    }
+
+    /**
+     * Define a ribbon along a path whose cross width is a spline through control points.
+     *
+     * <p>{@code widths} and {@code positions} may hold NaN variable ids, so the profile can be
+     * animated.
+     *
+     * @param meshId the id the mesh is stored under
+     * @param segments roughly how many quads to divide the path into; at least 1
+     * @param pathId the path to follow
+     * @param widths the width control points, at least one, in the path's own units
+     * @param positions where each width sits along the path, 0..1, empty for evenly spaced
+     */
+    public void addMesh2DPathStrip(
+            int meshId,
+            int segments,
+            int pathId,
+            float @Nullable [] widths,
+            float @Nullable [] positions) {
+        AddMesh2D.applyPathSplineStrip(mBuffer, meshId, segments, pathId, widths, positions);
+    }
+
+    /**
+     * Define a spline width path strip that ends in a semicircle at each end.
+     *
+     * <p>As {@link #addMesh2DPathStrip}, with a round cap of radius half the ribbon's width at each
+     * end. The caps are extra columns rather than a slice of {@code segments}, so the body is
+     * sampled exactly as finely as the flat variant would sample it.
+     *
+     * @param meshId the id the mesh is stored under
+     * @param segments roughly how many quads to divide the path into, excluding the caps
+     * @param pathId the path to follow
+     * @param widths the width control points, at least one, in the path's own units
+     * @param positions where each width sits along the path, 0..1, empty for evenly spaced
+     */
+    public void addMesh2DRoundStrip(
+            int meshId,
+            int segments,
+            int pathId,
+            float @Nullable [] widths,
+            float @Nullable [] positions) {
+        AddMesh2D.applySplineRoundStrip(mBuffer, meshId, segments, pathId, widths, positions);
+    }
+
+    /**
+     * Draw a previously defined 2D vertex mesh.
+     *
+     * @param meshId the mesh to draw
+     * @param blend how vertex colour and texel combine
+     * @param imageId the bitmap to sample, 0 for untextured
+     */
+    public void addDrawMesh2D(int meshId, int blend, int imageId) {
+        DrawMesh2D.apply(mBuffer, meshId, blend, imageId);
+    }
+
+    /**
+     * Multiply the local frame of a 2D mesh at (u, v) into the current canvas matrix.
+     *
+     * @param meshId the mesh to read the surface from
+     * @param u the u parameter
+     * @param v the v parameter
+     * @param flags which parts of the local frame to apply
+     */
+    public void setMatrixFromMesh2D(int meshId, float u, float v, int flags) {
+        MatrixFromMesh2D.apply(mBuffer, meshId, u, v, flags);
     }
 
     /**
@@ -3019,6 +3359,41 @@ public class RemoteComposeBuffer {
             int visibilityEasingType,
             int enterAnimation,
             int exitAnimation) {
+        addAnimationSpecModifier(
+                animationId,
+                motionDuration,
+                motionEasingType,
+                visibilityDuration,
+                visibilityEasingType,
+                enterAnimation,
+                exitAnimation,
+                -1,
+                -1);
+    }
+
+    /**
+     * Add an animation spec modifier with custom enter/exit function IDs
+     *
+     * @param animationId the animation id
+     * @param motionDuration the duration of the motion animation
+     * @param motionEasingType the type of easing for the motion animation
+     * @param visibilityDuration the duration of the visibility animation
+     * @param visibilityEasingType the type of easing for the visibility animation
+     * @param enterAnimation the type of animation when "entering" (newly visible)
+     * @param exitAnimation the type of animation when "exiting" (newly gone)
+     * @param enterFunctionId the function id for custom enter animation
+     * @param exitFunctionId the function id for custom exit animation
+     */
+    public void addAnimationSpecModifier(
+            int animationId,
+            float motionDuration,
+            int motionEasingType,
+            float visibilityDuration,
+            int visibilityEasingType,
+            int enterAnimation,
+            int exitAnimation,
+            int enterFunctionId,
+            int exitFunctionId) {
         AnimationSpec.apply(
                 mBuffer,
                 animationId,
@@ -3027,7 +3402,9 @@ public class RemoteComposeBuffer {
                 visibilityDuration,
                 visibilityEasingType,
                 enterAnimation,
-                exitAnimation);
+                exitAnimation,
+                enterFunctionId,
+                exitFunctionId);
     }
 
     /**

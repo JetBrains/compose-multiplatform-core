@@ -18,7 +18,7 @@ package androidx.camera.testing.impl
 import android.os.Build
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
+import kotlinx.coroutines.runBlocking
 import org.junit.AssumptionViolatedException
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -62,7 +62,9 @@ public class IgnoreProblematicDeviceRule : TestRule {
 
         public fun getPropSanitized(propKey: String): String {
             return try {
-                val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+                val device = runBlocking {
+                    RequireForegroundRule.getUiDevice(InstrumentationRegistry.getInstrumentation())
+                }
                 device.executeShellCommand("getprop $propKey")?.filter { it.isLetterOrDigit() }
                     ?: ""
             } catch (e: Exception) {
@@ -84,6 +86,10 @@ public class IgnoreProblematicDeviceRule : TestRule {
             isEmulator &&
                 avdName.contains("Pixel2", ignoreCase = true) &&
                 Build.VERSION.SDK_INT == Build.VERSION_CODES.R
+        public val isMediumPhoneApi26Emulator: Boolean =
+            isEmulator &&
+                avdName.contains("MediumPhone", ignoreCase = true) &&
+                Build.VERSION.SDK_INT == Build.VERSION_CODES.O
         public val isMediumPhoneApi35Emulator: Boolean =
             isEmulator &&
                 avdName.contains("MediumPhone", ignoreCase = true) &&

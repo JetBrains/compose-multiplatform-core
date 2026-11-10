@@ -16,11 +16,13 @@
 
 package androidx.pdf.annotation
 
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.annotation.content.PdfAnnotation
 import androidx.test.espresso.idling.CountingIdlingResource
 
+@OptIn(ExperimentalPdfApi::class)
 internal class FakeHighlightListeners(private val highlightIdlingResource: CountingIdlingResource) :
-    OnGestureClaimListener, OnAnnotationEditListener {
+    AnnotationsView.OnGestureClaimListener, AnnotationsView.OnAnnotationEditListener {
     var isStarted: Boolean = false
         private set
 

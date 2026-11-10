@@ -74,16 +74,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.material3.samples.CompactButtonWithContentSample
 import androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
 import androidx.wear.compose.material3.samples.SimpleButtonSample
+import androidx.wear.compose.material3.tokens.ChildButtonTokens
+import androidx.wear.compose.material3.tokens.CompactButtonTokens
+import androidx.wear.compose.material3.tokens.FilledButtonTokens
+import androidx.wear.compose.material3.tokens.FilledTonalButtonTokens
+import androidx.wear.compose.material3.tokens.OutlinedButtonTokens
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class ButtonTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun simple_button_sample_builds() {
@@ -93,6 +98,11 @@ class ButtonTest {
     @Test
     fun filled_tonal_compact_button_sample_builds() {
         rule.setContentWithTheme { FilledTonalCompactButtonSample() }
+    }
+
+    @Test
+    fun compact_button_with_content_sample_builds() {
+        rule.setContentWithTheme { CompactButtonWithContentSample() }
     }
 
     @Test
@@ -380,7 +390,9 @@ class ButtonTest {
             }
         }
         // Verify initial height
-        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(60.dp + buttonPadding * 2)
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assertHeightIsEqualTo(60.dp + buttonPadding * 2, tolerance = 1.dp)
 
         // Set autoAdvance off to test the content size animation
         rule.mainClock.autoAdvance = false
@@ -401,7 +413,9 @@ class ButtonTest {
         rule.mainClock.autoAdvance = true
         rule.waitForIdle()
         // Verify end height is correct
-        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(100.dp + buttonPadding * 2)
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assertHeightIsEqualTo(100.dp + buttonPadding * 2, tolerance = 1.dp)
     }
 
     @Test
@@ -860,6 +874,137 @@ class ButtonTest {
     }
 
     @Test
+    fun single_slot_compact_button_has_correct_default_height() {
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            CompactButton(
+                onClick = {},
+                modifier = Modifier.testTag(TEST_TAG),
+                content = { Text("Test") },
+            )
+        }
+
+        rule.onRoot().assertHeightIsEqualTo(CompactButtonDefaults.Height)
+    }
+
+    @Test
+    fun single_slot_compact_button_can_be_disabled() {
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = {},
+                enabled = false,
+                modifier = Modifier.testTag(TEST_TAG),
+                content = { Text("Test") },
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).assertIsNotEnabled()
+    }
+
+    @Test
+    fun single_slot_compact_button_responds_to_click_when_enabled() {
+        var clicked = false
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = { clicked = true },
+                enabled = true,
+                modifier = Modifier.testTag(TEST_TAG),
+                content = { Text("Test") },
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performClick()
+
+        rule.runOnIdle { assertThat(clicked).isTrue() }
+    }
+
+    @Test
+    fun single_slot_compact_button_does_not_respond_to_click_when_disabled() {
+        var clicked = false
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = { clicked = true },
+                enabled = false,
+                modifier = Modifier.testTag(TEST_TAG),
+                content = { Text("Test") },
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performClick()
+
+        rule.runOnIdle { assertThat(clicked).isFalse() }
+    }
+
+    @Test
+    fun single_slot_compact_button_responds_to_long_click_when_enabled() {
+        var longClicked = false
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = {},
+                onLongClick = { longClicked = true },
+                enabled = true,
+                modifier = Modifier.testTag(TEST_TAG),
+                content = { Text("Test") },
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        rule.runOnIdle { assertThat(longClicked).isTrue() }
+    }
+
+    @Test
+    fun single_slot_compact_button_does_not_respond_to_long_click_when_disabled() {
+        var longClicked = false
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = {},
+                onLongClick = { longClicked = true },
+                enabled = false,
+                modifier = Modifier.testTag(TEST_TAG),
+                content = { Text("Test") },
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        rule.runOnIdle { assertThat(longClicked).isFalse() }
+    }
+
+    @Test
+    fun single_slot_compact_button_onLongClickLabel_includedInSemantics() {
+        val testLabel = "Long click action"
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = {},
+                onLongClick = {},
+                onLongClickLabel = testLabel,
+                modifier = Modifier.testTag(TEST_TAG),
+                content = { Text("Test") },
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).assertOnLongClickLabelMatches(testLabel)
+    }
+
+    @Test
+    fun single_slot_compact_button_can_have_width_overridden() {
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            CompactButton(
+                onClick = {},
+                modifier = Modifier.testTag(TEST_TAG).width(100.dp),
+                content = { Text("Test") },
+            )
+        }
+
+        rule.onRoot().assertWidthIsEqualTo(100.dp)
+    }
+
+    @Test
     fun icon_only_compact_button_can_have_width_overridden() {
         val iconTag = "TestIcon"
         rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
@@ -987,6 +1132,24 @@ class ButtonTest {
         rule.verifyCompactButtonColors(
             status = Status.Disabled,
             colors = { ButtonDefaults.childButtonColors() },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun gives_enabled_single_slot_compact_button_correct_colors() {
+        rule.verifySingleSlotCompactButtonColors(
+            status = Status.Enabled,
+            colors = { ButtonDefaults.buttonColors() },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun gives_disabled_single_slot_compact_button_correct_colors() {
+        rule.verifySingleSlotCompactButtonColors(
+            status = Status.Disabled,
+            colors = { ButtonDefaults.buttonColors() },
         )
     }
 
@@ -1400,6 +1563,331 @@ class ButtonTest {
 
         rule.runOnIdle { assert() }
     }
+
+    @Test
+    fun button_content_slots_have_correct_colors_and_typography_when_enabled() {
+        var actualLabelColor: Color = Color.Transparent
+        var actualSecondaryLabelColor: Color = Color.Transparent
+        var actualIconColor: Color = Color.Transparent
+        var actualLabelStyle: TextStyle = TextStyle.Default
+        var actualSecondaryLabelStyle: TextStyle = TextStyle.Default
+
+        var expectedLabelColor: Color = Color.Transparent
+        var expectedSecondaryLabelColor: Color = Color.Transparent
+        var expectedIconColor: Color = Color.Transparent
+        var expectedLabelStyle: TextStyle = TextStyle.Default
+        var expectedSecondaryLabelStyle: TextStyle = TextStyle.Default
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.buttonColors()
+            expectedLabelColor = colors.contentColor(enabled = true)
+            expectedSecondaryLabelColor = colors.secondaryContentColor(enabled = true)
+            expectedIconColor = colors.iconColor(enabled = true)
+            expectedLabelStyle = FilledButtonTokens.LabelFont.value
+            expectedSecondaryLabelStyle = FilledButtonTokens.SecondaryLabelFont.value
+
+            Button(onClick = {}) {
+                ButtonDefaults.Content(
+                    label = {
+                        actualLabelColor = LocalContentColor.current
+                        actualLabelStyle = LocalTextStyle.current
+                    },
+                    secondaryLabel = {
+                        actualSecondaryLabelColor = LocalContentColor.current
+                        actualSecondaryLabelStyle = LocalTextStyle.current
+                    },
+                    icon = { actualIconColor = LocalContentColor.current },
+                    colors = colors,
+                    enabled = true,
+                )
+            }
+        }
+
+        assertEquals(expectedLabelColor, actualLabelColor)
+        assertEquals(expectedSecondaryLabelColor, actualSecondaryLabelColor)
+        assertEquals(expectedIconColor, actualIconColor)
+        assertEquals(expectedLabelStyle, actualLabelStyle)
+        assertEquals(expectedSecondaryLabelStyle, actualSecondaryLabelStyle)
+    }
+
+    @Test
+    fun button_content_slots_have_correct_colors_and_typography_when_disabled() {
+        var actualLabelColor: Color = Color.Transparent
+        var actualSecondaryLabelColor: Color = Color.Transparent
+        var actualIconColor: Color = Color.Transparent
+        var actualLabelStyle: TextStyle = TextStyle.Default
+        var actualSecondaryLabelStyle: TextStyle = TextStyle.Default
+
+        var expectedLabelColor: Color = Color.Transparent
+        var expectedSecondaryLabelColor: Color = Color.Transparent
+        var expectedIconColor: Color = Color.Transparent
+        var expectedLabelStyle: TextStyle = TextStyle.Default
+        var expectedSecondaryLabelStyle: TextStyle = TextStyle.Default
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.buttonColors()
+            expectedLabelColor = colors.contentColor(enabled = false)
+            expectedSecondaryLabelColor = colors.secondaryContentColor(enabled = false)
+            expectedIconColor = colors.iconColor(enabled = false)
+            expectedLabelStyle = FilledButtonTokens.LabelFont.value
+            expectedSecondaryLabelStyle = FilledButtonTokens.SecondaryLabelFont.value
+
+            Button(onClick = {}, enabled = false) {
+                ButtonDefaults.Content(
+                    label = {
+                        actualLabelColor = LocalContentColor.current
+                        actualLabelStyle = LocalTextStyle.current
+                    },
+                    secondaryLabel = {
+                        actualSecondaryLabelColor = LocalContentColor.current
+                        actualSecondaryLabelStyle = LocalTextStyle.current
+                    },
+                    icon = { actualIconColor = LocalContentColor.current },
+                    colors = colors,
+                    enabled = false,
+                )
+            }
+        }
+
+        assertEquals(expectedLabelColor, actualLabelColor)
+        assertEquals(expectedSecondaryLabelColor, actualSecondaryLabelColor)
+        assertEquals(expectedIconColor, actualIconColor)
+        assertEquals(expectedLabelStyle, actualLabelStyle)
+        assertEquals(expectedSecondaryLabelStyle, actualSecondaryLabelStyle)
+    }
+
+    @Test
+    fun filled_tonal_button_content_slots_have_correct_colors_when_enabled() {
+        var actualLabelColor: Color = Color.Transparent
+        var actualSecondaryLabelColor: Color = Color.Transparent
+        var actualIconColor: Color = Color.Transparent
+
+        var expectedLabelColor: Color = Color.Transparent
+        var expectedSecondaryLabelColor: Color = Color.Transparent
+        var expectedIconColor: Color = Color.Transparent
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.filledTonalButtonColors()
+            expectedLabelColor = colors.contentColor(enabled = true)
+            expectedSecondaryLabelColor = colors.secondaryContentColor(enabled = true)
+            expectedIconColor = colors.iconColor(enabled = true)
+
+            FilledTonalButton(
+                onClick = {},
+                colors = colors,
+                label = { actualLabelColor = LocalContentColor.current },
+                secondaryLabel = { actualSecondaryLabelColor = LocalContentColor.current },
+                icon = { actualIconColor = LocalContentColor.current },
+            )
+        }
+
+        assertEquals(expectedLabelColor, actualLabelColor)
+        assertEquals(expectedSecondaryLabelColor, actualSecondaryLabelColor)
+        assertEquals(expectedIconColor, actualIconColor)
+    }
+
+    @Test
+    fun outlined_button_content_slots_have_correct_colors_when_enabled() {
+        var actualLabelColor: Color = Color.Transparent
+        var actualSecondaryLabelColor: Color = Color.Transparent
+        var actualIconColor: Color = Color.Transparent
+
+        var expectedLabelColor: Color = Color.Transparent
+        var expectedSecondaryLabelColor: Color = Color.Transparent
+        var expectedIconColor: Color = Color.Transparent
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.outlinedButtonColors()
+            expectedLabelColor = colors.contentColor(enabled = true)
+            expectedSecondaryLabelColor = colors.secondaryContentColor(enabled = true)
+            expectedIconColor = colors.iconColor(enabled = true)
+
+            OutlinedButton(
+                onClick = {},
+                colors = colors,
+                label = { actualLabelColor = LocalContentColor.current },
+                secondaryLabel = { actualSecondaryLabelColor = LocalContentColor.current },
+                icon = { actualIconColor = LocalContentColor.current },
+            )
+        }
+
+        assertEquals(expectedLabelColor, actualLabelColor)
+        assertEquals(expectedSecondaryLabelColor, actualSecondaryLabelColor)
+        assertEquals(expectedIconColor, actualIconColor)
+    }
+
+    @Test
+    fun child_button_content_slots_have_correct_colors_when_enabled() {
+        var actualLabelColor: Color = Color.Transparent
+        var actualSecondaryLabelColor: Color = Color.Transparent
+        var actualIconColor: Color = Color.Transparent
+
+        var expectedLabelColor: Color = Color.Transparent
+        var expectedSecondaryLabelColor: Color = Color.Transparent
+        var expectedIconColor: Color = Color.Transparent
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.childButtonColors()
+            expectedLabelColor = colors.contentColor(enabled = true)
+            expectedSecondaryLabelColor = colors.secondaryContentColor(enabled = true)
+            expectedIconColor = colors.iconColor(enabled = true)
+
+            ChildButton(
+                onClick = {},
+                colors = colors,
+                label = { actualLabelColor = LocalContentColor.current },
+                secondaryLabel = { actualSecondaryLabelColor = LocalContentColor.current },
+                icon = { actualIconColor = LocalContentColor.current },
+            )
+        }
+
+        assertEquals(expectedLabelColor, actualLabelColor)
+        assertEquals(expectedSecondaryLabelColor, actualSecondaryLabelColor)
+        assertEquals(expectedIconColor, actualIconColor)
+    }
+
+    @Test
+    fun compact_button_content_slots_have_correct_colors_when_enabled() {
+        var actualLabelColor: Color = Color.Transparent
+        var actualIconColor: Color = Color.Transparent
+
+        var expectedLabelColor: Color = Color.Transparent
+        var expectedIconColor: Color = Color.Transparent
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.buttonColors()
+            expectedLabelColor = colors.contentColor(enabled = true)
+            expectedIconColor = colors.iconColor(enabled = true)
+
+            CompactButton(
+                onClick = {},
+                colors = colors,
+                label = { actualLabelColor = LocalContentColor.current },
+                icon = { actualIconColor = LocalContentColor.current },
+            )
+        }
+
+        assertEquals(expectedLabelColor, actualLabelColor)
+        assertEquals(expectedIconColor, actualIconColor)
+    }
+
+    @Test
+    fun compact_button_content_slots_have_correct_colors_when_disabled() {
+        var actualLabelColor: Color = Color.Transparent
+        var actualIconColor: Color = Color.Transparent
+
+        var expectedLabelColor: Color = Color.Transparent
+        var expectedIconColor: Color = Color.Transparent
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.buttonColors()
+            expectedLabelColor = colors.contentColor(enabled = false)
+            expectedIconColor = colors.iconColor(enabled = false)
+
+            CompactButton(
+                onClick = {},
+                colors = colors,
+                enabled = false,
+                label = { actualLabelColor = LocalContentColor.current },
+                icon = { actualIconColor = LocalContentColor.current },
+            )
+        }
+
+        assertEquals(expectedLabelColor, actualLabelColor)
+        assertEquals(expectedIconColor, actualIconColor)
+    }
+
+    @Test
+    fun single_slot_filled_tonal_button_provides_local_content_color_and_text_style() {
+        var actualColor: Color = Color.Transparent
+        var actualStyle: TextStyle = TextStyle.Default
+        var expectedColor: Color = Color.Transparent
+        var expectedStyle: TextStyle = TextStyle.Default
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.filledTonalButtonColors()
+            expectedColor = colors.contentColor(true)
+            expectedStyle = FilledTonalButtonTokens.LabelFont.value
+
+            FilledTonalButton(onClick = {}, colors = colors) {
+                actualColor = LocalContentColor.current
+                actualStyle = LocalTextStyle.current
+            }
+        }
+
+        assertEquals(expectedColor, actualColor)
+        assertEquals(expectedStyle, actualStyle)
+    }
+
+    @Test
+    fun single_slot_outlined_button_provides_local_content_color_and_text_style() {
+        var actualColor: Color = Color.Transparent
+        var actualStyle: TextStyle = TextStyle.Default
+        var expectedColor: Color = Color.Transparent
+        var expectedStyle: TextStyle = TextStyle.Default
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.outlinedButtonColors()
+            expectedColor = colors.contentColor(true)
+            expectedStyle = OutlinedButtonTokens.LabelFont.value
+
+            OutlinedButton(onClick = {}, colors = colors) {
+                actualColor = LocalContentColor.current
+                actualStyle = LocalTextStyle.current
+            }
+        }
+
+        assertEquals(expectedColor, actualColor)
+        assertEquals(expectedStyle, actualStyle)
+    }
+
+    @Test
+    fun single_slot_child_button_provides_local_content_color_and_text_style() {
+        var actualColor: Color = Color.Transparent
+        var actualStyle: TextStyle = TextStyle.Default
+        var expectedColor: Color = Color.Transparent
+        var expectedStyle: TextStyle = TextStyle.Default
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.childButtonColors()
+            expectedColor = colors.contentColor(true)
+            expectedStyle = ChildButtonTokens.LabelFont.value
+
+            ChildButton(onClick = {}, colors = colors) {
+                actualColor = LocalContentColor.current
+                actualStyle = LocalTextStyle.current
+            }
+        }
+
+        assertEquals(expectedColor, actualColor)
+        assertEquals(expectedStyle, actualStyle)
+    }
+
+    @Test
+    fun single_slot_compact_button_provides_local_content_color_and_text_style() {
+        var actualColor: Color = Color.Transparent
+        var actualStyle: TextStyle = TextStyle.Default
+        var expectedColor: Color = Color.Transparent
+        var expectedStyle: TextStyle = TextStyle.Default
+
+        rule.setContentWithTheme {
+            val colors = ButtonDefaults.buttonColors()
+            expectedColor = colors.contentColor(true)
+            expectedStyle = CompactButtonTokens.LabelFont.value
+
+            CompactButton(
+                onClick = {},
+                colors = colors,
+                content = {
+                    actualColor = LocalContentColor.current
+                    actualStyle = LocalTextStyle.current
+                },
+            )
+        }
+
+        assertEquals(expectedColor, actualColor)
+        assertEquals(expectedStyle, actualStyle)
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -1682,6 +2170,41 @@ private fun ComposeContentTestRule.verifyCompactButtonColors(
 
     assertEquals(actualLabelColor, labelColor)
     assertEquals(actualIconColor, iconColor)
+
+    onNodeWithTag(TEST_TAG)
+        .captureToImage()
+        .assertContainsColor(
+            if (containerColor != Color.Transparent) containerColor else testBackgroundColor
+        )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun ComposeContentTestRule.verifySingleSlotCompactButtonColors(
+    status: Status,
+    colors: @Composable () -> ButtonColors,
+) {
+    val testBackgroundColor = Color.White
+    var containerColor = Color.Transparent
+    var contentColor = Color.Transparent
+    var actualContentColor = Color.Transparent
+
+    setContentWithTheme {
+        containerColor =
+            (colors().containerColor(status.enabled())).compositeOver(testBackgroundColor)
+        contentColor = colors().contentColor(status.enabled())
+
+        Box(Modifier.fillMaxSize().background(testBackgroundColor)) {
+            CompactButton(
+                onClick = {},
+                colors = colors(),
+                enabled = status.enabled(),
+                modifier = Modifier.testTag(TEST_TAG),
+                content = { actualContentColor = LocalContentColor.current },
+            )
+        }
+    }
+
+    assertEquals(actualContentColor, contentColor)
 
     onNodeWithTag(TEST_TAG)
         .captureToImage()

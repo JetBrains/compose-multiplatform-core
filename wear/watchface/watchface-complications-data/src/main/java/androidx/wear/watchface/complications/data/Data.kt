@@ -213,7 +213,7 @@ constructor(
         cachedWearSdkComplicationData?.let {
             return it
         }
-        var input = this
+        val input = this
         fun WearSdkComplicationData.Builder.setTimeRange() {
             input.validTimeRange.let {
                 if (it.startDateTimeMillis > Instant.MIN) {
@@ -225,7 +225,7 @@ constructor(
             }
         }
 
-        var builder =
+        val builder =
             when (input) {
                 is NoDataComplicationData ->
                     WearSdkComplicationData.Builder(
@@ -381,8 +381,8 @@ constructor(
                                 setElementColors(IntArray(0))
                                 setElementWeights(FloatArray(0))
                             } else {
-                                var weights = ArrayList<Float>()
-                                var colors = ArrayList<Int>()
+                                val weights = ArrayList<Float>()
+                                val colors = ArrayList<Int>()
                                 input.elements.forEach {
                                     weights.add(it.weight)
                                     colors.add(it.color)
@@ -2914,7 +2914,7 @@ private fun WireComplicationData.toApiComplicationData(
             "WireComplicationData.toApiComplicationData failed for " + toStringNoRedaction(),
             e,
         )
-        throw e
+        return NoDataComplicationData()
     }
 }
 
@@ -2933,14 +2933,13 @@ private fun WireComplicationData.parseTimeRange() =
         )
     }
 
-private fun WireComplicationData.parseIcon(placeholderAware: Boolean = false) =
-    icon?.let {
-        if (placeholderAware && it.isPlaceholder()) {
-            MonochromaticImage.PLACEHOLDER
-        } else {
-            MonochromaticImage.Builder(it).apply { setAmbientImage(burnInProtectionIcon) }.build()
-        }
+private fun WireComplicationData.parseIcon(placeholderAware: Boolean = false) = icon?.let {
+    if (placeholderAware && it.isPlaceholder()) {
+        MonochromaticImage.PLACEHOLDER
+    } else {
+        MonochromaticImage.Builder(it).apply { setAmbientImage(burnInProtectionIcon) }.build()
     }
+}
 
 private fun WireComplicationData.parseSmallImage(placeholderAware: Boolean = false) =
     smallImage?.let {

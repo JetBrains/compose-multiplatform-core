@@ -4,9 +4,6 @@ package androidx.compose.ui {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental and is likely to change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalComposeUiApi {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental and is likely to change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalIndirectPointerApi {
-  }
-
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental and is likely to change or be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMediaQueryApi {
   }
 
@@ -70,11 +67,12 @@ package androidx.compose.ui.util {
     method public static inline <T> int fastSumBy(java.util.List<? extends T>, kotlin.jvm.functions.Function1<? super T,java.lang.Integer> selector);
     method public static inline <T, R, V> java.util.List<V> fastZip(java.util.List<? extends T>, java.util.List<? extends R> other, kotlin.jvm.functions.Function2<? super T,? super R,? extends V> transform);
     method public static inline <T, R> java.util.List<R> fastZipWithNext(java.util.List<? extends T>, kotlin.jvm.functions.Function2<? super T,? super T,? extends R> transform);
-    method @kotlin.PublishedApi internal static Void throwNoSuchElementException(String message);
-    method @kotlin.PublishedApi internal static void throwUnsupportedOperationException(String message);
+    method @BytecodeOnly @kotlin.PublishedApi internal static Void throwNoSuchElementException(String);
+    method @BytecodeOnly @kotlin.PublishedApi internal static void throwUnsupportedOperationException(String);
   }
 
   public final class MathHelpersKt {
+    method public static inline boolean equalsIncludingNaN(float, float other);
     method public static float fastCbrt(float x);
     method public static inline double fastCoerceAtLeast(double, double minimumValue);
     method public static inline float fastCoerceAtLeast(float, float minimumValue);

@@ -23,7 +23,6 @@ import android.graphics.Rect
 import android.util.Size
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.testTag
@@ -33,13 +32,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,10 +47,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class PdfViewerScubaTests {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_DIRECTORY)
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun testPdfViewer_withContentPadding_rendersCorrectly_onOpen() {
         val pages = List(3) { Point(400, 500) }
@@ -60,7 +60,7 @@ class PdfViewerScubaTests {
 
         lateinit var pdfViewerState: PdfViewerState
         composeTestRule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 pdfDocument = pdfDocument,
                 state = pdfViewerState,
@@ -80,6 +80,7 @@ class PdfViewerScubaTests {
             .assertAgainstGolden(screenshotRule, PDF_VIEW_CONTENT_PADDING_NO_SCROLL)
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun testPdfViewer_withContentPadding_rendersCorrectly_onScrollToBottom() {
         val pages = List(3) { Point(400, 500) }
@@ -88,7 +89,7 @@ class PdfViewerScubaTests {
 
         lateinit var pdfViewerState: PdfViewerState
         composeTestRule.setContent {
-            pdfViewerState = remember { PdfViewerState() }
+            pdfViewerState = rememberPdfViewerState()
             PdfViewer(
                 pdfDocument = pdfDocument,
                 state = pdfViewerState,

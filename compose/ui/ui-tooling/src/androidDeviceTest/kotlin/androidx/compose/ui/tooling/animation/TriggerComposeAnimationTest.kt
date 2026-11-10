@@ -23,7 +23,6 @@ import androidx.compose.ui.tooling.AnimationDebugMutableState
 import androidx.compose.ui.tooling.animation.TriggerComposeAnimation.Companion.parse
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -35,7 +34,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TriggerComposeAnimationTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun parseAnimationDebugMutableState() {
@@ -49,5 +48,48 @@ class TriggerComposeAnimationTest {
         assertEquals(state, animation.animationObject)
         assertEquals(25, animation.initialState)
         assertEquals(10, animation.targetState)
+    }
+
+    @Test
+    fun parseAnimationDebugMutableStateWithSingleState() {
+        val state: AnimationDebugMutableState<Int> =
+            AnimationDebugMutableState(mutableStateOf(25), { setOf(25) }, "singleState")
+
+        val animation = state.parse()!!
+        assertNotNull(animation)
+        assertEquals("singleState", animation.label)
+        assertEquals(setOf(25), animation.states)
+        assertEquals(25, animation.initialState)
+        assertEquals(25, animation.targetState)
+    }
+
+    @Test
+    fun parseAnimationDebugMutableStateWithEmptyStates() {
+        val state: AnimationDebugMutableState<Int> =
+            AnimationDebugMutableState(mutableStateOf(25), { emptySet() }, "emptyStates")
+
+        val animation = state.parse()!!
+        assertNotNull(animation)
+        assertEquals("emptyStates", animation.label)
+        assertEquals(setOf(25), animation.states)
+        assertEquals(25, animation.initialState)
+        assertEquals(25, animation.targetState)
+    }
+
+    @Test
+    fun parseAnimationDebugMutableStateWithNullableTargetState() {
+        val state: AnimationDebugMutableState<Int?> =
+            AnimationDebugMutableState(
+                mutableStateOf(25),
+                { setOf(25, null, 10) },
+                "nullableTarget",
+            )
+
+        val animation = state.parse()!!
+        assertNotNull(animation)
+        assertEquals("nullableTarget", animation.label)
+        assertEquals(setOf(25, 10), animation.states)
+        assertEquals(25, animation.initialState)
+        assertEquals(null, animation.targetState)
     }
 }

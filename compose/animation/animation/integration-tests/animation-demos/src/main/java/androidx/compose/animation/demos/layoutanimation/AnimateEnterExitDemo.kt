@@ -19,7 +19,6 @@ package androidx.compose.animation.demos.layoutanimation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -68,7 +67,6 @@ import androidx.compose.ui.unit.dp
  * - Modifier.animateEnterExit
  */
 @Preview
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AnimateEnterExitDemo() {
     Box {
@@ -93,14 +91,13 @@ fun AnimateEnterExitDemo() {
                         summerColors.forEachIndexed { index, color ->
                             // Creates a custom enter/exit animation on scale using
                             // `AnimatedVisibilityScope.transition`
-                            val scale by
-                                transition.animateFloat { enterExitState ->
-                                    when (enterExitState) {
-                                        EnterExitState.PreEnter -> 0.9f
-                                        EnterExitState.Visible -> 1.0f
-                                        EnterExitState.PostExit -> 0.5f
-                                    }
+                            val scale by transition.animateFloat { enterExitState ->
+                                when (enterExitState) {
+                                    EnterExitState.PreEnter -> 0.9f
+                                    EnterExitState.Visible -> 1.0f
+                                    EnterExitState.PostExit -> 0.5f
                                 }
+                            }
                             val staggeredSpring = remember {
                                 spring<IntOffset>(
                                     stiffness = Spring.StiffnessLow * (1f - index * 0.2f)

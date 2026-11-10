@@ -55,7 +55,7 @@ import kotlin.jvm.JvmName
  * To get one of these, and for usage samples, see [TextFieldState.edit]. Every change to the buffer
  * is tracked in a [ChangeList] which you can access via the [changes] property.
  */
-class TextFieldBuffer
+public class TextFieldBuffer
 internal constructor(
     initialValue: TextFieldCharSequence,
     initialChanges: ChangeTracker? = null,
@@ -83,41 +83,42 @@ internal constructor(
      */
     internal var suggestionSelected: Boolean = false
 
-    private var backingChangeTracker: ChangeTracker? =
-        initialChanges?.let { ChangeTracker(initialChanges) }
+    private var backingChangeTracker: ChangeTracker? = initialChanges?.let {
+        ChangeTracker(initialChanges)
+    }
 
     /** Lazily-allocated [ChangeTracker], initialized on the first access. */
     internal val changeTracker: ChangeTracker
         get() = backingChangeTracker ?: ChangeTracker().also { backingChangeTracker = it }
 
     /** The number of characters in the text field. */
-    val length: Int
+    public val length: Int
         get() = buffer.length
 
     /**
      * Original text content of the buffer before any changes were applied. Calling
      * [revertAllChanges] will set the contents of this buffer to this value.
      */
-    val originalText: CharSequence
+    public val originalText: CharSequence
         get() = originalValue.text
 
     /**
      * Original selection before the changes. Calling [revertAllChanges] will set the selection to
      * this value.
      */
-    val originalSelection: TextRange
+    public val originalSelection: TextRange
         get() = originalValue.selection
 
     /**
-     * The [ChangeList] represents the changes made to this value and is inherently mutable. This
-     * means that the returned [ChangeList] always reflects the complete list of changes made to
-     * this value at any given time, even those made after reading this property.
+     * The [ChangeList] represents the changes made to this [TextFieldBuffer] and is inherently
+     * mutable. This means that the returned [ChangeList] always reflects the complete list of
+     * changes made to this [TextFieldBuffer] at any given time, even those made after reading this
+     * property.
      *
      * @sample androidx.compose.foundation.samples.BasicTextFieldChangeIterationSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldChangeReverseIterationSample
      */
-    @ExperimentalFoundationApi
-    val changes: ChangeList
+    public val changes: ChangeList
         get() = changeTracker
 
     // region selection
@@ -129,7 +130,7 @@ internal constructor(
      * @see selection
      */
     @get:JvmName("hasSelection")
-    val hasSelection: Boolean
+    public val hasSelection: Boolean
         get() = !selection.collapsed
 
     /**
@@ -151,7 +152,7 @@ internal constructor(
      * character, pass [TextFieldBuffer.length]. Passing a zero-length range is the same as calling
      * [placeCursorBeforeCharAt].
      */
-    var selection: TextRange
+    public var selection: TextRange
         get() = selectionInChars
         set(value) {
             requireValidRange(value)
@@ -302,7 +303,7 @@ internal constructor(
      * @see insert
      * @see delete
      */
-    fun replace(start: Int, end: Int, text: CharSequence) {
+    public fun replace(start: Int, end: Int, text: CharSequence) {
         replace(start, end, text, 0, text.length)
     }
 
@@ -420,7 +421,7 @@ internal constructor(
     // endregion
 
     /** Returns the [Char] at [index] in this buffer. */
-    fun charAt(index: Int): Char = buffer[index]
+    public fun charAt(index: Int): Char = buffer[index]
 
     override fun toString(): String = buffer.toString()
 
@@ -428,7 +429,7 @@ internal constructor(
      * Returns a [CharSequence] backed by this buffer. Any subsequent changes to this buffer will be
      * visible in the returned sequence as well.
      */
-    fun asCharSequence(): CharSequence = buffer
+    public fun asCharSequence(): CharSequence = buffer
 
     private fun clearChangeList() {
         changeTracker.clearChanges()
@@ -441,7 +442,7 @@ internal constructor(
      * created, and [changes] will be empty.
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun revertAllChanges() {
+    public fun revertAllChanges() {
         replace(0, length, originalValue.toString())
         selection = originalValue.selection
         clearChangeList()
@@ -468,7 +469,7 @@ internal constructor(
      *   [TextFieldBuffer.length], inclusive.
      * @see placeCursorAfterCharAt
      */
-    fun placeCursorBeforeCharAt(index: Int) {
+    public fun placeCursorBeforeCharAt(index: Int) {
         requireValidIndex(index, startExclusive = true, endExclusive = false)
         // skip further validation
         selectionInChars = TextRange(index)
@@ -487,7 +488,7 @@ internal constructor(
      *   [TextFieldBuffer.length] (exclusive).
      * @see placeCursorBeforeCharAt
      */
-    fun placeCursorAfterCharAt(index: Int) {
+    public fun placeCursorAfterCharAt(index: Int) {
         requireValidIndex(index, startExclusive = false, endExclusive = true)
         // skip further validation
         selectionInChars = TextRange((index + 1).coerceAtMost(length))
@@ -572,6 +573,7 @@ internal constructor(
         val end = range.end
         // We treat it as replace the original text with newly styled text.
         changeTracker.trackChange(start, end, end - start, false)
+
         return requireTextFieldBuffer()
             .addStyle<T>(
                 annotation,
@@ -605,7 +607,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun addStyle(spanStyle: SpanStyle, start: Int, end: Int) {
+    public fun addStyle(spanStyle: SpanStyle, start: Int, end: Int) {
         if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
             val range = TextRange(start, end)
             requireValidStyleRange(range)
@@ -639,7 +641,7 @@ internal constructor(
      * @throws IllegalArgumentException if [start] or [end] is out of range, or if [start] > [end].
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int) {
+    public fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int) {
         if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
             val range = TextRange(start, end)
             requireValidStyleRange(range)
@@ -671,7 +673,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun addStyle(
+    public fun addStyle(
         spanStyle: SpanStyle,
         range: TextRange,
         expandPolicy: ExpandPolicy,
@@ -705,7 +707,7 @@ internal constructor(
      * @throws IllegalArgumentException if [range] is out of [0, length], or if it's reversed.
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun addStyle(
+    public fun addStyle(
         paragraphStyle: ParagraphStyle,
         range: TextRange,
         expandPolicy: ExpandPolicy,
@@ -762,7 +764,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun getSpanStyles(range: TextRange): List<TrackedRange<SpanStyle>> {
+    public fun getSpanStyles(range: TextRange): List<TrackedRange<SpanStyle>> {
         return if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
             val start = range.min.coerceIn(0, length)
             val end = range.max.coerceIn(0, length)
@@ -811,7 +813,7 @@ internal constructor(
      *   returned in the order they were added to the buffer.
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun getParagraphStyles(range: TextRange): List<TrackedRange<ParagraphStyle>> {
+    public fun getParagraphStyles(range: TextRange): List<TrackedRange<ParagraphStyle>> {
         return if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
             val start = range.min.coerceIn(0, length)
             val end = range.max.coerceIn(0, length)
@@ -837,7 +839,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun removeStyle(trackedRange: TrackedRange<*>): Boolean {
+    public fun removeStyle(trackedRange: TrackedRange<*>): Boolean {
         return if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
             textStyleBuffer?.removeStyle(trackedRange) ?: false
         } else {
@@ -857,7 +859,7 @@ internal constructor(
      *
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangePropertiesSample
      */
-    val TrackedRange<*>.isValid: Boolean
+    public val TrackedRange<*>.isValid: Boolean
         get() = textStyleBuffer?.isValid(this) ?: false
 
     /**
@@ -879,7 +881,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
-    var TrackedRange<*>.textRange: TextRange
+    public var TrackedRange<*>.textRange: TextRange
         get() =
             if (isValid) {
                 textStyleBuffer!!.getRange(this)
@@ -913,7 +915,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeTextRangeSetterSample
      */
-    var TrackedRange<SpanStyle>.spanStyle: SpanStyle
+    public var TrackedRange<SpanStyle>.spanStyle: SpanStyle
         get() =
             if (isValid) {
                 textStyleBuffer!!.getItem<SpanStyle>(this) ?: SpanStyle()
@@ -939,7 +941,7 @@ internal constructor(
      * Setting this property will update the style applied to the text in-place, preserving its
      * original applying order relative to other styles in the buffer.
      */
-    var TrackedRange<ParagraphStyle>.paragraphStyle: ParagraphStyle
+    public var TrackedRange<ParagraphStyle>.paragraphStyle: ParagraphStyle
         get() =
             if (isValid) {
                 textStyleBuffer!!.getItem<ParagraphStyle>(this) ?: ParagraphStyle()
@@ -968,7 +970,7 @@ internal constructor(
      *
      * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangePropertiesSample
      */
-    var TrackedRange<*>.expandPolicy: ExpandPolicy
+    public var TrackedRange<*>.expandPolicy: ExpandPolicy
         get() =
             if (isValid) {
                 textStyleBuffer!!.getExpandPolicy(this)
@@ -988,23 +990,23 @@ internal constructor(
      * appear in the text, not the order in which they were made. Overlapping changes are
      * represented as a single change.
      */
-    interface ChangeList {
+    public interface ChangeList {
         /** The number of changes that have been performed. */
-        val changeCount: Int
+        public val changeCount: Int
 
         /**
          * Returns the range in the [TextFieldBuffer] that was changed.
          *
          * @throws IndexOutOfBoundsException If [changeIndex] is not in [0, [changeCount]).
          */
-        fun getRange(changeIndex: Int): TextRange
+        public fun getRange(changeIndex: Int): TextRange
 
         /**
          * Returns the range in the original text that was replaced.
          *
          * @throws IndexOutOfBoundsException If [changeIndex] is not in [0, [changeCount]).
          */
-        fun getOriginalRange(changeIndex: Int): TextRange
+        public fun getOriginalRange(changeIndex: Int): TextRange
     }
 }
 
@@ -1090,7 +1092,7 @@ internal fun adjustTextRange(
  * @see TextFieldBuffer.append
  * @see TextFieldBuffer.delete
  */
-fun TextFieldBuffer.insert(index: Int, text: String) {
+public fun TextFieldBuffer.insert(index: Int, text: String) {
     replace(index, index, text)
 }
 
@@ -1104,33 +1106,44 @@ fun TextFieldBuffer.insert(index: Int, text: String) {
  * @see TextFieldBuffer.append
  * @see TextFieldBuffer.insert
  */
-fun TextFieldBuffer.delete(start: Int, end: Int) {
+public fun TextFieldBuffer.delete(start: Int, end: Int) {
     replace(start, end, "")
 }
 
 /** Places the cursor at the end of the text. */
-fun TextFieldBuffer.placeCursorAtEnd() {
+public fun TextFieldBuffer.placeCursorAtEnd() {
     placeCursorBeforeCharAt(length)
 }
 
 /** Places the selection around all the text. */
-fun TextFieldBuffer.selectAll() {
+public fun TextFieldBuffer.selectAll() {
     selection = TextRange(0, length)
 }
 
 /**
- * Iterates over all the changes in this [ChangeList].
+ * Iterates over all changes in this [ChangeList] in order of their appearance in the text (from the
+ * lowest character offset to the highest).
  *
- * Changes are iterated by index, so any changes made by [block] after the current one will be
- * visited by [block]. [block] should not make any new changes _before_ the current one or changes
- * will be visited more than once. If you need to make changes, consider using
- * [forEachChangeReversed].
+ * In each iteration, [block] receives `range` (the range of the change in the updated
+ * [TextFieldBuffer]) and `originalRange` (the corresponding range in the original text buffer
+ * before any changes).
  *
+ * Avoid modifying text *before* the current `range`. Changes are ordered by character offset, so
+ * modifying text earlier in the buffer shifts the current change to a higher index in the
+ * [ChangeList]. Because this function iterates forward by index, it will mistakenly visit the
+ * current change again and skip the newly inserted change.
+ *
+ * For example, assume [ChangeList] initially has one change at `5..8`. If [block] inserts text at
+ * index `0`, a new change at `0..2` is placed at index 0, and the original change is shifted to
+ * index 1. As the loop advances to index 1, it visits the original change a second time.
+ *
+ * @param block The block to be invoked for each change.
  * @sample androidx.compose.foundation.samples.BasicTextFieldChangeIterationSample
  * @see forEachChangeReversed
  */
-@ExperimentalFoundationApi
-inline fun ChangeList.forEachChange(block: (range: TextRange, originalRange: TextRange) -> Unit) {
+public inline fun ChangeList.forEachChange(
+    block: (range: TextRange, originalRange: TextRange) -> Unit
+) {
     var i = 0
     // Check the size every iteration in case more changes were performed.
     while (i < changeCount) {
@@ -1140,17 +1153,29 @@ inline fun ChangeList.forEachChange(block: (range: TextRange, originalRange: Tex
 }
 
 /**
- * Iterates over all the changes in this [ChangeList] in reverse order.
+ * Iterates over all changes in this [ChangeList] in reverse order of their appearance in the text
+ * (from the highest character offset down to the lowest).
  *
- * Changes are iterated by index, so [block] should not perform any new changes before the current
- * one or changes may be skipped. [block] may make non-overlapping changes after the current one
- * safely, such changes will not be visited.
+ * In each iteration, [block] receives `range` (the range of the change in the updated
+ * [TextFieldBuffer]) and `originalRange` (the corresponding range in the original text buffer
+ * before any changes).
  *
+ * Unlike [forEachChange], you may safely make non-overlapping changes *after* the current `range`
+ * without triggering repeated iterations.
+ *
+ * Because iteration proceeds backward by index, any new changes made after the current range are
+ * assigned greater indices in the [ChangeList] and fall beyond the current loop index, so they are
+ * cleanly skipped.
+ *
+ * For example, suppose [ChangeList] has changes at index 0 (`0..2`) and index 1 (`10..12`). This
+ * function visits index 1 first. If you then insert text at index `15`, the new change is appended
+ * at index 2. Since the loop next decrements to index 0, the new change at index 2 is skipped.
+ *
+ * @param block The block to be invoked for each change.
  * @sample androidx.compose.foundation.samples.BasicTextFieldChangeReverseIterationSample
  * @see forEachChange
  */
-@ExperimentalFoundationApi
-inline fun ChangeList.forEachChangeReversed(
+public inline fun ChangeList.forEachChangeReversed(
     block: (range: TextRange, originalRange: TextRange) -> Unit
 ) {
     var i = changeCount - 1

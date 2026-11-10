@@ -25,15 +25,20 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap.Companion.createNamedRemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.wear.compose.remote.material3.RemoteCardDefaults
 import androidx.wear.compose.remote.material3.RemoteText
 import androidx.wear.compose.remote.material3.RemoteTitleCard
 import androidx.wear.compose.remote.material3.previews.utils.ProfilePreviewParameterProvider
+import androidx.wear.compose.remote.material3.previews.utils.createImage
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @WearPreviewDevices
@@ -53,6 +58,18 @@ fun RemoteTitleCardWithTitleSubtitlePreview(
 fun RemoteTitleCardWithTitleTimePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) = RemoteContentPreview(profile = profile) { Container { RemoteTitleCardWithTitleTime() } }
+
+@WearPreviewDevices
+@Composable
+fun RemoteTitleCardWithBorderPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteTitleCardWithBorder() } }
+
+@WearPreviewDevices
+@Composable
+fun RemoteTitleCardWithImagePreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteTitleCardWithImage() } }
 
 @Composable
 @RemoteComposable
@@ -85,6 +102,53 @@ fun RemoteTitleCardWithTitleTime() {
         title = { RemoteText("Card Title".rs) },
         time = { RemoteText("now".rs) },
     )
+}
+
+@Composable
+@RemoteComposable
+fun RemoteTitleCardWithTwoLineTitle() {
+    RemoteTitleCard(
+        onClick = Action.Empty,
+        title = { RemoteText("First Line Title\nSecond Line Title".rs) },
+        time = { RemoteText("now".rs) },
+        subtitle = { RemoteText("Card Subtitle".rs) },
+    ) {
+        RemoteText("This is a sample Title Card.".rs)
+    }
+}
+
+@Composable
+@RemoteComposable
+fun RemoteTitleCardWithImage() {
+    val backgroundImage = remember {
+        createNamedRemoteImageBitmap(name = "backgroundImage") {
+            createImage(200, 200).asImageBitmap()
+        }
+    }
+    val containerPainter = RemoteCardDefaults.containerPainter(backgroundImage)
+    RemoteTitleCard(
+        onClick = Action.Empty,
+        containerPainter = containerPainter,
+        title = { RemoteText("Card Title".rs) },
+        time = { RemoteText("now".rs) },
+        subtitle = { RemoteText("Card Subtitle".rs) },
+    ) {
+        RemoteText("This is a sample Title Card with image.".rs)
+    }
+}
+
+@Composable
+@RemoteComposable
+fun RemoteTitleCardWithBorder() {
+    RemoteTitleCard(
+        onClick = Action.Empty,
+        title = { RemoteText("Card Title".rs) },
+        time = { RemoteText("now".rs) },
+        subtitle = { RemoteText("Card Subtitle".rs) },
+        border = RemoteCardDefaults.outlinedCardBorder(),
+    ) {
+        RemoteText("This is a sample Title Card with border.".rs)
+    }
 }
 
 @Composable
