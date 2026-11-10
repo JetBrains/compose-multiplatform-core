@@ -3,8 +3,9 @@
 Open `BenchmarksIosApp.xcodeproj` in Xcode and select the shared `BenchmarksIosApp` scheme.
 A Run Script builds the static `BenchmarksApp` framework with `embedAndSignAppleFrameworkForXcode`
 before Swift compilation, as in DemoApp. A UIKit application delegate selects the launch path:
-`averageFrame` and `fps` run without creating a window or Compose view controller;
-UI benchmarks use a window with the Compose view controller.
+`averageFrame` and `fps` run without creating a window or Compose view controller.
+The app adopts the UIScene lifecycle. UI benchmarks create their window and Compose view controller
+in `SceneDelegate`, while render benchmarks leave the scene without a window.
 
 ## Parameters
 

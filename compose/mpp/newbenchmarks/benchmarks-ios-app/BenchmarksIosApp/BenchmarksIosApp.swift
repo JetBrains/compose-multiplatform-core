@@ -3,7 +3,7 @@ import BenchmarksApp
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-    var window: UIWindow?
+    fileprivate var arguments: [String] = []
 
     override init() {
         super.init()
@@ -14,31 +14,45 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        let arguments = Array(ProcessInfo.processInfo.arguments.dropFirst())
+        arguments = Array(ProcessInfo.processInfo.arguments.dropFirst())
         precondition(arguments.count == 4, "Expected collector URL, test name, benchmark type and id")
-        let benchmarkCollectorUrl = arguments[0]
-        let testName = arguments[1]
-        let benchmarkType = arguments[2]
-        let id = arguments[3]
-
-        if Main_iosKt.isRenderBenchmark(benchmarkType: benchmarkType) {
+        if Main_iosKt.isRenderBenchmark(benchmarkType: arguments[2]) {
             Main_iosKt.runRenderBenchmark(
-                benchmarkCollectorUrl: benchmarkCollectorUrl,
-                testName: testName,
-                benchmarkType: benchmarkType,
-                id: id
+                benchmarkCollectorUrl: arguments[0],
+                testName: arguments[1],
+                benchmarkType: arguments[2],
+                id: arguments[3]
             )
-        } else {
-            let window = UIWindow(frame: UIScreen.main.bounds)
-            window.rootViewController = Main_iosKt.MainViewController(
-                benchmarkCollectorUrl: benchmarkCollectorUrl,
-                testName: testName,
-                benchmarkType: benchmarkType,
-                id: id
-            )
-            window.makeKeyAndVisible()
-            self.window = window
         }
         return true
+    }
+}
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    var window: UIWindow?
+
+    func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
+        guard let windowScene = scene as? UIWindowScene,
+              let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+            return
+        }
+        let arguments = appDelegate.arguments
+        if Main_iosKt.isRenderBenchmark(benchmarkType: arguments[2]) {
+            return
+        }
+
+        let window = UIWindow(windowScene: windowScene)
+        window.rootViewController = Main_iosKt.MainViewController(
+            benchmarkCollectorUrl: arguments[0],
+            testName: arguments[1],
+            benchmarkType: arguments[2],
+            id: arguments[3]
+        )
+        window.makeKeyAndVisible()
+        self.window = window
     }
 }
