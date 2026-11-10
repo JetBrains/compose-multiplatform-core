@@ -19,7 +19,6 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.asComposeSystemTheme
@@ -54,7 +53,6 @@ import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.IntVar
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.nativeHeap
@@ -98,7 +96,6 @@ internal class ComposeContainer(
 
     private var mediator: ComposeSceneMediator? = null
 
-    @OptIn(InternalComposeUiApi::class)
     var rootForTestListener: PlatformContext.RootForTestListener? = null
         set(value) {
             field = value
@@ -143,6 +140,7 @@ internal class ComposeContainer(
     )
     val hasInteropViews: Boolean get() = mediator?.hasInteropViews ?: false
 
+    private var measureAndLayoutMutex = 0
 
     private val focusedViewsList = FocusedViewsList()
 
@@ -180,7 +178,18 @@ internal class ComposeContainer(
             layersHolder?.layersViewController?.hasInvalidations == true
     }
 
-    private fun onLayoutSubviews() {
+    // Used to filter out unexpected layout calls that may happen outside the standard layout-draw paths.
+    private fun skippingMeasureAndLayout(actions: () -> Unit = {}) {
+        measureAndLayoutMutex++
+        actions()
+        measureAndLayoutMutex--
+    }
+
+    private fun onLayoutSubviews(frameChoreographer: FrameChoreographer) {
+        if (measureAndLayoutMutex > 0) {
+            frameChoreographer.requestFrame()
+            return
+        }
         windowContext.updateWindowContainerSize()
 
         mediator?.updateKeyboardOverlap()
@@ -316,7 +325,7 @@ internal class ComposeContainer(
             view.updateMetalView(
                 metalView = metalView,
                 onDidMoveToWindow = ::onDidMoveToWindow,
-                onLayoutSubviews = ::onLayoutSubviews,
+                onLayoutSubviews = { onLayoutSubviews(frameChoreographer) },
                 onTraitCollectionDidChange = ::onTraitCollectionDidChange,
                 onDraw = { needsSynchronousDraw ->
                     metalView.redrawer.onDraw(
@@ -329,6 +338,7 @@ internal class ComposeContainer(
             )
             view.embedSubview(mediator.overlayView)
 
+            layoutInvalidationHandler.invalidateLayoutIfNeeded()
             mediator.setContent(parentCompositionContext = view.findParentCompositionContext()) {
                 ProvideContainerCompositionLocals(content)
             }
@@ -413,7 +423,11 @@ internal class ComposeContainer(
                 )
 
                 layer.rootForTestListener = rootForTestListener
-                layersHolder.getLayersViewController().attach(layer)
+                skippingMeasureAndLayout {
+                    // Attaching a new layer may cause unwanted layout call for ComposeContainerView
+                    // beside the default layout and rendering path.
+                    layersHolder.getLayersViewController().attach(layer)
+                }
                 onFontScaleChanged(fontScaleProvider.fontScale)
                 onFocusConditionsChanged()
 
@@ -550,10 +564,8 @@ internal class LayoutInvalidationHandler(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private val compositionContextAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
 
-@OptIn(ExperimentalForeignApi::class)
 internal var UIResponder.attachedCompositionContext: CompositionContext?
     get() = objc_getAssociatedObject(this, compositionContextAssociationKey) as? CompositionContext
     set(value) {
