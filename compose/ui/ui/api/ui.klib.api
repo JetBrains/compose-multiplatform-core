@@ -2466,8 +2466,12 @@ final class androidx.compose.ui.spatial/RelativeLayoutBounds { // androidx.compo
 
 final class androidx.compose.ui.window/DialogProperties { // androidx.compose.ui.window/DialogProperties|null[0]
     constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ...) // androidx.compose.ui.window/DialogProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean){}[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., androidx.compose.ui.unit/Dp = ...) // androidx.compose.ui.window/DialogProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;androidx.compose.ui.unit.Dp){}[0]
     constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., androidx.compose.ui.graphics/Color = ...) // androidx.compose.ui.window/DialogProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;androidx.compose.ui.graphics.Color){}[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.unit/Dp = ...) // androidx.compose.ui.window/DialogProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;androidx.compose.ui.graphics.Color;androidx.compose.ui.unit.Dp){}[0]
 
+    final val blurBehindRadius // androidx.compose.ui.window/DialogProperties.blurBehindRadius|{}blurBehindRadius[0]
+        final fun <get-blurBehindRadius>(): androidx.compose.ui.unit/Dp // androidx.compose.ui.window/DialogProperties.blurBehindRadius.<get-blurBehindRadius>|<get-blurBehindRadius>(){}[0]
     final val dismissOnBackPress // androidx.compose.ui.window/DialogProperties.dismissOnBackPress|{}dismissOnBackPress[0]
         final fun <get-dismissOnBackPress>(): kotlin/Boolean // androidx.compose.ui.window/DialogProperties.dismissOnBackPress.<get-dismissOnBackPress>|<get-dismissOnBackPress>(){}[0]
     final val dismissOnClickOutside // androidx.compose.ui.window/DialogProperties.dismissOnClickOutside|{}dismissOnClickOutside[0]

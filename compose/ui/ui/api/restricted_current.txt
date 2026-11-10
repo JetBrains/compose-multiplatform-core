@@ -5353,8 +5353,11 @@ package androidx.compose.ui.window {
     ctor @BytecodeOnly @Deprecated public DialogProperties(boolean, boolean, androidx.compose.ui.window.SecureFlagPolicy!, boolean, boolean, String!, int, android.os.IBinder!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly @Deprecated public DialogProperties(boolean, boolean, androidx.compose.ui.window.SecureFlagPolicy!, boolean, boolean, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly @Deprecated public DialogProperties(boolean, boolean, androidx.compose.ui.window.SecureFlagPolicy!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    ctor public DialogProperties(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean usePlatformDefaultWidth);
-    ctor @BytecodeOnly public DialogProperties(boolean, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public DialogProperties(boolean, boolean, boolean);
+    ctor @KotlinOnly public DialogProperties(optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean usePlatformDefaultWidth, optional androidx.compose.ui.unit.Dp blurBehindRadius);
+    ctor @BytecodeOnly public DialogProperties(boolean, boolean, boolean, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public DialogProperties(boolean, boolean, boolean, float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public DialogProperties(boolean, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @BytecodeOnly public float getBackgroundBlurRadius-D9Ej5fM();
     method @BytecodeOnly public float getBlurBehindRadius-D9Ej5fM();
     method @InaccessibleFromKotlin public boolean getDecorFitsSystemWindows();
