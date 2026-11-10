@@ -318,9 +318,8 @@ public constructor(
  * @param startIconToLabelHorizontalPadding the padding between the start icon and the label of the
  *   item (the iconPosition is Start)
  * @param topIconItemVerticalPadding the vertical padding of the item when the iconPosition is Top
- * @param textColor the color of this item's label
- * @param iconColor the color of this item's icon
- * @param indicatorColor the color of this item's selected indicator
+ * @param colors [NavigationItemColors] that will be used to resolve the colors used for this item
+ *   in different states
  * @param modifier the [Modifier] to be applied to this item
  * @param enabled controls the enabled state of this item. When `false`, this component will not
  *   respond to user input, and it will appear visually disabled and disabled to accessibility
@@ -344,15 +343,14 @@ internal fun NavigationItem(
     indicatorToLabelVerticalPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
     topIconItemVerticalPadding: Dp,
-    textColor: Color,
-    iconColor: Color,
-    indicatorColor: Color,
+    colors: NavigationItemColors,
     modifier: Modifier,
     enabled: Boolean,
     label: @Composable (() -> Unit)?,
     iconPosition: NavigationItemIconPosition,
     interactionSource: MutableInteractionSource,
 ) {
+    val iconColor = colors.iconColor(selected = selected, enabled = enabled)
     val styledIcon: @Composable () -> Unit = {
         CompositionLocalProvider(LocalContentColor provides iconColor, content = icon)
     }
@@ -364,8 +362,9 @@ internal fun NavigationItem(
                 StyledLabel(
                     selected = selected,
                     labelTextStyle = labelTextStyle,
-                    color = textColor,
+                    colors = colors,
                     enabled = enabled,
+                    isIconPositionTop = iconPosition == NavigationItemIconPosition.Top,
                     animateColor = false,
                     content = label,
                 )
@@ -415,7 +414,7 @@ internal fun NavigationItem(
 
         NavigationItemLayout(
             interactionSource = offsetInteractionSource ?: interactionSource,
-            indicatorColor = indicatorColor,
+            indicatorColor = colors.selectedIndicatorColor,
             indicatorShape = indicatorShape,
             icon = styledIcon,
             iconPosition = iconPosition,
@@ -450,15 +449,14 @@ internal fun AnimatedNavigationItem(
     noLabelIndicatorPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
     itemHorizontalPadding: Dp,
-    textColor: Color,
-    iconColor: Color,
-    indicatorColor: Color,
+    colors: NavigationItemColors,
     modifier: Modifier,
     enabled: Boolean,
     label: @Composable (() -> Unit)?,
     iconPosition: NavigationItemIconPosition,
     interactionSource: MutableInteractionSource,
 ) {
+    val iconColor = colors.iconColor(selected = selected, enabled = enabled)
     val styledIcon: @Composable () -> Unit = {
         CompositionLocalProvider(LocalContentColor provides iconColor, content = icon)
     }
@@ -504,8 +502,9 @@ internal fun AnimatedNavigationItem(
                     StyledLabel(
                         selected = selected,
                         labelTextStyle = textStyle,
-                        color = textColor,
+                        colors = colors,
                         enabled = enabled,
+                        isIconPositionTop = isIconPositionTop,
                         animateColor = true,
                         content = label,
                     )
@@ -536,7 +535,7 @@ internal fun AnimatedNavigationItem(
 
         AnimatedNavigationItemLayout(
             interactionSource = offsetInteractionSource ?: interactionSource,
-            indicatorColor = indicatorColor,
+            indicatorColor = colors.selectedIndicatorColor,
             indicatorShape = indicatorShape,
             indicatorAnimationProgress = { indicatorAnimationProgress.value.coerceAtLeast(0f) },
             icon = styledIcon,
@@ -1202,17 +1201,25 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
 private fun StyledLabel(
     selected: Boolean,
     labelTextStyle: TextStyle,
-    color: Color,
+    colors: NavigationItemColors,
     enabled: Boolean,
+    isIconPositionTop: Boolean,
     animateColor: Boolean,
     content: @Composable () -> Unit,
 ) {
+    val targetTextColor =
+        colors.textColor(
+            selected = selected,
+            enabled = enabled,
+            isIconPositionTop = isIconPositionTop,
+        )
     val textColor =
         if (animateColor) {
             val colorAnimationSpec = MotionSchemeKeyTokens.DefaultEffects.value<Color>()
-            animateColorAsState(targetValue = color, animationSpec = colorAnimationSpec).value
+            animateColorAsState(targetValue = targetTextColor, animationSpec = colorAnimationSpec)
+                .value
         } else {
-            color
+            targetTextColor
         }
     ProvideContentColorTextStyle(
         contentColor = textColor,
