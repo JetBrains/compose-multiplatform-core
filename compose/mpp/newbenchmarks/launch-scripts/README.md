@@ -50,9 +50,10 @@ python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
 ## Browser (JS or WasmJS)
 
 Pass a browser executable, a command on `PATH`, or a macOS `.app` path.
-Set `--browser-kind firefox` for Firefox; the default is `chromium`.
-Each test gets a temporary browser profile and a separate instance. It is closed after a report,
-crash, or timeout. Browser launches are visible by default.
+The family is detected from the executable name: Chromium-based browsers, Firefox, or Safari.
+There is no `--browser-kind` option. Unknown names are rejected rather than treated as Chromium.
+Chromium and Firefox get a temporary profile and a separate instance per test. Each instance is
+closed after a report, crash, or timeout. Browser launches are visible by default.
 
 Chromium:
 
@@ -66,12 +67,27 @@ Firefox:
 
 ```bash
 python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
-  --target js --browser "/Applications/Firefox.app" --browser-kind firefox \
+  --target js --browser "/Applications/Firefox.app" \
   --tests LazyGrid --modes averageFrame
 ```
 
-Use `--browser-arg=--some-flag` to pass extra browser flags. For Chromium, for example:
-`--browser-arg=--js-flags=--expose-gc` enables manual GC.
+Safari (macOS only):
+
+```bash
+python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
+  --target js --browser "/Applications/Safari.app" \
+  --tests LazyGrid --modes startup --repeat 3
+```
+
+Close Safari before starting the series. The launcher refuses to use an existing Safari process.
+Each test starts Safari with `open -W` and quits it after the report or timeout. Quitting uses AppleScript;
+macOS may ask for Automation permission. If quitting fails, the launched Safari process is terminated.
+Safari Technology Preview is also recognized by its executable name.
+Safari uses its normal profile, not a temporary profile. Its cache and history are not reset between runs.
+Finish Safari's first-launch setup before running benchmarks, and do not open Safari manually during a series.
+
+Use `--browser-arg=--some-flag` to pass extra Chromium/Firefox flags. For Chromium, for example:
+`--browser-arg=--js-flags=--expose-gc` enables manual GC. Extra browser flags are not supported for Safari.
 
 The launcher serves production files on a free loopback port (`--web-port` can override it).
 The browser sends reports directly to the collector port. There is no proxy: the collector allows

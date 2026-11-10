@@ -60,8 +60,7 @@ def parse_args():
     parser.add_argument("--timeout", type=float, default=30, help="seconds per test (default: 30)")
     parser.add_argument("--output-dir", type=Path, help="new directory for this series")
     parser.add_argument("--skip-build", action="store_true", help="reuse existing release artifacts")
-    parser.add_argument("--browser", help="Chromium/Firefox executable, command name, or macOS .app")
-    parser.add_argument("--browser-kind", choices=("chromium", "firefox"), default="chromium")
+    parser.add_argument("--browser", help="Chromium/Firefox/Safari executable, command name, or macOS .app")
     parser.add_argument("--browser-arg", action="append", default=[], help="extra browser flag; use --browser-arg=--flag")
     parser.add_argument("--web-port", type=int, default=0, help="static file server port (default: automatic)")
     parser.add_argument("--simulator", help="iOS Simulator UUID or unique name (default: one booted device)")
@@ -154,6 +153,81 @@ def executable(value):
     if not found or not os.access(found, os.X_OK):
         raise RuntimeError(f"executable not found: {value}")
     return found
+
+
+def detect_browser(browser):
+    name = Path(browser).name.casefold()
+    if name in ("safari", "safari technology preview"):
+        return "safari"
+    if "firefox" in name:
+        return "firefox"
+    if any(part in name for part in ("chrome", "chromium", "brave", "edge", "vivaldi")) or name == "arc":
+        return "chromium"
+    raise RuntimeError(f"cannot determine browser family from executable name: {browser}")
+
+
+def safari_pids(browser):
+    processes = subprocess.check_output(["ps", "-ww", "-axo", "pid=,comm="], text=True)
+    executable_path = Path(browser).resolve()
+    matches = []
+    for line in processes.splitlines():
+        fields = line.strip().split(None, 1)
+        if len(fields) == 2 and Path(fields[1]).resolve() == executable_path:
+            matches.append(int(fields[0]))
+    return matches
+
+
+def require_safari_closed(browser):
+    if safari_pids(browser):
+        raise RuntimeError("close Safari before starting the series; existing Safari sessions will not be closed")
+
+
+def safari_bundle(browser):
+    for parent in Path(browser).parents:
+        if parent.suffix == ".app":
+            return parent
+    raise RuntimeError("Safari executable must be inside its .app bundle")
+
+
+def quit_safari(browser, log_path):
+    pids = safari_pids(browser)
+    if not pids:
+        return
+    script = 'on run argv\n tell application (item 1 of argv) to quit\nend run'
+    with log_path.open("ab") as log:
+        try:
+            subprocess.run(["osascript", "-e", script, str(safari_bundle(browser))],
+                           stdout=log, stderr=log, timeout=5)
+        except subprocess.TimeoutExpired:
+            log.write(b"Safari quit timed out; terminating the launched process.\n")
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        if not set(pids).intersection(safari_pids(browser)):
+            return
+        time.sleep(0.1)
+    # AppleScript may be denied by macOS Automation permissions. Only signal the owned Safari PIDs.
+    remaining = set(pids).intersection(safari_pids(browser))
+    for pid in remaining:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        if not remaining.intersection(safari_pids(browser)):
+            return
+        time.sleep(0.1)
+    raise RuntimeError("Safari did not stop; refusing to start the next test")
+
+
+@contextmanager
+def launch_safari(browser, url, log_path):
+    require_safari_closed(browser)
+    with managed_process(["open", "-W", "-a", safari_bundle(browser), url], log_path) as process:
+        try:
+            yield lambda: process.poll() is not None
+        finally:
+            quit_safari(browser, log_path)
 
 
 def java_executable():
@@ -256,9 +330,13 @@ def launch_test(args, app, browser, simulator, collector_url, web_url, name, mod
 
     with ExitStack() as stack:
         if args.target in ("js", "wasmJs"):
-            profile = stack.enter_context(tempfile.TemporaryDirectory(prefix="benchmark-browser-"))
             query = urlencode({"benchmarkCollectorUrl": collector_url, "test": name, "type": mode, "id": run_id})
             url = web_url + "/?" + query
+            if args.browser_kind == "safari":
+                with launch_safari(browser, url, log_path) as exited:
+                    yield exited
+                return
+            profile = stack.enter_context(tempfile.TemporaryDirectory(prefix="benchmark-browser-"))
             if args.browser_kind == "chromium":
                 command = [browser, f"--user-data-dir={profile}", "--no-first-run",
                            "--no-default-browser-check", "--new-window", *args.browser_arg, url]
@@ -305,6 +383,17 @@ def run_series(args, out, directory, summary):
     collector_build = out / "compose-multiplatform-core/compose/mpp/newbenchmarks/benchmarks-collector/build"
     simulator = select_simulator(args.simulator) if args.target == "ios" else None
     browser = executable(args.browser) if args.target in ("js", "wasmJs") else None
+    if browser:
+        args.browser_kind = detect_browser(browser)
+        summary["browser"] = {"kind": args.browser_kind, "executable": browser}
+        print(f"Browser: {args.browser_kind} ({browser})", flush=True)
+        if args.browser_kind == "safari":
+            if sys.platform != "darwin":
+                raise RuntimeError("Safari requires macOS")
+            if args.browser_arg:
+                raise RuntimeError("--browser-arg is not supported for Safari")
+            safari_bundle(browser)
+            require_safari_closed(browser)
     ensure_free_port(args.port)
     if not args.skip_build:
         build(args, out, logs, simulator)
@@ -332,6 +421,8 @@ def run_series(args, out, directory, summary):
                 for iteration in range(1, args.repeat + 1):
                     if collector.poll() is not None:
                         raise RuntimeError("collector exited; see logs/collector.log")
+                    if browser and args.browser_kind == "safari":
+                        require_safari_closed(browser)
                     run_id = str(uuid.uuid4())
                     log_path = logs / f"{run_id}.log"
                     result = {"id": run_id, "name": name, "type": mode, "iteration": iteration,
