@@ -78,6 +78,7 @@ import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.SharedOwnerContext
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformUriHandler
@@ -1002,6 +1003,8 @@ internal class ComposeSceneMediator(
         override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
             createFontFamilyResolver()
         }
+
+        override val sharedOwnerContext: SharedOwnerContext = SharedOwnerContext()
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
             windowContext.convertLocalToWindowPosition(_overlayView, localPosition)

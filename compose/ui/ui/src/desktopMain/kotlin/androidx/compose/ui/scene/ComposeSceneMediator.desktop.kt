@@ -67,6 +67,7 @@ import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.SharedOwnerContext
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.ViewConfiguration
@@ -904,6 +905,8 @@ internal class ComposeSceneMediator(
         override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
             createFontFamilyResolver()
         }
+
+        override val sharedOwnerContext: SharedOwnerContext = SharedOwnerContext()
 
         override val textInputService get() = this@ComposeSceneMediator.textInputService
 
