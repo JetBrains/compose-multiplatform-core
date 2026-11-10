@@ -16,10 +16,14 @@
 
 package org.jetbrains.compose.benchmarks.collector
 
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.post
@@ -60,6 +64,11 @@ fun main(args: Array<String>) {
 }
 
 internal fun Application.collectReports(outputDirectory: Path) {
+    install(CORS) {
+        anyHost()
+        allowMethod(HttpMethod.Post)
+        allowHeader(HttpHeaders.ContentType)
+    }
     routing {
         post("/reports") {
             val body = call.receiveText()

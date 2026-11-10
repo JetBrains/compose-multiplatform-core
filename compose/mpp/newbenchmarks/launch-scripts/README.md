@@ -74,7 +74,8 @@ Use `--browser-arg=--some-flag` to pass extra browser flags. For Chromium, for e
 `--browser-arg=--js-flags=--expose-gc` enables manual GC.
 
 The launcher serves production files on a free loopback port (`--web-port` can override it).
-It forwards same-origin `POST /reports` requests to the collector. No CORS setup is needed.
+The browser sends reports directly to the collector port. There is no proxy: the collector allows
+JSON POST requests from any origin and handles CORS preflight requests.
 The browser receives all application parameters in the page URL.
 
 ## iOS Simulator (ARM64)
