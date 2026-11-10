@@ -87,6 +87,9 @@ compose {
     desktop {
         application {
             mainClass = "org.jetbrains.compose.benchmarks.app.Main_jvmKt"
+            buildTypes.release.proguard {
+                configurationFiles.from(project.file("proguard-rules.pro"))
+            }
         }
     }
 }
