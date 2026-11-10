@@ -96,7 +96,6 @@ internal class ComposeContainer(
 
     private var mediator: ComposeSceneMediator? = null
 
-    @OptIn(InternalComposeUiApi::class)
     var rootForTestListener: PlatformContext.RootForTestListener? = null
         set(value) {
             field = value
