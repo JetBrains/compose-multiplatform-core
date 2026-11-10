@@ -51,7 +51,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
     @Test
     fun siblingsAreSortedByGeometry() = runApplicationTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(Modifier.absoluteOffset(100.dp, 0.dp).size(20.dp).testTag("right"))
                 Box(Modifier.absoluteOffset(0.dp, 0.dp).size(20.dp).testTag("left"))
                 Box(Modifier.absoluteOffset(0.dp, 40.dp).size(20.dp).testTag("bottom"))
@@ -65,7 +65,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
     @Test
     fun traversalIndexOverridesGeometry() = runApplicationTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(0.dp, 0.dp)
                         .size(20.dp)
@@ -96,7 +96,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
                 // Absolute offsets need a physical left origin; TopStart would align these
                 // children to the right in RTL and push the offset child outside the viewport.
                 Box(
-                    Modifier.fillMaxSize().testTag("parent"),
+                    Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent"),
                     contentAlignment = AbsoluteAlignment.TopLeft,
                 ) {
                     Box(Modifier.absoluteOffset(0.dp, 0.dp).size(20.dp).testTag("left").recordCoordinates("left"))
@@ -123,7 +123,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
     @Test
     fun traversalGroupsKeepTheirChildrenTogetherAndSortWithinEachGroup() = runApplicationTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(100.dp, 0.dp)
                         .size(100.dp)
@@ -155,7 +155,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
     fun geometryChangesReorderChildrenWithoutReplacingTheirElements() = runApplicationTest {
         var swapped by mutableStateOf(false)
         createComposeWindow {
-            Box(Modifier.fillMaxSize().testTag("parent")) {
+            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(if (swapped) 100.dp else 0.dp, 0.dp)
                         .size(20.dp)

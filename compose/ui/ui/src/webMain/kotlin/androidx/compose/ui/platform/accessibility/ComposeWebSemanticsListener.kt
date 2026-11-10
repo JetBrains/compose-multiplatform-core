@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.time.Duration.Companion.milliseconds
@@ -340,6 +341,11 @@ internal class ComposeWebSemanticsListener(
         htmlParent: HTMLElement,
         parentA11YExposure: A11YReachability,
     ) {
+        // The reachability inherited by the children hoisted from the flattened wrappers.
+        // The other children inherit parentA11YExposure.
+        val hoistedReachabilities = MutableIntObjectMap<A11YReachability>()
+        @Suppress("NAME_SHADOWING")
+        val children = children.flattenA11YWrappers(parentA11YExposure, hoistedReachabilities)
         if (children.isEmpty()) return
 
         // Prepare the children bounds to avoid recomputing them during grouping and comparison.
@@ -360,9 +366,11 @@ internal class ComposeWebSemanticsListener(
         ).asReversed()
 
         dfsSemanticsNodes.addAll(reversedChildren)
-        repeat(reversedChildren.size) {
+        reversedChildren.fastForEach { child ->
             dfsA11YParents.addLast(htmlParent)
-            dfsA11YReachabilities.addLast(parentA11YExposure)
+            dfsA11YReachabilities.addLast(
+                hoistedReachabilities.getOrDefault(child.id, parentA11YExposure)
+            )
         }
     }
 
@@ -757,6 +765,53 @@ internal class ComposeWebSemanticsListener(
         hasStopped = true
     }
 }
+
+/**
+ * Web counterpart of the hierarchy flattening in `SemanticsNode.geometryDepthFirstSearch`
+ * (`compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsSort.kt`).
+ *
+ * Only traversal groups keep their children together in the reading order. Any other node is
+ * transparent for the order: its children are sorted by geometry together with the node's siblings.
+ * The a11y DOM is read in tree order, so a node exposing nothing to accessibility (for example, a
+ * layout wrapper with only a `testTag`) doesn't get an element of its own, and its children are
+ * hoisted to the nearest exposed ancestor instead.
+ *
+ * Nodes exposing something (a label, a role, an action, a scroll container, etc.) keep their
+ * element and nest their children in it, because the DOM can't both expose the node and interleave
+ * its children with its siblings. Leaves are kept as well: they have nothing to hoist, and their
+ * `testTag` ids remain addressable.
+ *
+ * A flattened wrapper still affects the reachability of its subtree (e.g. a fully clipped wrapper
+ * makes its children unreachable), so the reachability each hoisted child inherits is recorded in
+ * [hoistedReachabilities].
+ */
+private fun List<SemanticsNode>.flattenA11YWrappers(
+    parentReachability: A11YReachability,
+    hoistedReachabilities: MutableIntObjectMap<A11YReachability>,
+): List<SemanticsNode> {
+    if (!fastAny { it.isA11YWrapper() }) return this
+
+    val flattened = ArrayList<SemanticsNode>(size)
+    fun collect(nodes: List<SemanticsNode>, reachability: A11YReachability, hoisted: Boolean) {
+        nodes.fastForEach { node ->
+            if (node.isA11YWrapper()) {
+                collect(node.placedA11YChildren(), node.a11yReachability(reachability), hoisted = true)
+            } else {
+                if (hoisted) hoistedReachabilities[node.id] = reachability
+                flattened.add(node)
+            }
+        }
+    }
+    collect(this, parentReachability, hoisted = false)
+    return flattened
+}
+
+private fun SemanticsNode.isA11YWrapper(): Boolean =
+    !isFake &&
+        !unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false } &&
+        !unmergedConfig.isMergingSemanticsOfDescendants &&
+        !unmergedConfig.containsImportantForAccessibility() &&
+        replacedChildren.isNotEmpty()
 
 private fun SemanticsNode.placedA11YChildren(): List<SemanticsNode> =
     replacedChildren.filter { child ->

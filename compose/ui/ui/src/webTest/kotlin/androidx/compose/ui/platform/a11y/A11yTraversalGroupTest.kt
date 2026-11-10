@@ -117,7 +117,7 @@ class A11yTraversalGroupTest : OnCanvasTests {
         createComposeWindow {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Box(
-                    Modifier.fillMaxSize().testTag("parent"),
+                    Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent"),
                     contentAlignment = AbsoluteAlignment.TopLeft,
                 ) {
                     listOf("leftGroup" to 0.dp, "rightGroup" to 160.dp).forEach { (tag, x) ->
