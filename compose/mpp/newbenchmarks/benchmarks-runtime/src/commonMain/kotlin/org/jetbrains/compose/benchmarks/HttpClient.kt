@@ -24,6 +24,7 @@ import kotlinx.serialization.json.Json
 internal fun createHttpClient(): HttpClient = HttpClient {
     val json = Json {
         explicitNulls = true
+        encodeDefaults = true
     }
     install(ContentNegotiation) {
         json(json)

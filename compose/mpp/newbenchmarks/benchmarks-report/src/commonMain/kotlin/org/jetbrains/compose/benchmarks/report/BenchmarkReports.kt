@@ -17,25 +17,48 @@
 package org.jetbrains.compose.benchmarks.report
 
 import kotlin.time.Duration
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class BenchmarkReportType {
+    @SerialName("startup")
+    STARTUP,
+
+    @SerialName("realFrames")
+    REAL_FRAMES,
+
+    @SerialName("averageFrame")
+    AVERAGE_FRAME,
+
+    @SerialName("fps")
+    FPS,
+}
+
+interface BenchmarkReport {
+    val id: String
+    val type: BenchmarkReportType
+}
+
+@Serializable
 data class StartupReport(
-    val id: String,
+    override val id: String,
+    override val type: BenchmarkReportType = BenchmarkReportType.STARTUP,
     val frameCount: Int,
     val timeToMain: Duration,
     val timeToFirstFrame: Duration,
     val timeToNthFrame: Duration,
-)
+) : BenchmarkReport
 
 @Serializable
 data class RealFramesReport(
-    val id: String,
+    override val id: String,
+    override val type: BenchmarkReportType = BenchmarkReportType.REAL_FRAMES,
     val warmupCount: Int,
     val frameCount: Int,
     val frameTimes: List<Duration>,
     val totalDuration: Duration,
-)
+) : BenchmarkReport
 
 @Serializable
 data class FrameInfo(
@@ -46,22 +69,24 @@ data class FrameInfo(
 
 @Serializable
 data class AverageFrameReport(
-    val id: String,
+    override val id: String,
+    override val type: BenchmarkReportType = BenchmarkReportType.AVERAGE_FRAME,
     val width: Int,
     val height: Int,
     val targetFps: Int,
     val warmupCount: Int,
     val frameCount: Int,
     val averageFrameInfo: FrameInfo,
-)
+) : BenchmarkReport
 
 @Serializable
 data class FpsReport(
-    val id: String,
+    override val id: String,
+    override val type: BenchmarkReportType = BenchmarkReportType.FPS,
     val width: Int,
     val height: Int,
     val targetFps: Int,
     val warmupCount: Int,
     val frameCount: Int,
     val frames: List<FrameInfo>,
-)
+) : BenchmarkReport
