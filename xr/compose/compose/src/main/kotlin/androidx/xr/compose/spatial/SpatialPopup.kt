@@ -65,6 +65,7 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.findNearestParentEntity
 import androidx.xr.compose.platform.getActivity
 import androidx.xr.compose.platform.isEmbedded
+import androidx.xr.compose.subspace.SpatialComposeView
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.spatialComposeView
@@ -72,6 +73,7 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.PixelDensity
 import androidx.xr.scenecore.scene
 
 /**
@@ -197,6 +199,7 @@ private fun LayoutSpatialPopup(
                 compositionContext = compositionContext,
                 session = session,
                 transition = transition,
+                pixelDensity = session.scene.virtualPixelDensity,
                 initialPopupProperties = properties,
                 initialParentLayoutDirection = parentLayoutDirection,
                 initialPopupPositionProvider = popupPositionProvider,
@@ -205,10 +208,9 @@ private fun LayoutSpatialPopup(
         }
 
     DisposableEffect(parentView) {
-        val listener =
-            View.OnLayoutChangeListener { _, _, _, right, bottom, _, _, _, _ ->
-                holder.parentViewSize = IntSize(right, bottom)
-            }
+        val listener = View.OnLayoutChangeListener { _, _, _, right, bottom, _, _, _, _ ->
+            holder.parentViewSize = IntSize(right, bottom)
+        }
         parentView.addOnLayoutChangeListener(listener)
         onDispose { parentView.removeOnLayoutChangeListener(listener) }
     }
@@ -262,6 +264,7 @@ private class SpatialPopupRenderer(
     private val compositionContext: CompositionContext,
     private val session: Session,
     private val transition: Transition<Dp>,
+    private val pixelDensity: PixelDensity,
     initialPopupProperties: PopupProperties,
     initialParentLayoutDirection: LayoutDirection,
     initialPopupPositionProvider: PopupPositionProvider,
@@ -281,20 +284,22 @@ private class SpatialPopupRenderer(
     var parentEntity: CoreEntity? by mutableStateOf(null)
 
     private var panelEntity: CorePanelEntity? = null
-    private var view: ComposeView? = null
+    private var view: SpatialComposeView? = null
 
     override fun onRemembered() {
         val view = spatialComposeView(parentView, context, compositionContext, localId)
         this.view = view
         panelEntity =
             CorePanelEntity(
-                    PanelEntity.create(
-                        session = session,
-                        view = view,
-                        pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
-                        name = "ElevatedPanel:${view.id}",
-                        parent = session.scene.activitySpace,
-                    )
+                    pixelDensity = pixelDensity,
+                    entity =
+                        PanelEntity.create(
+                            session = session,
+                            view = view,
+                            pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
+                            name = "ElevatedPanel:${view.id}",
+                            parent = session.scene.activitySpace,
+                        ),
                 )
                 .apply { view.setTag(R.id.compose_xr_local_view_entity, this) }
 
@@ -343,6 +348,7 @@ private class SpatialPopupRenderer(
                                 contentSize = contentSize,
                                 zDepth = zDepth,
                                 density = density,
+                                pixelDensity = pixelDensity,
                             )
                         parent = currentParent
                     }

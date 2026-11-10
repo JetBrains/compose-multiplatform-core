@@ -42,7 +42,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +50,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DrawReorderingTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
 
     @Test
@@ -260,13 +259,12 @@ class DrawReorderingTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun testChangingZOrderReusingModifiers() {
         val state = mutableStateOf(0f)
-        val zIndex =
-            Modifier.layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) {
-                    placeable.place(0, 0, zIndex = state.value)
-                }
+        val zIndex = Modifier.layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                placeable.place(0, 0, zIndex = state.value)
             }
+        }
         val modifier1 = Modifier.padding(10).then(zIndex).background(Color.White)
         val modifier2 = Modifier.background(Color.Red)
         rule.setContent {
@@ -377,7 +375,9 @@ class DrawReorderingTest {
             FixedSize(size = 30) {
                 FixedSize(
                     10,
-                    Modifier.padding(10).graphicsLayer(shadowElevation = 1f).background(Color.White),
+                    Modifier.padding(10)
+                        .graphicsLayer(shadowElevation = 1f)
+                        .background(Color.White),
                 )
                 FixedSize(30, Modifier.graphicsLayer().background(Color.Red))
             }
@@ -503,14 +503,13 @@ class DrawReorderingTest {
     fun changingPlaceOrderInLayout() {
         var reverseOrder by mutableStateOf(false)
         var childRelayoutCount = 0
-        val childRelayoutModifier =
-            Modifier.layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) {
-                    childRelayoutCount++
-                    placeable.place(0, 0)
-                }
+        val childRelayoutModifier = Modifier.layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                childRelayoutCount++
+                placeable.place(0, 0)
             }
+        }
         rule.setContent {
             Layout(
                 content = {
@@ -557,14 +556,13 @@ class DrawReorderingTest {
     fun changingZIndexInLayout() {
         var zIndex by mutableStateOf(1f)
         var childRelayoutCount = 0
-        val childRelayoutModifier =
-            Modifier.layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) {
-                    childRelayoutCount++
-                    placeable.place(0, 0)
-                }
+        val childRelayoutModifier = Modifier.layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                childRelayoutCount++
+                placeable.place(0, 0)
             }
+        }
         rule.setContent {
             Layout(
                 content = {

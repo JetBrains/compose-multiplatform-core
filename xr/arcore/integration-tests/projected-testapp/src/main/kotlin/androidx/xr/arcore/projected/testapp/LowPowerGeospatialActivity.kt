@@ -24,7 +24,6 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.ArDevice
@@ -64,27 +64,29 @@ import androidx.xr.glimmer.Button
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Icon
 import androidx.xr.glimmer.Text
+import androidx.xr.projected.ProjectedActivityCompat
+import androidx.xr.projected.ProjectedContext
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
-import androidx.xr.projected.permissions.ProjectedPermissionsRequestParams
-import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.GeospatialMode
-import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(PreviewSpatialApi::class)
-class LowPowerGeospatialActivity : ComponentActivity() {
+open class LowPowerGeospatialActivity : ComponentActivity() {
     companion object {
         private const val TAG = "LowPowerGeospatialActivity"
+        private const val PERMISSION_REQUEST_CODE = 1234
     }
+
+    protected open fun usesProjectedScreen(): Boolean = true
 
     private var targetModeState by mutableStateOf(GeospatialMode.SPATIAL)
 
@@ -103,12 +105,6 @@ class LowPowerGeospatialActivity : ComponentActivity() {
     private var sessionInstance by mutableStateOf<Session?>(null)
     private var geospatialInstance by mutableStateOf<Geospatial?>(null)
     private var arDeviceInstance by mutableStateOf<ArDevice?>(null)
-    @OptIn(ExperimentalProjectedApi::class)
-    private val requestPermissionLauncher:
-        ActivityResultLauncher<List<ProjectedPermissionsRequestParams>> =
-        registerForActivityResult(ProjectedPermissionsResultContract()) { results ->
-            tryCreateAndConfigureSession()
-        }
 
     @OptIn(ExperimentalProjectedApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -118,19 +114,25 @@ class LowPowerGeospatialActivity : ComponentActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
             )
-        val hasAllPermissions =
-            permissionsRequired.all {
-                ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-            }
+        val hasAllPermissions = permissionsRequired.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
         if (hasAllPermissions) {
             tryCreateAndConfigureSession()
-        } else {
-            val params =
-                ProjectedPermissionsRequestParams(
-                    permissions = permissionsRequired,
-                    rationale = "Location permissions are required in projected mode.",
+        } else if (ProjectedContext.isProjectedDeviceContext(this)) {
+            lifecycleScope.launch(Dispatchers.Default) {
+                ProjectedActivityCompat.requestPermissions(
+                    this@LowPowerGeospatialActivity,
+                    permissionsRequired.toTypedArray(),
+                    PERMISSION_REQUEST_CODE,
                 )
-            requestPermissionLauncher.launch(listOf(params))
+            }
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                permissionsRequired.toTypedArray(),
+                PERMISSION_REQUEST_CODE,
+            )
         }
         setContent {
             GlimmerTheme {
@@ -151,6 +153,17 @@ class LowPowerGeospatialActivity : ComponentActivity() {
                 }
                 GeospatialDashboard(geospatial, arDevice)
             }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray,
+        deviceId: Int,
+    ) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            tryCreateAndConfigureSession()
         }
     }
 
@@ -180,13 +193,29 @@ class LowPowerGeospatialActivity : ComponentActivity() {
         return super.onKeyUp(keyCode, event)
     }
 
+    @OptIn(ExperimentalProjectedApi::class)
     private fun tryCreateAndConfigureSession() {
-        lifecycleScope.launch {
+        val useBgThread = intent.getBooleanExtra("debug.jxr.geo.bg_thread", false)
+        val delayMs = intent.getIntExtra("debug.jxr.geo.delay_ms", 0)
+        val dispatcher = if (useBgThread) Dispatchers.IO else Dispatchers.Main
+
+        Log.i(TAG, "tryCreateAndConfigureSession: useBgThread=$useBgThread, delayMs=$delayMs")
+
+        lifecycleScope.launch(dispatcher) {
+            delay(delayMs.toLong())
             try {
+                val sessionContext =
+                    if (usesProjectedScreen()) {
+                        this@LowPowerGeospatialActivity
+                    } else {
+                        ProjectedContext.createProjectedDeviceContext(
+                            this@LowPowerGeospatialActivity.applicationContext
+                        )
+                    }
                 when (
                     val result =
                         Session.create(
-                            context = this@LowPowerGeospatialActivity,
+                            context = sessionContext,
                             lifecycleOwner = this@LowPowerGeospatialActivity,
                         )
                 ) {
@@ -216,7 +245,6 @@ class LowPowerGeospatialActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(PreviewSpatialApi::class)
     @Composable
     private fun GeospatialDashboard(geospatial: Geospatial, arDevice: ArDevice) {
         val geospatialState by geospatial.state.collectAsState()
@@ -262,7 +290,12 @@ class LowPowerGeospatialActivity : ComponentActivity() {
                 Modifier.fillMaxSize()
                     .background(GlimmerTheme.colors.surface)
                     .clickable { toggleGeospatialMode() }
-                    .padding(top = 56.dp, start = 16.dp, end = 16.dp, bottom = 8.dp)
+                    .padding(
+                        top = if (usesProjectedScreen()) 70.dp else 130.dp,
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = 8.dp,
+                    )
         ) {
             Column(modifier = Modifier.align(Alignment.TopStart)) {
                 DashboardHeader(geospatialState, arDeviceState)
@@ -453,13 +486,11 @@ class LowPowerGeospatialActivity : ComponentActivity() {
         return kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
     }
 
-    @OptIn(ExperimentalInertialTrackingApi::class)
     private fun TrackingState?.getTrackingStateMessage(): String {
         return when (this) {
             TrackingState.TRACKING -> "TRACKING"
             TrackingState.PAUSED -> "PAUSED"
             TrackingState.STOPPED -> "STOPPED"
-            TrackingState.TRACKING_DEGRADED -> "DEGRADED"
             else -> "UNKNOWN"
         }
     }

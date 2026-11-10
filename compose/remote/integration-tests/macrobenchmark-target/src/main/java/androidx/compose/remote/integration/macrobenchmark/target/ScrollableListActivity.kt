@@ -39,11 +39,11 @@ import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocum
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.RemoteScrollState
 import androidx.compose.remote.creation.compose.modifier.contentDescription
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.padding
-import androidx.compose.remote.creation.compose.modifier.rememberRemoteScrollState
 import androidx.compose.remote.creation.compose.modifier.semantics
 import androidx.compose.remote.creation.compose.modifier.verticalScroll
 import androidx.compose.remote.creation.compose.state.rdp
@@ -92,6 +92,8 @@ class ScrollableListActivity : ComponentActivity() {
             MODE_COMPOSE -> setContent { LiveCompose() }
             MODE_WEB_VIEW -> setWebViewContent()
             MODE_REMOTE_VIEW -> setRemoteViewsScrollContent()
+            MODE_EMBEDDED_PLAYER -> setContent { RemoteCompose(playerMode = MODE_EMBEDDED_PLAYER) }
+            MODE_JAVA_PLAYER -> setContent { RemoteCompose(playerMode = MODE_JAVA_PLAYER) }
             else -> setContent { RemoteCompose() }
         }
     }
@@ -192,7 +194,7 @@ class ScrollableListActivity : ComponentActivity() {
     }
 
     @Composable
-    fun RemoteCompose() {
+    fun RemoteCompose(playerMode: String = MODE_JAVA_PLAYER) {
         var documentBytes by remember { mutableStateOf<ByteArray?>(null) }
         val context = LocalContext.current
         LaunchedEffect(Unit) {
@@ -201,7 +203,7 @@ class ScrollableListActivity : ComponentActivity() {
                         profile = RcPlatformProfiles.ANDROIDX,
                         context = context,
                     ) {
-                        val scrollState = rememberRemoteScrollState()
+                        val scrollState = remember { RemoteScrollState() }
                         RemoteColumn(
                             modifier =
                                 RemoteModifier.fillMaxSize()
@@ -220,6 +222,6 @@ class ScrollableListActivity : ComponentActivity() {
                     .bytes
         }
 
-        documentBytes?.let { RemoteComposePlayer(it) }
+        documentBytes?.let { RemotePlayerHost(playerMode = playerMode, remoteDocumentBytes = it) }
     }
 }

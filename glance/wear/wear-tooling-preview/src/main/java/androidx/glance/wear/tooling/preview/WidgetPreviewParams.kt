@@ -21,7 +21,14 @@ import androidx.glance.wear.core.ContainerInfo
 import androidx.glance.wear.core.WearWidgetParams
 import androidx.glance.wear.core.WidgetInstanceId
 
-private const val WIDGETS_NAMESPACE = "tiles"
+private object WidgetPreviewConstants {
+    const val WIDGETS_NAMESPACE = "tiles"
+    const val SQUIRCLE_PREFIX = "Squircle"
+    const val ROUND_PREFIX = "Round"
+    const val RECTANGULAR_PREFIX = "Rectangular"
+    const val CORNER_RADIUS_ROUND_DP = 999f
+    const val CORNER_RADIUS_RECTANGULAR_DP = 0f
+}
 
 /**
  * A [PreviewParameterProvider] that provides standard configurations based on the default squircle
@@ -31,19 +38,84 @@ private const val WIDGETS_NAMESPACE = "tiles"
  * be overridden by specific OEM specifications. The suite covers small and large screen variants
  * for both Small and Large widget types.
  */
-public class SquircleAllWidgetPreviewParams : BaseWidgetPreviewParams(SQUIRCLE_ALL_PARAMS)
+public class SquircleAllWidgetPreviewParams :
+    BaseWidgetPreviewParams(SQUIRCLE_ALL_PARAMS, WidgetPreviewConstants.SQUIRCLE_PREFIX)
 
 /**
  * Provides Small-type widget configurations from the default squircle specification for both small
  * and large screens.
  */
-public class SquircleSmallWidgetPreviewParams : BaseWidgetPreviewParams(SQUIRCLE_SMALL_PARAMS)
+public class SquircleSmallWidgetPreviewParams :
+    BaseWidgetPreviewParams(SQUIRCLE_SMALL_PARAMS, WidgetPreviewConstants.SQUIRCLE_PREFIX)
 
 /**
  * Provides Large-type widget configurations from the default squircle specification for both small
  * and large screens.
  */
-public class SquircleLargeWidgetPreviewParams : BaseWidgetPreviewParams(SQUIRCLE_LARGE_PARAMS)
+public class SquircleLargeWidgetPreviewParams :
+    BaseWidgetPreviewParams(SQUIRCLE_LARGE_PARAMS, WidgetPreviewConstants.SQUIRCLE_PREFIX)
+
+/**
+ * A [PreviewParameterProvider] that provides standard configurations based on the custom fully
+ * rounded specification. This covers small and large screen variants for both Small and Large
+ * widget types.
+ */
+public class RoundAllWidgetPreviewParams :
+    BaseWidgetPreviewParams(ROUND_ALL_PARAMS, WidgetPreviewConstants.ROUND_PREFIX)
+
+/**
+ * Provides Small-type widget configurations from the default round specification for both small and
+ * large screens.
+ */
+public class RoundSmallWidgetPreviewParams :
+    BaseWidgetPreviewParams(ROUND_SMALL_PARAMS, WidgetPreviewConstants.ROUND_PREFIX)
+
+/**
+ * Provides Large-type widget configurations from the default round specification for both small and
+ * large screens.
+ */
+public class RoundLargeWidgetPreviewParams :
+    BaseWidgetPreviewParams(ROUND_LARGE_PARAMS, WidgetPreviewConstants.ROUND_PREFIX)
+
+/**
+ * A [PreviewParameterProvider] that provides standard widget configurations to be used for preview
+ * image assets that are displayed as part of the system, such as a catalog, that are not cut to
+ * shape as it will be done by the system.
+ *
+ * This set of parameters is purposely designed to help Wear widget developers generate and export
+ * clean, rectangular screenshot preview assets for the Play Store and galleries where users can
+ * choose their widgets. The preview configuration utilizes a square-cornered (rectangular)
+ * specification and applies safe padding boundaries outside the content area to prevent clipping
+ * when cropped to custom OEM widget shapes. This includes both Small and Large widget types.
+ */
+public class RectangularAllWidgetPreviewParams :
+    BaseWidgetPreviewParams(RECTANGULAR_ALL_PARAMS, WidgetPreviewConstants.RECTANGULAR_PREFIX)
+
+/**
+ * A [PreviewParameterProvider] that provides Small-type widget configurations from the rectangular
+ * specification with safe padding buffers.
+ *
+ * This set of parameters is purposely designed to help Wear widget developers generate and export
+ * clean, rectangular screenshot preview assets for the Play Store and galleries where users can
+ * choose their widgets. The preview configuration utilizes a square-cornered (rectangular)
+ * specification and applies safe padding boundaries outside the content area to prevent clipping
+ * when cropped to custom OEM widget shapes.
+ */
+public class RectangularSmallWidgetPreviewParams :
+    BaseWidgetPreviewParams(RECTANGULAR_SMALL_PARAMS, WidgetPreviewConstants.RECTANGULAR_PREFIX)
+
+/**
+ * A [PreviewParameterProvider] that provides Large-type widget configurations from the rectangular
+ * specification with safe padding buffers.
+ *
+ * This set of parameters is purposely designed to help Wear widget developers generate and export
+ * clean, rectangular screenshot preview assets for the Play Store and galleries where users can
+ * choose their widgets. The preview configuration utilizes a square-cornered (rectangular)
+ * specification and applies safe padding boundaries outside the content area to prevent clipping
+ * when cropped to custom OEM widget shapes.
+ */
+public class RectangularLargeWidgetPreviewParams :
+    BaseWidgetPreviewParams(RECTANGULAR_LARGE_PARAMS, WidgetPreviewConstants.RECTANGULAR_PREFIX)
 
 private val SQUIRCLE_SMALL_PARAMS =
     sequenceOf(
@@ -52,10 +124,10 @@ private val SQUIRCLE_SMALL_PARAMS =
          * on a 204dp screen.
          */
         WearWidgetParams(
-            instanceId = WidgetInstanceId(WIDGETS_NAMESPACE, 1),
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 1),
             containerType = ContainerInfo.CONTAINER_TYPE_SMALL,
             widthDp = 166f,
-            heightDp = 72f,
+            heightDp = 60f,
             verticalPaddingDp = 8f,
             horizontalPaddingDp = 8f,
             cornerRadiusDp = 26f,
@@ -65,10 +137,10 @@ private val SQUIRCLE_SMALL_PARAMS =
          * on a 240dp screen.
          */
         WearWidgetParams(
-            instanceId = WidgetInstanceId(WIDGETS_NAMESPACE, 2),
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 2),
             containerType = ContainerInfo.CONTAINER_TYPE_SMALL,
-            widthDp = 199f,
-            heightDp = 72f,
+            widthDp = 200f,
+            heightDp = 60f,
             verticalPaddingDp = 8f,
             horizontalPaddingDp = 8f,
             cornerRadiusDp = 26f,
@@ -82,7 +154,7 @@ private val SQUIRCLE_LARGE_PARAMS =
          * on a 204dp screen.
          */
         WearWidgetParams(
-            instanceId = WidgetInstanceId(WIDGETS_NAMESPACE, 3),
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 3),
             containerType = ContainerInfo.CONTAINER_TYPE_LARGE,
             widthDp = 166f,
             heightDp = 96f,
@@ -95,10 +167,10 @@ private val SQUIRCLE_LARGE_PARAMS =
          * on a 240dp screen.
          */
         WearWidgetParams(
-            instanceId = WidgetInstanceId(WIDGETS_NAMESPACE, 4),
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 4),
             containerType = ContainerInfo.CONTAINER_TYPE_LARGE,
-            widthDp = 199f,
-            heightDp = 112f,
+            widthDp = 200f,
+            heightDp = 108f,
             verticalPaddingDp = 8f,
             horizontalPaddingDp = 8f,
             cornerRadiusDp = 26f,
@@ -106,3 +178,101 @@ private val SQUIRCLE_LARGE_PARAMS =
     )
 
 private val SQUIRCLE_ALL_PARAMS = SQUIRCLE_SMALL_PARAMS + SQUIRCLE_LARGE_PARAMS
+
+private val ROUND_SMALL_PARAMS =
+    sequenceOf(
+        /**
+         * A [WearWidgetParams] calculated with the default spec of small widget defined in renderer
+         * on a 216dp screen.
+         */
+        WearWidgetParams(
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 5),
+            containerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+            widthDp = 182f,
+            heightDp = 54f,
+            verticalPaddingDp = 8f,
+            horizontalPaddingDp = 13f,
+            cornerRadiusDp = WidgetPreviewConstants.CORNER_RADIUS_ROUND_DP,
+        ),
+        /**
+         * A [WearWidgetParams] calculated with the default spec of small widget defined in renderer
+         * on a 240dp screen.
+         */
+        WearWidgetParams(
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 6),
+            containerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+            widthDp = 200f,
+            heightDp = 60f,
+            verticalPaddingDp = 8f,
+            horizontalPaddingDp = 15f,
+            cornerRadiusDp = WidgetPreviewConstants.CORNER_RADIUS_ROUND_DP,
+        ),
+    )
+
+private val ROUND_LARGE_PARAMS =
+    sequenceOf(
+        /**
+         * A [WearWidgetParams] calculated with the default spec of large widget defined in renderer
+         * on a 216dp screen.
+         */
+        WearWidgetParams(
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 7),
+            containerType = ContainerInfo.CONTAINER_TYPE_LARGE,
+            widthDp = 150f,
+            heightDp = 120f,
+            verticalPaddingDp = 16f,
+            horizontalPaddingDp = 29f,
+            cornerRadiusDp = WidgetPreviewConstants.CORNER_RADIUS_ROUND_DP,
+        ),
+        /**
+         * A [WearWidgetParams] calculated with the default spec of large widget defined in renderer
+         * on a 240dp screen.
+         */
+        WearWidgetParams(
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 8),
+            containerType = ContainerInfo.CONTAINER_TYPE_LARGE,
+            widthDp = 160f,
+            heightDp = 136f,
+            verticalPaddingDp = 16f,
+            horizontalPaddingDp = 35f,
+            cornerRadiusDp = WidgetPreviewConstants.CORNER_RADIUS_ROUND_DP,
+        ),
+    )
+
+private val ROUND_ALL_PARAMS = ROUND_SMALL_PARAMS + ROUND_LARGE_PARAMS
+
+private val RECTANGULAR_SMALL_PARAMS =
+    sequenceOf(
+        /**
+         * A [WearWidgetParams] calculated as a safe grid-aligned (8dp/4dp) median configuration
+         * with square corners to allow cropping to custom OEM shapes without clipping.
+         */
+        WearWidgetParams(
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 9),
+            containerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+            widthDp = 192f,
+            heightDp = 60f,
+            verticalPaddingDp = 12f,
+            horizontalPaddingDp = 16f,
+            cornerRadiusDp = WidgetPreviewConstants.CORNER_RADIUS_RECTANGULAR_DP,
+        )
+    )
+
+private val RECTANGULAR_LARGE_PARAMS =
+    sequenceOf(
+        /**
+         * A [WearWidgetParams] calculated as a safe grid-aligned (8dp/4dp) median configuration
+         * with square corners to allow cropping to custom OEM shapes without clipping.
+         */
+        WearWidgetParams(
+            instanceId = WidgetInstanceId(WidgetPreviewConstants.WIDGETS_NAMESPACE, 10),
+            containerType = ContainerInfo.CONTAINER_TYPE_LARGE,
+            widthDp = 168f,
+            heightDp = 112f,
+            verticalPaddingDp = 16f,
+            horizontalPaddingDp = 32f,
+            cornerRadiusDp = WidgetPreviewConstants.CORNER_RADIUS_RECTANGULAR_DP,
+        )
+    )
+
+private val RECTANGULAR_ALL_PARAMS = RECTANGULAR_SMALL_PARAMS + RECTANGULAR_LARGE_PARAMS

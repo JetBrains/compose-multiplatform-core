@@ -19,21 +19,20 @@ package androidx.compose.animation.samples
 import androidx.annotation.Sampled
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.CapturedAnimatedVisibility
 import androidx.compose.animation.DeferredAnimatedVisibility
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.MutableTransform
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.DeferredTransitionState
-import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.rememberTransition
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
@@ -175,7 +174,6 @@ fun FadeTransition() {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Sampled
 @Composable
 fun FullyLoadedTransition() {
@@ -201,7 +199,6 @@ fun FullyLoadedTransition() {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Sampled
 @Composable
 fun AnimatedVisibilityWithBooleanVisibleParamNoReceiver() {
@@ -218,15 +215,14 @@ fun AnimatedVisibilityWithBooleanVisibleParamNoReceiver() {
 
             // As a part of the enter transition, the corner radius will be animated from 0.dp to
             // 50.dp.
-            val cornerRadius by
-                transition.animateDp {
-                    when (it) {
-                        EnterExitState.PreEnter -> 0.dp
-                        EnterExitState.Visible -> 50.dp
-                        // No corner radius change when exiting.
-                        EnterExitState.PostExit -> 50.dp
-                    }
+            val cornerRadius by transition.animateDp {
+                when (it) {
+                    EnterExitState.PreEnter -> 0.dp
+                    EnterExitState.Visible -> 50.dp
+                    // No corner radius change when exiting.
+                    EnterExitState.PostExit -> 50.dp
                 }
+            }
             Box(
                 Modifier.background(Color.Red, shape = RoundedCornerShape(cornerRadius))
                     .height(100.dp)
@@ -236,7 +232,6 @@ fun AnimatedVisibilityWithBooleanVisibleParamNoReceiver() {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Sampled
 @Composable
 fun ColumnScope.AnimatedFloatingActionButton() {
@@ -361,21 +356,19 @@ fun ColumnAnimatedVisibilitySample() {
 @Sampled
 @Composable
 fun AVScopeAnimateEnterExit() {
-    @OptIn(ExperimentalAnimationApi::class)
     @Composable
     fun AnimatedVisibilityScope.Item(modifier: Modifier, backgroundColor: Color) {
         // Creates a custom enter/exit animation for scale property.
-        val scale by
-            transition.animateFloat { enterExitState ->
-                // Enter transition will be animating the scale from 0.9f to 1.0f
-                // (i.e. PreEnter -> Visible). Exit transition will be from 1.0f to
-                // 0.5f (i.e. Visible -> PostExit)
-                when (enterExitState) {
-                    EnterExitState.PreEnter -> 0.9f
-                    EnterExitState.Visible -> 1.0f
-                    EnterExitState.PostExit -> 0.5f
-                }
+        val scale by transition.animateFloat { enterExitState ->
+            // Enter transition will be animating the scale from 0.9f to 1.0f
+            // (i.e. PreEnter -> Visible). Exit transition will be from 1.0f to
+            // 0.5f (i.e. Visible -> PostExit)
+            when (enterExitState) {
+                EnterExitState.PreEnter -> 0.9f
+                EnterExitState.Visible -> 1.0f
+                EnterExitState.PostExit -> 0.5f
             }
+        }
 
         // Since we defined `Item` as an extension function on AnimatedVisibilityScope, we can use
         // the `animateEnterExit` modifier to produce an enter/exit animation for it. This will
@@ -451,7 +444,6 @@ fun AVScopeAnimateEnterExit() {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 @Sampled
 fun AddAnimatedVisibilityToGenericTransitionSample() {
@@ -470,7 +462,6 @@ fun AddAnimatedVisibilityToGenericTransitionSample() {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Composable
     fun SelectableItem() {
         // This sample animates a number of properties, including AnimatedVisibility, as a part of
@@ -480,18 +471,17 @@ fun AddAnimatedVisibilityToGenericTransitionSample() {
             // Creates a transition to animate visual changes when `selected` is changed.
             val selectionTransition = updateTransition(selected)
             // Animates the border color as a part of the transition
-            val borderColor by
-                selectionTransition.animateColor { isSelected ->
-                    if (isSelected) Color(0xff03a9f4) else Color.White
-                }
+            val borderColor by selectionTransition.animateColor { isSelected ->
+                if (isSelected) Color(0xff03a9f4) else Color.White
+            }
             // Animates the background color when selected state changes
-            val contentBackground by
-                selectionTransition.animateColor { isSelected ->
-                    if (isSelected) Color(0xffdbf0fe) else Color.White
-                }
+            val contentBackground by selectionTransition.animateColor { isSelected ->
+                if (isSelected) Color(0xffdbf0fe) else Color.White
+            }
             // Animates elevation as a part of the transition
-            val elevation by
-                selectionTransition.animateDp { isSelected -> if (isSelected) 10.dp else 2.dp }
+            val elevation by selectionTransition.animateDp { isSelected ->
+                if (isSelected) 10.dp else 2.dp
+            }
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(2.dp, borderColor),
@@ -605,8 +595,8 @@ fun AnimatedVisibilityLazyColumnSample() {
             // notify the model to prune the list.
             LaunchedEffect(model) {
                 snapshotFlow {
-                        model.items.firstOrNull { it.visible.isIdle && !it.visible.targetState }
-                    }
+                    model.items.firstOrNull { it.visible.isIdle && !it.visible.targetState }
+                }
                     .collect {
                         if (it != null) {
                             model.pruneItems()
@@ -647,15 +637,14 @@ fun AVColumnScopeWithMutableTransitionState() {
     Column {
         repeat(3) {
             AnimatedVisibility(
-                visibleState =
-                    remember {
-                            // This sets up the initial state of the AnimatedVisibility to false to
-                            // guarantee an initial enter transition. In contrast, initializing this
-                            // as
-                            // `MutableTransitionState(visible)` would result in no initial enter
-                            // transition.
-                            MutableTransitionState(initialState = false)
-                        }
+                visibleState = remember {
+                        // This sets up the initial state of the AnimatedVisibility to false to
+                        // guarantee an initial enter transition. In contrast, initializing this
+                        // as
+                        // `MutableTransitionState(visible)` would result in no initial enter
+                        // transition.
+                        MutableTransitionState(initialState = false)
+                    }
                         .apply {
                             // This changes the target state of the visible state. If it's different
                             // than
@@ -672,7 +661,6 @@ fun AVColumnScopeWithMutableTransitionState() {
 @Sampled
 @Composable
 fun AnimateEnterExitPartialContent() {
-    @OptIn(ExperimentalAnimationApi::class)
     @Composable
     fun FullScreenNotification(visible: Boolean) {
         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
@@ -698,7 +686,6 @@ fun AnimateEnterExitPartialContent() {
 }
 
 @Sampled
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AnimatedVisibilityVeil() {
     var visible by remember { mutableStateOf(true) }
@@ -715,7 +702,6 @@ fun AnimatedVisibilityVeil() {
 }
 
 @Sampled
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ScaledEnterExit() {
     Column {
@@ -764,7 +750,6 @@ fun ScaledEnterExit() {
     }
 }
 
-@OptIn(ExperimentalDeferredTransitionApi::class)
 @Sampled
 @Composable
 fun DeferredAnimatedVisibilitySample() {
@@ -774,7 +759,7 @@ fun DeferredAnimatedVisibilitySample() {
     var swipeOffset by remember { mutableStateOf(IntOffset.Zero) }
 
     val transitionState = remember { DeferredTransitionState(visible) }
-    val transition = rememberTransition(transitionState)
+    val transition = rememberDeferredTransition(transitionState)
     LaunchedEffect(isBackGestureInProgress, visible) {
         if (isBackGestureInProgress) {
             transitionState.defer(visible)
@@ -797,5 +782,56 @@ fun DeferredAnimatedVisibilitySample() {
             },
     ) {
         Box(Modifier.size(200.dp).background(Color.Red))
+    }
+}
+
+@Sampled
+@Composable
+fun CapturedAnimatedVisibilitySample() {
+    var visible by remember { mutableStateOf(true) }
+    Column {
+        Button(onClick = { visible = !visible }) { Text(if (visible) "Hide" else "Show") }
+        Spacer(Modifier.height(16.dp))
+        CapturedAnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+        ) {
+            // Child composition is removed immediately when visible becomes false
+            Box(Modifier.size(100.dp).background(Color.Blue, shape = RoundedCornerShape(8.dp)))
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun CapturedAnimatedVisibilityMutableTransitionStateSample() {
+    // MutableTransitionState allows observing the animation status (currentState, targetState, and
+    // isIdle) as well as setting an initial currentState = false and targetState = true to animate
+    // in immediately upon entering composition.
+    val visibleState = remember { MutableTransitionState(false) }.apply { targetState = true }
+
+    Column {
+        Button(onClick = { visibleState.targetState = !visibleState.targetState }) {
+            Text(if (visibleState.targetState) "Hide" else "Show")
+        }
+        Spacer(Modifier.height(8.dp))
+        // Observe the current animation status directly via visibleState properties
+        Text(
+            "State: current=${visibleState.currentState}, " +
+                "target=${visibleState.targetState}, " +
+                "isIdle=${visibleState.isIdle}"
+        )
+        Spacer(Modifier.height(16.dp))
+        CapturedAnimatedVisibility(
+            visibleState = visibleState,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+        ) {
+            // Content animates IN from false -> true upon initial composition.
+            // When targetState becomes false, child composition is removed immediately
+            // while the last captured graphics layer frame animates OUT.
+            Box(Modifier.size(100.dp).background(Color.Red, shape = RoundedCornerShape(8.dp)))
+        }
     }
 }

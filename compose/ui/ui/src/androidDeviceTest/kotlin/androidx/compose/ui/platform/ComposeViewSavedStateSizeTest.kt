@@ -30,13 +30,12 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.core.util.isEmpty
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 class ComposeViewSavedStateSizeTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun composeViewIsProducingEmptySavedState() {
@@ -62,12 +61,11 @@ class ComposeViewSavedStateSizeTest {
             Box { repeat(childCount) { Box(Modifier.graphicsLayer()) } }
         }
 
-        val initialArray =
-            rule.runOnIdle {
-                val array = SparseArray<Parcelable>()
-                view.saveHierarchyState(array)
-                array
-            }
+        val initialArray = rule.runOnIdle {
+            val array = SparseArray<Parcelable>()
+            view.saveHierarchyState(array)
+            array
+        }
 
         childCount = 10
 

@@ -16,10 +16,12 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object SourceNodeNative {
     init {
         NativeLoader.load()
@@ -40,4 +42,6 @@ actual internal object SourceNodeNative {
     @UsedByNative actual external fun getValueRangeEnd(nativePointer: Long): Float
 
     @UsedByNative actual external fun getOutOfRangeBehaviorInt(nativePointer: Long): Int
+
+    @UsedByNative actual external fun getSourceMinimumRequiredVersion(sourceInt: Int): Int
 }

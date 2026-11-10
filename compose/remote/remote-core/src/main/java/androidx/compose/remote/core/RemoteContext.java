@@ -16,12 +16,14 @@
 package androidx.compose.remote.core;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.events.EventManager;
 import androidx.compose.remote.core.operations.FloatExpression;
 import androidx.compose.remote.core.operations.ShaderData;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.managers.LayoutManager;
+import androidx.compose.remote.core.operations.layout.measure.ComponentMeasurePool;
 import androidx.compose.remote.core.operations.layout.utils.DebugLog;
 import androidx.compose.remote.core.operations.utilities.ArrayAccess;
 import androidx.compose.remote.core.operations.utilities.CollectionsAccess;
@@ -48,6 +50,7 @@ public abstract class RemoteContext {
             new RemoteComposeState(); // todo, is this a valid use of RemoteComposeState -- bbade@
     private long mDocLoadTime;
     @Nullable protected PaintContext mPaintContext = null;
+    private final EventManager mEventManager;
     protected float mDensity = Float.NaN;
     private int mPaintTheme = -3;
     @NonNull ContextMode mMode = ContextMode.UNSET;
@@ -74,12 +77,23 @@ public abstract class RemoteContext {
 
     private int mTouchVersion = LayoutManager.DEFAULT_TOUCH_VERSION;
 
+    private final ComponentMeasurePool mComponentMeasurePool = new ComponentMeasurePool();
+
+    public @NonNull ComponentMeasurePool getComponentMeasurePool() {
+        return mComponentMeasurePool;
+    }
+
     public RemoteContext() {
         this(RemoteClock.SYSTEM);
     }
 
     public RemoteContext(@NonNull RemoteClock clock) {
-        this.mClock = clock;
+        this(clock, new EventManager());
+    }
+
+    public RemoteContext(@NonNull RemoteClock clock, @NonNull EventManager eventManager) {
+        mClock = clock;
+        mEventManager = eventManager;
         setDocLoadTime();
         mDocument = new CoreDocument(clock); // todo: is this a valid way to initialize? bbade@
     }
@@ -367,6 +381,23 @@ public abstract class RemoteContext {
      */
     public abstract void hapticEffect(int type);
 
+    /**
+     * Load sound data for a given sound ID. Accepts WAV-formatted bytes (produced by {@link
+     * androidx.compose.remote.core.operations.utilities.ToneSynthesizer}) or SC-format bytes (from
+     * {@link androidx.compose.remote.core.operations.SoundData}).
+     *
+     * @param soundId the ID under which the sound is registered
+     * @param data WAV or SC-format audio bytes
+     */
+    public void loadSound(int soundId, byte @NonNull [] data) {}
+
+    /**
+     * Trigger playback of a previously loaded sound.
+     *
+     * @param soundId the ID of the sound to play
+     */
+    public void playSound(int soundId) {}
+
     /** Set the repaint flag. This will trigger a repaint of the current document. */
     public void needsRepaint() {
         if (mPaintContext != null) {
@@ -398,6 +429,10 @@ public abstract class RemoteContext {
 
     public void setClock(@NonNull RemoteClock clock) {
         this.mClock = clock;
+    }
+
+    public @NonNull EventManager getEventManager() {
+        return mEventManager;
     }
 
     /**
@@ -537,7 +572,7 @@ public abstract class RemoteContext {
         return mPaintContext;
     }
 
-    public void setPaintContext(@NonNull PaintContext paintContext) {
+    public void setPaintContext(@Nullable PaintContext paintContext) {
         this.mPaintContext = paintContext;
     }
 
@@ -595,11 +630,19 @@ public abstract class RemoteContext {
             int height,
             long capabilities,
             @Nullable IntMap<Object> properties) {
-        mRemoteComposeState.setWindowWidth(width);
-        mRemoteComposeState.setWindowHeight(height);
+        int scaledWidth = width;
+        int scaledHeight = height;
+        if (mDocument.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP
+                && !Float.isNaN(mDensity)
+                && mDensity > 0f) {
+            scaledWidth = Math.round(width * mDensity);
+            scaledHeight = Math.round(height * mDensity);
+        }
+        mRemoteComposeState.setWindowWidth(scaledWidth);
+        mRemoteComposeState.setWindowHeight(scaledHeight);
         mDocument.setVersion(majorVersion, minorVersion, patchVersion);
-        mDocument.setWidth(width);
-        mDocument.setHeight(height);
+        mDocument.setWidth(scaledWidth);
+        mDocument.setHeight(scaledHeight);
         mDocument.setRequiredCapabilities(capabilities);
         mDocument.setProperties(properties);
     }
@@ -1010,4 +1053,7 @@ public abstract class RemoteContext {
     public void clearLastOpCount() {
         mOpCount = 0;
     }
+
+    /** Clear variables registered in the context */
+    public void clearVariables() {}
 }

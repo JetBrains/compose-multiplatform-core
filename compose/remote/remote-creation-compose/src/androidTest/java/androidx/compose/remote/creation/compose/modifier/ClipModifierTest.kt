@@ -23,14 +23,16 @@ import androidx.compose.remote.creation.compose.shapes.RemoteCircleShape
 import androidx.compose.remote.creation.compose.shapes.RemoteRectangleShape
 import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemoteColor.Companion.createNamedRemoteColor
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberNamedRemoteColor
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI.Companion.DefaultContainerSize
 import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
 import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -54,46 +56,45 @@ class ClipModifierTest {
     private val gridScreenshotUI = GridScreenshotUI()
 
     @Test
-    fun grid() =
-        composeTestRule.runScreenshotTest {
-            val clips =
-                listOf<Pair<String, @Composable RemoteModifier.() -> RemoteModifier>>(
-                    "RectangleShape" to { clip(RemoteRectangleShape) },
-                    "CircleShape" to { clip(RemoteCircleShape) },
-                    "RoundedCornerShape size" to { clip(RemoteRoundedCornerShape(size = 10.rdp)) },
-                    "RoundedCornerShape percent 25" to
-                        {
-                            clip(RemoteRoundedCornerShape(percent = 25))
-                        },
-                    "RoundedCornerShape percent 50" to
-                        {
-                            clip(RemoteRoundedCornerShape(percent = 50))
-                        },
-                    "RoundedCornerShape custom size" to
-                        {
-                            clip(RemoteRoundedCornerShape(topStart = 10.rdp, bottomEnd = 10.rdp))
-                        },
-                )
-
-            gridScreenshotUI.GridContent(
-                sequence {
-                        for ((name, clipFn) in clips) {
-                            yield(
-                                name to
-                                    @RemoteComposable @Composable {
-                                        RemoteBox(
-                                            modifier =
-                                                RemoteModifier.size(DefaultContainerSize)
-                                                    .clipFn()
-                                                    .background(Color.Red)
-                                        )
-                                    }
-                            )
-                        }
-                    }
-                    .toList()
+    fun grid() = composeTestRule.runScreenshotTest {
+        val clips =
+            listOf<Pair<String, @Composable RemoteModifier.() -> RemoteModifier>>(
+                "RectangleShape" to { clip(RemoteRectangleShape) },
+                "CircleShape" to { clip(RemoteCircleShape) },
+                "RoundedCornerShape size" to { clip(RemoteRoundedCornerShape(size = 10.rdp)) },
+                "RoundedCornerShape percent 25" to
+                    {
+                        clip(RemoteRoundedCornerShape(percent = 25))
+                    },
+                "RoundedCornerShape percent 50" to
+                    {
+                        clip(RemoteRoundedCornerShape(percent = 50))
+                    },
+                "RoundedCornerShape custom size" to
+                    {
+                        clip(RemoteRoundedCornerShape(topStart = 10.rdp, bottomEnd = 10.rdp))
+                    },
             )
-        }
+
+        gridScreenshotUI.GridContent(
+            sequence {
+                for ((name, clipFn) in clips) {
+                    yield(
+                        name to
+                            @RemoteComposable @Composable {
+                                RemoteBox(
+                                    modifier =
+                                        RemoteModifier.size(DefaultContainerSize)
+                                            .clipFn()
+                                            .background(Color.Red.rc)
+                                )
+                            }
+                    )
+                }
+            }
+                .toList()
+        )
+    }
 
     @Test
     fun clipWithRemoteRoundedCornerShape_rtl() =
@@ -116,7 +117,7 @@ class ClipModifierTest {
                                 modifier =
                                     RemoteModifier.size(DefaultContainerSize)
                                         .clip(shape)
-                                        .background(Color.Red)
+                                        .background(Color.Red.rc)
                             )
                         }
                 )
@@ -126,30 +127,28 @@ class ClipModifierTest {
         }
 
     @Test
-    fun clipWithDrawWithContent() =
-        composeTestRule.runScreenshotTest {
-            RemoteBox(
-                modifier =
-                    RemoteModifier.size(50.rdp)
-                        .clip(RemoteRoundedCornerShape(size = 20.rdp))
-                        .drawWithContent {
-                            val paint = RemotePaint()
-                            paint.color = RemoteColor(Color.Blue)
-                            drawRect(paint = paint)
-                            drawContent()
-                        }
-            )
-        }
+    fun clipWithDrawWithContent() = composeTestRule.runScreenshotTest {
+        RemoteBox(
+            modifier =
+                RemoteModifier.size(50.rdp)
+                    .clip(RemoteRoundedCornerShape(size = 20.rdp))
+                    .drawWithContent {
+                        val paint = RemotePaint()
+                        paint.color = RemoteColor(Color.Blue)
+                        drawRect(paint = paint)
+                        drawContent()
+                    }
+        )
+    }
 
     @Test
-    fun clipWithBackground() =
-        composeTestRule.runScreenshotTest {
-            val color = rememberNamedRemoteColor("test", Color.Blue)
-            RemoteBox(
-                modifier =
-                    RemoteModifier.size(50.rdp)
-                        .clip(RemoteRoundedCornerShape(size = 20.rdp))
-                        .background(color)
-            )
-        }
+    fun clipWithBackground() = composeTestRule.runScreenshotTest {
+        val color = remember { createNamedRemoteColor("test", Color.Blue) }
+        RemoteBox(
+            modifier =
+                RemoteModifier.size(50.rdp)
+                    .clip(RemoteRoundedCornerShape(size = 20.rdp))
+                    .background(color)
+        )
+    }
 }

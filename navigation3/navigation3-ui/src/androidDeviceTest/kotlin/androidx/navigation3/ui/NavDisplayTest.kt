@@ -36,6 +36,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.kruth.assertThat
+import androidx.navigation3.defaultContentKey
 import androidx.navigation3.first
 import androidx.navigation3.fourth
 import androidx.navigation3.runtime.NavBackStack
@@ -62,7 +63,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.serialization.Serializable
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -70,7 +70,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavDisplayTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testContentShown() {
@@ -777,7 +777,7 @@ class NavDisplayTest {
                     "in the previously active backstack"
             )
             .that(poppedKeys)
-            .containsExactly(first, third)
+            .containsExactly(first.defaultContentKey(), third.defaultContentKey())
     }
 
     @Test
@@ -842,7 +842,40 @@ class NavDisplayTest {
         // It should be popped even if it's hidden!
         assertWithMessage("onPop SHOULD be called when an entry is removed from a hidden backstack")
             .that(poppedKeys1)
-            .containsExactly(first)
+            .containsExactly(first.defaultContentKey())
+    }
+
+    @Test
+    fun testInterruptPopWithPop() {
+        val backStack = mutableStateListOf(first, second, third)
+
+        composeTestRule.setContent {
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategies = listOf(TestTwoPaneSceneStrategy()),
+                onBack = { backStack.removeLastOrNull() },
+            ) { key ->
+                NavEntry(key) { Text(key) }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.autoAdvance = false
+
+        // Pop 'third' in frame 1 and advance clock slightly so pop 1 transition is actively running
+        // mid-flight
+        backStack.removeLastOrNull()
+        composeTestRule.mainClock.advanceTimeBy(50)
+
+        // Pop 'second' while pop 1 exit transition is still actively animating
+        backStack.removeLastOrNull()
+        composeTestRule.mainClock.advanceTimeBy(50)
+
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
+
+        // Verify 'first' is displayed
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
     }
 }
 

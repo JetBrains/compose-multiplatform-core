@@ -39,8 +39,12 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 fun MainScreen(
     useDynamicColor: Boolean,
     onUseDynamicColorChange: (Boolean) -> Unit,
+    onSelectedFontNameChange: (String) -> Unit,
     navigateToRoute: (String) -> Unit,
     modifier: Modifier = Modifier,
+    selectedFontName: String = "Default",
+    useEmbeddedPlayer: Boolean = false,
+    onUseEmbeddedPlayerChange: (Boolean) -> Unit = {},
 ) {
     val transformationSpec = rememberTransformationSpec()
     val columnState = rememberTransformingLazyColumnState()
@@ -75,10 +79,36 @@ fun MainScreen(
                 item {
                     SwitchButton(
                         modifier = Modifier.fillMaxWidth(),
+                        checked = useEmbeddedPlayer,
+                        onCheckedChange = onUseEmbeddedPlayerChange,
+                    ) {
+                        Text("Embedded Player")
+                    }
+                }
+                item {
+                    SwitchButton(
+                        modifier = Modifier.fillMaxWidth(),
                         checked = useDynamicColor,
                         onCheckedChange = onUseDynamicColorChange,
                     ) {
                         Text("Dynamic Color")
+                    }
+                }
+                item {
+                    val presetFonts = listOf("Default", "Pacifico", "Bungee", "Cinzel", "Creepster")
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            val currentIndex = presetFonts.indexOf(selectedFontName)
+                            val nextIndex = (currentIndex + 1) % presetFonts.size
+                            onSelectedFontNameChange(presetFonts[nextIndex])
+                        },
+                    ) {
+                        Text(
+                            "Font: $selectedFontName",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                        )
                     }
                 }
                 item {
@@ -91,6 +121,12 @@ fun MainScreen(
                     MenuButton(
                         "RemoteCompactButton",
                         onClick = { navigateToRoute(Screen.RemoteCompactButtonDemosScreen.route) },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteEdgeButton",
+                        onClick = { navigateToRoute(Screen.RemoteEdgeButtonDemosScreen.route) },
                     )
                 }
                 item {
@@ -113,6 +149,60 @@ fun MainScreen(
                 }
                 item {
                     MenuButton(
+                        "RemoteCheckboxButton",
+                        onClick = { navigateToRoute(Screen.RemoteCheckboxButtonDemosScreen.route) },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteRadioButton",
+                        onClick = { navigateToRoute(Screen.RemoteRadioButtonDemosScreen.route) },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteSwitchButton",
+                        onClick = { navigateToRoute(Screen.RemoteSwitchButtonDemosScreen.route) },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteSplitCheckboxButton",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteSplitCheckboxButtonDemosScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteSplitRadioButton",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteSplitRadioButtonDemosScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteSplitSwitchButton",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteSplitSwitchButtonDemosScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteSlider",
+                        onClick = { navigateToRoute(Screen.RemoteSliderDemosScreen.route) },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteStepper",
+                        onClick = { navigateToRoute(Screen.RemoteStepperDemosScreen.route) },
+                    )
+                }
+                item {
+                    MenuButton(
                         "RemoteIcon",
                         onClick = { navigateToRoute(Screen.RemoteIconDemosScreen.route) },
                     )
@@ -122,6 +212,22 @@ fun MainScreen(
                         "RemoteCircularProgressIndicator",
                         onClick = {
                             navigateToRoute(Screen.RemoteCircularProgressIndicatorDemosScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteCurvedProgressIndicator",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteCurvedProgressIndicatorDemosScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteLinearProgressIndicator",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteLinearProgressIndicatorDemosScreen.route)
                         },
                     )
                 }
@@ -149,6 +255,46 @@ fun MainScreen(
                         onClick = { navigateToRoute(Screen.RemoteTextDemosScreen.route) },
                     )
                 }
+                item {
+                    MenuButton(
+                        "RemoteHorizontalPageIndicator (3 pages)",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteHorizontalPageIndicator3DemoScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteHorizontalPageIndicator (10 pages)",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteHorizontalPageIndicator10DemoScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteVerticalPageIndicator (3 pages)",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteVerticalPageIndicator3DemoScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "RemoteVerticalPageIndicator (10 pages)",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteVerticalPageIndicator10DemoScreen.route)
+                        },
+                    )
+                }
+                item {
+                    MenuButton(
+                        "Gesture Hint",
+                        onClick = {
+                            navigateToRoute(Screen.RemoteOneHandedGestureDemosScreen.route)
+                        },
+                    )
+                }
             }
         }
     }
@@ -164,5 +310,11 @@ private fun MenuButton(text: String, onClick: () -> Unit, modifier: Modifier = M
 @WearPreviewDevices
 @Composable
 private fun MainScreenPreview() {
-    MainScreen(useDynamicColor = true, onUseDynamicColorChange = {}, navigateToRoute = {})
+    MainScreen(
+        useDynamicColor = true,
+        onUseDynamicColorChange = {},
+        selectedFontName = "Default",
+        onSelectedFontNameChange = {},
+        navigateToRoute = {},
+    )
 }

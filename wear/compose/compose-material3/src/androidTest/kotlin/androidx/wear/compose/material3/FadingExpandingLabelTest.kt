@@ -26,12 +26,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 class FadingExpandingLabelTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun fading_expanding_label_supports_testtag() {
@@ -47,7 +46,7 @@ class FadingExpandingLabelTest {
         var initialHeight = 0f
         var updatedHeight = 0f
         var finalHeight = 0f
-        var text = mutableStateOf("test")
+        val text = mutableStateOf("test")
 
         rule.mainClock.autoAdvance = false
         rule.setContentWithTheme(modifier = Modifier.size(SCREEN_SIZE_SMALL.dp)) {
@@ -83,7 +82,7 @@ class FadingExpandingLabelTest {
     fun fading_expanding_label_no_animation_on_initial_text() {
         var initialHeight = 0f
         var finalHeight = 0f
-        var text = mutableStateOf("test")
+        val text = mutableStateOf("test")
 
         rule.mainClock.autoAdvance = false
         rule.setContentWithTheme(modifier = Modifier.size(SCREEN_SIZE_SMALL.dp)) {

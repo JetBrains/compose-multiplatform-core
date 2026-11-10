@@ -17,7 +17,6 @@
 package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.ink.nativeloader.UsedByNative
 import kotlin.jvm.JvmStatic
 import kotlin.math.max
@@ -45,7 +44,7 @@ public class ImmutableBox internal constructor(x1: Float, y1: Float, x2: Float, 
     /** The upper bound in the `Y` direction. */
     override val yMax: Float = max(y1, y2)
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override fun toImmutable(): ImmutableBox = this
+    override fun toImmutable(): ImmutableBox = this
 
     override fun equals(other: Any?): Boolean =
         other === this || (other is Box && Box.areEquivalent(this, other))
@@ -82,8 +81,7 @@ public class ImmutableBox internal constructor(x1: Float, y1: Float, x2: Float, 
          * Overload that just takes the x and y components of the vectors. This isn't part of the
          * public API, but allows internal callers to avoid unnecessary allocations.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun fromTwoPoints(x1: Float, y1: Float, x2: Float, y2: Float): ImmutableBox =
+        internal fun fromTwoPoints(x1: Float, y1: Float, x2: Float, y2: Float): ImmutableBox =
             ImmutableBox(x1, y1, x2, y2)
     }
 }

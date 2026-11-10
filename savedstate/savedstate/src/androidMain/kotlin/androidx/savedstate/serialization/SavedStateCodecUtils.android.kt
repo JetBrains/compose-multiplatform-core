@@ -28,6 +28,20 @@ import kotlinx.serialization.builtins.ArraySerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.nullable
 
+// Compile-time constants for generic collection serial names.
+// Used to generate optimized decoders/encoders.
+internal const val ARRAY_LIST_NAME = "kotlin.collections.ArrayList"
+internal const val ARRAY_NAME = "kotlin.Array"
+internal const val SPARSE_ARRAY_NAME =
+    "androidx.savedstate.serialization.serializers.SparseArraySerializer.SparseArraySurrogate"
+
+internal const val POLYMORPHIC_CHAR_SEQUENCE_NAME =
+    "kotlinx.serialization.Polymorphic<CharSequence>"
+internal const val POLYMORPHIC_PARCELABLE_NAME = "kotlinx.serialization.Polymorphic<Parcelable>"
+internal const val POLYMORPHIC_JAVA_SERIALIZABLE_NAME =
+    "kotlinx.serialization.Polymorphic<Serializable>"
+internal const val POLYMORPHIC_IBINDER_NAME = "kotlinx.serialization.Polymorphic<IBinder>"
+
 internal val polymorphicCharSequenceDescriptor =
     PolymorphicSerializer(CharSequence::class).descriptor
 
@@ -43,20 +57,30 @@ internal val parcelableArrayDescriptor = ArraySerializer(DefaultParcelableSerial
 @OptIn(ExperimentalSerializationApi::class)
 internal val polymorphicParcelableArrayDescriptor =
     ArraySerializer(PolymorphicSerializer(Parcelable::class)).descriptor
+@OptIn(ExperimentalSerializationApi::class)
+internal val nullablePolymorphicParcelableArrayDescriptor =
+    ArraySerializer(PolymorphicSerializer(Parcelable::class).nullable).descriptor
 
 internal val parcelableListDescriptor = ListSerializer(DefaultParcelableSerializer).descriptor
 internal val polymorphicParcelableListDescriptor =
     ListSerializer(PolymorphicSerializer(Parcelable::class)).descriptor
+internal val nullablePolymorphicParcelableListDescriptor =
+    ListSerializer(PolymorphicSerializer(Parcelable::class).nullable).descriptor
 
 @OptIn(ExperimentalSerializationApi::class)
 internal val charSequenceArrayDescriptor = ArraySerializer(CharSequenceSerializer).descriptor
 @OptIn(ExperimentalSerializationApi::class)
 internal val polymorphicCharSequenceArrayDescriptor =
     ArraySerializer(PolymorphicSerializer(CharSequence::class)).descriptor
+@OptIn(ExperimentalSerializationApi::class)
+internal val nullablePolymorphicCharSequenceArrayDescriptor =
+    ArraySerializer(PolymorphicSerializer(CharSequence::class).nullable).descriptor
 
 internal val charSequenceListDescriptor = ListSerializer(CharSequenceSerializer).descriptor
 internal val polymorphicCharSequenceListDescriptor =
     ListSerializer(PolymorphicSerializer(CharSequence::class)).descriptor
+internal val nullablePolymorphicCharSequenceListDescriptor =
+    ListSerializer(PolymorphicSerializer(CharSequence::class).nullable).descriptor
 
 internal val sparseParcelableArrayDescriptor =
     SparseArraySerializer(DefaultParcelableSerializer).descriptor

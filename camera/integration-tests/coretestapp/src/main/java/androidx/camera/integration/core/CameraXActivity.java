@@ -145,9 +145,9 @@ import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.utils.AspectRatioUtil;
-import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.resolutionselector.AspectRatioStrategy;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
+import androidx.camera.integration.core.button.MirrorModeButton;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.testing.impl.StreamSharingForceEnabledEffect;
 import androidx.camera.testing.impl.util.EdgeToEdgeUtil;
@@ -166,6 +166,7 @@ import androidx.camera.video.VideoCapture;
 import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.ScreenFlashView;
 import androidx.camera.viewfinder.core.ZoomGestureDetector;
+import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.content.ContextCompat;
 import androidx.core.math.MathUtils;
 import androidx.core.util.Consumer;
@@ -175,6 +176,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -455,6 +457,7 @@ public class CameraXActivity extends AppCompatActivity {
     private Button mZoomIn2XToggle;
     private Button mZoomResetToggle;
     private Button mButtonImageOutputFormat;
+    private MirrorModeButton mMirrorButton;
     private Toast mEvToast = null;
     private Toast mPSToast = null;
     private ToggleButton mPreviewStabilizationToggle;
@@ -469,9 +472,8 @@ public class CameraXActivity extends AppCompatActivity {
     private DynamicRange mDynamicRange = DynamicRange.SDR;
     private @ImageCapture.OutputFormat int mImageOutputFormat = OUTPUT_FORMAT_JPEG;
     private final Set<DynamicRange> mSelectableDynamicRanges = new HashSet<>();
-    private int mVideoMirrorMode = MIRROR_MODE_ON_FRONT_ONLY;
+    private int mMirrorMode = MIRROR_MODE_ON_FRONT_ONLY;
     private boolean mIsPreviewStabilizationOn = false;
-    private boolean mIsLowLightBoostOn = false;
     private Range<Integer> mFpsRange = FPS_UNSPECIFIED;
     private boolean mForceEnableStreamSharing;
     private boolean mDisableViewPort = true;
@@ -732,7 +734,6 @@ public class CameraXActivity extends AppCompatActivity {
             RecordUi.State state = mRecordUi.getState();
             switch (state) {
                 case IDLE:
-                    createDefaultVideoFolderIfNotExist();
                     final PendingRecording pendingRecording;
                     String fileName = "video_" + System.currentTimeMillis();
                     String extension = "mp4";
@@ -1117,7 +1118,6 @@ public class CameraXActivity extends AppCompatActivity {
     @SuppressLint("RestrictedApiAndroidX")
     private ImageCapture.@NonNull OutputFileOptions createOutputFileOptions(
             @ImageCapture.OutputFormat int imageOutputFormat) {
-        createDefaultPictureFolderIfNotExist();
         Format formatter = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS",
                 Locale.US);
 
@@ -1232,7 +1232,7 @@ public class CameraXActivity extends AppCompatActivity {
                 public void onFailure(@NonNull Throwable t) {
                     throw new RuntimeException(t);
                 }
-            }, CameraXExecutors.directExecutor());
+            }, MoreExecutors.directExecutor());
         });
     }
 
@@ -1249,7 +1249,7 @@ public class CameraXActivity extends AppCompatActivity {
                 ListenableFuture<Integer> future =
                         getCameraControl().setExposureCompensationIndex(ec + 1);
                 Futures.addCallback(future, mEVFutureCallback,
-                        CameraXExecutors.mainThreadExecutor());
+                        ContextCompat.getMainExecutor(this));
             } else {
                 showEVToast(String.format("EV: %.2f", range.getUpper()
                         * exposureState.getExposureCompensationStep().floatValue()));
@@ -1268,7 +1268,7 @@ public class CameraXActivity extends AppCompatActivity {
                 ListenableFuture<Integer> future =
                         getCameraControl().setExposureCompensationIndex(ec - 1);
                 Futures.addCallback(future, mEVFutureCallback,
-                        CameraXExecutors.mainThreadExecutor());
+                        ContextCompat.getMainExecutor(this));
             } else {
                 showEVToast(String.format("EV: %.2f", range.getLower()
                         * exposureState.getExposureCompensationStep().floatValue()));
@@ -1387,12 +1387,22 @@ public class CameraXActivity extends AppCompatActivity {
         mButtonImageOutputFormat.setVisibility(visible);
     }
 
+    private void updateMirrorModeUiState() {
+        boolean enabled = mPreviewToggle.isChecked() || mVideoToggle.isChecked();
+        if (mMirrorButton != null) {
+            mMirrorButton.setVisibility(enabled ? View.VISIBLE : View.GONE);
+            mMirrorButton.setEnabled(enabled);
+            mMirrorButton.setSelectedItem(mMirrorMode);
+        }
+    }
+
     @SuppressLint("RestrictedApiAndroidX")
     @OptIn(markerClass = androidx.camera.core.ExperimentalZeroShutterLag.class)
     private void updateButtonsUi() {
         mRecordUi.setEnabled(mVideoToggle.isChecked());
         updateDynamicRangeUiState();
         updateImageOutputFormatUiState();
+        updateMirrorModeUiState();
 
         mTakePicture.setEnabled(mPhotoToggle.isChecked());
         mCaptureQualityToggle.setEnabled(mPhotoToggle.isChecked());
@@ -1493,6 +1503,7 @@ public class CameraXActivity extends AppCompatActivity {
         setUpEVButton();
         setUpZoomButton();
         setUpPreviewStabilizationButton();
+        setUpMirrorModeButton();
         mCaptureQualityToggle.setOnCheckedChangeListener(mOnCheckedChangeListener);
         mZslToggle.setOnCheckedChangeListener(mOnCheckedChangeListener);
     }
@@ -1530,7 +1541,7 @@ public class CameraXActivity extends AppCompatActivity {
         int mirrorMode = intent.getIntExtra(INTENT_EXTRA_VIDEO_MIRROR_MODE, -1);
         if (mirrorMode != -1) {
             Log.d(TAG, "updateVideoMirrorModeByIntent: mirrorMode = " + mirrorMode);
-            mVideoMirrorMode = mirrorMode;
+            mMirrorMode = mirrorMode;
         }
     }
 
@@ -1572,6 +1583,7 @@ public class CameraXActivity extends AppCompatActivity {
                 Collections.singletonList(R.id.top_buttons_layout));
 
         mFileWriterExecutorService = Executors.newSingleThreadExecutor();
+        ListenableFuture<Void> folderFuture = ensureDefaultFoldersExist();
         mImageCaptureExecutorService = Executors.newSingleThreadExecutor();
         Set<DynamicRange> displaySupportedHighDynamicRanges = Collections.emptySet();
         if (Build.VERSION.SDK_INT >= 30) {
@@ -1641,6 +1653,7 @@ public class CameraXActivity extends AppCompatActivity {
         mTextView = findViewById(R.id.textView);
         mDynamicRangeUi = new DynamicRangeUi(findViewById(R.id.dynamic_range));
         mButtonImageOutputFormat = findViewById(R.id.image_output_format);
+        mMirrorButton = findViewById(R.id.mirror_button);
         mRecordUi = new RecordUi(
                 findViewById(R.id.Video),
                 findViewById(R.id.video_pause),
@@ -1716,27 +1729,31 @@ public class CameraXActivity extends AppCompatActivity {
         CameraXViewModel viewModel = new ViewModelProvider(this).get(CameraXViewModel.class);
         viewModel.getCameraProvider().observe(this, cameraProviderResult -> {
             mCameraProviderResult = cameraProviderResult;
-            mInitializationIdlingLatch.countDown();
-            if (cameraProviderResult.hasProvider()) {
+            folderFuture.addListener(() -> {
+                mInitializationIdlingLatch.countDown();
+                if (cameraProviderResult.hasProvider()) {
 
-                mCameraProvider = cameraProviderResult.getProvider();
-                requireNonNull(mCameraProvider).addCameraPresenceListener(
-                        CameraXExecutors.mainThreadExecutor(),
-                        new CameraPresenceChangeListener(CameraXActivity.this,
-                                mCameraIterateButton));
+                    mCameraProvider = cameraProviderResult.getProvider();
+                    requireNonNull(mCameraProvider).addCameraPresenceListener(
+                            ContextCompat.getMainExecutor(CameraXActivity.this),
+                            new CameraPresenceChangeListener(CameraXActivity.this,
+                                    mCameraIterateButton));
 
-                // Initialize CameraSelectorList
-                mCameraSwitcher.updateCameraInfos(mCameraProvider.getAvailableCameraInfos());
-                mCurrentCameraSelector = mCameraSwitcher.getCurrentSelector();
+                    // Initialize CameraSelectorList
+                    mCameraSwitcher.updateCameraInfos(
+                            mCameraProvider.getAvailableCameraInfos());
+                    mCurrentCameraSelector = mCameraSwitcher.getCurrentSelector();
 
-                updateVideoQualityByIntent(getIntent());
-                tryBindUseCases();
-            } else {
-                Log.e(TAG, "Failed to retrieve ProcessCameraProvider",
-                        cameraProviderResult.getError());
-                Toast.makeText(getApplicationContext(), "Unable to initialize CameraX. See logs "
-                        + "for details.", Toast.LENGTH_LONG).show();
-            }
+                    updateVideoQualityByIntent(getIntent());
+                    tryBindUseCases();
+                } else {
+                    Log.e(TAG, "Failed to retrieve ProcessCameraProvider",
+                            cameraProviderResult.getError());
+                    Toast.makeText(getApplicationContext(),
+                            "Unable to initialize CameraX. See logs "
+                                    + "for details.", Toast.LENGTH_LONG).show();
+                }
+            }, ContextCompat.getMainExecutor(this));
         });
 
         setupPermissions();
@@ -2036,6 +2053,7 @@ public class CameraXActivity extends AppCompatActivity {
     }
 
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
+    @SuppressWarnings("deprecation")
     private <T> void setCaptureCallback(androidx.camera.core.ExtendableBuilder<T> builder) {
         new Camera2Interop.Extender<>(builder).setSessionCaptureCallback(mCaptureCallback);
     }
@@ -2054,6 +2072,7 @@ public class CameraXActivity extends AppCompatActivity {
         if (mPreviewToggle.isChecked()) {
             Preview.Builder builder = new Preview.Builder()
                     .setTargetName("Preview")
+                    .setMirrorMode(mMirrorMode)
                     .setResolutionSelector(
                             new ResolutionSelector.Builder()
                                     .setAspectRatioStrategy(getTargetAspectRatioStrategy())
@@ -2065,7 +2084,7 @@ public class CameraXActivity extends AppCompatActivity {
                     .setTargetFrameRate(mFpsRange);
             setCaptureCallback(builder);
             Preview preview = builder.build();
-            resetViewIdlingLatch();
+            mPreviewFrameCount.set(0);
             // Use the listener of the future to make sure the Preview set up the new surface.
             mPreviewRenderer.attachInputPreview(preview).addListener(() -> {
                 Log.d(TAG, "OpenGLRenderer get the new surface for the Preview");
@@ -2109,8 +2128,7 @@ public class CameraXActivity extends AppCompatActivity {
             setCaptureCallback(builder);
             ImageAnalysis imageAnalysis = builder.build();
             useCases.add(imageAnalysis);
-            // Make the analysis idling resource non-idle, until the required frames received.
-            resetAnalysisIdlingLatch();
+            mImageAnalysisFrameCount.set(0);
             imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), mAnalyzer);
         }
 
@@ -2128,7 +2146,7 @@ public class CameraXActivity extends AppCompatActivity {
                 mRecorder = builder.setAspectRatio(mTargetAspectRatio).build();
                 VideoCapture.Builder<Recorder> videoCaptureBuilder =
                         new VideoCapture.Builder<>(mRecorder)
-                                .setMirrorMode(mVideoMirrorMode)
+                                .setMirrorMode(mMirrorMode)
                                 .setDynamicRange(mDynamicRange)
                                 .setTargetFrameRate(mFpsRange);
                 setCaptureCallback(videoCaptureBuilder);
@@ -2223,9 +2241,24 @@ public class CameraXActivity extends AppCompatActivity {
         return false;
     }
 
+    private ListenableFuture<Void> ensureDefaultFoldersExist() {
+        return CallbackToFutureAdapter.getFuture(completer -> {
+            mFileWriterExecutorService.execute(() -> {
+                try {
+                    createDefaultPictureFolderIfNotExist();
+                    createDefaultVideoFolderIfNotExist();
+                    completer.set(null);
+                } catch (Exception e) {
+                    completer.setException(e);
+                }
+            });
+            return "ensureDefaultFoldersExist";
+        });
+    }
+
     void createDefaultPictureFolderIfNotExist() {
         File pictureFolder = getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        if (createFolder(pictureFolder)) {
+        if (!createFolder(pictureFolder)) {
             Log.e(TAG, "Failed to create directory: " + pictureFolder);
         }
     }
@@ -2335,7 +2368,7 @@ public class CameraXActivity extends AppCompatActivity {
                                     Log.e(TAG, "Focus and metering failed.", t);
                                 }
                             },
-                            CameraXExecutors.mainThreadExecutor());
+                            ContextCompat.getMainExecutor(CameraXActivity.this));
                     return true;
                 }
             };
@@ -2455,41 +2488,67 @@ public class CameraXActivity extends AppCompatActivity {
         });
     }
 
+    private void setUpMirrorModeButton() {
+        mMirrorButton.setSelectedItem(mMirrorMode);
+        mMirrorButton.setOnItemChangedListener(mirrorMode -> {
+            if (mirrorMode != null && mirrorMode != mMirrorMode) {
+                mMirrorMode = mirrorMode;
+                applyMirrorMode();
+            }
+        });
+    }
+
+    private void applyMirrorMode() {
+        VideoCapture<Recorder> videoCapture = getVideoCapture();
+        if (videoCapture != null) {
+            videoCapture.setMirrorMode(mMirrorMode);
+        }
+        Preview preview = getPreview();
+        if (preview != null) {
+            preview.setMirrorMode(mMirrorMode);
+        }
+    }
+
     @SuppressWarnings("FutureReturnValueIgnored")
     private void setUpLowLightBoostButton() {
-        mIsLowLightBoostOn = false;
-        mLowLightBoostToggle.setVisibility(
-                mCamera == null || !mCamera.getCameraInfo().isLowLightBoostSupported() ? View.GONE
-                        : View.VISIBLE);
+        if (mCamera == null || !mCamera.getCameraInfo().isLowLightBoostSupported()) {
+            mLowLightBoostToggle.setVisibility(View.GONE);
+            return;
+        }
+        mLowLightBoostToggle.setVisibility(View.VISIBLE);
+        mCamera.getCameraInfo().getLowLightBoostState().removeObservers(this);
+        mCamera.getCameraInfo().getLowLightBoostState().observe(
+                this,
+                state -> {
+                    int resId;
+                    switch (state) {
+                        case LowLightBoostState.INACTIVE:
+                            resId = R.string.toggle_low_light_boost_inactive;
+                            mLowLightBoostToggle.setChecked(true);
+                            break;
+                        case LowLightBoostState.ACTIVE:
+                            resId = R.string.toggle_low_light_boost_active;
+                            mLowLightBoostToggle.setChecked(true);
+                            break;
+                        default:
+                            resId = R.string.toggle_low_light_boost_off;
+                            mLowLightBoostToggle.setChecked(false);
+                            break;
+                    }
+                    mLowLightBoostToggle.setText(resId);
+                }
+        );
         if (mLowLightBoostToggle.hasOnClickListeners()) {
             return;
         }
         mLowLightBoostToggle.setOnClickListener(v -> {
-            mIsLowLightBoostOn = !mIsLowLightBoostOn;
             if (mCamera == null) {
                 return;
             }
-            if (!mCamera.getCameraInfo().getLowLightBoostState().hasObservers()) {
-                // Show the low-light boost state to the toggle button text for easy observation.
-                mCamera.getCameraInfo().getLowLightBoostState().observe(
-                        this,
-                        state -> {
-                            int resId;
-                            switch (state) {
-                                case LowLightBoostState.INACTIVE:
-                                    resId = R.string.toggle_low_light_boost_inactive;
-                                    break;
-                                case LowLightBoostState.ACTIVE:
-                                    resId = R.string.toggle_low_light_boost_active;
-                                    break;
-                                default:
-                                    resId = R.string.toggle_low_light_boost_off;
-                            }
-                            mLowLightBoostToggle.setText(resId);
-                        }
-                );
-            }
-            mCamera.getCameraControl().enableLowLightBoostAsync(mIsLowLightBoostOn);
+            Integer llbState = mCamera.getCameraInfo().getLowLightBoostState().getValue();
+            boolean isLlbOn = Objects.equals(llbState, LowLightBoostState.ACTIVE)
+                    || Objects.equals(llbState, LowLightBoostState.INACTIVE);
+            mCamera.getCameraControl().enableLowLightBoostAsync(!isLlbOn);
         });
     }
 
@@ -2669,10 +2728,10 @@ public class CameraXActivity extends AppCompatActivity {
                 mButtonRecord.setText("Record");
                 mButtonRecord.setEnabled(false);
                 mButtonPause.setVisibility(View.INVISIBLE);
-                mButtonQuality.setVisibility(View.INVISIBLE);
+                mButtonQuality.setVisibility(View.GONE);
                 mTextStats.setVisibility(View.GONE);
-                mButtonPersistent.setVisibility(View.INVISIBLE);
-                mButtonMute.setVisibility(View.INVISIBLE);
+                mButtonPersistent.setVisibility(View.GONE);
+                mButtonMute.setVisibility(View.GONE);
             }
         }
 
@@ -3055,6 +3114,7 @@ public class CameraXActivity extends AppCompatActivity {
     }
 
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
+    @SuppressWarnings("deprecation")
     private static boolean isCamera2LegacyDevice(@NonNull CameraInfo cameraInfo) {
         return Camera2CameraInfo.from(cameraInfo).getCameraCharacteristic(
                 CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
@@ -3066,6 +3126,7 @@ public class CameraXActivity extends AppCompatActivity {
     }
 
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
+    @SuppressWarnings("deprecation")
     private static @NonNull String getCamera2CameraId(@NonNull CameraInfo cameraInfo) {
         return Camera2CameraInfo.from(cameraInfo).getCameraId();
     }

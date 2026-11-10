@@ -18,8 +18,10 @@ package androidx.compose.remote.creation.compose.state
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.state.RemoteLong.Companion.createNamedRemoteLong
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.remember
 
 /**
@@ -34,7 +36,6 @@ internal constructor(
         RemoteOperationCacheKey.create(RemoteLongOp.FromLowHigh, low, high),
 ) : BaseRemoteState<Long>(cacheKey) {
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @get:Suppress("AutoBoxing")
     public override val constantValueOrNull: Long?
         get() {
@@ -204,6 +205,7 @@ internal constructor(
  * @param constantValueOrNull A nullable value if this [MutableRemoteLong] is constant.
  */
 public class MutableRemoteLong
+@RememberInComposition
 internal constructor(
     @get:Suppress("AutoBoxing") public override val constantValueOrNull: Long?,
     cacheKey: RemoteStateCacheKey,
@@ -226,9 +228,24 @@ internal constructor(
      *
      * @param id An optional explicit ID for this mutable long. If `null`, a new ID is reserved.
      */
+    @RememberInComposition
     internal constructor(
         id: Int
     ) : this(constantValueOrNull = null, cacheKey = RemoteStateIdKey(id), idProvider = { id })
+
+    /**
+     * Creates a [MutableRemoteLong] initialized with [initialValue].
+     *
+     * @param initialValue The initial [Long] value.
+     */
+    @RememberInComposition
+    public constructor(
+        initialValue: Long
+    ) : this(
+        constantValueOrNull = initialValue,
+        cacheKey = RemoteStateInstanceKey(),
+        idProvider = { creationState -> creationState.document.addLong(initialValue) },
+    )
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
@@ -245,13 +262,9 @@ internal constructor(
          * @param initialValue The initial value for the state.
          * @return A new [MutableRemoteLong] instance.
          */
+        @RememberInComposition
         public operator fun invoke(initialValue: Long): MutableRemoteLong {
-            return MutableRemoteLong(
-                constantValueOrNull = null,
-                cacheKey = RemoteStateInstanceKey(),
-            ) { creationState ->
-                creationState.document.addLong(initialValue)
-            }
+            return MutableRemoteLong(initialValue)
         }
 
         /**
@@ -290,12 +303,10 @@ public fun rememberNamedRemoteLong(
     defaultValue: Long,
     domain: RemoteState.Domain = RemoteState.Domain.User,
 ): RemoteLong {
-    return rememberNamedState(name, domain) {
-        RemoteLong.createNamedRemoteLong(name, defaultValue, domain)
-    }
+    return remember(name, domain) { createNamedRemoteLong(name, defaultValue, domain) }
 }
 
-internal enum class RemoteLongOp(val symbol: String? = null) : DebuggableOperation {
+internal enum class RemoteLongOp(val symbol: String? = null) : RemoteOperation {
     FromLowHigh,
     Add("+"),
     Sub("-"),
@@ -315,5 +326,18 @@ internal enum class RemoteLongOp(val symbol: String? = null) : DebuggableOperati
             return args.formatOp(symbol, precedence)
         }
         return formatCamelCaseFunction(args)
+    }
+
+    override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> {
+        return when (this) {
+            FromLowHigh -> {
+                val low = args[0] as RemoteInt
+                val high = args[1] as RemoteInt
+                object : RemoteLong(low, high) {}
+            }
+            Add -> (args[0] as RemoteLong) + (args[1] as RemoteLong)
+            Sub -> (args[0] as RemoteLong) - (args[1] as RemoteLong)
+            Mul -> (args[0] as RemoteLong) * (args[1] as RemoteLong)
+        }
     }
 }

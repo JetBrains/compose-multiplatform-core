@@ -216,6 +216,18 @@ open public class RcFloat {
         return this
     }
 
+    /** support springs for animation */
+    public fun spring(
+        stiffness: Float,
+        damping: Float,
+        stopThreshold: Float,
+        boundaryMode: Int,
+    ): RcFloat {
+        animation = writer?.spring(stiffness, damping, stopThreshold, boundaryMode)
+        this.flush()
+        return this
+    }
+
     /**
      * Type-safe overload of [anim] that accepts a [RcAnimationCurve] instead of a raw
      * `Rc.Animate.*` opcode. `CubicCustom` and `SplineCustom` require a non-null [spec] containing

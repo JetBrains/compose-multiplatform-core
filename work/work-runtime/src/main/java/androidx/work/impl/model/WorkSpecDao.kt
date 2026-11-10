@@ -432,8 +432,7 @@ public interface WorkSpecDao {
      */
     @Query(
         "SELECT * FROM workspec WHERE " + // Unfinished work
-            "state=" +
-            ENQUEUED + // We only want WorkSpecs which have been scheduled.
+            "state IN ($ENQUEUED, $RUNNING)" +
             " AND schedule_requested_at<>" +
             WorkSpec.SCHEDULE_NOT_REQUESTED_YET
     )
@@ -461,14 +460,33 @@ public interface WorkSpecDao {
      *   longer considered "representative".
      */
     @Query(
-        "SELECT * FROM workspec WHERE " + // Unfinished work
-            "state=" +
-            ENQUEUED + // We only want WorkSpecs which have been scheduled.
+        "SELECT * FROM workspec WHERE " +
+            "state IN ($ENQUEUED, $RUNNING)" +
             " AND schedule_requested_at<>" +
             WorkSpec.SCHEDULE_NOT_REQUESTED_YET +
             " AND LENGTH(content_uri_triggers)=0"
     )
     public fun getScheduledWork(): List<WorkSpec>
+
+    /**
+     * Retrieves work ids for unfinished, unscheduled work, ordered by last enqueue time descending.
+     *
+     * This excludes content URI triggers as they have their own max limit and pool.
+     *
+     * @param limit The maximum number of work ids to return
+     * @return A list of work ids
+     */
+    @Query(
+        "SELECT id FROM workspec WHERE " +
+            "state=" +
+            ENQUEUED +
+            " AND schedule_requested_at=" +
+            WorkSpec.SCHEDULE_NOT_REQUESTED_YET +
+            " AND LENGTH(content_uri_triggers)=0" +
+            " ORDER BY last_enqueue_time DESC" +
+            " LIMIT :limit"
+    )
+    public fun getLatestUnscheduledWorkIds(limit: Int): List<String>
 
     /** @return The List of [WorkSpec]s that are running. */
     @Query(
@@ -543,8 +561,11 @@ internal fun WorkSpecDao.getWorkInfos(ids: List<String>): List<WorkInfo> =
 
 internal fun Flow<List<WorkSpec.WorkInfoPojo>>.dedup(
     dispatcher: CoroutineDispatcher
-): Flow<List<WorkInfo>> =
-    map { list -> list.map { pojo -> pojo.toWorkInfo() } }.distinctUntilChanged().flowOn(dispatcher)
+): Flow<List<WorkInfo>> = map { list ->
+    list.map { pojo -> pojo.toWorkInfo() }
+}
+    .distinctUntilChanged()
+    .flowOn(dispatcher)
 
 private const val WORK_INFO_COLUMNS =
     "id, state, output, run_attempt_count, generation" +

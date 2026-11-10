@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.foundation.textfield
 
 import androidx.compose.foundation.contextmenu.ContextMenuItemLabels
@@ -61,7 +63,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Ignore
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -70,7 +71,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
 class TextFieldContextMenuTest : FocusedWindowTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val textFieldTag = "BTF"
     private val defaultFullWidthText = "M".repeat(20)

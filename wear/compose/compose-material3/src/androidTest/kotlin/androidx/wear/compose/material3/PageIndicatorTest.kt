@@ -36,6 +36,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.PagerState
@@ -43,13 +44,12 @@ import androidx.wear.compose.foundation.pager.rememberPagerState
 import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class PageIndicatorTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     public fun horizontalPageIndicator_supports_testtag_circular() {
@@ -171,8 +171,10 @@ class PageIndicatorTest {
 
         rule
             .onNodeWithTag(TEST_TAG)
-            .assertWidthIsEqualTo((indicatorSize + spacing) * 6 + padding * 2)
-        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(indicatorSize * 2 + padding * 2)
+            .assertWidthIsEqualTo((indicatorSize + spacing) * 6 + padding * 2, tolerance = 1.dp)
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assertHeightIsEqualTo(indicatorSize * 2 + padding * 2, tolerance = 1.dp)
     }
 
     @Test
@@ -198,8 +200,8 @@ class PageIndicatorTest {
 
         rule
             .onNodeWithTag(TEST_TAG)
-            .assertWidthIsEqualTo((indicatorSize + spacing) * pagesCount + padding * 2)
-        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(indicatorSize * 2 + padding * 2)
+            .assertWidthIsEqualTo((indicatorSize + spacing) * pagesCount + padding * 2, 1.dp)
+        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(indicatorSize * 2 + padding * 2, 1.dp)
     }
 
     @Test

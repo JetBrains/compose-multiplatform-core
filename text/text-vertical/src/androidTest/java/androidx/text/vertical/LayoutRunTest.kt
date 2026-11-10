@@ -16,22 +16,31 @@
 
 package androidx.text.vertical
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Paint.FontMetricsInt
 import android.os.Build
+import android.text.SpannableString
+import android.text.Spanned
 import android.text.TextPaint
-import androidx.test.filters.SdkSuppress
+import android.text.style.BackgroundColorSpan
+import android.text.style.RelativeSizeSpan
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
 import androidx.text.vertical.ResolvedOrientation.Rotate
 import androidx.text.vertical.ResolvedOrientation.TateChuYoko
 import androidx.text.vertical.ResolvedOrientation.Upright
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import kotlin.math.ceil
+import kotlin.math.floor
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
-@RunWith(JUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
+@RunWith(AndroidJUnit4::class)
+@SmallTest
 class LayoutRunTest {
     private val PREFIX = "PREFIX_PREFIX_PREFIX"
     private val SUFFIX = "SUFFIX_SUFFIX_SUFFIX"
@@ -49,29 +58,13 @@ class LayoutRunTest {
 
     private val PAINT = TextPaint().apply { textSize = ONE_EM }
 
-    private fun getVerticalAdvance(text: String): Float {
-        val oldFlags = PAINT.flags
-        PAINT.flags = PAINT.flags or Paint.VERTICAL_TEXT_FLAG
-        try {
-            return PAINT.measureText(text)
-        } finally {
-            PAINT.flags = oldFlags
-        }
-    }
+    private fun getVerticalAdvance(text: String): Float = PAINT.measureTextVertical(text)
 
-    private fun getHorizontalAdvance(text: String): Float {
-        val oldFlags = PAINT.flags
-        PAINT.flags = PAINT.flags and Paint.VERTICAL_TEXT_FLAG.inv()
-        try {
-            return PAINT.measureText(text)
-        } finally {
-            PAINT.flags = oldFlags
-        }
-    }
+    private fun getHorizontalAdvance(text: String): Float = PAINT.measureText(text)
 
     private fun getHorizontalLineHeight(text: String): Float {
         val fm = FontMetricsInt()
-        PAINT.getFontMetricsInt(text, 0, text.length, 0, text.length, false, fm)
+        PAINT.getFontMetricsIntCompat(text, 0, text.length, 0, text.length, false, fm)
         return (fm.descent - fm.ascent).toFloat()
     }
 
@@ -82,8 +75,30 @@ class LayoutRunTest {
         orientation: ResolvedOrientation,
     ) = createLayoutRun(text, start, end, PAINT, orientation)
 
-    private class MockCanvas(val drawTextCallback: (CharSequence, Int, Int, Paint) -> Unit) :
-        Canvas() {
+    private data class DrawRectCall(
+        val left: Float,
+        val top: Float,
+        val right: Float,
+        val bottom: Float,
+        val color: Int,
+    )
+
+    private class MockCanvas(
+        val drawTextCallback: (CharSequence, Int, Int, Paint) -> Unit = { _, _, _, _ -> }
+    ) : Canvas() {
+        val drawnRects = mutableListOf<DrawRectCall>()
+
+        override fun drawRect(
+            left: Float,
+            top: Float,
+            right: Float,
+            bottom: Float,
+            paint: Paint,
+        ) {
+            super.drawRect(left, top, right, bottom, paint)
+            drawnRects.add(DrawRectCall(left, top, right, bottom, paint.color))
+        }
+
         override fun drawText(
             text: CharSequence,
             start: Int,
@@ -107,17 +122,25 @@ class LayoutRunTest {
             assertThat(leftSideOffset).isEqualTo(-HALF_EM) // leftSide is half of 1em
             assertThat(rightSideOffset).isEqualTo(HALF_EM) // rightSide is half of 1em
 
+            val usesVerticalTextFlag = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+            val ranges = mutableListOf<Pair<Int, Int>>()
             draw(
                 MockCanvas { text, start, end, paint ->
                     assertThat(text).isEqualTo(TEXT)
-                    assertThat(start).isEqualTo(LATIN_START)
-                    assertThat(end).isEqualTo(LATIN_END)
-                    assertThat(paint.hasVerticalTextFlag()).isTrue()
+                    assertThat(paint.hasVerticalTextFlag()).isEqualTo(usesVerticalTextFlag)
+                    ranges += start to end
                 },
                 0f,
                 0f,
                 PAINT,
             )
+            if (usesVerticalTextFlag) {
+                assertThat(ranges).containsExactly(LATIN_START to LATIN_END)
+            } else {
+                assertThat(ranges)
+                    .containsExactlyElementsIn((LATIN_START until LATIN_END).map { it to it + 1 })
+                    .inOrder()
+            }
         }
     }
 
@@ -131,17 +154,27 @@ class LayoutRunTest {
             assertThat(leftSideOffset).isEqualTo(-HALF_EM) // leftSide is half of 1em
             assertThat(rightSideOffset).isEqualTo(HALF_EM) // rightSide is half of 1em
 
+            val usesVerticalTextFlag = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+            val ranges = mutableListOf<Pair<Int, Int>>()
             draw(
                 MockCanvas { text, start, end, paint ->
                     assertThat(text).isEqualTo(TEXT)
-                    assertThat(start).isEqualTo(JAPANESE_START)
-                    assertThat(end).isEqualTo(JAPANESE_END)
-                    assertThat(paint.hasVerticalTextFlag()).isTrue()
+                    assertThat(paint.hasVerticalTextFlag()).isEqualTo(usesVerticalTextFlag)
+                    ranges += start to end
                 },
                 0f,
                 0f,
                 PAINT,
             )
+            if (usesVerticalTextFlag) {
+                assertThat(ranges).containsExactly(JAPANESE_START to JAPANESE_END)
+            } else {
+                assertThat(ranges)
+                    .containsExactlyElementsIn(
+                        (JAPANESE_START until JAPANESE_END).map { it to it + 1 }
+                    )
+                    .inOrder()
+            }
         }
     }
 
@@ -175,7 +208,7 @@ class LayoutRunTest {
             assertThat(start).isEqualTo(JAPANESE_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
-            assertThat(height).isEqualTo(getVerticalAdvance(JAPANESE_TEXT))
+            assertThat(height).isEqualTo(getHorizontalAdvance(JAPANESE_TEXT))
             assertThat(leftSideOffset).isEqualTo(-HALF_EM) // leftSide is half of 1em
             assertThat(rightSideOffset).isEqualTo(HALF_EM) // rightSide is half of 1em
 
@@ -292,7 +325,140 @@ class LayoutRunTest {
             )
         }
     }
+
+    @Test
+    fun layoutRun_UprightPlainString_honorsBasePaintBgColor() {
+        val bgPaint = bgTextPaint()
+        val run = createLayoutRun(JAPANESE_TEXT, 0, JAPANESE_TEXT.length, bgPaint, Upright)
+        assertRunDrawsBackground(run, bgPaint)
+    }
+
+    @Test
+    fun layoutRun_RotatePlainString_honorsBasePaintBgColor() {
+        val bgPaint = bgTextPaint()
+        val run = createLayoutRun(LATIN_TEXT, 0, LATIN_TEXT.length, bgPaint, Rotate)
+        assertRunDrawsBackground(run, bgPaint)
+    }
+
+    @Test
+    fun rubyLayoutRun_plainStringRubyAnnotation_honorsBasePaintBgColor() {
+        val bgPaint = bgTextPaint()
+        val run = RubyLayoutRun("漢字", 0, 2, TextOrientation.Mixed, bgPaint, RubySpan("かな"))
+        val bitmap =
+            Bitmap.createBitmap(160, ceil(run.height).toInt() + 40, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap).apply { drawColor(Color.WHITE) }
+
+        run.draw(canvas, ORIGIN_X, ORIGIN_Y, bgPaint)
+
+        // Check specifically inside the ruby annotation column to the right of the 1em body column.
+        val rubyLeft = ceil(ORIGIN_X + bgPaint.textSize * 0.5f).toInt() + 1
+        val rubyRight = floor(ORIGIN_X + run.rightSideOffset).toInt()
+        val top = ORIGIN_Y.toInt()
+        val bottom = ceil(ORIGIN_Y + run.height).toInt()
+        assertWithMessage(
+                "Expected Color.YELLOW pixel in [%s, %s) x [%s, %s)",
+                rubyLeft,
+                rubyRight,
+                top,
+                bottom,
+            )
+            .that(bitmap.hasPixelWithColor(Color.YELLOW, rubyLeft, top, rubyRight, bottom))
+            .isTrue()
+    }
+
+    @Test
+    fun uprightLayoutRun_multiStyleRuns_drawsBackgroundWithinRunHeight() {
+        val text =
+            SpannableString("あい").apply {
+                setSpan(BackgroundColorSpan(Color.RED), 0, 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+                setSpan(BackgroundColorSpan(Color.BLUE), 1, 2, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+                setSpan(RelativeSizeSpan(2f), 1, 2, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
+        val run = createLayoutRun(text, 0, text.length, PAINT, Upright)
+        val canvas = MockCanvas()
+        run.draw(canvas, ORIGIN_X, ORIGIN_Y, PAINT)
+
+        val run1Height = PAINT.measureTextVertical("あ")
+        val run2Paint = TextPaint(PAINT).apply { textSize = PAINT.textSize * 2f }
+        val run2Height = run2Paint.measureTextVertical("い")
+        assertThat(canvas.drawnRects)
+            .containsExactly(
+                DrawRectCall(
+                    left = ORIGIN_X + run.leftSideOffset,
+                    top = ORIGIN_Y,
+                    right = ORIGIN_X + run.rightSideOffset,
+                    bottom = ORIGIN_Y + run1Height,
+                    color = Color.RED,
+                ),
+                DrawRectCall(
+                    left = ORIGIN_X + run.leftSideOffset,
+                    top = ORIGIN_Y + run1Height,
+                    right = ORIGIN_X + run.rightSideOffset,
+                    bottom = ORIGIN_Y + run1Height + run2Height,
+                    color = Color.BLUE,
+                ),
+            )
+            .inOrder()
+    }
+
+    private fun assertRunDrawsBackground(run: LayoutRun, bgPaint: TextPaint) {
+        val bitmap =
+            Bitmap.createBitmap(120, ceil(run.height).toInt() + 40, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap).apply { drawColor(Color.WHITE) }
+
+        run.draw(canvas, ORIGIN_X, ORIGIN_Y, bgPaint)
+
+        val left = floor(ORIGIN_X + run.leftSideOffset).toInt()
+        val top = ORIGIN_Y.toInt()
+        val right = ceil(ORIGIN_X + run.rightSideOffset).toInt()
+        val bottom = ceil(ORIGIN_Y + run.height).toInt()
+        assertWithMessage(
+                "Expected Color.YELLOW pixel in [%s, %s) x [%s, %s)",
+                left,
+                right,
+                top,
+                bottom,
+            )
+            .that(bitmap.hasPixelWithColor(Color.YELLOW, left, top, right, bottom))
+            .isTrue()
+    }
 }
+
+/** Large enough that glyph strokes cannot cover every pixel of the background rectangle. */
+private const val BG_TEXT_SIZE = 40f
+private const val ORIGIN_X = 60f
+private const val ORIGIN_Y = 10f
+
+private fun bgTextPaint(): TextPaint =
+    TextPaint().apply {
+        textSize = BG_TEXT_SIZE
+        color = Color.BLACK
+        bgColor = Color.YELLOW
+    }
 
 private fun Paint.hasVerticalTextFlag() =
     (flags and Paint.VERTICAL_TEXT_FLAG) == Paint.VERTICAL_TEXT_FLAG
+
+/** Returns true when any pixel in `[left, right) x [top, bottom)` equals [expectedColor]. */
+private fun Bitmap.hasPixelWithColor(
+    expectedColor: Int,
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+): Boolean {
+    require(left in 0 until right && right <= width) {
+        "Invalid horizontal range [$left, $right) for bitmap width $width"
+    }
+    require(top in 0 until bottom && bottom <= height) {
+        "Invalid vertical range [$top, $bottom) for bitmap height $height"
+    }
+    for (y in top until bottom) {
+        for (x in left until right) {
+            if (getPixel(x, y) == expectedColor) {
+                return true
+            }
+        }
+    }
+    return false
+}

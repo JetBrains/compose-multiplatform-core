@@ -32,7 +32,9 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.creation.compose.widgets.RemoteComposeWidget
 import androidx.compose.remote.creation.compose.widgets.onClick
@@ -42,7 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 
-@SuppressLint("RestrictedApiAndroidX")
+@SuppressLint("RestrictedApiAndroidX") // Referring to RemoteComposeWidget, onClick
 class MyWidget : RemoteComposeWidget() {
     @RemoteComposable
     @Composable
@@ -51,12 +53,12 @@ class MyWidget : RemoteComposeWidget() {
             modifier
                 .padding(16.rdp)
                 .clip(RemoteRoundedCornerShape(20.rdp))
-                .background(Color.LightGray)
+                .background(Color.LightGray.rc)
                 .padding(20.rdp)
                 .onClick(onClick),
             contentAlignment = RemoteAlignment.Center,
         ) {
-            RemoteText(text, fontSize = 32.rsp, color = RemoteColor(Color.White))
+            RemoteText(text.rs, fontSize = 32.rsp, color = RemoteColor(Color.White))
         }
     }
 
@@ -65,12 +67,12 @@ class MyWidget : RemoteComposeWidget() {
     override fun Content(context: Context, widgetId: Int) {
         val counter = readCounter(context, widgetId)
         RemoteRow(
-            RemoteModifier.background(Color.White).fillMaxSize(),
+            RemoteModifier.background(Color.White.rc).fillMaxSize(),
             horizontalArrangement = RemoteArrangement.Center,
             verticalAlignment = RemoteAlignment.CenterVertically,
         ) {
             Button("-", RemoteModifier.weight(1f)) { writeCounter(context, widgetId, -1) }
-            RemoteText("$counter", fontSize = 48.rsp)
+            RemoteText("$counter".rs, fontSize = 48.rsp)
             Button("+", RemoteModifier.weight(1f)) { writeCounter(context, widgetId, 1) }
         }
     }
@@ -99,12 +101,10 @@ class MyWidget : RemoteComposeWidget() {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @Preview
 @Composable
 private fun ButtonPreview() = RemoteContentPreview { MyWidget().Button("Click me") {} }
 
-@Suppress("RestrictedApiAndroidX")
 @Preview
 @Composable
 private fun ContentPreview() = RemoteContentPreview { MyWidget().Content(LocalContext.current, 0) }

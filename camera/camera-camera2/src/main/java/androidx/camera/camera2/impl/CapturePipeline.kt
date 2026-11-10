@@ -34,6 +34,7 @@ package androidx.camera.camera2.impl
 
 import android.hardware.camera2.CameraCharacteristics.CONTROL_AE_STATE_FLASH_REQUIRED
 import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
@@ -52,13 +53,13 @@ import androidx.camera.camera2.impl.TorchControl.TorchMode
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
+import androidx.camera.common.CameraFrameNumber
 import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
 import androidx.camera.core.ImageCapture.CaptureMode
 import androidx.camera.core.ImageCapture.ERROR_CAMERA_CLOSED
@@ -125,9 +126,10 @@ constructor(
     private val threads: UseCaseThreads,
     private val requestListener: ComboRequestListener,
     private val useTorchAsFlash: UseTorchAsFlash,
-    cameraProperties: CameraProperties,
+    private val cameraProperties: CameraProperties,
     private val useCaseCameraStateProvider: Provider<UseCaseCameraState>,
     private val useCaseCameraContext: UseCaseCameraContext,
+    private val lowLightBoostControl: LowLightBoostControl? = null,
 ) : CapturePipeline {
     private enum class PipelineTask {
         PRE_CAPTURE,
@@ -138,7 +140,7 @@ constructor(
     private data class MainCaptureParams(
         val configs: List<CaptureConfig>,
         val requestTemplate: RequestTemplate,
-        val sessionConfigOptions: Config,
+        var sessionConfigOptions: Config,
     )
 
     // If there is no flash unit, skip the flash related task instead of failing the pipeline.
@@ -346,7 +348,13 @@ constructor(
                 if (isFlashRequired) CHECK_3A_WITH_FLASH_TIMEOUT_IN_NS else CHECK_3A_TIMEOUT_IN_NS
 
             if (isFlashRequired || captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY) {
-                aePreCaptureApplyCapture(mainCaptureParams, timeout, captureMode, pipelineTasks)
+                aePreCaptureApplyCapture(
+                    mainCaptureParams,
+                    timeout,
+                    captureMode,
+                    pipelineTasks,
+                    isFlashRequired = isFlashRequired,
+                )
             } else {
                 defaultNoFlashCapture(mainCaptureParams, captureMode, pipelineTasks)
             }
@@ -389,12 +397,30 @@ constructor(
         triggerAePreCapture: Boolean,
     ): List<Deferred<Void?>> {
         debug { "CapturePipeline#torchApplyCapture" }
+        val isLlbOverrideRequired = lowLightBoostControl?.isLowLightBoostOn == true
         val torchOnRequired = torchControl.torchStateLiveData.value == TorchState.OFF
         val lock3ARequired = torchOnRequired || captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY
 
         return pipelineTasks.invoke(
             mainCaptureParams = mainCaptureParams,
             preCapture = {
+                if (isLlbOverrideRequired) {
+                    debug { "CapturePipeline#torchApplyCapture: Disabling LLB for flash" }
+                    lowLightBoostControl?.disableForFlashCaptureAsync()?.join()
+                    debug { "CapturePipeline#torchApplyCapture: Disabling LLB for flash done" }
+                    if (mainCaptureParams != null) {
+                        val overrideAeMode = lowLightBoostControl.getFlashOverrideAeMode()
+                        mainCaptureParams.sessionConfigOptions =
+                            Camera2ImplConfig.Builder()
+                                .insertAllOptions(mainCaptureParams.sessionConfigOptions)
+                                .setCaptureRequestOption(
+                                    CaptureRequest.CONTROL_AE_MODE,
+                                    overrideAeMode,
+                                )
+                                .build()
+                    }
+                }
+
                 if (torchOnRequired) {
                     debug { "CapturePipeline#torchApplyCapture: Setting torch" }
                     torchControl.setTorchAsync(TorchMode.USED_AS_FLASH).join()
@@ -403,15 +429,14 @@ constructor(
 
                 if (triggerAePreCapture) {
                     debug { "CapturePipeline#torchApplyCapture: Locking 3A for capture" }
-                    val result3A =
-                        useCaseCameraContext.useGraphSession {
-                            it.lock3AForCapture(
-                                    timeLimitNs = timeLimitNs,
-                                    triggerAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
-                                    waitForAwb = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
-                                )
-                                .await()
-                        }
+                    val result3A = useCaseCameraContext.useGraphSession {
+                        it.lock3AForCapture(
+                                timeLimitNs = timeLimitNs,
+                                triggerAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
+                                waitForAwb = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
+                            )
+                            .await()
+                    }
                     debug {
                         "CapturePipeline#torchApplyCapture: Locking 3A for capture done" +
                             ", result3A = $result3A"
@@ -463,6 +488,11 @@ constructor(
                         debug { "CapturePipeline#torchApplyCapture: Unlocking 3A done" }
                     }
                 }
+                if (isLlbOverrideRequired) {
+                    debug { "CapturePipeline#torchApplyCapture: Restoring LLB after flash" }
+                    lowLightBoostControl?.restoreAfterFlashCaptureAsync()?.join()
+                    debug { "CapturePipeline#torchApplyCapture: Restoring LLB after flash done" }
+                }
             },
         )
     }
@@ -472,12 +502,33 @@ constructor(
         timeLimitNs: Long,
         @CaptureMode captureMode: Int,
         pipelineTasks: List<PipelineTask>,
+        isFlashRequired: Boolean = true,
     ): List<Deferred<Void?>> {
         debug { "CapturePipeline#aePreCaptureApplyCapture" }
+        val isLlbOverrideRequired =
+            isFlashRequired && (lowLightBoostControl?.isLowLightBoostOn == true)
 
         return pipelineTasks.invoke(
             mainCaptureParams = mainCaptureParams,
             preCapture = {
+                if (isLlbOverrideRequired) {
+                    debug { "CapturePipeline#aePreCaptureApplyCapture: Disabling LLB for flash" }
+                    lowLightBoostControl?.disableForFlashCaptureAsync()?.join()
+                    debug {
+                        "CapturePipeline#aePreCaptureApplyCapture: Disabling LLB for flash done"
+                    }
+                    if (mainCaptureParams != null) {
+                        val overrideAeMode = lowLightBoostControl.getFlashOverrideAeMode()
+                        mainCaptureParams.sessionConfigOptions =
+                            Camera2ImplConfig.Builder()
+                                .insertAllOptions(mainCaptureParams.sessionConfigOptions)
+                                .setCaptureRequestOption(
+                                    CaptureRequest.CONTROL_AE_MODE,
+                                    overrideAeMode,
+                                )
+                                .build()
+                    }
+                }
                 debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for locking 3A"
                 }
@@ -503,6 +554,13 @@ constructor(
                     @Suppress("DeferredResultUnused")
                     it.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
                     debug { "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A done" }
+                }
+                if (isLlbOverrideRequired) {
+                    debug { "CapturePipeline#aePreCaptureApplyCapture: Restoring LLB after flash" }
+                    lowLightBoostControl?.restoreAfterFlashCaptureAsync()?.join()
+                    debug {
+                        "CapturePipeline#aePreCaptureApplyCapture: Restoring LLB after flash done"
+                    }
                 }
             },
         )
@@ -625,7 +683,7 @@ constructor(
 
                                 override fun onTotalCaptureResult(
                                     requestMetadata: RequestMetadata,
-                                    frameNumber: FrameNumber,
+                                    frameNumber: CameraFrameNumber,
                                     totalCaptureResult: FrameInfo,
                                 ) {
                                     completeSignal.complete(null)
@@ -633,7 +691,7 @@ constructor(
 
                                 override fun onFailed(
                                     requestMetadata: RequestMetadata,
-                                    frameNumber: FrameNumber,
+                                    frameNumber: CameraFrameNumber,
                                     requestFailure: RequestFailure,
                                 ) {
                                     completeSignal.completeExceptionally(
@@ -781,7 +839,7 @@ public class ResultListener(
 
     override fun onTotalCaptureResult(
         requestMetadata: RequestMetadata,
-        frameNumber: FrameNumber,
+        frameNumber: CameraFrameNumber,
         totalCaptureResult: FrameInfo,
     ) {
         // Save some compute if the task is already complete or has been canceled.

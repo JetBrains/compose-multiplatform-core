@@ -32,7 +32,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(37) }
+        compileSdk { version = release(35) }
         namespace = "androidx.compose.material3.adaptive.navigation"
     }
     jvmStubs()
@@ -75,5 +75,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2023"
     description = "Compose Material Design Adaptive Library"
-    legacyDisableKotlinStrictApiMode = true
 }

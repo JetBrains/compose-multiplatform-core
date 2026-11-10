@@ -134,7 +134,7 @@ public final class TriggerBuilders {
         }
 
         /** Builder for {@link OnVisibleTrigger}. */
-        @SuppressWarnings("HiddenSuperclass")
+        @SuppressWarnings({"HiddenSuperclass", "EmptyBuilder"})
         public static final class Builder implements Trigger.Builder {
             private final TriggerProto.OnVisibleTrigger.Builder mImpl =
                     TriggerProto.OnVisibleTrigger.newBuilder();
@@ -218,7 +218,7 @@ public final class TriggerBuilders {
         }
 
         /** Builder for {@link OnVisibleOnceTrigger}. */
-        @SuppressWarnings("HiddenSuperclass")
+        @SuppressWarnings({"HiddenSuperclass", "EmptyBuilder"})
         public static final class Builder implements Trigger.Builder {
             private final TriggerProto.OnVisibleOnceTrigger.Builder mImpl =
                     TriggerProto.OnVisibleOnceTrigger.newBuilder();
@@ -462,10 +462,12 @@ public final class TriggerBuilders {
         }
 
         /** Get the protocol buffer representation of this object. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         TriggerProto.@NonNull Trigger toTriggerProto();
 
         /** Get the fingerprint for this object or null if unknown. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable Fingerprint getFingerprint();
 

@@ -34,8 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
-import androidx.wear.compose.material3.TextButtonColors
-import androidx.wear.compose.material3.TextButtonDefaults
 
 /**
  * Wear Material [RemoteTextButton] is a circular, text-only button with transparent background and
@@ -101,8 +99,8 @@ public object RemoteTextButtonDefaults {
         get() = RemoteCircleShape
 
     /**
-     * Returns a [TextButtonColors] for a text button - by default, a transparent background with
-     * contrasting content color. If the button is disabled then the colors default to
+     * Returns a [RemoteTextButtonColors] for a text button - by default, a transparent background
+     * with contrasting content color. If the button is disabled then the colors default to
      * [RemoteColorScheme.onSurface] with suitable alpha values applied.
      */
     @Composable
@@ -121,17 +119,19 @@ public object RemoteTextButtonDefaults {
      */
     @Composable
     public fun textButtonColors(
-        containerColor: RemoteColor = RemoteColor(Color.Transparent),
+        containerColor: RemoteColor? = null,
         contentColor: RemoteColor? = null,
-        disabledContainerColor: RemoteColor = RemoteColor(Color.Transparent),
+        disabledContainerColor: RemoteColor? = null,
         disabledContentColor: RemoteColor? = null,
-    ): RemoteTextButtonColors =
-        RemoteMaterialTheme.colorScheme.defaultTextButtonColors.copy(
-            containerColor = containerColor,
-            contentColor = contentColor,
-            disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor,
+    ): RemoteTextButtonColors {
+        val default = RemoteMaterialTheme.colorScheme.defaultTextButtonColors
+        return default.copy(
+            containerColor = containerColor ?: default.containerColor,
+            contentColor = contentColor ?: default.contentColor,
+            disabledContainerColor = disabledContainerColor ?: default.disabledContainerColor,
+            disabledContentColor = disabledContentColor ?: default.disabledContentColor,
         )
+    }
 
     /** The recommended size for a small button. */
     public val SmallButtonSize: RemoteDp = 48.rdp
@@ -168,10 +168,8 @@ public object RemoteTextButtonDefaults {
 /**
  * Represents the container and content colors used in a text button in different states.
  *
- * See [TextButtonDefaults.filledTextButtonColors],
- * [TextButtonDefaults.filledTonalTextButtonColors], [TextButtonDefaults.textButtonColors] and
- * [TextButtonDefaults.outlinedTextButtonColors] for [TextButtonColors] with different levels of
- * emphasis.
+ * See [RemoteTextButtonDefaults.textButtonColors] for the default colors used in a
+ * [RemoteTextButton].
  *
  * @param containerColor the background color of this text button when enabled.
  * @param contentColor the content color of this text button when enabled.

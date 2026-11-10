@@ -16,9 +16,27 @@
 
 package androidx.compose.ui.test.junit4.v2
 
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.implementedInJetBrainsFork
 import kotlin.coroutines.CoroutineContext
 
-actual fun createComposeRule(effectContext: CoroutineContext): ComposeContentTestRule =
+@Deprecated(
+    level = DeprecationLevel.WARNING,
+    message =
+        "Use createComposeRule(config: ComposeUiTestConfig) instead. " +
+            "The `effectContext` parameter has been moved into " +
+            "[ComposeUiTestConfig] to allow for more flexible test environment configuration.\n" +
+            "Before:\n" +
+            "createComposeRule(effectContext)\n" +
+            "After:\n" +
+            "createComposeRule(ComposeUiTestConfig(effectContext))",
+    replaceWith = ReplaceWith("createComposeRule(ComposeUiTestConfig(effectContext))"),
+)
+public actual fun createComposeRule(effectContext: CoroutineContext): ComposeContentTestRule =
     implementedInJetBrainsFork()
+
+public actual fun createComposeRule(config: ComposeUiTestConfig): ComposeContentTestRule =
+    implementedInJetBrainsFork()
+
+public actual fun createComposeRule(): ComposeContentTestRule = implementedInJetBrainsFork()

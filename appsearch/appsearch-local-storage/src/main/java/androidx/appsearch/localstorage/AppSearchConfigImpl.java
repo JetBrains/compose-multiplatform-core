@@ -66,11 +66,6 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
-    public boolean getDocumentStoreNamespaceIdFingerprint() {
-        return mIcingOptionsConfig.getDocumentStoreNamespaceIdFingerprint();
-    }
-
-    @Override
     public float getOptimizeRebuildIndexThreshold() {
         return mIcingOptionsConfig.getOptimizeRebuildIndexThreshold();
     }
@@ -101,11 +96,6 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
-    public boolean getUsePersistentHashMap() {
-        return mIcingOptionsConfig.getUsePersistentHashMap();
-    }
-
-    @Override
     public int getMaxPageBytesLimit() {
         return mIcingOptionsConfig.getMaxPageBytesLimit();
     }
@@ -123,11 +113,6 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     @Override
     public int getLiteIndexSortSize() {
         return mIcingOptionsConfig.getLiteIndexSortSize();
-    }
-
-    @Override
-    public boolean getBuildPropertyExistenceMetadataHits() {
-        return mIcingOptionsConfig.getBuildPropertyExistenceMetadataHits();
     }
 
     @Override
@@ -158,6 +143,11 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     @Override
     public int getMaxOpenBlobCount() {
         return mLimitConfig.getMaxOpenBlobCount();
+    }
+
+    @Override
+    public int getMaxAccumulatedResultBytes() {
+        return mLimitConfig.getMaxAccumulatedResultBytes();
     }
 
     @Override
@@ -197,8 +187,8 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
-    public boolean enableRepeatedFieldJoins() {
-        return mIcingOptionsConfig.enableRepeatedFieldJoins();
+    public boolean getAllowRepeatedFieldJoins() {
+        return mIcingOptionsConfig.getAllowRepeatedFieldJoins();
     }
 
     @Override

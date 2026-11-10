@@ -64,7 +64,6 @@ import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -165,7 +164,7 @@ class ScrollToNodeTest(private val config: TestConfig) {
             }
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun scrollToTarget() {
@@ -274,31 +273,29 @@ class ScrollToNodeTest(private val config: TestConfig) {
 
     private fun DpRect.toPx(): Rect = with(rule.density) { toRect() }
 
-    private fun rowModifier(): Modifier =
-        Modifier.composed {
-            with(LocalDensity.current) {
-                Modifier.testTag(containerTag)
-                    .then(
-                        if (config.hasNestedScrollConsumer)
-                            Modifier.nestedScroll(horizontalNestedScrollConsumer)
-                        else Modifier
-                    )
-                    .requiredSize(config.viewportSizePx.toDp(), itemSizePx.toDp())
-            }
+    private fun rowModifier(): Modifier = Modifier.composed {
+        with(LocalDensity.current) {
+            Modifier.testTag(containerTag)
+                .then(
+                    if (config.hasNestedScrollConsumer)
+                        Modifier.nestedScroll(horizontalNestedScrollConsumer)
+                    else Modifier
+                )
+                .requiredSize(config.viewportSizePx.toDp(), itemSizePx.toDp())
         }
+    }
 
-    private fun columnModifier(): Modifier =
-        Modifier.composed {
-            with(LocalDensity.current) {
-                Modifier.testTag(containerTag)
-                    .then(
-                        if (config.hasNestedScrollConsumer)
-                            Modifier.nestedScroll(verticalNestedScrollConsumer)
-                        else Modifier
-                    )
-                    .requiredSize(itemSizePx.toDp(), config.viewportSizePx.toDp())
-            }
+    private fun columnModifier(): Modifier = Modifier.composed {
+        with(LocalDensity.current) {
+            Modifier.testTag(containerTag)
+                .then(
+                    if (config.hasNestedScrollConsumer)
+                        Modifier.nestedScroll(verticalNestedScrollConsumer)
+                    else Modifier
+                )
+                .requiredSize(itemSizePx.toDp(), config.viewportSizePx.toDp())
         }
+    }
 
     private fun LazyListScope.Boxes() {
         items(itemsAround) { ClickableTestBox(color = if (it % 2 == 0) Color.Blue else Color.Red) }

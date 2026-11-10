@@ -17,6 +17,7 @@
 package androidx.pdf.annotation.operations
 
 import androidx.pdf.EditsDraft
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.MutableEditsDraft
 import androidx.pdf.annotation.AnnotationHandleIdGenerator.decomposeAnnotationId
 import androidx.pdf.annotation.content.KeyedPdfAnnotation
@@ -85,6 +86,11 @@ internal class SessionAnnotationOperationsTracker(
         }
     }
 
+    override fun removeEntry(key: String) {
+        synchronized(operationsMap) { operationsMap.remove(key) }
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
     override fun getModificationsSnapshot(): EditsDraft {
         val mutableEditsDraft = MutableEditsDraft()
         operationsMap.forEach { (_, operation) ->

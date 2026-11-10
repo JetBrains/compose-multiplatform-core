@@ -16,36 +16,48 @@
 
 package androidx.build
 
+import androidx.build.pinneddependencies.ProjectCoordinates
+import androidx.build.pinneddependencies.TipOfTreeExemption
+import androidx.build.pinneddependencies.findVerificationErrors
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.setProperty
 
 /**
  * Task for verifying the androidx dependency-stability-suffix rule (A library is only as stable as
- * its least stable dependency)
+ * its least stable dependency), and that tip-of-tree project dependencies on libraries that release
+ * separately are either pinned to a released version or listed in
+ * [androidx.build.pinneddependencies.TIP_OF_TREE_EXEMPTIONS_FILE_NAME].
  */
 @CacheableTask
-abstract class VerifyDependencyVersionsTask : DefaultTask() {
+internal abstract class VerifyDependencyVersionsTask : DefaultTask() {
 
     init {
         group = "Verification"
-        description = "Task for verifying the androidx dependency-stability-suffix rule"
+        description =
+            "Task for verifying the androidx dependency-stability-suffix rule and that " +
+                "tip-of-tree dependencies on separately released libraries are pinned or exempted"
     }
 
-    @get:Input abstract val version: Property<String>
+    @get:Input abstract val library: Property<ProjectCoordinates>
 
-    @get:Input
-    val androidXDependencySet: SetProperty<AndroidXDependency> = project.objects.setProperty()
+    @get:Input abstract val androidXDependencySet: SetProperty<AndroidXDependency>
+
+    @get:Input abstract val tipOfTreeDependencies: SetProperty<ProjectCoordinates>
+
+    @get:Input abstract val exemptions: ListProperty<TipOfTreeExemption>
 
     /**
      * Iterate through the dependencies of the project and ensure none of them are of an inferior
@@ -57,10 +69,23 @@ abstract class VerifyDependencyVersionsTask : DefaultTask() {
     @TaskAction
     fun verifyDependencyVersions() {
         androidXDependencySet.get().forEach { dependency -> verifyDependencyVersion(dependency) }
+        val tipOfTreeDependencies = tipOfTreeDependencies.get()
+        if (tipOfTreeDependencies.isEmpty()) return
+
+        val errors =
+            findVerificationErrors(
+                library = library.get(),
+                dependencies = tipOfTreeDependencies,
+                exemptions = exemptions.get(),
+            )
+        if (errors.isEmpty()) return
+
+        val report = errors.joinToString(separator = "\n\n")
+        throw GradleException(report)
     }
 
     private fun verifyDependencyVersion(dependency: AndroidXDependency) {
-        val projectVersion = version.get()
+        val projectVersion = library.get().version.toString()
         val dependencyVersion = dependency.version
         val projectReleasePhase = releasePhase(projectVersion)
         if (projectReleasePhase < 0) {
@@ -75,7 +100,7 @@ abstract class VerifyDependencyVersionsTask : DefaultTask() {
         }
         if (dependencyReleasePhase < projectReleasePhase) {
             throw GradleException(
-                "Project with version ${version.get()} may " +
+                "Project with version $projectVersion may " +
                     "not take a dependency on less-stable artifact ${dependency.group}:" +
                     "${dependency.name}:${dependency.version} for configuration " +
                     "${dependency.configurationName}. Dependency versions must be at least as " +
@@ -115,33 +140,36 @@ data class AndroidXDependency(
     }
 }
 
-internal fun Project.createVerifyDependencyVersionsTask():
-    TaskProvider<VerifyDependencyVersionsTask> {
+internal fun Project.createVerifyDependencyVersionsTask(
+    libraryVersionsService: Provider<LibraryVersionsService>
+): TaskProvider<VerifyDependencyVersionsTask> {
     val usingMaxDepsVersions = project.usingMaxDepVersions()
+    val projectPath = project.path
     val taskProvider =
         tasks.register("verifyDependencyVersions", VerifyDependencyVersionsTask::class.java) { task
             ->
-            task.version.set(project.version.toString())
+            task.library.set(getLibraryProjectCoordinates(libraryVersionsService))
             task.androidXDependencySet.set(
                 project.provider {
-                    val dependencies = mutableSetOf<AndroidXDependency>()
-                    project.configurations.filter(project::shouldVerifyConfiguration).forEach {
+                    project.configurations.matching(project::shouldVerifyConfiguration).flatMap {
                         configuration ->
-                        configuration.allDependencies.filter(::shouldVerifyDependency).forEach {
+                        configuration.allDependencies.filter(::shouldVerifyDependency).map {
                             dependency ->
-                            dependencies.add(
-                                AndroidXDependency(
-                                    dependency.group!!,
-                                    dependency.name,
-                                    dependency.version!!,
-                                    configuration.name,
-                                )
+                            AndroidXDependency(
+                                dependency.group!!,
+                                dependency.name,
+                                dependency.version!!,
+                                configuration.name,
                             )
                         }
                     }
-                    dependencies
                 }
             )
+            task.tipOfTreeDependencies.set(getTipOfTreeDependencies(libraryVersionsService))
+            task.exemptions.set(
+                libraryVersionsService.map { service -> service.exemptionsFor(projectPath) }
+            )
+
             task.onlyIf {
                 /**
                  * Ignore -Pandroidx.useMaxDepVersions when verifying dependency versions because it
@@ -229,6 +257,7 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
 
     // Don't check KGP internal configuration used for tooling
     if (name == "kotlinInternalAbiValidation") return false
+    if (name == "kotlinAbiValidationCompatClasspath") return false
 
     // don't verify these configurations of KMP projects since we don't publish them anyway
     if (name.endsWith("CompileKlibraries")) return false
@@ -284,4 +313,54 @@ private fun shouldVerifyDependency(dependency: Dependency): Boolean {
     }
 
     return true
+}
+
+internal fun Project.getLibraryProjectCoordinates(
+    libraryVersionsService: Provider<LibraryVersionsService>
+): Provider<ProjectCoordinates> {
+    val projectPath = path
+    val projectVersion = Version(version.toString())
+    val projectGroup = group.toString()
+    val projectArtifact = name
+    return libraryVersionsService.map { service ->
+        ProjectCoordinates(
+            projectPath = projectPath,
+            groupId = projectGroup,
+            artifactId = projectArtifact,
+            version = projectVersion,
+            versionGroup = service.versionGroupFor(projectPath, projectGroup),
+        )
+    }
+}
+
+internal fun Project.getTipOfTreeDependencies(
+    libraryVersionService: Provider<LibraryVersionsService>
+): Provider<Set<ProjectCoordinates>> {
+    val declaredDependencies =
+        project.configurations.matching(project::shouldVerifyConfiguration).flatMap { configuration
+            ->
+            configuration.allDependencies
+                .filter(::shouldVerifyDependency)
+                .filterIsInstance<ProjectDependency>()
+                .distinctBy { it.path }
+                .map { dependency ->
+                    ProjectCoordinates(
+                        projectPath = dependency.path,
+                        groupId = dependency.group!!,
+                        artifactId = dependency.name,
+                        version = dependency.version?.let { Version.parseOrNull(it) },
+                    )
+                }
+        }
+
+    return libraryVersionService.map { service ->
+        declaredDependencies
+            .map { dependency ->
+                dependency.copy(
+                    versionGroup =
+                        service.versionGroupFor(dependency.projectPath, dependency.groupId)
+                )
+            }
+            .toSet()
+    }
 }

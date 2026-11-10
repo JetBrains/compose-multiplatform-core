@@ -23,6 +23,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
 import android.graphics.BlendMode;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ComposePathEffect;
 import android.graphics.DashPathEffect;
 import android.graphics.DiscretePathEffect;
@@ -61,6 +62,8 @@ import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.ClipPath;
+import androidx.compose.remote.core.operations.DrawMesh2D;
+import androidx.compose.remote.core.operations.DrawTextOnCircle;
 import androidx.compose.remote.core.operations.ShaderData;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.managers.CoreText;
@@ -68,6 +71,7 @@ import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerMod
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.paint.PaintChanges;
 import androidx.compose.remote.core.operations.paint.PaintPathEffects;
+import androidx.compose.remote.core.operations.utilities.Mesh2DGenerator;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -217,9 +221,14 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         mCanvas.save();
     }
 
+    private final Paint mLayerPaint = new Paint();
+
     @Override
     public void saveLayer(float x, float y, float width, float height) {
-        mCanvas.saveLayer(x, y, x + width, y + height, mPaint);
+        mLayerPaint.reset();
+        mLayerPaint.setAlpha(mPaint.getAlpha());
+        mCanvas.saveLayer(x, y, x + width, y + height, mLayerPaint);
+        mPaint.setAlpha(255);
     }
 
     @Override
@@ -269,6 +278,7 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         mCanvas.scale(scaleX, scaleY);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
     public void startGraphicsLayer(int w, int h) {
         mNode = new RenderNode("layer");
@@ -277,6 +287,7 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         mCanvas = mNode.beginRecording();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
     public void setGraphicsLayer(@NonNull HashMap<Integer, Object> attributes) {
         if (mNode == null) {
@@ -306,7 +317,7 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
                     mNode.setPivotX((Float) value * mNode.getWidth());
                     break;
                 case GraphicsLayerModifierOperation.TRANSFORM_ORIGIN_Y:
-                    mNode.setPivotY((Float) value * mNode.getWidth());
+                    mNode.setPivotY((Float) value * mNode.getHeight());
                     break;
                 case GraphicsLayerModifierOperation.TRANSLATION_X:
                     mNode.setTranslationX((Float) value);
@@ -407,6 +418,7 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
     public void endGraphicsLayer() {
         mNode.endRecording();
@@ -500,6 +512,68 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         mCanvas.drawTextOnPath(getText(textId), getPath(pathId, 0, 1), hOffset, vOffset, mPaint);
     }
 
+    /**
+     * Draws text along a circular arc using Android {@link Path} and {@link Canvas#drawTextOnPath}.
+     *
+     * <p>Measures text width with the current {@link Paint}, calculates the arc sweep angle based
+     * on the final radius ({@code radius + warpRadiusOffset}), adjusts the starting angle for text
+     * alignment (START, CENTER, or END), and constructs an arc path using {@link Path#addArc}.
+     *
+     * <p>Placement specifies the drawing direction: {@code OUTSIDE} places text clockwise along the
+     * top of the arc, while {@code INSIDE} places text counter-clockwise along the bottom.
+     */
+    @Override
+    public void drawTextOnCircle(
+            int textId,
+            float centerX,
+            float centerY,
+            float radius,
+            float startAngle,
+            float warpRadiusOffset,
+            int alignment,
+            int placement) {
+        String textToDraw = getText(textId);
+        if (textToDraw == null) {
+            return;
+        }
+        float textWidth = mPaint.measureText(textToDraw);
+        float finalRadius = radius + warpRadiusOffset;
+        if (finalRadius <= 0f) {
+            return;
+        }
+        // OUTSIDE placement draws text clockwise on top of the arc;
+        // INSIDE placement draws counterclockwise.
+        boolean clockwise = placement == DrawTextOnCircle.Placement.OUTSIDE.ordinal();
+        float sweepDegrees = (float) Math.toDegrees(textWidth / finalRadius);
+        float finalStartAngle = startAngle;
+        if (!clockwise) {
+            sweepDegrees = -sweepDegrees;
+            if (alignment == DrawTextOnCircle.Alignment.CENTER.ordinal()) {
+                finalStartAngle = startAngle + Math.abs(sweepDegrees) / 2f;
+            } else if (alignment == DrawTextOnCircle.Alignment.END.ordinal()) {
+                finalStartAngle = startAngle + Math.abs(sweepDegrees);
+            }
+        } else {
+            if (alignment == DrawTextOnCircle.Alignment.CENTER.ordinal()) {
+                finalStartAngle = startAngle - sweepDegrees / 2f;
+            } else if (alignment == DrawTextOnCircle.Alignment.END.ordinal()) {
+                finalStartAngle = startAngle - sweepDegrees;
+            }
+        }
+
+        Path path = new Path();
+        path.addArc(
+                centerX - finalRadius,
+                centerY - finalRadius,
+                centerX + finalRadius,
+                centerY + finalRadius,
+                finalStartAngle,
+                sweepDegrees);
+
+        mPaint.setTextAlign(Paint.Align.LEFT);
+        mCanvas.drawTextOnPath(textToDraw, path, 0f, 0f, mPaint);
+    }
+
     private Paint.FontMetrics mCachedFontMetrics;
 
     @Override
@@ -571,7 +645,8 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
 
         TextPaint textPaint = new TextPaint();
 
-        boolean useAdvancedFeatures = (flags & PaintContext.TEXT_MEASURE_AUTOSIZE) != 0;
+        boolean useAdvancedFeatures =
+                (flags & (PaintContext.TEXT_MEASURE_AUTOSIZE | PaintContext.TEXT_COMPLEX)) != 0;
 
         if (letterSpacing != 0f) {
             mPaint.setLetterSpacing(letterSpacing);
@@ -668,7 +743,12 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
                 }
             }
             return new AndroidComputedTextLayout(
-                    staticLayout, bounds.width(), bounds.height(), visibleLines, isHyphenatedText);
+                    staticLayout,
+                    bounds.left,
+                    bounds.width(),
+                    bounds.height(),
+                    visibleLines,
+                    isHyphenatedText);
         } else {
             return new AndroidComputedTextLayout(
                     staticLayout,
@@ -706,25 +786,25 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         int top = layout.getLineTop(0);
         int bottom = layout.getLineBottom(lineCount - 1);
 
-        float maxContentWidth = 0f;
-        for (int i = 0; i < lineCount; i++) {
-            float lineWidth = layout.getLineMax(i);
-            if (lineWidth > maxContentWidth) {
-                maxContentWidth = lineWidth;
-            }
-        }
-
-        float minLeft = 0f;
+        float minLeft = Float.MAX_VALUE;
+        float maxRight = 0f;
         for (int i = 0; i < lineCount; i++) {
             float lineLeft = layout.getLineLeft(i);
+            float lineRight = layout.getLineRight(i);
             if (lineLeft < minLeft) {
                 minLeft = lineLeft;
             }
+            if (lineRight > maxRight) {
+                maxRight = lineRight;
+            }
             isHyphenated |= isLineHyphenated(layout, layout.getText(), i);
+        }
+        if (minLeft == Float.MAX_VALUE) {
+            minLeft = 0f;
         }
         bounds.left = (int) minLeft;
         bounds.top = top;
-        bounds.right = (int) maxContentWidth;
+        bounds.right = (int) Math.ceil(maxRight);
         bounds.bottom = bottom;
         return isHyphenated;
     }
@@ -763,8 +843,16 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         if (computedTextLayout == null) {
             return;
         }
-        StaticLayout staticLayout = ((AndroidComputedTextLayout) computedTextLayout).get();
-        staticLayout.draw(mCanvas);
+        AndroidComputedTextLayout androidLayout = (AndroidComputedTextLayout) computedTextLayout;
+        StaticLayout staticLayout = androidLayout.get();
+        float left = androidLayout.getLeft();
+        if (left != 0f) {
+            mCanvas.translate(-left, 0f);
+            staticLayout.draw(mCanvas);
+            mCanvas.translate(left, 0f);
+        } else {
+            staticLayout.draw(mCanvas);
+        }
     }
 
     @Override
@@ -926,6 +1014,7 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
                 }
 
                 @Override
+                @SuppressLint("NewApi")
                 public void setTypeFace(int fontType, int weight, boolean italic) {
                     mFontInstance =
                             mTypefaceResolver.resolve(
@@ -987,6 +1076,7 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
                  * @param tags tags
                  * @param values values
                  */
+                @RequiresApi(api = Build.VERSION_CODES.Q)
                 @Override
                 public void setFontVariationAxes(@NonNull String[] tags, float @NonNull [] values) {
                     mPendingTags = tags;
@@ -1138,14 +1228,31 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
                     for (int i = 0; i < names.length; i++) {
                         String name = names[i];
                         float[] val = data.getUniformFloats(name);
-                        if (val.length == 1 && Float.isNaN(val[0])) {
-                            // check if dynamic array
-                            float[] values =
-                                    mContext.getCollectionsAccess()
-                                            .getDynamicFloats(Utils.idFromNan(val[0]));
-                            shader.setFloatUniform(name, values);
+                        if (val.length == 1) {
+                            if (Float.isNaN(val[0])) {
+                                int varId = Utils.idFromNan(val[0]);
+                                float[] values =
+                                        mContext.getCollectionsAccess() != null
+                                                ? mContext.getCollectionsAccess()
+                                                .getDynamicFloats(varId)
+                                                : null;
+                                if (values != null) {
+                                    shader.setFloatUniform(name, values);
+                                } else {
+                                    shader.setFloatUniform(name, mContext.getFloat(varId));
+                                }
+                            } else {
+                                shader.setFloatUniform(name, val[0]);
+                            }
                         } else {
-                            shader.setFloatUniform(name, val);
+                            float[] evaluated = new float[val.length];
+                            for (int k = 0; k < val.length; k++) {
+                                evaluated[k] =
+                                        Float.isNaN(val[k])
+                                                ? mContext.getFloat(Utils.idFromNan(val[k]))
+                                                : val[k];
+                            }
+                            shader.setFloatUniform(name, evaluated);
                         }
                     }
                     names = data.getUniformIntegerNames();
@@ -1176,13 +1283,13 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
                 @SuppressLint("ObsoleteSdkInt")
                 @Override
                 public void setBlendMode(int mode) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // REMOVE IN PLATFORM
                         Api29Impl.setBlendMode(mPaint, mode);
-                    } else {
-                        mPaint.setXfermode(
-                                new android.graphics.PorterDuffXfermode(
-                                        remoteToAndroidPorterDuffMode(mode)));
-                    }
+                    } else { // REMOVE IN PLATFORM
+                        mPaint.setXfermode(// REMOVE IN PLATFORM
+                                new android.graphics.PorterDuffXfermode(// REMOVE IN PLATFORM
+                                        remoteToAndroidPorterDuffMode(mode))); // REMOVE IN PLATFORM
+                    } // REMOVE IN PLATFORM
                 }
 
                 @Override
@@ -1254,6 +1361,39 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
                     mPaint.setShader(
                             new RadialGradient(
                                     centerX, centerY, radius, colors, stops, mTileModes[tileMode]));
+                }
+
+                @Override
+                public void setRadialGradient(
+                        int @NonNull [] colors,
+                        float @Nullable [] stops,
+                        float startX,
+                        float startY,
+                        float startRadius,
+                        float endX,
+                        float endY,
+                        float endRadius,
+                        int tileMode) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // REMOVE IN PLATFORM
+                        // unavoidable short term allocation for now but little used API.
+                        // Long term could cache the data
+                        long[] colorLong = new long[colors.length];
+                        for (int i = 0; i < colorLong.length; i++) {
+                            colorLong[i] = Color.pack(colors[i]);
+                        }
+                        mPaint.setShader(
+                                new RadialGradient(
+                                        startX, startY, startRadius,
+                                        endX, endY, endRadius,
+                                        colorLong, stops, mTileModes[tileMode]));
+                    } else { // REMOVE IN PLATFORM
+                        // The two-circle (focal) form needs API 31. Degrade to the end circle
+                        // so the document still renders something sensible.
+                        mPaint.setShader(// REMOVE IN PLATFORM
+                                new RadialGradient(// REMOVE IN PLATFORM
+                                        endX, endY, endRadius, // REMOVE IN PLATFORM
+                                        colors, stops, mTileModes[tileMode])); // REMOVE IN PLATFORM
+                    } // REMOVE IN PLATFORM
                 }
 
                 @Override
@@ -1394,6 +1534,7 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         // segmentation violation
         mPaint.setTypeface(Typeface.DEFAULT);
         mPaint.reset();
+        releaseOffscreenBitmaps();
     }
 
     private Path getPath(int path1Id, int path2Id, float tween, float start, float end) {
@@ -1475,7 +1616,156 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
         mCanvas.concat(matrix);
     }
 
-    HashMap<Bitmap, Canvas> mCCache = new HashMap<>();
+    /** Geometry for one 2D mesh, already in the shape {@code Canvas.drawVertices} wants. */
+    private static final class Mesh2D {
+        final int mLayout;
+        final int mUCount;
+        final int mVCount;
+        final float[] mVerts;
+        final float[] mUv;
+        final int[] mColors;
+        final short[] mIndices;
+
+        Mesh2D(
+                int layout,
+                int uCount,
+                int vCount,
+                float[] verts,
+                float[] uv,
+                int[] colors,
+                short[] indices) {
+            mLayout = layout;
+            mUCount = uCount;
+            mVCount = vCount;
+            mVerts = verts;
+            mUv = uv;
+            mColors = colors;
+            mIndices = indices;
+        }
+    }
+
+    private final HashMap<Integer, Mesh2D> mMeshCache = new HashMap<>();
+    private final HashMap<Integer, BitmapShader> mMeshShaderCache = new HashMap<>();
+
+    @Override
+    public void setMesh(
+            int meshId,
+            int layout,
+            int uCount,
+            int vCount,
+            float @NonNull [] verts,
+            float @NonNull [] uv,
+            int @NonNull [] colors,
+            int @NonNull [] indices) {
+        // Android's drawVertices takes short[] indices, so narrow once here rather than per frame.
+        short[] shortIndices = new short[indices.length];
+        for (int i = 0; i < indices.length; i++) {
+            shortIndices[i] = (short) indices[i];
+        }
+        float[] vertsCopy = verts.length > 0 ? verts.clone() : new float[0];
+        float[] uvCopy = uv.length > 0 ? uv.clone() : new float[0];
+        int[] colorsCopy = colors.length > 0 ? colors.clone() : new int[0];
+        mMeshCache.put(
+                meshId,
+                new Mesh2D(layout, uCount, vCount, vertsCopy, uvCopy, colorsCopy, shortIndices));
+    }
+
+    @Override
+    public void drawMesh(int meshId, int blend, int imageId) {
+        Mesh2D mesh = mMeshCache.get(meshId);
+        if (mesh == null || mesh.mVerts.length == 0 || mesh.mIndices.length == 0) {
+            return;
+        }
+
+        int vertexCount = mesh.mVerts.length;
+        int[] colors = mesh.mColors.length > 0 ? mesh.mColors : null;
+
+        // drawVertices takes no bitmap: the texture comes from the paint's shader, and texs are
+        // coordinates in shader space. Passing texs with no shader is meaningless, so an
+        // untextured mesh must pass null.
+        Shader previousShader = mPaint.getShader();
+        boolean shaderInstalled = false;
+        float[] texs = null;
+
+        try {
+            if (imageId != DrawMesh2D.NO_IMAGE && mesh.mUv.length == mesh.mVerts.length) {
+                Bitmap bitmap = (Bitmap) mContext.mRemoteComposeState.getFromId(imageId);
+                if (bitmap != null) {
+                    BitmapShader shader = mMeshShaderCache.get(imageId);
+                    if (shader == null) {
+                        shader =
+                                new BitmapShader(
+                                        bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+                        mMeshShaderCache.put(imageId, shader);
+                    }
+                    mPaint.setShader(shader);
+                    shaderInstalled = true;
+
+                    // uv is normalised 0..1 with (0,0) at the top left, and both Android and Skia
+                    // want image pixels, so the conversion is a plain multiply with no flip. The
+                    // 3D path next door flips v for the GL convention; 2D deliberately does not.
+                    int width = bitmap.getWidth();
+                    int height = bitmap.getHeight();
+                    texs = new float[mesh.mUv.length];
+                    for (int i = 0; i < mesh.mUv.length; i += 2) {
+                        texs[i] = mesh.mUv[i] * width;
+                        texs[i + 1] = mesh.mUv[i + 1] * height;
+                    }
+                }
+            }
+
+            if (blend == DrawMesh2D.BLEND_COLORS_ONLY) {
+                // colours only: ignore any texture and let the vertex colours through
+                texs = null;
+                if (shaderInstalled) {
+                    mPaint.setShader(previousShader);
+                    shaderInstalled = false;
+                }
+            }
+
+            mCanvas.drawVertices(
+                    Canvas.VertexMode.TRIANGLES,
+                    vertexCount,
+                    mesh.mVerts,
+                    0,
+                    texs,
+                    0,
+                    colors,
+                    0,
+                    mesh.mIndices,
+                    0,
+                    mesh.mIndices.length,
+                    mPaint);
+        } finally {
+            // Paint is canvas state; a backend that borrows it must give it back, including when
+            // the draw throws.
+            if (shaderInstalled) {
+                mPaint.setShader(previousShader);
+            }
+        }
+    }
+
+    @Override
+    public void matrixFromMesh(int meshId, float u, float v, int flags) {
+        Mesh2D mesh = mMeshCache.get(meshId);
+        if (mesh == null) {
+            return;
+        }
+        float[] affine = new float[6];
+        if (!Mesh2DGenerator.computeMatrixFromMesh(
+                mesh.mLayout, mesh.mUCount, mesh.mVCount, mesh.mVerts, u, v, flags, affine)) {
+            return;
+        }
+        Matrix m = new Matrix();
+        // [duX, duY, dvX, dvY, originX, originY] -> the 3x3 Android wants, row major
+        m.setValues(
+                new float[]{
+                        affine[0], affine[2], affine[4], affine[1], affine[3], affine[5], 0f, 0f, 1f
+                });
+        mCanvas.concat(m);
+    }
+
+    java.util.WeakHashMap<Bitmap, Canvas> mCCache = new java.util.WeakHashMap<>();
 
     @Override
     public void drawToBitmap(int bitmapId, int mode, int color) {
@@ -1486,6 +1776,7 @@ public class AndroidPaintContext extends PaintContext implements CustomContext {
             mCanvas = mMainCanvas;
             return;
         }
+        mPaint.setAlpha(255);
         Bitmap bitmap = (Bitmap) mContext.mRemoteComposeState.getFromId(bitmapId);
         Objects.requireNonNull(bitmap);
         if (mCCache.containsKey(bitmap)) {

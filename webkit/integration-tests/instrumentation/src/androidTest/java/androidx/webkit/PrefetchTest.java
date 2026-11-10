@@ -17,6 +17,8 @@
 package androidx.webkit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -24,13 +26,18 @@ import androidx.test.filters.SmallTest;
 import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.Assert;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class PrefetchTest {
+
+    @Before
+    public void setup() {
+        WebkitUtils.checkFeature(WebViewFeature.MULTI_PROFILE);
+    }
 
     /**
      * Test setting valid values for
@@ -155,7 +162,6 @@ public class PrefetchTest {
      * Test to make sure that calling the setMaxPrefetches API won't cause any obvious errors.
      */
     @Test
-    @Ignore("https://crbug.com/501069897")
     public void testSetMaxPrefetches() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
         WebkitUtils.onMainThreadSync(() -> {
@@ -170,7 +176,6 @@ public class PrefetchTest {
      * Test to make sure that calling the setPrefetchTtlSeconds API won't cause any obvious errors.
      */
     @Test
-    @Ignore("https://crbug.com/501069897")
     public void testSetPrefetchTtlSeconds() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
         WebkitUtils.onMainThreadSync(() -> {
@@ -215,6 +220,35 @@ public class PrefetchTest {
                     () -> testProfile.getPrefetchCache().setPrefetchTtlSeconds(0));
             assertThrows(IllegalArgumentException.class,
                     () -> testProfile.getPrefetchCache().setPrefetchTtlSeconds(-1));
+        });
+    }
+
+    @Test
+    public void testPrefetchCacheEqualsAndHashCode() {
+        WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
+        WebkitUtils.onMainThreadSync(() -> {
+            Profile defaultProfile1 = ProfileStore.getInstance().getProfile(
+                    Profile.DEFAULT_PROFILE_NAME);
+            assertNotNull(defaultProfile1);
+            PrefetchCache prefetchCache1 = defaultProfile1.getPrefetchCache();
+
+            Profile defaultProfile2 = ProfileStore.getInstance().getProfile(
+                    Profile.DEFAULT_PROFILE_NAME);
+            assertNotNull(defaultProfile2);
+            PrefetchCache prefetchCache2 = defaultProfile2.getPrefetchCache();
+
+            assertEquals("PrefetchCache instances for the same profile should be equal",
+                    prefetchCache1, prefetchCache2);
+            assertEquals("PrefetchCache hashCodes for the same profile should be equal",
+                    prefetchCache1.hashCode(), prefetchCache2.hashCode());
+
+            String testProfileName = "prefetch-test-profile-eq";
+            Profile testProfile = ProfileStore.getInstance().getOrCreateProfile(testProfileName);
+            PrefetchCache testPrefetchCache = testProfile.getPrefetchCache();
+
+            assertNotEquals(
+                    "PrefetchCache instances for different profiles should not be equal",
+                    prefetchCache1, testPrefetchCache);
         });
     }
 }

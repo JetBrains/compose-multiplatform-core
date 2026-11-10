@@ -17,7 +17,6 @@
 package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.ink.nativeloader.UsedByNative
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
@@ -124,7 +123,7 @@ public abstract class Vec internal constructor() {
      * Returns an immutable copy of this object. This will return itself if called on an immutable
      * instance.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun toImmutable(): ImmutableVec
+    public abstract fun toImmutable(): ImmutableVec
 
     /**
      * Returns true if the angle formed by `this` and [other] is within [toleranceDegrees] of 0
@@ -237,8 +236,7 @@ public abstract class Vec internal constructor() {
          * Overload that just takes the x and y components of the vectors. This isn't part of the
          * public API, but allows internal callers to avoid unnecessary allocations.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun determinant(lhx: Float, lhy: Float, rhx: Float, rhy: Float): Float =
+        internal fun determinant(lhx: Float, lhy: Float, rhx: Float, rhy: Float): Float =
             lhx * rhy - lhy * rhx
 
         /**

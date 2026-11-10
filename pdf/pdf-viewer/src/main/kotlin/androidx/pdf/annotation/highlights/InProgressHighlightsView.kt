@@ -27,9 +27,10 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.os.HandlerCompat
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.R
-import androidx.pdf.annotation.OnAnnotationEditListener
-import androidx.pdf.annotation.OnGestureClaimListener
+import androidx.pdf.annotation.AnnotationsView.OnAnnotationEditListener
+import androidx.pdf.annotation.AnnotationsView.OnGestureClaimListener
 import androidx.pdf.annotation.PageInfoProvider
 import androidx.pdf.annotation.TextBoundsProvider
 import androidx.pdf.annotation.content.StampAnnotation
@@ -47,6 +48,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 /** A [View] that renders in-progress "wet" text highlights over PDF content. */
+@OptIn(ExperimentalPdfApi::class)
 internal class InProgressHighlightsView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
@@ -150,10 +152,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                 )
 
             if (pageRects.isNotEmpty()) {
-                val viewRects =
-                    pageRects.map { pageRect ->
-                        RectF().apply { pageToViewTransform.mapRect(this, pageRect) }
-                    }
+                val viewRects = pageRects.map { pageRect ->
+                    RectF().apply { pageToViewTransform.mapRect(this, pageRect) }
+                }
 
                 // If the gesture hasn't been canceled, update its state and notify listeners.
                 activeHighlights[id]?.let { currentState ->
@@ -183,12 +184,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                             currentState.startPdfPoint,
                             currentPdfPoint,
                         )
-                    val newViewRects =
-                        pageRects.map { pageRect ->
-                            RectF().apply {
-                                currentState.pageToViewTransform.mapRect(this, pageRect)
-                            }
+                    val newViewRects = pageRects.map { pageRect ->
+                        RectF().apply {
+                            currentState.pageToViewTransform.mapRect(this, pageRect)
                         }
+                    }
 
                     // Check if the highlight is still active before updating the viewRects.
                     if (activeHighlights.contains(id)) {

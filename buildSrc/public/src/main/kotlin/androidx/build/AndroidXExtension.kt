@@ -319,11 +319,8 @@ abstract class AndroidXExtension(
     }
 
     fun shouldPublishSbom(): Provider<Boolean> {
-        return type.zip(project.provider { isIsolatedProjectsEnabled() }) { type, isolated ->
-            if (isolated) return@zip false
-            // IDE plugins are used by and ship inside Studio
-            type.publish.shouldPublish() || type == SoftwareType.IDE_PLUGIN
-        }
+        // IDE plugins are used by and ship inside Studio
+        return type.map { type -> type.publish.shouldPublish() || type == SoftwareType.IDE_PLUGIN }
     }
 
     var doNotDocumentReason: String? = null
@@ -346,9 +343,6 @@ abstract class AndroidXExtension(
 
     var bypassCoordinateValidation = false
 
-    /** Whether the project has not yet been migrated to use JSpecify annotations. */
-    var optOutJSpecify = false
-
     val additionalDeviceTestApkKeys = mutableListOf<String>()
 
     val additionalDeviceTestTags: MutableList<String> by lazy {
@@ -358,6 +352,7 @@ abstract class AndroidXExtension(
                 project.path.startsWith(":privacysandbox:ads:") ->
                     mutableListOf("privacysandbox", "privacysandbox_ads")
                 project.path.startsWith(":wear:watchface") -> mutableListOf("wear_optin")
+                project.path.startsWith(":xr:") -> mutableListOf("xr_optin")
                 else -> mutableListOf()
             }
         if (deviceTests.enableAlsoRunningOnPhysicalDevices) {
@@ -531,4 +526,12 @@ abstract class DeviceTests @Inject constructor(objects: ObjectFactory) {
     val useOrchestrator: Property<Boolean> = objects.property<Boolean>().convention(false)
 
     var minSdkForFtlOverride: Int? = null
+
+    /**
+     * Maximum number of shards Tradefed may use for this module's instrumentation tests. When set
+     * to 1, tests will run on a single shard ("not-shardable"). When set to > 1, Tradefed limits
+     * shards to this value ("ajur-max-shard"). When null, Tradefed defaults to the suite-level
+     * shard count (e.g. 16 on Cuttlefish).
+     */
+    var maxShardCount: Int? = null
 }

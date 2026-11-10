@@ -11,6 +11,10 @@ package androidx.tracing {
     property public abstract androidx.tracing.Tracer tracer;
   }
 
+  public static interface AbstractTraceDriver.Factory {
+    method public androidx.tracing.AbstractTraceDriver create();
+  }
+
   public abstract class AbstractTraceSink implements java.lang.AutoCloseable {
     ctor public AbstractTraceSink();
     method public abstract void close();
@@ -33,6 +37,10 @@ package androidx.tracing {
     method public static inline long nanoTime();
   }
 
+  public final class CommonKt {
+    method @BytecodeOnly @kotlin.PublishedApi internal static long monotonicId();
+  }
+
   public interface Counter {
     method public String name();
     method public void setValue(double value);
@@ -40,6 +48,10 @@ package androidx.tracing {
   }
 
   @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="Marks declarations in the Tracing API that are delicate.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface DelicateTracingApi {
+  }
+
+  @BytecodeOnly @kotlin.PublishedApi internal final class EmptyCloseable implements java.lang.AutoCloseable {
+    method public void close();
   }
 
   public abstract class EventMetadata {
@@ -64,6 +76,10 @@ package androidx.tracing {
     field public AutoCloseable closeable;
     field public androidx.tracing.EventMetadata metadata;
     field public androidx.tracing.PropagationToken propagationToken;
+  }
+
+  public final class EventMetadataCloseableKt {
+    method @BytecodeOnly @kotlin.PublishedApi internal static androidx.tracing.EventMetadataCloseable getEmptyEventMetadataCloseable();
   }
 
   @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="Marks APIs that are highly experimental for context propagation.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface ExperimentalContextPropagation {
@@ -106,6 +122,13 @@ package androidx.tracing {
     property public String category;
     property public java.util.List<java.lang.Long> flowIds;
     property public String name;
+    field @BytecodeOnly @kotlin.PublishedApi internal static final androidx.tracing.PlatformThreadContextElement.Companion Companion;
+    field @BytecodeOnly @kotlin.PublishedApi internal static final kotlin.coroutines.CoroutineContext.Key<androidx.tracing.PlatformThreadContextElement> KEY;
+    field @BytecodeOnly @kotlin.PublishedApi internal static final int STATE_BEGIN = 1; // 0x1
+    field @BytecodeOnly @kotlin.PublishedApi internal static final int STATE_END = 0; // 0x0
+  }
+
+  @BytecodeOnly @kotlin.PublishedApi internal static final class PlatformThreadContextElement.Companion {
   }
 
   public abstract class Poolable<T extends androidx.tracing.Poolable<T>> {
@@ -129,6 +152,12 @@ package androidx.tracing {
     method public void close();
     method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public kotlin.coroutines.CoroutineContext.Element? contextElementOrNull();
     field public static final androidx.tracing.PropagationUnsupportedToken INSTANCE;
+  }
+
+  @BytecodeOnly @kotlin.PublishedApi internal final class ProtoPool {
+    ctor public ProtoPool(boolean isDebug);
+    method public androidx.tracing.PooledTracePacketArray obtainTracePacketArray();
+    method public long poolableCount();
   }
 
   public final class Throwables {
@@ -157,6 +186,12 @@ package androidx.tracing {
     ctor public TraceEvent();
     method public void copyFrom(androidx.tracing.TraceEvent src);
     method public void reset();
+    method @BytecodeOnly @kotlin.PublishedApi internal void setBeginSection(long, String);
+    method @BytecodeOnly @kotlin.PublishedApi internal void setBeginSectionWithFlows(long, String, java.util.List<java.lang.Long!>);
+    method @BytecodeOnly @kotlin.PublishedApi internal void setCounterDouble(long, double);
+    method @BytecodeOnly @kotlin.PublishedApi internal void setCounterLong(long, long);
+    method @BytecodeOnly @kotlin.PublishedApi internal void setEndSection(long);
+    method @BytecodeOnly @kotlin.PublishedApi internal void setInstant(long, String, java.util.List<java.lang.Long!>);
     property public java.util.List<androidx.tracing.AttributeEntry> attributes;
     property public java.util.List<java.lang.String> categories;
     property public Long? correlationId;
@@ -197,6 +232,14 @@ package androidx.tracing {
     field public int type;
   }
 
+  public final class TraceEventKt {
+    field @BytecodeOnly @kotlin.PublishedApi internal static final int TRACE_EVENT_TYPE_BEGIN = 1; // 0x1
+    field @BytecodeOnly @kotlin.PublishedApi internal static final int TRACE_EVENT_TYPE_COUNTER = 4; // 0x4
+    field @BytecodeOnly @kotlin.PublishedApi internal static final int TRACE_EVENT_TYPE_END = 2; // 0x2
+    field @BytecodeOnly @kotlin.PublishedApi internal static final int TRACE_EVENT_TYPE_INSTANT = 3; // 0x3
+    field @BytecodeOnly @kotlin.PublishedApi internal static final int TRACE_EVENT_TYPE_UNDEFINED = 0; // 0x0
+  }
+
   public final class TraceKt {
     method public static inline <T> T trace(String label, kotlin.jvm.functions.Function0<? extends T> block);
     method public static inline <T> T trace(kotlin.jvm.functions.Function0<java.lang.String> lazyLabel, kotlin.jvm.functions.Function0<? extends T> block);
@@ -213,13 +256,16 @@ package androidx.tracing {
     method @BytecodeOnly public static AutoCloseable! beginSection$default(androidx.tracing.Tracer!, String!, String!, androidx.tracing.PropagationToken!, boolean, kotlin.jvm.functions.Function1!, int, Object!);
     method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public abstract androidx.tracing.EventMetadataCloseable beginSectionWithMetadata(String category, String name, androidx.tracing.PropagationToken? token, boolean isRoot);
     method public abstract androidx.tracing.Counter counter(String category, String name);
+    method @InaccessibleFromKotlin public static final androidx.tracing.Tracer getGlobal();
     method public static final androidx.tracing.Tracer getStubTracer();
-    method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public abstract androidx.tracing.EventMetadataCloseable instant(String category, String name);
     method public final inline void instant(String category, String name);
-    method public final inline void instant(String category, String name, optional kotlin.jvm.functions.Function1<? super androidx.tracing.EventMetadata,kotlin.Unit> metadataBlock);
-    method @BytecodeOnly public static void instant$default(androidx.tracing.Tracer!, String!, String!, kotlin.jvm.functions.Function1!, int, Object!);
+    method public final inline void instant(String category, String name, optional androidx.tracing.PropagationToken? token);
+    method public final inline void instant(String category, String name, optional androidx.tracing.PropagationToken? token, optional kotlin.jvm.functions.Function1<? super androidx.tracing.EventMetadata,kotlin.Unit> metadataBlock);
+    method @BytecodeOnly public static void instant$default(androidx.tracing.Tracer!, String!, String!, androidx.tracing.PropagationToken!, kotlin.jvm.functions.Function1!, int, Object!);
     method public abstract boolean isCategoryEnabled(String category);
-    method @SuppressCompatibility @androidx.tracing.ExperimentalContextPropagation public abstract androidx.tracing.PropagationToken tokenForManualPropagation();
+    method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public static final void setGlobalTracer(androidx.tracing.Tracer tracer);
+    method @SuppressCompatibility @androidx.tracing.ExperimentalContextPropagation public abstract androidx.tracing.PropagationToken tokenForManualPropagation(optional java.util.List<java.lang.Long> flowIds);
+    method @BytecodeOnly @SuppressCompatibility @androidx.tracing.ExperimentalContextPropagation public static androidx.tracing.PropagationToken! tokenForManualPropagation$default(androidx.tracing.Tracer!, java.util.List!, int, Object!);
     method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public abstract suspend Object? tokenFromCoroutineContext(kotlin.coroutines.Continuation<? super androidx.tracing.PropagationToken>);
     method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public abstract androidx.tracing.PropagationToken tokenFromThreadContext();
     method public final inline <T> T trace(String category, String name, optional androidx.tracing.PropagationToken? token, optional boolean isRoot, kotlin.jvm.functions.Function0<? extends T> block);
@@ -232,11 +278,16 @@ package androidx.tracing {
     method public final suspend inline <T> Object? traceCoroutine(String category, String name, optional androidx.tracing.PropagationToken? token, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super T>);
     method public final suspend inline <T> Object? traceCoroutine(String category, String name, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super T>);
     method @BytecodeOnly public static Object! traceCoroutine$default(androidx.tracing.Tracer!, String!, String!, androidx.tracing.PropagationToken!, boolean, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.coroutines.Continuation!, int, Object!);
+    method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public abstract androidx.tracing.EventMetadataCloseable writeInstant(String category, String name, androidx.tracing.PropagationToken? token);
     field public static final androidx.tracing.Tracer.Companion Companion;
   }
 
   public static final class Tracer.Companion {
+    method @InaccessibleFromKotlin public androidx.tracing.Tracer getGlobal();
     method public androidx.tracing.Tracer getStubTracer();
+    method @VisibleForTesting public void resetGlobalTracer();
+    method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public void setGlobalTracer(androidx.tracing.Tracer tracer);
+    property public static androidx.tracing.Tracer global;
   }
 
   public final class TrackDescriptor {

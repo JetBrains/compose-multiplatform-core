@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:JvmName("EdgeToEdge")
+@file:Suppress("DEPRECATION")
 
 package androidx.activity
 
@@ -74,6 +75,20 @@ private var Impl: EdgeToEdgeImpl? = null
  * @param statusBarStyle The [SystemBarStyle] for the status bar.
  * @param navigationBarStyle The [SystemBarStyle] for the navigation bar.
  */
+@Deprecated(
+    message =
+        """Use {@link WindowCompat#enableEdgeToEdge(Window)} to enable edge-to-edge display.
+      To adjust the light/dark appearance of system bar icons, use
+      {@link WindowInsetsControllerCompat#setAppearanceLightStatusBars(boolean)} or
+      {@link WindowInsetsControllerCompat#setAppearanceLightNavigationBars(boolean)}. To add scrim
+      or background protection, use {@link ProtectionLayout} or handle insets directly in your view
+      hierarchy.""",
+    replaceWith =
+        ReplaceWith(
+            expression = "WindowCompat.enableEdgeToEdge(window)",
+            imports = ["androidx.core.view.WindowCompat"],
+        ),
+)
 @JvmName("enable")
 @JvmOverloads
 public fun ComponentActivity.enableEdgeToEdge(
@@ -91,38 +106,25 @@ public fun ComponentActivity.enableEdgeToEdge(
                 Build.VERSION.SDK_INT >= 26 -> EdgeToEdgeApi26()
                 else -> EdgeToEdgeApi23()
             }.also { Impl = it }
-    val setup = Runnable {
-        impl.setUp(
-            statusBarStyle,
-            navigationBarStyle,
-            window,
-            view,
-            statusBarStyle.detectDarkMode(view.resources),
-            navigationBarStyle.detectDarkMode(view.resources),
-        )
-    }
-    (view as ViewGroup).apply {
-        if (children.none { it.tag is EdgeToEdgeImpl }) {
-            // Adds a view to listen to configuration changes.
-            addView(
-                object : View(view.context) {
-                        override fun onConfigurationChanged(newConfig: Configuration) {
-                            setup.run()
-                        }
-                    }
-                    .apply {
-                        tag = impl
-                        visibility = View.GONE
-                        setWillNotDraw(true)
-                    }
-            )
-        }
-    }
-    setup.run()
+    impl.setUp(
+        statusBarStyle,
+        navigationBarStyle,
+        window,
+        view,
+        statusBarStyle.detectDarkMode(view.resources),
+        navigationBarStyle.detectDarkMode(view.resources),
+    )
     impl.adjustLayoutInDisplayCutoutMode(window)
 }
 
 /** The style for the status bar or the navigation bar used in [enableEdgeToEdge]. */
+@Deprecated(
+    message =
+        "SystemBarStyle was used to configure enableEdgeToEdge. Use " +
+            "WindowCompat.enableEdgeToEdge(Window), " +
+            "WindowCompat.getInsetsController(Window, View), and " +
+            "ProtectionLayout instead."
+)
 public class SystemBarStyle
 private constructor(
     private val lightScrim: Int,

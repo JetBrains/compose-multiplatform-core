@@ -25,18 +25,19 @@ import androidx.annotation.RequiresApi
 @Deprecated(
     message = "Use android.graphics.Paint directly instead",
     replaceWith = ReplaceWith("android.graphics.Paint"),
+    level = DeprecationLevel.ERROR,
 )
-actual typealias NativePaint = android.graphics.Paint
+public actual typealias NativePaint = android.graphics.Paint
 
-actual fun Paint(): Paint = AndroidPaint()
+public actual fun Paint(): Paint = AndroidPaint()
 
 /** Convert an [android.graphics.Paint] instance into a Compose-compatible [Paint] */
 // TODO: Multiple calls will NOT return the same instance,
 //  consider to replace to `fun Paint(androidPaint: android.graphics.Paint)`
-fun android.graphics.Paint.asComposePaint(): Paint = AndroidPaint(this)
+public fun android.graphics.Paint.asComposePaint(): Paint = AndroidPaint(this)
 
 /** Convert a Compose [Paint] instance into an [android.graphics.Paint]. */
-val Paint.nativePaint: android.graphics.Paint
+public val Paint.nativePaint: android.graphics.Paint
     get() {
         requirePrecondition(this is AndroidPaint) {
             "Extracting native reference is only supported from androidx.compose.ui.graphics.AndroidPaint instances but received ${this::class.qualifiedName}"
@@ -55,10 +56,10 @@ val Paint.nativePaint: android.graphics.Paint
 //    message = "This type is not supposed to be used directly",
 //    replaceWith = ReplaceWith("androidx.compose.ui.graphics.Paint"),
 // )
-class AndroidPaint(internal var internalPaint: android.graphics.Paint) : Paint {
+public class AndroidPaint(internal var internalPaint: android.graphics.Paint) : Paint {
 
     /** Create a new [AndroidPaint] instance backed by a newly created [android.graphics.Paint] */
-    constructor() : this(makeNativePaint())
+    public constructor() : this(makeNativePaint())
 
     private var _blendMode = BlendMode.SrcOver
     private var internalShader: Shader? = null
@@ -67,6 +68,7 @@ class AndroidPaint(internal var internalPaint: android.graphics.Paint) : Paint {
     @Deprecated(
         message = "Use [nativePaint] extension instead",
         replaceWith = ReplaceWith("nativePaint"),
+        level = DeprecationLevel.ERROR,
     )
     override fun asFrameworkPaint(): android.graphics.Paint = internalPaint
 

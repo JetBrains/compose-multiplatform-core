@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.ui.text.input
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
 
-/** The transformed text with offset offset mapping */
-class TransformedText(
+/** The transformed text with offset mapping */
+@Deprecated(
+    "The TextField flavors that use VisualTransformation are deprecated. Please" +
+        " refer to OutputTransformation."
+)
+public class TransformedText(
     /** The transformed text */
-    val text: AnnotatedString,
+    public val text: AnnotatedString,
 
     /** The map used for bidirectional offset mapping from original to transformed text. */
-    val offsetMapping: OffsetMapping,
+    public val offsetMapping: OffsetMapping,
 ) {
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is TransformedText) return false
         if (text != other.text) return false
@@ -36,13 +42,13 @@ class TransformedText(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = text.hashCode()
         result = 31 * result + offsetMapping.hashCode()
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "TransformedText(text=$text, offsetMapping=$offsetMapping)"
     }
 }
@@ -54,8 +60,13 @@ class TransformedText(
  * example, you can mask characters in password field with asterisk with
  * [PasswordVisualTransformation].
  */
+@Deprecated(
+    "The TextField flavors that use VisualTransformation are deprecated. Please" +
+        " refer to OutputTransformation.",
+    replaceWith = ReplaceWith("OutputTransformation", "androidx.compose.foundation.text.input"),
+)
 @Immutable
-fun interface VisualTransformation {
+public fun interface VisualTransformation {
     /**
      * Change the visual output of given text.
      *
@@ -75,12 +86,12 @@ fun interface VisualTransformation {
      * @param text The original text
      * @return the pair of filtered text and offset translator.
      */
-    fun filter(text: AnnotatedString): TransformedText
+    public fun filter(text: AnnotatedString): TransformedText
 
-    companion object {
+    public companion object {
         /** A special visual transformation object indicating that no transformation is applied. */
         @Stable
-        val None: VisualTransformation = VisualTransformation { text ->
+        public val None: VisualTransformation = VisualTransformation { text ->
             TransformedText(text, OffsetMapping.Identity)
         }
     }
@@ -93,22 +104,26 @@ fun interface VisualTransformation {
  *
  * @param mask The mask character used instead of original text.
  */
-class PasswordVisualTransformation(val mask: Char = '\u2022') : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
+@Deprecated(
+    "The TextField flavors that use VisualTransformation are deprecated. Please" +
+        " refer to BasicSecureTextField and other SecureTextField composables for password inputs."
+)
+public class PasswordVisualTransformation(public val mask: Char = '\u2022') : VisualTransformation {
+    public override fun filter(text: AnnotatedString): TransformedText {
         return TransformedText(
             AnnotatedString(mask.toString().repeat(text.text.length)),
             OffsetMapping.Identity,
         )
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is PasswordVisualTransformation) return false
         if (mask != other.mask) return false
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         return mask.hashCode()
     }
 }

@@ -37,14 +37,16 @@ import androidx.core.telecom.internal.utils.EndpointUtils
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.getSpeakerEndpoint
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isEarpieceEndpoint
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isSpeakerEndpoint
-import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isWiredHeadsetOrBtEndpoint
+import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isUnexpectedSwitchFromPreferredToSpeaker
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.maybeRemoveEarpieceIfWiredEndpointPresent
 import androidx.core.telecom.internal.utils.Utils.Companion.toCallTypeCompat
 import java.util.function.Consumer
 import kotlin.Int
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -95,6 +97,9 @@ internal open class CallSession(
      * been processed.
      */
     private var mWasPreferredOverrideChecked: Boolean = false
+    // Stores the job responsible for disarming the preferred starting endpoint guard after
+    // the initial call setup stabilization window has elapsed.
+    private var mStartingEndpointStabilizationJob: Job? = null
     /**
      * Flag to ensure that the logic to switch the starting call endpoint is only attempted once.
      */
@@ -170,8 +175,6 @@ internal open class CallSession(
     }
 
     override fun onCallEndpointChanged(endpoint: CallEndpoint) {
-        // cache the previous call endpoint for maybeSwitchToSpeakerOnHeadsetDisconnect. This
-        // is used to determine if the last endpoint was BT and the new endpoint is EARPIECE.
         val previousCallEndpoint = mCurrentCallEndpoint
         // due to the [CallsManager#getAvailableStartingCallEndpoints] API, endpoints the client
         // has can be different from the ones coming from the platform. Hence, a remapping is needed
@@ -184,14 +187,14 @@ internal open class CallSession(
             mIsCurrentEndpointSet.complete(Unit)
             Log.i(TAG, "onCallEndpointChanged: mCurrentCallEndpoint was set")
         }
-        maybeSwitchToSpeakerOnHeadsetDisconnect(mCurrentCallEndpoint!!, previousCallEndpoint)
+
         avoidSpeakerOverrideOnCallStart(previousCallEndpoint, mCurrentCallEndpoint)
 
         enforceVideoCallSpeakerFallback(mCurrentCallEndpoint!!)
         maybeRerouteToEarpiece(isEndpointChange = true)
 
         // clear out the last user requested CallEndpoint. It's only used to determine if the
-        // change in current endpoints was intentional for maybeSwitchToSpeakerOnHeadsetDisconnect
+        // change in current endpoints was intentional.
         if (mLastClientRequestedEndpoint?.type == endpoint.endpointType) {
             mLastClientRequestedEndpoint = null
         }
@@ -200,16 +203,21 @@ internal open class CallSession(
     /**
      * A strict enforcer that ensures video calls never linger on the earpiece. If the platform
      * routes to the earpiece unexpectedly, this immediately forces it to the speaker, UNLESS a
-     * Bluetooth headset is available or the user explicitly requested the earpiece.
+     * Bluetooth or wired headset is available or the user explicitly requested the earpiece.
      */
-    private fun enforceVideoCallSpeakerFallback(endpoint: CallEndpointCompat) {
+    @VisibleForTesting
+    internal fun enforceVideoCallSpeakerFallback(endpoint: CallEndpointCompat) {
         // We only care about video calls
         if (mCallType != CallAttributesCompat.CALL_TYPE_VIDEO_CALL) {
             return
         }
 
-        // If the client explicitly requested the earpiece, respect their choice
-        if (isEarpieceEndpoint(mLastClientRequestedEndpoint)) {
+        // If the client explicitly requested the earpiece or preferred it as the starting
+        // endpoint, respect their choice
+        if (
+            isEarpieceEndpoint(mLastClientRequestedEndpoint) ||
+                isEarpieceEndpoint(mPreferredStartingCallEndpoint)
+        ) {
             return
         }
 
@@ -285,6 +293,7 @@ internal open class CallSession(
                     "Assuming intentional. No override.",
             )
             mWasPreferredOverrideChecked = true
+            mStartingEndpointStabilizationJob?.cancel()
             return
         }
 
@@ -298,10 +307,6 @@ internal open class CallSession(
             return
         }
 
-        // Since prevEndpoint is now non-null, we are proceeding with the one-time check.
-        // Set the flag to true immediately to ensure this block of logic runs at most once
-        // under these stable conditions (prevEndpoint is known).
-        mWasPreferredOverrideChecked = true
         Log.i(
             TAG,
             "avoidSpeakerOverrideOnCallStart: Evaluating. " +
@@ -314,11 +319,14 @@ internal open class CallSession(
         // Check 2: bug fix logic - an unexpected switch from PreferredStartingCallEndpoint
         // to SPEAKER.
         if (
-            mPreferredStartingCallEndpoint != null &&
-                mPreferredStartingCallEndpoint == prevEndpoint &&
-                mPreferredStartingCallEndpoint != nextEndpoint &&
-                isSpeakerEndpoint(nextEndpoint) // Current endpoint is SPEAKER
+            isUnexpectedSwitchFromPreferredToSpeaker(
+                preferredEndpoint = mPreferredStartingCallEndpoint,
+                prevEndpoint = prevEndpoint,
+                currentEndpoint = nextEndpoint,
+            )
         ) {
+            mWasPreferredOverrideChecked = true
+            mStartingEndpointStabilizationJob?.cancel()
             CoroutineScope(coroutineContext).launch {
                 Log.i(
                     TAG,
@@ -348,6 +356,11 @@ internal open class CallSession(
             mIsAvailableEndpointsSet.complete(Unit)
             Log.i(TAG, "onAvailableCallEndpointsChanged: mAvailableEndpoints was set")
         }
+
+        // Re-evaluate video speaker fallback when the available endpoints list changes (e.g., if
+        // onCallEndpointChanged(EARPIECE) arrived before onAvailableCallEndpointsChanged removed
+        // a disconnected Bluetooth or wired headset).
+        mCurrentCallEndpoint?.let { enforceVideoCallSpeakerFallback(it) }
     }
 
     override fun onMuteStateChanged(isMuted: Boolean) {
@@ -361,6 +374,32 @@ internal open class CallSession(
         callChannels.isMutedChannel.trySend(isMuted).getOrThrow()
     }
 
+    @VisibleForTesting internal var mStartingEndpointJob: Job? = null
+
+    /**
+     * Non-blocking entry point to launch starting endpoint resolution in the background.
+     *
+     * Clients executing logic inside their [androidx.core.telecom.CallsManager.addCall] blocks
+     * should never be blocked by initial audio route setup or waiting on platform audio state
+     * callback emissions before entering [androidx.core.telecom.CallControlScope].
+     *
+     * Previously, executing this logic synchronously on the main setup path caused notable setup
+     * regressions for client apps, stalling [androidx.core.telecom.CallsManager.addCall] execution.
+     * Furthermore, if platform or Jetpack call initialization took more than a few seconds and was
+     * further delayed by starting audio route settlement (e.g., Bluetooth connection delays), it
+     * could cause the call setup transaction to hit the platform timeout threshold and fail with a
+     * timeout error.
+     *
+     * Starting audio route setup can safely execute in the background after unpausing execution and
+     * exposing the [androidx.core.telecom.CallControlScope] to the client.
+     */
+    fun launchStartingEndpointSwitch(preferredStartingCallEndpoint: CallEndpointCompat?) {
+        mStartingEndpointJob =
+            CoroutineScope(coroutineContext).launch {
+                maybeSwitchStartingEndpoint(preferredStartingCallEndpoint)
+            }
+    }
+
     /**
      * This function should only be run once at the start of CallSession to determine if the
      * starting CallEndpointCompat should be switched based on the call properties or user request.
@@ -368,10 +407,31 @@ internal open class CallSession(
     suspend fun maybeSwitchStartingEndpoint(preferredStartingCallEndpoint: CallEndpointCompat?) {
         mPreferredStartingCallEndpoint = preferredStartingCallEndpoint
         if (preferredStartingCallEndpoint != null) {
+            startPreferredEndpointStabilizationTimer()
             switchStartingCallEndpointOnCallStart(preferredStartingCallEndpoint)
         } else {
             switchToSpeakerForVideoCallIfNeeded()
         }
+    }
+
+    @VisibleForTesting
+    internal fun startPreferredEndpointStabilizationTimer() {
+        mStartingEndpointStabilizationJob?.cancel()
+        mStartingEndpointStabilizationJob =
+            CoroutineScope(coroutineContext).launch {
+                try {
+                    delay(INITIAL_ENDPOINT_SWITCH_TIMEOUT)
+                    Log.i(
+                        TAG,
+                        "startPreferredEndpointStabilizationTimer: Call-start stabilization " +
+                            "window elapsed. Disarming preferred override guard.",
+                    )
+                    mWasPreferredOverrideChecked = true
+                    mPreferredStartingCallEndpoint = null
+                } catch (e: CancellationException) {
+                    // Normal cancellation when call ends or route stabilizes early
+                }
+            }
     }
 
     internal suspend fun switchToSpeakerForVideoCallIfNeeded(): Boolean {
@@ -432,45 +492,6 @@ internal open class CallSession(
             }
         } catch (e: Exception) {
             Log.e(TAG, "switchStartingCallEndpointOnCallStart: hit exception=[$e]")
-        }
-    }
-
-    /**
-     * Due to the fact that OEMs may diverge from AOSP telecom platform behavior, Core-Telecom needs
-     * to ensure that if a video calls headset disconnects, the speakerphone is defaulted instead of
-     * the earpiece route.
-     */
-    @VisibleForTesting
-    fun maybeSwitchToSpeakerOnHeadsetDisconnect(
-        newEndpoint: CallEndpointCompat,
-        previousEndpoint: CallEndpointCompat?,
-    ) {
-        try {
-            if (
-                (mCallType == CallAttributesCompat.CALL_TYPE_VIDEO_CALL) &&
-                    /* Only switch if the users headset disconnects & earpiece is defaulted */
-                    isEarpieceEndpoint(newEndpoint) &&
-                    isWiredHeadsetOrBtEndpoint(previousEndpoint) &&
-                    /* Do not switch request a switch to speaker if the client specifically requested
-                     * to switch from the headset from an earpiece */
-                    !isEarpieceEndpoint(mLastClientRequestedEndpoint)
-            ) {
-                val speakerCompat = getSpeakerEndpoint(mAvailableEndpoints)
-                if (speakerCompat != null) {
-                    Log.i(
-                        TAG,
-                        "maybeSwitchToSpeakerOnHeadsetDisconnect: headset disconnected while" +
-                            " in a video call. requesting switch to speaker.",
-                    )
-                    mPlatformInterface?.requestCallEndpointChange(
-                        EndpointUtils.Api34PlusImpl.toCallEndpoint(speakerCompat),
-                        Runnable::run,
-                        {},
-                    )
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "maybeSwitchToSpeakerOnHeadsetDisconnect: exception=[$e]")
         }
     }
 
@@ -659,7 +680,19 @@ internal open class CallSession(
 
     suspend fun disconnect(disconnectCause: DisconnectCause): CallControlResult {
         val result: CompletableDeferred<CallControlResult> = CompletableDeferred()
-        mPlatformInterface?.disconnect(disconnectCause, Runnable::run, CallControlReceiver(result))
+        val remappedCause =
+            if (VERSION.SDK_INT < 38 && disconnectCause.code == DisconnectCause.ERROR) {
+                DisconnectCause(
+                    DisconnectCause.LOCAL,
+                    disconnectCause.label,
+                    disconnectCause.description,
+                    disconnectCause.reason,
+                    disconnectCause.tone,
+                )
+            } else {
+                disconnectCause
+            }
+        mPlatformInterface?.disconnect(remappedCause, Runnable::run, CallControlReceiver(result))
         val callControlResult = result.await()
         moveState(callControlResult, CallStateEvent.DISCONNECTED)
         return callControlResult
@@ -794,6 +827,7 @@ internal open class CallSession(
 
     override fun close() {
         Log.i(TAG, "close: CallSessionId=[$mCallSessionId]")
+        mStartingEndpointStabilizationJob?.cancel()
         CallEndpointUuidTracker.endSession(mCallSessionId)
     }
 }

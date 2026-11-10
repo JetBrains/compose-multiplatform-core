@@ -17,6 +17,7 @@
 package androidx.leanback.widget;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
@@ -41,48 +42,79 @@ import org.robolectric.Robolectric;
 import org.robolectric.shadows.ShadowLooper;
 import org.robolectric.shadows.ShadowSystemClock;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(AndroidJUnit4.class)
 public class GridLayoutManagerRobolectricTest {
     private Context mContext;
+    private final List<Integer> mSelectedPositions = new ArrayList<>();
 
     @Before
     public void setup() {
         mContext = ApplicationProvider.getApplicationContext();
     }
 
+    static class TestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        int mItemCount;
+        final int[] mFirstItemHeight;
+
+        TestAdapter(int itemCount, int[] firstItemHeight) {
+            mItemCount = itemCount;
+            mFirstItemHeight = firstItemHeight;
+        }
+
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(
+                @NonNull ViewGroup parent, int viewType) {
+            View view = new View(parent.getContext());
+            view.setLayoutParams(new ViewGroup.LayoutParams(100, 100));
+            return new RecyclerView.ViewHolder(view) {};
+        }
+
+        @Override
+        public void onBindViewHolder(
+                RecyclerView.@NonNull ViewHolder holder, int position) {
+            if (mFirstItemHeight != null) {
+                holder.itemView.getLayoutParams().height = (position == 0)
+                        ? mFirstItemHeight[0] : 100;
+                holder.itemView.requestLayout();
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return mItemCount;
+        }
+
+        public void insertItem(int position) {
+            mItemCount++;
+            notifyItemInserted(position);
+        }
+    }
+
     private VerticalGridView setupGridView(int itemCount, final int[] firstItemHeight) {
-        InstrumentationRegistry.getInstrumentation().setInTouchMode(true);
+        return setupGridView(itemCount, firstItemHeight, true);
+    }
+
+    private VerticalGridView setupGridView(
+            int itemCount, final int[] firstItemHeight, boolean touchMode) {
+        InstrumentationRegistry.getInstrumentation().setInTouchMode(touchMode);
         Activity activity = Robolectric.buildActivity(Activity.class).setup().get();
         VerticalGridView gridView = new VerticalGridView(activity);
         gridView.setWindowAlignment(BaseGridView.WINDOW_ALIGN_NO_EDGE);
 
-        RecyclerView.Adapter<RecyclerView.ViewHolder> adapter =
-                new RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-                    @Override
-                    public RecyclerView.@NonNull ViewHolder onCreateViewHolder(
-                            @NonNull ViewGroup parent, int viewType) {
-                        View view = new View(parent.getContext());
-                        view.setLayoutParams(new ViewGroup.LayoutParams(100, 100));
-                        return new RecyclerView.ViewHolder(view) {};
-                    }
+        mSelectedPositions.clear();
+        gridView.addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
+            @Override
+            public void onChildViewHolderSelected(RecyclerView parent,
+                    RecyclerView.ViewHolder viewHolder, int position, int subposition) {
+                mSelectedPositions.add(position);
+            }
+        });
 
-                    @Override
-                    public void onBindViewHolder(
-                            RecyclerView.@NonNull ViewHolder holder, int position) {
-                        if (firstItemHeight != null) {
-                            holder.itemView.getLayoutParams().height = (position == 0)
-                                    ? firstItemHeight[0] : 100;
-                            holder.itemView.requestLayout();
-                        }
-                    }
-
-                    @Override
-                    public int getItemCount() {
-                        return itemCount;
-                    }
-                };
+        TestAdapter adapter = new TestAdapter(itemCount, firstItemHeight);
         gridView.setAdapter(adapter);
 
         FrameLayout frameLayout = new FrameLayout(activity);
@@ -147,7 +179,7 @@ public class GridLayoutManagerRobolectricTest {
     }
 
     @Test
-    public void testFastRelayout_InTouchMode_InvalidatesAllItems_AlignsToFocus() {
+    public void testFastRelayout_InTouchMode_InvalidatesAllItems_DoesNotAlignToFocus() {
         final int[] firstItemHeight = {100};
         VerticalGridView gridView = setupGridView(10, firstItemHeight);
 
@@ -159,7 +191,7 @@ public class GridLayoutManagerRobolectricTest {
         assertEquals(439, top1); // 450 - 11 (scrolled up)
 
         // Notify a change of the first item with size change to invalidate all items.
-        // It triggers fastRelayout which requires alignment.
+        // It triggers fastRelayout which should not require alignment.
         firstItemHeight[0] = 200;
         gridView.getAdapter().notifyItemChanged(0);
         assertTrue(gridView.isLayoutRequested());
@@ -168,10 +200,34 @@ public class GridLayoutManagerRobolectricTest {
 
         int top2 = child.getTop();
 
-        // Because fastRelayout invalidates all items (index 0), it should realign.
-        // Item is 200px high, container is 1000px, so it should be centered at 400.
-        // The offset of 11 is lost.
-        assertEquals(400, top2);
+        // Because structure didn't change, it should not realign.
+        // The offset of 11 is kept.
+        assertEquals(439, top2);
+    }
+
+    @Test
+    public void testFastRelayout_InTouchMode_StructureChange_AlignsToFocus() {
+        VerticalGridView gridView = setupGridView(10, null);
+
+        View child = gridView.getChildAt(0);
+
+        // Scroll the view to a new position
+        gridView.scrollBy(0, 11);
+        int top1 = child.getTop();
+        assertEquals(439, top1); // 450 - 11 (scrolled up)
+
+        // Trigger structure change (insert 1 item at position 0)
+        // This should shift focus to position 1, and force realignment of focus (position 1) to keyline (450)
+        TestAdapter adapter = (TestAdapter) gridView.getAdapter();
+        adapter.insertItem(0);
+        assertTrue(gridView.isLayoutRequested());
+
+        measureAndLayout((View) gridView.getParent());
+
+        // Because structure changed, it should realign the focused item (now at position 1) to keyline (450).
+        RecyclerView.ViewHolder holder = gridView.findViewHolderForAdapterPosition(1);
+        assertNotNull(holder);
+        assertEquals(450, holder.itemView.getTop());
     }
 
     @Test
@@ -337,5 +393,438 @@ public class GridLayoutManagerRobolectricTest {
         assertEquals(RecyclerView.SCROLL_STATE_IDLE, gridView.getScrollState());
 
         assertEquals(0, gridView.getSelectedPosition());
+    }
+
+    @Test
+    public void testTouchMode_setSelectedPositionToUnalignedChild_doesNotAlign() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        View child1 = gridView.getChildAt(1);
+        int topBefore = child1.getTop();
+        assertEquals(539, topBefore); // 450 (keyline) + 100 (item 0) - 11 (scroll)
+
+        // Select unaligned
+        mSelectedPositions.clear();
+        gridView.setSelectedPositionToUnalignedChild(child1);
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+
+        // Trigger view layout change (requestLayout)
+        child1.requestLayout();
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it did not align (remains at 539)
+        assertEquals(539, child1.getTop());
+        assertEquals(1, mSelectedPositions.size());
+    }
+
+    @Test
+    public void testTouchMode_setSelectedPosition_aligns() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        View child1 = gridView.getChildAt(1);
+        assertEquals(539, child1.getTop());
+
+        // Select aligned (programmatic)
+        mSelectedPositions.clear();
+        gridView.setSelectedPosition(1);
+
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it aligned (child 1 moves to keyline 450)
+        assertEquals(450, child1.getTop());
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+    }
+
+    @Test
+    public void testTouchMode_setSelectedPosition_offscreen_aligns() {
+        VerticalGridView gridView = setupGridView(15, null);
+        assertTrue(gridView.isInTouchMode());
+
+        // Select offscreen item (index 12 is offscreen since height is 1000 and items are 100)
+        mSelectedPositions.clear();
+        gridView.setSelectedPosition(12);
+
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it is aligned to keyline (450)
+        RecyclerView.ViewHolder holder = gridView.findViewHolderForAdapterPosition(12);
+        assertNotNull(holder);
+        assertEquals(450, holder.itemView.getTop());
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(12, (int) mSelectedPositions.get(0));
+    }
+
+    @Test
+    public void testTouchMode_setSelectedPosition_sameFrameAsLayoutChange_aligns() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        View child1 = gridView.getChildAt(1);
+        assertEquals(539, child1.getTop());
+
+        // In the same frame: change layout of child 1 and call setSelectedPosition
+        child1.getLayoutParams().height = 150;
+        child1.requestLayout();
+        mSelectedPositions.clear();
+        gridView.setSelectedPosition(1);
+
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it aligned to keyline (425 because height is 150)
+        assertEquals(425, child1.getTop());
+        assertEquals(150, child1.getHeight());
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+    }
+
+    @Test
+    public void testTouchMode_setSelectedPositionToUnaligned_layoutChange_doesNotAlign() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        View child1 = gridView.getChildAt(1);
+        assertEquals(539, child1.getTop());
+
+        // In the same frame: change layout of child 1 and call setSelectedPositionToUnalignedChild
+        child1.getLayoutParams().height = 150;
+        child1.requestLayout();
+        mSelectedPositions.clear();
+        gridView.setSelectedPositionToUnalignedChild(child1);
+
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it did not align (remains at 539, but height is updated)
+        assertEquals(539, child1.getTop());
+        assertEquals(150, child1.getHeight());
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+    }
+
+    @Test
+    public void testDPADMode_setSelectedPositionToUnalignedChild_doesNotAlign() {
+        // Setup in DPAD mode (touchMode = false)
+        VerticalGridView gridView = setupGridView(10, null, false);
+        assertTrue(!gridView.isInTouchMode());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        View child1 = gridView.getChildAt(1);
+        assertEquals(539, child1.getTop());
+
+        // Select unaligned
+        mSelectedPositions.clear();
+        gridView.setSelectedPositionToUnalignedChild(child1);
+
+        child1.requestLayout();
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it did not align (keeps hover offset)
+        assertEquals(539, child1.getTop());
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+    }
+
+    @Test
+    public void testDPADMode_resumeDPADNavigation_aligns() {
+        VerticalGridView gridView = setupGridView(10, null, false);
+        assertTrue(!gridView.isInTouchMode());
+
+        // Focus on item 0
+        gridView.setSelectedPosition(0);
+        measureAndLayout((View) gridView.getParent());
+        View child0 = gridView.getChildAt(0);
+        assertEquals(450, child0.getTop());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        assertEquals(439, child0.getTop());
+
+        mSelectedPositions.clear();
+
+        // Hover select item 0 (stays unaligned)
+        gridView.setSelectedPositionToUnalignedChild(child0);
+        child0.requestLayout();
+        measureAndLayout((View) gridView.getParent());
+        assertEquals(439, child0.getTop());
+        assertTrue(mSelectedPositions.isEmpty());
+
+        // Simulate DPAD navigation to item 1.
+        // We call focusSearch to simulate key press.
+        View nextFocus = gridView.focusSearch(child0, View.FOCUS_DOWN);
+        assertNotNull(nextFocus);
+        nextFocus.requestFocus();
+        ShadowLooper.idleMainLooper();
+
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify next focus (item 1) is aligned to keyline (450)
+        RecyclerView.ViewHolder holder1 = gridView.findViewHolderForAdapterPosition(1);
+        assertNotNull(holder1);
+        assertEquals(450, holder1.itemView.getTop());
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+    }
+
+    @Test
+    public void testTouchMode_setSelectedPositionToUnaligned_structureChange_aligns() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        View child1 = gridView.getChildAt(1);
+        int topBefore = child1.getTop();
+        assertEquals(539, topBefore); // 450 (keyline) + 100 (item 0) - 11 (scroll)
+
+        // Select unaligned (sets PF_KEEP_UNALIGNED)
+        mSelectedPositions.clear();
+
+        gridView.setSelectedPositionToUnalignedChild(child1);
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+
+        child1.requestLayout();
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it did not align (remains at 539)
+        assertEquals(539, child1.getTop());
+        assertEquals(1, mSelectedPositions.size()); // No new events
+
+        // Trigger structure change (insert 1 item at position 0)
+        // This should shift focus to position 2, and force realignment of focus
+        // (position 2) to keyline (450)
+        TestAdapter adapter = (TestAdapter) gridView.getAdapter();
+        adapter.insertItem(0);
+        assertTrue(gridView.isLayoutRequested());
+
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it aligned the focused item (now at position 2) to keyline (450)
+        RecyclerView.ViewHolder holder = gridView.findViewHolderForAdapterPosition(2);
+        assertNotNull(holder);
+        assertEquals(450, holder.itemView.getTop());
+
+        // Verify it dispatched position 2 selection event.
+        assertEquals(2, mSelectedPositions.size());
+        assertEquals(2, (int) mSelectedPositions.get(1));
+    }
+
+    @Test
+    public void testDPADMode_setSelectedPosition_aligns() {
+        VerticalGridView gridView = setupGridView(10, null, false);
+        assertTrue(!gridView.isInTouchMode());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        View child1 = gridView.getChildAt(1);
+        assertEquals(539, child1.getTop());
+
+        // Select unaligned (hover)
+        mSelectedPositions.clear();
+
+        gridView.setSelectedPositionToUnalignedChild(child1);
+        child1.requestLayout();
+        measureAndLayout((View) gridView.getParent());
+        assertEquals(539, child1.getTop());
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+
+        // Select aligned programmatically
+        gridView.setSelectedPosition(1);
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it aligned (child 1 moves to keyline 450)
+        assertEquals(450, child1.getTop());
+        // Position didn't change, so no new event.
+        assertEquals(1, mSelectedPositions.size());
+    }
+
+    @Test
+    public void testDPADMode_setSelectedPositionToUnaligned_structureChange_aligns() {
+        VerticalGridView gridView = setupGridView(10, null, false);
+        assertTrue(!gridView.isInTouchMode());
+
+        // Scroll to unalign
+        gridView.scrollBy(0, 11);
+        View child1 = gridView.getChildAt(1);
+        assertEquals(539, child1.getTop());
+
+        // Select unaligned (hover)
+        mSelectedPositions.clear();
+
+        gridView.setSelectedPositionToUnalignedChild(child1);
+        child1.requestLayout();
+        measureAndLayout((View) gridView.getParent());
+        assertEquals(539, child1.getTop());
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+
+        // Trigger structure change (insert 1 item at position 0)
+        // Focus shifts to position 2, and should align to keyline (450)
+        TestAdapter adapter = (TestAdapter) gridView.getAdapter();
+        adapter.insertItem(0);
+        assertTrue(gridView.isLayoutRequested());
+
+        measureAndLayout((View) gridView.getParent());
+
+        // Verify it aligned the focused item (now at position 2) to keyline (450)
+        RecyclerView.ViewHolder holder = gridView.findViewHolderForAdapterPosition(2);
+        assertNotNull(holder);
+        assertEquals(450, holder.itemView.getTop());
+
+        // Verify it dispatched position 2 selection event.
+        assertEquals(2, mSelectedPositions.size());
+        assertEquals(2, (int) mSelectedPositions.get(1));
+    }
+
+    @Test
+    public void testTouchMode_setSelectedPosition_alreadyAligned_doesNotLeakPendingAlign() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+
+        // Focus on 0, it is aligned by default (450)
+        View child0 = gridView.getChildAt(0);
+        assertEquals(450, child0.getTop());
+
+        // Call setSelectedPosition(0) programmatically.
+        // It is already aligned, so it shouldn't scroll or layout.
+        mSelectedPositions.clear();
+
+        gridView.setSelectedPosition(0);
+        assertTrue(!gridView.isLayoutRequested());
+        assertTrue(mSelectedPositions.isEmpty());
+
+        // Scroll the view to make it unaligned.
+        gridView.scrollBy(0, 11);
+        assertEquals(439, child0.getTop());
+
+        // Trigger layout pass.
+        child0.requestLayout();
+        assertTrue(gridView.isLayoutRequested());
+        measureAndLayout((View) gridView.getParent());
+
+        // If PF_PENDING_ALIGN leaked, it will force alignment back to 450.
+        // It should remain at 439 (since we scrolled it and didn't request realignment).
+        assertEquals(439, child0.getTop());
+        assertTrue(mSelectedPositions.isEmpty());
+    }
+
+    @Test
+    public void testTouchMode_setSelectedPosition_visibleView_clearsPendingAlign() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+
+        // Child 1 is at 550, visible (grid height 1000)
+        View child1 = gridView.getChildAt(1);
+        assertEquals(550, child1.getTop());
+
+        mSelectedPositions.clear();
+
+        // Select child 1. This should trigger immediate scroll because the view is
+        // available and layout is not requested.
+        gridView.setSelectedPosition(1);
+
+        // Verify that the view scrolled immediately.
+        assertEquals(450, child1.getTop());
+
+        // Verify that PF_PENDING_ALIGN is not remaining.
+        GridLayoutManager layoutManager = (GridLayoutManager) gridView.getLayoutManager();
+        assertTrue((layoutManager.mFlag & GridLayoutManager.PF_PENDING_ALIGN) == 0);
+
+        // Verify that the selection event was dispatched once.
+        assertEquals(1, mSelectedPositions.size());
+        assertEquals(1, (int) mSelectedPositions.get(0));
+    }
+
+    @Test
+    public void testTouchMode_snapAfterHoverUnaligned() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+        gridView.setFocusScrollStrategy(BaseGridView.FOCUS_SCROLL_ALIGNED_AND_SNAP);
+
+        // Child 1 is at 550, visible
+        View child1 = gridView.getChildAt(1);
+        assertEquals(550, child1.getTop());
+
+        // Select child 1, it should align to 450
+        gridView.setSelectedPosition(1);
+        measureAndLayout((View) gridView.getParent());
+        assertEquals(450, child1.getTop());
+
+        // Simulate hover on child 2 (at 550 now)
+        View child2 = gridView.getChildAt(2);
+        gridView.setSelectedPositionToUnalignedChild(child2);
+        measureAndLayout((View) gridView.getParent());
+        // It should remain unaligned (at 550)
+        assertEquals(550, child2.getTop());
+
+        // Now simulate drag.
+        GridLayoutManager layoutManager = (GridLayoutManager) gridView.getLayoutManager();
+        layoutManager.onScrollStateChanged(RecyclerView.SCROLL_STATE_DRAGGING);
+
+        // Scroll a bit to simulate drag movement (downwards, so views move up)
+        // Drag by 60 to make child 2 closer to keyline (450) than child 1.
+        // Child 1 will be at 390 (dist 60). Child 2 will be at 490 (dist 40).
+        gridView.scrollBy(0, 60);
+
+        // Stop drag (idle)
+        layoutManager.onScrollStateChanged(RecyclerView.SCROLL_STATE_IDLE);
+        ShadowLooper.idleMainLooper();
+        measureAndLayout((View) gridView.getParent());
+
+        // It should snap to the aligned position of the selected item (child 2).
+        assertEquals(450, child2.getTop());
+    }
+
+    @Test
+    public void testTouchMode_snapAfterHoverUnaligned_smallDrag() {
+        VerticalGridView gridView = setupGridView(10, null);
+        assertTrue(gridView.isInTouchMode());
+        gridView.setFocusScrollStrategy(BaseGridView.FOCUS_SCROLL_ALIGNED_AND_SNAP);
+
+        // Child 1 is at 550, visible
+        View child1 = gridView.getChildAt(1);
+        assertEquals(550, child1.getTop());
+
+        // Select child 1, it should align to 450
+        gridView.setSelectedPosition(1);
+        measureAndLayout((View) gridView.getParent());
+        assertEquals(450, child1.getTop());
+
+        // Simulate hover on child 2 (at 550 now)
+        View child2 = gridView.getChildAt(2);
+        gridView.setSelectedPositionToUnalignedChild(child2);
+        measureAndLayout((View) gridView.getParent());
+        // It should remain unaligned (at 550)
+        assertEquals(550, child2.getTop());
+
+        // Now simulate drag.
+        GridLayoutManager layoutManager = (GridLayoutManager) gridView.getLayoutManager();
+        layoutManager.onScrollStateChanged(RecyclerView.SCROLL_STATE_DRAGGING);
+
+        // Scroll a bit to simulate drag movement (downwards, so views move up)
+        // Drag by 10. Child 1 will be at 440 (dist 10). Child 2 will be at 540 (dist 90).
+        // Child 1 is still closer to 450.
+        gridView.scrollBy(0, 10);
+
+        // Stop drag (idle)
+        layoutManager.onScrollStateChanged(RecyclerView.SCROLL_STATE_IDLE);
+        ShadowLooper.idleMainLooper();
+        measureAndLayout((View) gridView.getParent());
+
+        // It should snap back to the aligned position of child 1.
+        assertEquals(450, child1.getTop());
     }
 }

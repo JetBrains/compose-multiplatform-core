@@ -22,8 +22,8 @@ import kotlinx.atomicfu.updateAndGet
 
 /**
  * A SharedReference manages a reference to a [value] and can be used to create wrapper objects that
- * have shared-pointer like semantics. When created, a SharedReferences begins with a reference
- * count of `1`. When the reference count reaches 0 the current [Finalizer] will be invoked and all
+ * have shared-pointer like semantics. When created, a SharedReference begins with a reference count
+ * of `1`. When the reference count reaches 0 the current [Finalizer] will be invoked and all
  * subsequent calls to [setFinalizer] and [acquireOrNull] will fail.
  *
  * This class is designed as a building block to make it easier to create reference counted wrapper
@@ -37,18 +37,17 @@ internal class SharedReference<T>(private val value: T, defaultFinalizer: Finali
     private var currentFinalizer = atomic<Finalizer<T>?>(defaultFinalizer)
 
     /**
-     * Get the underlying value and atomically incrementing the reference count, or null if the
+     * Get the underlying value and atomically increment the reference count, or null if the
      * reference count is zero.
      */
     fun acquireOrNull(): T? {
-        val current =
-            count.updateAndGet { current ->
-                if (current == 0) {
-                    0
-                } else {
-                    current + 1
-                }
+        val current = count.updateAndGet { current ->
+            if (current == 0) {
+                0
+            } else {
+                current + 1
             }
+        }
         if (current != 0) {
             return value
         }
@@ -77,7 +76,7 @@ internal class SharedReference<T>(private val value: T, defaultFinalizer: Finali
     /**
      * Replace the current finalizer with a new one, and invoke [Finalizer.finalize] with null on
      * the previously configured finalizer object. If the reference count of this object has reached
-     * null, the [Finalizer.finalize] method will be immediately and synchronously invoked with
+     * zero, the [Finalizer.finalize] method will be immediately and synchronously invoked with
      * null.
      *
      * This can be used to gain access to the underlying object after all shared references have
@@ -86,14 +85,13 @@ internal class SharedReference<T>(private val value: T, defaultFinalizer: Finali
     fun setFinalizer(value: Finalizer<T>) {
         // Update the finalizer to the new value, but only if the current finalizer is not null. If
         // the previous finalizer is null, do not update the value.
-        val previous =
-            currentFinalizer.getAndUpdate { previous ->
-                if (previous == null) {
-                    null
-                } else {
-                    value
-                }
+        val previous = currentFinalizer.getAndUpdate { previous ->
+            if (previous == null) {
+                null
+            } else {
+                value
             }
+        }
 
         // If the previous finalizer is not null, then invoke the previous finalizer with null.
         // This indicates it has been replaced by a different finalizer instance and will not be

@@ -27,30 +27,51 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.NavHostController
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import androidx.wear.compose.remote.integration.demos.components.LocalSelectedFontFamilyName
 import androidx.wear.compose.remote.integration.demos.components.LocalUseDynamicColor
+import androidx.wear.compose.remote.integration.demos.components.LocalUseEmbeddedPlayer
 import androidx.wear.compose.remote.integration.demos.components.RemoteAppCardDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteButtonGroupDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteCardDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteCheckboxButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteCircularProgressIndicatorDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteCompactButtonDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteCurvedProgressIndicatorDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteEdgeButtonDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteHorizontalPageIndicator10Demo
+import androidx.wear.compose.remote.integration.demos.components.RemoteHorizontalPageIndicator3Demo
 import androidx.wear.compose.remote.integration.demos.components.RemoteIconButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteIconDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteLinearProgressIndicatorDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteOneHandedGestureDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteRadioButtonDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteSliderDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteSplitCheckboxButtonDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteSplitRadioButtonDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteSplitSwitchButtonDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteStepperDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteSwitchButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteTextButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteTextDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteTitleCardDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteVerticalPageIndicator10Demo
+import androidx.wear.compose.remote.integration.demos.components.RemoteVerticalPageIndicator3Demo
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 private val Context.dataStore by preferencesDataStore(name = "remote_material3_demos")
 private val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
+private val SELECTED_FONT_NAME = stringPreferencesKey("selected_font_name")
+private val USE_EMBEDDED_PLAYER = booleanPreferencesKey("use_embedded_player")
 
 @Composable
 fun WearApp(
@@ -64,7 +85,21 @@ fun WearApp(
     }
     val useDynamicColor by useDynamicColorFlow.collectAsState(initial = true)
 
-    CompositionLocalProvider(LocalUseDynamicColor provides useDynamicColor) {
+    val selectedFontNameFlow = remember {
+        context.dataStore.data.map { preferences -> preferences[SELECTED_FONT_NAME] ?: "Default" }
+    }
+    val selectedFontName by selectedFontNameFlow.collectAsState(initial = "Default")
+
+    val useEmbeddedPlayerFlow = remember {
+        context.dataStore.data.map { preferences -> preferences[USE_EMBEDDED_PLAYER] ?: false }
+    }
+    val useEmbeddedPlayer by useEmbeddedPlayerFlow.collectAsState(initial = false)
+
+    CompositionLocalProvider(
+        LocalUseDynamicColor provides useDynamicColor,
+        LocalSelectedFontFamilyName provides selectedFontName,
+        LocalUseEmbeddedPlayer provides useEmbeddedPlayer,
+    ) {
         AppScaffold(modifier = modifier) {
             SwipeDismissableNavHost(
                 startDestination = Screen.MainScreen.route,
@@ -80,12 +115,31 @@ fun WearApp(
                                 }
                             }
                         },
+                        selectedFontName = selectedFontName,
+                        onSelectedFontNameChange = { newValue ->
+                            coroutineScope.launch {
+                                context.dataStore.edit { preferences ->
+                                    preferences[SELECTED_FONT_NAME] = newValue
+                                }
+                            }
+                        },
+                        useEmbeddedPlayer = useEmbeddedPlayer,
+                        onUseEmbeddedPlayerChange = { newValue ->
+                            coroutineScope.launch {
+                                context.dataStore.edit { preferences ->
+                                    preferences[USE_EMBEDDED_PLAYER] = newValue
+                                }
+                            }
+                        },
                         navigateToRoute = navController::navigate,
                     )
                 }
                 composable(route = Screen.RemoteButtonDemosScreen.route) { RemoteButtonDemos() }
                 composable(route = Screen.RemoteCompactButtonDemosScreen.route) {
                     RemoteCompactButtonDemos()
+                }
+                composable(route = Screen.RemoteEdgeButtonDemosScreen.route) {
+                    RemoteEdgeButtonDemos()
                 }
                 composable(route = Screen.RemoteIconButtonDemosScreen.route) {
                     RemoteIconButtonDemos()
@@ -96,9 +150,38 @@ fun WearApp(
                 composable(route = Screen.RemoteButtonGroupDemosScreen.route) {
                     RemoteButtonGroupDemos()
                 }
+                composable(route = Screen.RemoteCheckboxButtonDemosScreen.route) {
+                    RemoteCheckboxButtonDemos()
+                }
+                composable(route = Screen.RemoteRadioButtonDemosScreen.route) {
+                    RemoteRadioButtonDemos()
+                }
+                composable(route = Screen.RemoteSwitchButtonDemosScreen.route) {
+                    RemoteSwitchButtonDemos()
+                }
+                composable(route = Screen.RemoteSplitCheckboxButtonDemosScreen.route) {
+                    RemoteSplitCheckboxButtonDemos()
+                }
+                composable(route = Screen.RemoteSplitRadioButtonDemosScreen.route) {
+                    RemoteSplitRadioButtonDemos()
+                }
+                composable(route = Screen.RemoteSplitSwitchButtonDemosScreen.route) {
+                    RemoteSplitSwitchButtonDemos()
+                }
+                composable(route = Screen.RemoteSliderDemosScreen.route) { RemoteSliderDemos() }
+                composable(route = Screen.RemoteStepperDemosScreen.route) { RemoteStepperDemos() }
                 composable(route = Screen.RemoteIconDemosScreen.route) { RemoteIconDemos() }
+                composable(route = Screen.RemoteOneHandedGestureDemosScreen.route) {
+                    RemoteOneHandedGestureDemos()
+                }
                 composable(route = Screen.RemoteCircularProgressIndicatorDemosScreen.route) {
                     RemoteCircularProgressIndicatorDemos()
+                }
+                composable(route = Screen.RemoteCurvedProgressIndicatorDemosScreen.route) {
+                    RemoteCurvedProgressIndicatorDemos()
+                }
+                composable(route = Screen.RemoteLinearProgressIndicatorDemosScreen.route) {
+                    RemoteLinearProgressIndicatorDemos()
                 }
                 composable(route = Screen.RemoteAppCardDemosScreen.route) { RemoteAppCardDemos() }
                 composable(route = Screen.RemoteCardDemosScreen.route) { RemoteCardDemos() }
@@ -106,6 +189,18 @@ fun WearApp(
                     RemoteTitleCardDemos()
                 }
                 composable(route = Screen.RemoteTextDemosScreen.route) { RemoteTextDemos() }
+                composable(route = Screen.RemoteHorizontalPageIndicator3DemoScreen.route) {
+                    RemoteHorizontalPageIndicator3Demo()
+                }
+                composable(route = Screen.RemoteHorizontalPageIndicator10DemoScreen.route) {
+                    RemoteHorizontalPageIndicator10Demo()
+                }
+                composable(route = Screen.RemoteVerticalPageIndicator3DemoScreen.route) {
+                    RemoteVerticalPageIndicator3Demo()
+                }
+                composable(route = Screen.RemoteVerticalPageIndicator10DemoScreen.route) {
+                    RemoteVerticalPageIndicator10Demo()
+                }
             }
         }
     }

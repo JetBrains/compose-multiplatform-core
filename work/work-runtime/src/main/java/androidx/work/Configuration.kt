@@ -20,6 +20,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.core.util.Consumer
 import androidx.tracing.Trace
 import androidx.work.impl.DefaultRunnableScheduler
@@ -28,11 +29,9 @@ import androidx.work.impl.utils.INITIAL_ID
 import androidx.work.multiprocess.RemoteWorkManager.DEFAULT_SESSION_TIMEOUT_MILLIS
 import androidx.work.multiprocess.RemoteWorkManager.MAX_SESSION_TIMEOUT_MILLIS
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
+import kotlin.jvm.JvmStatic
 import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.CoroutineDispatcher
@@ -149,6 +148,14 @@ public class Configuration internal constructor(builder: Builder) {
     /** @return `true` If the default task [Executor] is being used */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val isUsingDefaultTaskExecutor: Boolean
 
+    /**
+     * @return `true` if remote worker cancellation propagation is enabled. Note: This flag guards
+     *   the cancellation propagation fix to allow running it experimentally to verify that
+     *   reliability metrics remain stable before removing the flag permanently.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val isRemoteCancellationPropagationFixEnabled: Boolean
+
     // Note: public experimental properties are not allowed because the accessors will not appear
     // experimental to Java clients. There is a public accessor for this property below.
     @property:ExperimentalConfigurationApi
@@ -216,7 +223,8 @@ public class Configuration internal constructor(builder: Builder) {
         executor =
             builder.executor
                 ?: builderWorkerDispatcher?.asExecutor()
-                ?: createDefaultExecutor(isTaskExecutor = false)
+                ?: Dispatchers.Default.limitedParallelism(calculateExecutorParallelismLimit())
+                    .asExecutor()
 
         workerCoroutineContext =
             when {
@@ -231,7 +239,7 @@ public class Configuration internal constructor(builder: Builder) {
         // This executor is used for *both* WorkManager's tasks and Room's query executor.
         // So this should not be a single threaded executor. Writes will still be serialized
         // as this will be wrapped with an SerialExecutor.
-        taskExecutor = builder.taskExecutor ?: createDefaultExecutor(isTaskExecutor = true)
+        taskExecutor = builder.taskExecutor ?: Dispatchers.Default.asExecutor()
         clock = builder.clock ?: SystemClock()
         workerFactory = builder.workerFactory ?: DefaultWorkerFactory
         inputMergerFactory = builder.inputMergerFactory ?: NoOpInputMergerFactory
@@ -259,6 +267,7 @@ public class Configuration internal constructor(builder: Builder) {
         tracer = builder.tracer ?: createDefaultTracer()
         enableRepresentativeJobs = builder.enableRepresentativeJobs
         enableGreedyScheduler = builder.enableGreedyScheduler
+        isRemoteCancellationPropagationFixEnabled = builder.remoteCancellationPropagationFixEnabled
     }
 
     /** A Builder for [Configuration]s. */
@@ -287,6 +296,7 @@ public class Configuration internal constructor(builder: Builder) {
         internal var tracer: Tracer? = null
         internal var enableRepresentativeJobs: Boolean = false
         internal var enableGreedyScheduler: Boolean = true
+        internal var remoteCancellationPropagationFixEnabled: Boolean = false
 
         /** Creates a new [Configuration.Builder]. */
         public constructor()
@@ -325,6 +335,8 @@ public class Configuration internal constructor(builder: Builder) {
             tracer = configuration.tracer
             enableRepresentativeJobs = configuration.isRepresentativeJobsEnabled()
             enableGreedyScheduler = configuration.isGreedySchedulerEnabled()
+            remoteCancellationPropagationFixEnabled =
+                configuration.isRemoteCancellationPropagationFixEnabled
         }
 
         /**
@@ -696,6 +708,22 @@ public class Configuration internal constructor(builder: Builder) {
         }
 
         /**
+         * Specifies whether remote worker cancellation propagation is enabled.
+         *
+         * Note: This flag guards the cancellation propagation fix to allow running it
+         * experimentally to verify that reliability metrics remain stable before removing the flag
+         * permanently.
+         *
+         * @param enabled `true` to enable remote worker cancellation propagation
+         * @return This [Builder] instance
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun setRemoteCancellationPropagationFixEnabled(enabled: Boolean): Builder {
+            this.remoteCancellationPropagationFixEnabled = enabled
+            return this
+        }
+
+        /**
          * Builds a [Configuration] object.
          *
          * @return A [Configuration] object with this [Builder]'s parameters.
@@ -731,28 +759,19 @@ public class Configuration internal constructor(builder: Builder) {
          * [android.app.job.JobScheduler] or [android.app.AlarmManager].
          */
         public const val MIN_SCHEDULER_LIMIT: Int = 20
+
+        /** Calculates the maximum number of threads the executor should use. */
+        @VisibleForTesting
+        @JvmStatic
+        @JvmName("calculateExecutorParallelismLimit")
+        internal fun calculateExecutorParallelismLimit(): Int {
+            // This value is the same as the core pool size for AsyncTask#THREAD_POOL_EXECUTOR.
+            return max(1, min(Runtime.getRuntime().availableProcessors() - 1, 4))
+        }
     }
 }
 
 internal const val DEFAULT_CONTENT_URI_TRIGGERS_WORKERS_LIMIT = 8
-
-private fun createDefaultExecutor(isTaskExecutor: Boolean): Executor {
-    val factory =
-        object : ThreadFactory {
-            private val threadCount = AtomicInteger(0)
-
-            override fun newThread(runnable: Runnable): Thread {
-                // Thread names are constrained to a max of 15 characters by the Linux Kernel.
-                val prefix = if (isTaskExecutor) "WM.task-" else "androidx.work-"
-                return Thread(runnable, "$prefix${threadCount.incrementAndGet()}")
-            }
-        }
-    return Executors.newFixedThreadPool(
-        // This value is the same as the core pool size for AsyncTask#THREAD_POOL_EXECUTOR.
-        max(2, min(Runtime.getRuntime().availableProcessors() - 1, 4)),
-        factory,
-    )
-}
 
 private fun createDefaultTracer(): Tracer {
     // Delegate to AndroidX Tracing while leaving the implementation open-ended for a pluggable

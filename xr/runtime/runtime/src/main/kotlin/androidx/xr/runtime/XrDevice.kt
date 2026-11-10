@@ -19,8 +19,10 @@ package androidx.xr.runtime
 import android.content.Context
 import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
-import androidx.xr.runtime.XrDevice.Companion.getCurrentDevice
+import androidx.lifecycle.LifecycleOwner
 import androidx.xr.runtime.interfaces.DisplayBlendMode as InternalDisplayBlendMode
 import androidx.xr.runtime.interfaces.XrDeviceCapabilityProvider
 import androidx.xr.runtime.interfaces.XrDeviceCapabilityProviderFactory
@@ -28,27 +30,24 @@ import androidx.xr.runtime.internal.XrInstanceManager
 import java.util.WeakHashMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
 
-/** Provides hardware capabilities of the device. */
+/** Device hardware capabilities. */
 public class XrDevice
-private constructor(
-    private val session: Session?,
-    private val xrDeviceCapabilityProvider: XrDeviceCapabilityProvider?,
-) {
+private constructor(private val xrDeviceCapabilityProvider: XrDeviceCapabilityProvider?) {
 
     /**
      * Returns this XrDevice's [Lifecycle].
      *
      * The value will be the Projected device's lifecycle if its [Context] was used when calling
-     * [getCurrentDevice]. Otherwise, the [Session's][Session] lifecycle will be returned.
+     * [getCurrentDevice].
      *
-     * @throws IllegalStateException if there is no lifecycle associated with this XrDevice.
+     * @throws [IllegalStateException] if there is no lifecycle associated with this XrDevice
      */
     public fun getLifecycle(): Lifecycle =
-        // TODO(b/461561664) : Use XrDeviceCapabilityProvider.getLifecycle() once session
-        // constructor is removed.
         xrDeviceCapabilityProvider?.lifecycle
-            ?: session?.lifecycleOwner?.lifecycle
             ?: throw IllegalStateException("No lifecycle associated with this XrDevice.")
 
     public companion object {
@@ -67,7 +66,7 @@ private constructor(
          *
          * @param context the [Context] associated with the device
          * @param coroutineContext the [CoroutineContext] to use for the XrDevice operations
-         * @throws IllegalArgumentException if the provided [Context] is not supported
+         * @throws [IllegalArgumentException] if the provided [Context] is not supported
          */
         @JvmStatic
         @JvmOverloads
@@ -75,6 +74,11 @@ private constructor(
             context: Context,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
         ): XrDevice {
+            if (context is LifecycleOwner) {
+                check(context.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+                    "Cannot get XrDevice for a destroyed context."
+                }
+            }
             synchronized(deviceCache) {
                 deviceCache[context]?.let {
                     return it
@@ -89,16 +93,33 @@ private constructor(
                     ),
                     features,
                 )
+            // TODO(b/525421830): Make xrDeviceCapabilityProvider non-nullable.
             val device =
                 XrDevice(
-                    session = null,
                     xrDeviceCapabilityProviderFactory?.create(
                         context,
                         coroutineContext,
                         XrInstanceManager.getProvider(context),
-                    ),
+                    )
                 )
             synchronized(deviceCache) { deviceCache[context] = device }
+            if (context is LifecycleOwner) {
+                val mainDispatcher = MainExecutorDispatcher(ContextCompat.getMainExecutor(context))
+                CoroutineScope(mainDispatcher.immediate + NonCancellable).launch {
+                    if (context.lifecycle.currentState == Lifecycle.State.DESTROYED) {
+                        synchronized(deviceCache) { deviceCache.remove(context) }
+                        return@launch
+                    }
+                    val observer =
+                        object : DefaultLifecycleObserver {
+                            override fun onDestroy(owner: LifecycleOwner) {
+                                synchronized(deviceCache) { deviceCache.remove(context) }
+                                owner.lifecycle.removeObserver(this)
+                            }
+                        }
+                    context.lifecycle.addObserver(observer)
+                }
+            }
             return device
         }
 
@@ -110,14 +131,13 @@ private constructor(
          * @param context the [Context] associated with the device
          * @param extensions the list of extra OpenXR extension names to inject
          * @param coroutineContext the [CoroutineContext] to use for the XrDevice operations
-         * @throws IllegalArgumentException if the provided [Context] is not supported
-         * @throws IllegalStateException if the OpenXR instance has already been created or the
+         * @throws [IllegalArgumentException] if the provided [Context] is not supported
+         * @throws [IllegalStateException] if the OpenXR instance has already been created or the
          *   XrDevice is not backed by an OpenXR instance
-         * @throws UnsupportedOperationException if any of the requested extensions are not
+         * @throws [UnsupportedOperationException] if any of the requested extensions are not
          *   supported by the device
          */
         @JvmStatic
-        @UnstableNativeResourceApi
         @JvmOverloads
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun getCurrentDevice(
@@ -147,9 +167,9 @@ private constructor(
     /**
      * Returns the preferred display blend mode for this session.
      *
-     * @return The [DisplayBlendMode] that is preferred by the [Session] for rendering.
+     * @return the [DisplayBlendMode] that is preferred by the [Session] for rendering
      *   [DisplayBlendMode.NO_DISPLAY] will be returned if there are no supported blend modes
-     *   available.
+     *   available
      */
     public fun getPreferredDisplayBlendMode(): androidx.xr.runtime.DisplayBlendMode {
         return androidx.xr.runtime.DisplayBlendMode.fromInternalDisplayBlendMode(
@@ -163,7 +183,7 @@ private constructor(
     /**
      * Returns the [XrDevice]'s support for the given [HandTrackingMode].
      *
-     * @return whether the device supports the supplied [HandTrackingMode].
+     * @return whether the device supports the supplied [HandTrackingMode]
      */
     public fun isHandTrackingModeSupported(mode: HandTrackingMode): Boolean {
         return xrDeviceCapabilityProvider?.isHandTrackingModeSupported(
@@ -177,7 +197,7 @@ private constructor(
     /**
      * Returns the [XrDevice]'s support for the given [EyeTrackingMode].
      *
-     * @return whether the device supports the supplied [EyeTrackingMode].
+     * @return whether the device supports the supplied [EyeTrackingMode]
      */
     public fun isEyeTrackingModeSupported(mode: EyeTrackingMode): Boolean {
         return xrDeviceCapabilityProvider?.isEyeTrackingModeSupported(
@@ -191,7 +211,7 @@ private constructor(
     /**
      * Returns the [XrDevice]'s support for the given [GeospatialMode].
      *
-     * @return whether the device supports the supplied [GeospatialMode].
+     * @return whether the device supports the supplied [GeospatialMode]
      */
     public fun isGeospatialModeSupported(mode: GeospatialMode): Boolean {
         return xrDeviceCapabilityProvider?.isGeospatialModeSupported(
@@ -209,7 +229,7 @@ private constructor(
      *   [RenderingMode.MONO], RenderViewpoint.mono(session) is expected to be non-null. For devices
      *   that support [RenderingMode.STEREO], RenderViewpoint.left(session),
      *   RenderViewpoint.right(session), and RenderViewpoint.mono(session) are all expected to be
-     *   non-null.
+     *   non-null
      */
     public fun isRenderingModeSupported(mode: RenderingMode): Boolean {
         return xrDeviceCapabilityProvider?.isRenderingModeSupported(mode.toInternalRenderingMode())
@@ -221,7 +241,7 @@ private constructor(
     /**
      * Returns the [XrDevice]'s support for the given [DepthEstimationMode].
      *
-     * @return whether the device supports the supplied [DepthEstimationMode].
+     * @return whether the device supports the supplied [DepthEstimationMode]
      */
     public fun isDepthEstimationModeSupported(mode: DepthEstimationMode): Boolean {
         return xrDeviceCapabilityProvider?.isDepthEstimationModeSupported(

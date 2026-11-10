@@ -34,14 +34,6 @@ public class FlagsTest {
     }
 
     @Test
-    public void testFlagValue_enableListFilterMatchScoreExpressionFunction() {
-        assertThat(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
-                .isEqualTo(
-                        "com.android.appsearch"
-                                + ".flags.enable_list_filter_match_score_expression_function");
-    }
-
-    @Test
     public void testFlagValue_enableGroupingTypePerSchema() {
         assertThat(Flags.FLAG_ENABLE_GROUPING_TYPE_PER_SCHEMA).isEqualTo(
                 "com.android.appsearch.flags.enable_grouping_type_per_schema");
@@ -125,12 +117,6 @@ public class FlagsTest {
     }
 
     @Test
-    public void testFlagValue_enableResultAlreadyExists() {
-        assertThat(Flags.FLAG_ENABLE_RESULT_ALREADY_EXISTS)
-                .isEqualTo("com.android.appsearch.flags.enable_result_already_exists");
-    }
-
-    @Test
     public void testFlagValue_enableEnterpriseEmptyBatchResultFix() {
         assertThat(Flags.FLAG_ENABLE_ENTERPRISE_EMPTY_BATCH_RESULT_FIX)
                 .isEqualTo("com.android.appsearch.flags.enable_enterprise_empty_batch_result_fix");
@@ -188,13 +174,6 @@ public class FlagsTest {
     }
 
     @Test
-    public void testFlagValue_enableThrowExceptionForNativeNotFoundPageToken() {
-        assertThat(Flags.FLAG_ENABLE_THROW_EXCEPTION_FOR_NATIVE_NOT_FOUND_PAGE_TOKEN)
-                .isEqualTo("com.android.appsearch.flags"
-                        + ".enable_throw_exception_for_native_not_found_page_token");
-    }
-
-    @Test
     public void testFlagValue_enableInitializationRetriesBeforeReset() {
         assertThat(Flags.FLAG_ENABLE_INITIALIZATION_RETRIES_BEFORE_RESET)
                 .isEqualTo(
@@ -214,12 +193,6 @@ public class FlagsTest {
     }
 
     @Test
-    public void testFlagValue_enableRepeatedFieldJoins() {
-        assertThat(Flags.FLAG_ENABLE_REPEATED_FIELD_JOINS).isEqualTo(
-                "com.android.appsearch.flags.enable_repeated_field_joins");
-    }
-
-    @Test
     public void testFlagValue_enableDeletePropagationRw() {
         assertThat(Flags.FLAG_ENABLE_DELETE_PROPAGATION_RW)
                 .isEqualTo("com.android.appsearch.flags.enable_delete_propagation_rw");
@@ -229,13 +202,6 @@ public class FlagsTest {
     public void testFlagValue_enableNonExistentQualifiedIdJoin() {
         assertThat(Flags.FLAG_ENABLE_NON_EXISTENT_QUALIFIED_ID_JOIN)
                 .isEqualTo("com.android.appsearch.flags.enable_non_existent_qualified_id_join");
-    }
-
-    @Test
-    public void testFlagValue_enableSkipSetSchemaTypeEqualityCheck() {
-        assertThat(Flags.FLAG_ENABLE_SKIP_SET_SCHEMA_TYPE_EQUALITY_CHECK)
-                .isEqualTo(
-                        "com.android.appsearch.flags.enable_skip_set_schema_type_equality_check");
     }
 
     @Test
@@ -262,5 +228,77 @@ public class FlagsTest {
     public void testFlagValue_enableEmbeddingPreQuantizedData() {
         assertThat(Flags.FLAG_ENABLE_EMBEDDING_PRE_QUANTIZED_DATA)
                 .isEqualTo("com.android.appsearch.flags.enable_embedding_pre_quantized_data");
+    }
+
+    @Test
+    public void testFlagValue_enableDatabaseStablenessLog() {
+        assertThat(Flags.FLAG_ENABLE_DATABASE_STABLENESS_LOG)
+                .isEqualTo("com.android.appsearch.flags.enable_database_stableness_log");
+    }
+
+    @Test
+    public void testFlagValue_enableAccountPropertyIncompatibilityCheck() {
+        assertThat(Flags.FLAG_ENABLE_ACCOUNT_PROPERTY_INCOMPATIBILITY_CHECK)
+                .isEqualTo(
+                        "com.android.appsearch.flags"
+                                + ".enable_account_property_incompatibility_check");
+    }
+
+    @Test
+    public void testFlagValue_releaseSchemaCacheAfterInitialization() {
+        assertThat(Flags.FLAG_RELEASE_SCHEMA_CACHE_AFTER_INITIALIZATION)
+                .isEqualTo(
+                        "com.android.appsearch.flags"
+                                + ".release_schema_cache_after_initialization");
+    }
+
+    @Test
+    public void testFlagValue_removeSchemaStoreMoveAssignment() {
+        assertThat(Flags.FLAG_REMOVE_SCHEMA_STORE_MOVE_ASSIGNMENT)
+                .isEqualTo(
+                        "com.android.appsearch.flags"
+                                + ".remove_schema_store_move_assignment");
+    }
+
+    @Test
+    public void testFlagValue_enableFineGrainedIndexRebuild() {
+        assertThat(Flags.FLAG_ENABLE_FINE_GRAINED_INDEX_REBUILD)
+                .isEqualTo(
+                        "com.android.appsearch.flags"
+                                + ".enable_fine_grained_index_rebuild");
+    }
+
+    @Test
+    public void testFlagValue_enableReadDuringAnnMaintenance() {
+        assertThat(Flags.FLAG_ENABLE_READ_DURING_ANN_MAINTENANCE)
+                .isEqualTo(
+                        "com.android.appsearch.flags"
+                                + ".enable_read_during_ann_maintenance");
+    }
+
+    @Test
+    public void testFlagValue_enableOptimizeResultStates() {
+        assertThat(Flags.FLAG_ENABLE_OPTIMIZE_RESULT_STATES)
+                .isEqualTo("com.android.appsearch.flags.enable_optimize_result_states");
+    }
+
+    @Test
+    public void testFlagValue_enableIndexRestorationCriticalErrorHandlingFix() {
+        assertThat(Flags.FLAG_ENABLE_INDEX_RESTORATION_CRITICAL_ERROR_HANDLING_FIX)
+                .isEqualTo(
+                        "com.android.appsearch.flags"
+                                + ".enable_index_restoration_critical_error_handling_fix");
+    }
+
+    @Test
+    public void testFlagValue_enablePackageIdentifierMultiCert() {
+        assertThat(Flags.FLAG_ENABLE_PACKAGE_IDENTIFIER_MULTI_CERT)
+                .isEqualTo("com.android.appsearch.flags.enable_package_identifier_multi_cert");
+    }
+
+    @Test
+    public void testFlagValue_enableAppsIndexerPwaMultiCert() {
+        assertThat(Flags.FLAG_ENABLE_APPS_INDEXER_PWA_MULTI_CERT)
+                .isEqualTo("com.android.appsearch.flags.enable_apps_indexer_pwa_multi_cert");
     }
 }

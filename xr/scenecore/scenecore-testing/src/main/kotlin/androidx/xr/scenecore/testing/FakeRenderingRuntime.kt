@@ -136,8 +136,9 @@ public class FakeRenderingRuntime(
                 FakeTexture.wrap(it as TextureResource) as FakeTexture
             }
         set(value) {
-            internalRuntime.reflectionTexture =
-                value?.let { FakeTexture.unwrap(it as TextureResource) as InternalFakeTexture }
+            internalRuntime.reflectionTexture = value?.let {
+                FakeTexture.unwrap(it as TextureResource) as InternalFakeTexture
+            }
         }
 
     override fun borrowReflectionTexture(): TextureResource? {
@@ -607,6 +608,23 @@ public class FakeRenderingRuntime(
 
     override fun destroyMeshBuffer(meshBuffer: MeshBufferResource) {}
 
+    override fun updateMeshBufferVertexData(
+        meshBuffer: MeshBufferResource,
+        bufferIndex: Int,
+        vertexData: ByteBuffer,
+        vertexDataOffset: Int,
+        vertexDataSize: Int,
+        destOffsetInBytes: Int,
+    ) {}
+
+    override fun updateMeshBufferIndexData(
+        meshBuffer: MeshBufferResource,
+        indexData: ByteBuffer,
+        indexDataOffset: Int,
+        indexDataSize: Int,
+        destOffsetInBytes: Int,
+    ) {}
+
     override fun createCustomMesh(
         meshBuffer: MeshBufferResource,
         subsetOffsets: IntArray,
@@ -622,6 +640,8 @@ public class FakeRenderingRuntime(
 
     override fun getCustomMeshBoundingBox(customMesh: CustomMeshResource): BoundingBox =
         BoundingBox.fromMinMax(Vector3(0f, 0f, 0f), Vector3(0f, 0f, 0f))
+
+    override fun setCustomMeshBoundingBox(customMesh: CustomMeshResource, bounds: BoundingBox) {}
 
     override fun destroyCustomMesh(customMesh: CustomMeshResource) {}
 

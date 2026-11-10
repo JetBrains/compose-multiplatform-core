@@ -31,12 +31,12 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -49,6 +49,7 @@ import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
 @Suppress("DEPRECATION")
+@OptIn(ExperimentalCoroutinesApi::class)
 class InteractionTest {
     companion object {
         @ClassRule @JvmField val arCoreTestRule = ArCoreTestRule()
@@ -57,11 +58,13 @@ class InteractionTest {
     private lateinit var activityController: ActivityController<ComponentActivity>
     private lateinit var activity: ComponentActivity
     private lateinit var testDispatcher: TestDispatcher
+    private lateinit var testScope: TestScope
     private lateinit var session: Session
 
     @Before
     fun setUp(): Unit = runBlocking {
         testDispatcher = StandardTestDispatcher()
+        testScope = TestScope(testDispatcher)
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()
 
@@ -75,7 +78,6 @@ class InteractionTest {
         )
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun hitTest_successWithOneHitResult() =
         runTest(testDispatcher) {
@@ -86,14 +88,15 @@ class InteractionTest {
             arCoreTestRule.deviceTester.pose = devicePose
             arCoreTestRule.addTrackables(testPlane)
             testPlane.centerPose = expectedHitPose
-            advanceUntilIdle()
 
             // 2. Detect the Plane
             var foundPlanes = emptyList<Plane>()
-            backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 Plane.subscribe(session).collect { foundPlanes = it.toList() }
             }
             advanceUntilIdle()
+
+            assertThat(foundPlanes).isNotEmpty()
 
             // 3. Perform a hitTest to find Planes along ray from device in forward direction
             val plane = foundPlanes.first()
@@ -111,10 +114,10 @@ class InteractionTest {
         }
 
     @Test
-    fun hitTest_planeTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config.Builder().setPlaneTracking(PlaneTrackingMode.DISABLED).build())
+    fun hitTest_planeTrackingDisabled_throwsIllegalStateException() =
         runTest(testDispatcher) {
+            session.configure(Config.Builder().setPlaneTracking(PlaneTrackingMode.DISABLED).build())
+
             assertFailsWith<IllegalStateException> { hitTest(session, Ray()) }
         }
-    }
 }

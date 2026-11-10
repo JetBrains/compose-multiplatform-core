@@ -18,6 +18,7 @@ package androidx.compose.foundation.text.input.internal
 
 import android.graphics.Typeface
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TEST_LOCALE_LIST
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setSelectionCoerced
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -51,7 +53,6 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -64,7 +65,7 @@ import org.junit.runner.RunWith
 @MediumTest
 class TextFieldLayoutStateCacheTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private var textFieldState = TextFieldState("abc")
     private var transformedTextFieldState =
@@ -82,14 +83,16 @@ class TextFieldLayoutStateCacheTest {
     private var layoutDirection = LayoutDirection.Ltr
     private var fontFamilyResolver =
         createFontFamilyResolver(InstrumentationRegistry.getInstrumentation().context)
+    private var defaultLocaleList = TEST_LOCALE_LIST
     private var constraints = Constraints()
 
     private lateinit var globalWriteObserverHandle: ObserverHandle
 
     @Before
     fun setUp() {
-        globalWriteObserverHandle =
-            Snapshot.registerGlobalWriteObserver { Snapshot.sendApplyNotifications() }
+        globalWriteObserverHandle = Snapshot.registerGlobalWriteObserver {
+            Snapshot.sendApplyNotifications()
+        }
     }
 
     @After
@@ -317,6 +320,15 @@ class TextFieldLayoutStateCacheTest {
         constraints = Constraints.fixed(5, 5)
         assertInvalidationsOnChange(1) {
             constraints = Constraints.fixed(6, 5)
+            updateMeasureInputs()
+        }
+    }
+
+    @Test
+    fun updateMeasureInputs_invalidatesSnapshot_whenLocaleChanged() {
+        defaultLocaleList = LocaleList("ar")
+        assertInvalidationsOnChange(1) {
+            defaultLocaleList = TEST_LOCALE_LIST
             updateMeasureInputs()
         }
     }
@@ -1011,6 +1023,7 @@ class TextFieldLayoutStateCacheTest {
             density = density,
             layoutDirection = layoutDirection,
             fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = defaultLocaleList,
             constraints = constraints,
         )
     }

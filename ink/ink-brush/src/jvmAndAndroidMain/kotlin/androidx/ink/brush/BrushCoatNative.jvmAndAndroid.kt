@@ -16,10 +16,12 @@
 
 package androidx.ink.brush
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object BrushCoatNative {
     init {
         NativeLoader.load()
@@ -55,4 +57,6 @@ actual internal object BrushCoatNative {
      */
     @UsedByNative
     actual external fun newCopyOfBrushPaintPreference(nativePointer: Long, index: Int): Long
+
+    @UsedByNative actual external fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

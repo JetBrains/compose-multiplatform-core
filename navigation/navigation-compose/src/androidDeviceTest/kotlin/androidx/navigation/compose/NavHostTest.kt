@@ -17,18 +17,19 @@
 package androidx.navigation.compose
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.OnBackPressedDispatcher
-import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.Button
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -51,7 +52,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -67,6 +67,8 @@ import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import androidx.navigation.plusAssign
 import androidx.navigation.testing.TestNavHostController
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import androidx.navigationevent.testing.TestNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -76,7 +78,6 @@ import androidx.testutils.TestNavigator
 import androidx.testutils.test
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,7 +86,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavHostTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testSingleDestinationSet() {
@@ -328,7 +329,7 @@ class NavHostTest {
     @Test
     fun testViewModelClearedAfterPopWithConfigChange() {
         lateinit var navController: NavHostController
-        var lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
         lateinit var state: MutableState<Int>
         lateinit var viewModel: TestViewModel
         composeTestRule.setContent {
@@ -368,7 +369,7 @@ class NavHostTest {
     @Test
     fun testViewModelClearedAfterPopMultipleWithConfigChange() {
         lateinit var navController: NavHostController
-        var lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
         lateinit var state: MutableState<Int>
         lateinit var viewModel_second: TestViewModel
         lateinit var viewModel_third: TestViewModel
@@ -1034,8 +1035,7 @@ class NavHostTest {
 
         composeTestRule.setContent {
             // Add the flags to make NavController think this is a deep link
-            val activity = LocalContext.current as? Activity
-            activity?.intent?.run {
+            LocalActivity.current?.intent?.run {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
             navController = rememberNavController()
@@ -1066,22 +1066,19 @@ class NavHostTest {
     @Test
     fun testStateSaved() {
         lateinit var navController: NavHostController
-        lateinit var text: MutableState<String>
+        val textFieldState = TextFieldState()
 
         composeTestRule.setContent {
             navController = rememberNavController()
             NavHost(navController, "start") {
-                composable("start") {
-                    text = rememberSaveable { mutableStateOf("") }
-                    Column { TextField(value = text.value, onValueChange = { text.value = it }) }
-                }
+                composable("start") { Column { TextField(textFieldState) } }
                 composable("second") {}
             }
         }
 
         composeTestRule.onNodeWithText("test").assertDoesNotExist()
 
-        text.value = "test"
+        textFieldState.setTextAndPlaceCursorAtEnd("test")
 
         composeTestRule.onNodeWithText("test").assertExists()
 
@@ -1210,25 +1207,21 @@ class NavHostTest {
 
     @Test
     fun testNestedNavHostOnBackPressed() {
-        var innerLifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
-        val onBackPressedDispatcher = OnBackPressedDispatcher()
-        val dispatcherOwner =
-            object : OnBackPressedDispatcherOwner, LifecycleOwner by TestLifecycleOwner() {
-                override val onBackPressedDispatcher = onBackPressedDispatcher
-            }
-        lateinit var navController: NavHostController
-        lateinit var innerNavController: NavHostController
+        var childLifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+        val dispatcherOwner = TestNavigationEventDispatcherOwner()
+        lateinit var parentNavController: NavHostController
+        lateinit var childNavController: NavHostController
 
         composeTestRule.setContent {
-            CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides dispatcherOwner) {
-                navController = rememberNavController()
-                NavHost(navController, first) {
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides dispatcherOwner) {
+                parentNavController = rememberNavController()
+                NavHost(parentNavController, first) {
                     composable(first) {
-                        CompositionLocalProvider(LocalLifecycleOwner provides innerLifecycleOwner) {
+                        CompositionLocalProvider(LocalLifecycleOwner provides childLifecycleOwner) {
                             // Note: you should not ever do this. Use the state of the single
                             // NavHost to control the visibility of global UI
-                            innerNavController = rememberNavController()
-                            NavHost(innerNavController, "innerFirst") {
+                            childNavController = rememberNavController()
+                            NavHost(childNavController, "innerFirst") {
                                 composable("innerFirst") {}
                                 composable("innerSecond") {}
                             }
@@ -1240,35 +1233,79 @@ class NavHostTest {
         }
 
         composeTestRule.runOnIdle {
-            assertThat(onBackPressedDispatcher.hasEnabledCallbacks()).isFalse()
-            innerNavController.navigate("innerSecond")
-            assertThat(onBackPressedDispatcher.hasEnabledCallbacks()).isFalse()
+            assertThat(dispatcherOwner.navigationEventInput.hasEnabledHandlers).isFalse()
+        }
+        composeTestRule.runOnIdle { childNavController.navigate("innerSecond") }
+        composeTestRule.runOnIdle {
+            assertThat(dispatcherOwner.navigationEventInput.hasEnabledHandlers).isTrue()
         }
 
         // Now navigate to a second destination in the outer NavHost
-        composeTestRule.runOnIdle { navController.navigate(second) }
-
-        composeTestRule.runOnIdle { innerLifecycleOwner.currentState = Lifecycle.State.DESTROYED }
+        composeTestRule.runOnIdle { parentNavController.navigate(second) }
+        composeTestRule.runOnIdle { childLifecycleOwner.currentState = Lifecycle.State.DESTROYED }
 
         // Now trigger the back button
         composeTestRule.runOnIdle {
-            onBackPressedDispatcher.onBackPressed()
-            innerLifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+            dispatcherOwner.navigationEventInput.backCompleted()
+            childLifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
         }
 
-        composeTestRule.waitForIdle()
-        assertThat(navController.currentDestination?.route).isEqualTo(first)
-        assertThat(innerNavController.currentDestination?.route).isEqualTo("innerSecond")
+        composeTestRule.runOnIdle {
+            assertThat(parentNavController.currentDestination?.route).isEqualTo(first)
+            assertThat(childNavController.currentDestination?.route).isEqualTo("innerSecond")
+        }
 
         // Now trigger the back button
-        composeTestRule.runOnIdle { onBackPressedDispatcher.onBackPressed() }
+        composeTestRule.runOnIdle { dispatcherOwner.navigationEventInput.backCompleted() }
 
         composeTestRule.waitForIdle()
-        assertThat(navController.currentDestination?.route).isEqualTo(first)
-        assertThat(innerNavController.currentDestination?.route).isEqualTo("innerFirst")
+        assertThat(parentNavController.currentDestination?.route).isEqualTo(first)
+        assertThat(childNavController.currentDestination?.route).isEqualTo("innerFirst")
         // Assert that there's no enabled callbacks left when all of the NavControllers
         // are on their start destination
-        assertThat(onBackPressedDispatcher.hasEnabledCallbacks()).isFalse()
+        assertThat(dispatcherOwner.navigationEventInput.hasEnabledHandlers).isFalse()
+    }
+
+    @Test
+    fun testNavBackStackEntryInfoHistory() {
+        val dispatcherOwner = TestNavigationEventDispatcherOwner()
+        lateinit var navController: NavHostController
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides dispatcherOwner) {
+                navController = rememberNavController()
+                NavHost(navController, "first") {
+                    composable("first") {}
+                    composable("second") {}
+                }
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            val history = dispatcherOwner.navigationEventDispatcher.history.value
+            assertThat(history).isNotNull()
+            // Initially, the back stack has only 1 entry. Since back navigation is not
+            // possible within this NavHost, the back handler is disabled (isBackEnabled = false)
+            // to allow the back gesture to propagate to the parent dispatcher or system
+            // (e.g. to exit the app). A disabled handler is ignored by the
+            // NavigationEventProcessor, resulting in an empty history (currentIndex = -1).
+            assertThat(history.currentIndex).isEqualTo(-1)
+            assertThat(history.mergedHistory).isEmpty()
+        }
+
+        composeTestRule.runOnIdle { navController.navigate("second") }
+
+        composeTestRule.runOnIdle {
+            val history = dispatcherOwner.navigationEventDispatcher.history.value
+            assertThat(history).isNotNull()
+            // Navigating to a second destination enables the back handler since back navigation
+            // is now possible. The resolved handler now exposes the full back stack history.
+            assertThat(history.currentIndex).isEqualTo(1)
+            assertThat(history.mergedHistory).hasSize(2)
+            val firstInfo = history.mergedHistory[0] as NavBackStackEntryInfo
+            val secondInfo = history.mergedHistory[1] as NavBackStackEntryInfo
+            assertThat(firstInfo.visibleEntry?.destination?.route).isEqualTo("first")
+            assertThat(secondInfo.visibleEntry?.destination?.route).isEqualTo("second")
+        }
     }
 
     @Test
@@ -1338,7 +1375,7 @@ class NavHostTest {
     @Test
     fun testPopWithBackHandler() {
         lateinit var navController: NavHostController
-        var lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
         var backPressedDispatcher: OnBackPressedDispatcher? = null
         var count = 0
         var wasCalled = false

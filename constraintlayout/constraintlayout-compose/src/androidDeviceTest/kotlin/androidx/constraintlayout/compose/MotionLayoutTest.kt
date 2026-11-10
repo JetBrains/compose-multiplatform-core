@@ -81,7 +81,6 @@ import kotlin.math.roundToInt
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -90,7 +89,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 internal class MotionLayoutTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     /**
      * Tests that [MotionLayoutScope.customFontSize] works as expected.
@@ -486,38 +485,37 @@ internal class MotionLayoutTest {
 
             rule.setContent {
                 MotionLayout(
-                    motionScene =
-                        remember {
-                                derivedStateOf {
-                                    MotionScene {
-                                        val refs = ids.map { createRefFor(it) }.toTypedArray()
-                                        defaultTransition(
-                                            from =
-                                                constraintSet {
-                                                    createVerticalChain(
-                                                        *refs,
-                                                        chainStyle = ChainStyle.Packed(0.0f),
-                                                    )
-                                                    refs.forEachIndexed { index, ref ->
-                                                        constrain(ref) {
-                                                            staggeredWeight = weights[index]
-                                                        }
+                    motionScene = remember {
+                            derivedStateOf {
+                                MotionScene {
+                                    val refs = ids.map { createRefFor(it) }.toTypedArray()
+                                    defaultTransition(
+                                        from =
+                                            constraintSet {
+                                                createVerticalChain(
+                                                    *refs,
+                                                    chainStyle = ChainStyle.Packed(0.0f),
+                                                )
+                                                refs.forEachIndexed { index, ref ->
+                                                    constrain(ref) {
+                                                        staggeredWeight = weights[index]
                                                     }
-                                                },
-                                            to =
-                                                constraintSet {
-                                                    createVerticalChain(
-                                                        *refs,
-                                                        chainStyle = ChainStyle.Packed(0.0f),
-                                                    )
-                                                    constrain(*refs) { end.linkTo(parent.end) }
-                                                },
-                                        ) {
-                                            maxStaggerDelay = staggeredValue.value
-                                        }
+                                                }
+                                            },
+                                        to =
+                                            constraintSet {
+                                                createVerticalChain(
+                                                    *refs,
+                                                    chainStyle = ChainStyle.Packed(0.0f),
+                                                )
+                                                constrain(*refs) { end.linkTo(parent.end) }
+                                            },
+                                    ) {
+                                        maxStaggerDelay = staggeredValue.value
                                     }
                                 }
                             }
+                        }
                             .value,
                     progress = progress.value,
                     modifier = Modifier.size(rootSizePx.toDp()),

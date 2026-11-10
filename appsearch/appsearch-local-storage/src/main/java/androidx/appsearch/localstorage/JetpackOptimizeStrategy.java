@@ -18,6 +18,9 @@ package androidx.appsearch.localstorage;
 
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.appsearch.annotation.HideInPlatform;
+import androidx.appsearch.localstorage.stats.CallStats;
+import androidx.appsearch.localstorage.stats.OptimizeStats;
 
 import com.google.android.icing.proto.GetOptimizeInfoResultProto;
 
@@ -25,10 +28,11 @@ import org.jspecify.annotations.NonNull;
 
 /**
  * An implementation of {@link androidx.appsearch.localstorage.OptimizeStrategy} will
- * determine when to trigger {@link androidx.appsearch.localstorage.AppSearchImpl#optimize()} in
- * Jetpack environment.
- * @exportToFramework:hide
+ * determine when to trigger
+ * {@link androidx.appsearch.localstorage.AppSearchImpl#optimize(OptimizeStats.Builder, CallStats.Builder)}
+ * in Jetpack environment.
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class JetpackOptimizeStrategy implements OptimizeStrategy {
 

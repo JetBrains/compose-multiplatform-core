@@ -39,13 +39,13 @@ android {
     defaultConfig {
         externalNativeBuild {
             cmake {
-                cppFlags ''
+                cppFlags ""
             }
         }
     }
     externalNativeBuild {
         cmake {
-            path file('src/main/cpp/CMakeLists.txt')
+            path file("src/main/cpp/CMakeLists.txt")
             version = libs.versions.cmake.get()
         }
     }
@@ -83,11 +83,11 @@ wire {
     kotlin {}
 
     // prune unused config components which have deprecated fields
-    prune 'perfetto.protos.TraceConfig.IncidentReportConfig'
-    prune 'perfetto.protos.ProcessStatsConfig.Quirks'
+    prune "perfetto.protos.TraceConfig.IncidentReportConfig"
+    prune "perfetto.protos.ProcessStatsConfig.Quirks"
 
     sourcePath {
-        srcDir 'src/main/proto'
+        srcDir "src/main/proto"
     }
 }
 
@@ -117,9 +117,9 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Android Benchmark - Common"
-    legacyDisableKotlinStrictApiMode = true
     deviceTests {
         enableAlsoRunningOnPhysicalDevices = true
+        minSdkForFtlOverride = 25 // b/539512562
     }
     samples(project(":benchmark:benchmark-samples"))
 }

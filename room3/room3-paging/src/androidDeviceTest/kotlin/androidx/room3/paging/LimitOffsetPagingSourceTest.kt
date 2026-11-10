@@ -106,7 +106,7 @@ class LimitOffsetPagingSourceTest {
     @Test
     fun load_usesQueryExecutor() = runTest {
         val testExecutor = TestExecutor()
-        database =
+        val customDatabase =
             Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
                     ApplicationProvider.getApplicationContext<Context>()
                 )
@@ -119,7 +119,7 @@ class LimitOffsetPagingSourceTest {
 
         val job = Job()
         launch(job) {
-            LimitOffsetPagingSourceImpl(database)
+            LimitOffsetPagingSourceImpl(customDatabase)
                 .load(
                     PagingSource.LoadParams.Refresh(
                         key = null,
@@ -136,6 +136,7 @@ class LimitOffsetPagingSourceTest {
         assertThat(testExecutor.executeAll()).isTrue()
 
         job.cancel()
+        customDatabase.close()
     }
 
     @Test
@@ -380,11 +381,10 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun append_middleOfList() = runPagingSourceTest { pager, _ ->
-        val result =
-            pager.run {
-                refresh(initialKey = 5)
-                append() as LoadResult.Page
-            }
+        val result = pager.run {
+            refresh(initialKey = 5)
+            append() as LoadResult.Page
+        }
 
         // item in pos 21-25 (TestItemId 20-24) loaded
         assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(20, 25))
@@ -394,11 +394,10 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun append_availableItemsLessThanLoadSize() = runPagingSourceTest { pager, _ ->
-        val result =
-            pager.run {
-                refresh(82)
-                append() as LoadResult.Page
-            }
+        val result = pager.run {
+            refresh(82)
+            append() as LoadResult.Page
+        }
 
         // item in pos 98-100 (TestItemId 97-99) loaded
         assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(97, 100))
@@ -408,12 +407,11 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun load_consecutiveAppend() = runPagingSourceTest { pager, _ ->
-        val result1 =
-            pager.run {
-                refresh(15)
-                // first append
-                append() as LoadResult.Page
-            }
+        val result1 = pager.run {
+            refresh(15)
+            // first append
+            append() as LoadResult.Page
+        }
 
         // TestItemId 30-34 loaded from the append
         assertThat(result1.data).containsExactlyElementsIn(ITEMS_LIST.subList(30, 35))
@@ -427,11 +425,10 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun append_invalidResult() = runPagingSourceTest { pager, pagingSource ->
-        val result =
-            pager.run {
-                refresh(initialKey = 15)
-                append() as LoadResult.Page
-            }
+        val result = pager.run {
+            refresh(initialKey = 15)
+            append() as LoadResult.Page
+        }
         // TestItemId 30-34 loaded
         assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(30, 35))
         // invalidate pagingSource to imitate invalidation from running refreshVersionSync
@@ -446,11 +443,10 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun prepend_middleOfList() = runPagingSourceTest { pager, _ ->
-        val result =
-            pager.run {
-                refresh(initialKey = 30)
-                prepend() as LoadResult.Page
-            }
+        val result = pager.run {
+            refresh(initialKey = 30)
+            prepend() as LoadResult.Page
+        }
 
         assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(25, 30))
         assertThat(result.nextKey).isEqualTo(30)
@@ -459,11 +455,10 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun prepend_availableItemsLessThanLoadSize() = runPagingSourceTest { pager, _ ->
-        val result =
-            pager.run {
-                refresh(initialKey = 3)
-                prepend() as LoadResult.Page
-            }
+        val result = pager.run {
+            refresh(initialKey = 3)
+            prepend() as LoadResult.Page
+        }
 
         // items in pos 0 - 2 (TestItemId 0 - 2) loaded
         assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(0, 3))
@@ -473,11 +468,10 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun load_consecutivePrepend() = runPagingSourceTest { pager, _ ->
-        val result1 =
-            pager.run {
-                refresh(initialKey = 20)
-                prepend() as LoadResult.Page // first prepend
-            }
+        val result1 = pager.run {
+            refresh(initialKey = 20)
+            prepend() as LoadResult.Page // first prepend
+        }
         // items pos 16-20 (TestItemId 15-19) loaded
         assertThat(result1.data).containsExactlyElementsIn(ITEMS_LIST.subList(15, 20))
 
@@ -490,11 +484,10 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun prepend_invalidResult() = runPagingSourceTest { pager, pagingSource ->
-        val result =
-            pager.run {
-                refresh(initialKey = 20)
-                prepend() as LoadResult.Page
-            }
+        val result = pager.run {
+            refresh(initialKey = 20)
+            prepend() as LoadResult.Page
+        }
         // items pos 16-20 (TestItemId 15-19) loaded
         assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(15, 20))
 
@@ -534,12 +527,11 @@ class LimitOffsetPagingSourceTest {
 
     @Test
     fun test_getRefreshKey() = runPagingSourceTest { pager, pagingSource ->
-        val pagingState1 =
-            pager.run {
-                refresh()
-                // 15 items loaded, assuming anchorPosition = 14 as the last item loaded
-                getPagingState(14)
-            }
+        val pagingState1 = pager.run {
+            refresh()
+            // 15 items loaded, assuming anchorPosition = 14 as the last item loaded
+            getPagingState(14)
+        }
         // should load around anchor position
         // Initial load size = 15, refresh key should be (15/2 = 7) items
         // before anchorPosition (14 - 7 = 7)
@@ -709,7 +701,8 @@ class LimitOffsetPagingSourceTest {
         populateDatabase: Boolean = true,
         block:
             suspend (
-                pager: TestPager<Int, TestItem>, pagingSource: LimitOffsetPagingSourceImpl,
+                pager: TestPager<Int, TestItem>,
+                pagingSource: LimitOffsetPagingSourceImpl,
             ) -> Unit,
     ) {
         if (populateDatabase) dao.addAllItems(ITEMS_LIST)

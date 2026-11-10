@@ -25,16 +25,21 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap.Companion.createNamedRemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.wear.compose.remote.material3.RemoteCard
+import androidx.wear.compose.remote.material3.RemoteCardDefaults
 import androidx.wear.compose.remote.material3.RemoteOutlinedCard
 import androidx.wear.compose.remote.material3.RemoteText
 import androidx.wear.compose.remote.material3.previews.utils.ProfilePreviewParameterProvider
+import androidx.wear.compose.remote.material3.previews.utils.createImage
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @WearPreviewDevices
@@ -48,6 +53,18 @@ fun RemoteCardOutlinePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) = RemoteContentPreview(profile = profile) { Container { RemoteCardOutline() } }
 
+@WearPreviewDevices
+@Composable
+fun RemoteCardWithImagePreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteCardWithImage() } }
+
+@WearPreviewDevices
+@Composable
+fun RemoteCardWithImageAndBorderPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemoteContentPreview(profile = profile) { Container { RemoteCardWithImageAndBorder() } }
+
 @Composable
 @RemoteComposable
 fun RemoteCardDefault() {
@@ -58,6 +75,38 @@ fun RemoteCardDefault() {
 @RemoteComposable
 fun RemoteCardOutline() {
     RemoteOutlinedCard(onClick = Action.Empty) { RemoteText("Outlined variation".rs) }
+}
+
+@Composable
+@RemoteComposable
+fun RemoteCardWithImage() {
+    val backgroundImage = remember {
+        createNamedRemoteImageBitmap(name = "backgroundImage") {
+            createImage(200, 200).asImageBitmap()
+        }
+    }
+    val containerPainter = RemoteCardDefaults.containerPainter(backgroundImage)
+    RemoteCard(onClick = Action.Empty, containerPainter = containerPainter) {
+        RemoteText("Card with image".rs)
+    }
+}
+
+@Composable
+@RemoteComposable
+fun RemoteCardWithImageAndBorder() {
+    val backgroundImage = remember {
+        createNamedRemoteImageBitmap(name = "backgroundImage") {
+            createImage(200, 200).asImageBitmap()
+        }
+    }
+    val containerPainter = RemoteCardDefaults.containerPainter(backgroundImage)
+    RemoteCard(
+        onClick = Action.Empty,
+        containerPainter = containerPainter,
+        border = RemoteCardDefaults.outlinedCardBorder(),
+    ) {
+        RemoteText("Card with image and border".rs)
+    }
 }
 
 @Composable

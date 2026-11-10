@@ -54,7 +54,6 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -66,7 +65,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FlowRowColumnTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testFlowRow_wrapsToTheNextLine() {
@@ -339,7 +338,7 @@ class FlowRowColumnTest {
         }
 
         rule.waitForIdle()
-        var desiredHeights = mutableListOf<Int>()
+        val desiredHeights = mutableListOf<Int>()
         repeat(9) { desiredHeights.add(0) }
         Truth.assertThat(listOfHeights).containsExactlyElementsIn(desiredHeights)
         Truth.assertThat(finalHeight).isEqualTo(0)
@@ -383,7 +382,7 @@ class FlowRowColumnTest {
         }
 
         rule.waitForIdle()
-        var desiredHeights = mutableListOf<Int>()
+        val desiredHeights = mutableListOf<Int>()
         repeat(9) { desiredHeights.add(if (it % 3 == 0) 0 else 20) }
         Truth.assertThat(listOfHeights).containsExactlyElementsIn(desiredHeights)
         Truth.assertThat(finalHeight).isEqualTo(60)
@@ -2536,8 +2535,8 @@ class FlowRowColumnTest {
         val positions: MutableList<Offset> = mutableListOf()
         var seeMorePosition: Offset? = null
         var seeMoreSize: IntSize? = null
-        var mainAxisSpacing = 10
-        var crossAxisSpacing = 20
+        val mainAxisSpacing = 10
+        val crossAxisSpacing = 20
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 var maxLines by remember { mutableStateOf(2) }
@@ -2603,8 +2602,8 @@ class FlowRowColumnTest {
         val positions: MutableList<Offset> = mutableListOf()
         var seeMorePosition: Offset? = null
         var seeMoreSize: IntSize? = null
-        var mainAxisSpacing = 10
-        var crossAxisSpacing = 20
+        val mainAxisSpacing = 10
+        val crossAxisSpacing = 20
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 var maxLines by remember { mutableStateOf(2) }
@@ -2669,7 +2668,7 @@ class FlowRowColumnTest {
         //  * Visually: 123####
 
         val xPositions = mutableListOf<Float>()
-        var overflowState = mutableStateOf(FlowRowOverflow.Clip)
+        val overflowState = mutableStateOf(FlowRowOverflow.Clip)
         var seeMoreOrCollapse: FlowRowOverflow? = null
         var seeMoreXPosition: Float? = null
         var collapseXPosition: Float? = null
@@ -2732,15 +2731,14 @@ class FlowRowColumnTest {
                 }
             }
             xPositions.clear()
-            overflowState.value =
-                FlowRowOverflow.expandIndicator {
-                    Box(
-                        Modifier.size(20.dp).onGloballyPositioned {
-                            val positionInParent = it.positionInParent()
-                            seeMoreXPosition = positionInParent.x
-                        }
-                    )
-                }
+            overflowState.value = FlowRowOverflow.expandIndicator {
+                Box(
+                    Modifier.size(20.dp).onGloballyPositioned {
+                        val positionInParent = it.positionInParent()
+                        seeMoreXPosition = positionInParent.x
+                    }
+                )
+            }
         }
         advanceClock()
         rule.runOnIdle {
@@ -2836,7 +2834,7 @@ class FlowRowColumnTest {
         //  * Visually: 123####
 
         val yPositions = mutableListOf<Float>()
-        var overflowState = mutableStateOf(FlowColumnOverflow.Clip)
+        val overflowState = mutableStateOf(FlowColumnOverflow.Clip)
         var seeMoreOrCollapse: FlowColumnOverflow? = null
         var seeMoreYPosition: Float? = null
         var collapseYPosition: Float? = null
@@ -2900,15 +2898,14 @@ class FlowRowColumnTest {
                 }
             }
             yPositions.clear()
-            overflowState.value =
-                FlowColumnOverflow.expandIndicator {
-                    Box(
-                        Modifier.size(20.dp).onGloballyPositioned {
-                            val positionInParent = it.positionInParent()
-                            seeMoreYPosition = positionInParent.y
-                        }
-                    )
-                }
+            overflowState.value = FlowColumnOverflow.expandIndicator {
+                Box(
+                    Modifier.size(20.dp).onGloballyPositioned {
+                        val positionInParent = it.positionInParent()
+                        seeMoreYPosition = positionInParent.y
+                    }
+                )
+            }
         }
         // Continuing from the previous logic
         advanceClock()
@@ -3005,7 +3002,7 @@ class FlowRowColumnTest {
         //  * Visually: 123####
 
         val xPositions = mutableListOf<Float>()
-        var overflowState = mutableStateOf(FlowRowOverflow.Clip)
+        val overflowState = mutableStateOf(FlowRowOverflow.Clip)
         var seeMoreOrCollapse: FlowRowOverflow? = null
         var seeMoreXPosition: Float? = null
         var collapseXPosition: Float? = null
@@ -3067,15 +3064,14 @@ class FlowRowColumnTest {
                 }
             }
             xPositions.clear()
-            overflowState.value =
-                FlowRowOverflow.expandIndicator {
-                    Box(
-                        Modifier.size(20.dp).onGloballyPositioned {
-                            val positionInParent = it.positionInParent()
-                            seeMoreXPosition = positionInParent.x
-                        }
-                    )
-                }
+            overflowState.value = FlowRowOverflow.expandIndicator {
+                Box(
+                    Modifier.size(20.dp).onGloballyPositioned {
+                        val positionInParent = it.positionInParent()
+                        seeMoreXPosition = positionInParent.x
+                    }
+                )
+            }
         }
         advanceClock()
         rule.runOnIdle {
@@ -3213,7 +3209,7 @@ class FlowRowColumnTest {
         //  * Visually: 123####
 
         val yPositions = mutableListOf<Float>()
-        var overflowState = mutableStateOf(FlowColumnOverflow.Clip)
+        val overflowState = mutableStateOf(FlowColumnOverflow.Clip)
         var seeMoreOrCollapse: FlowColumnOverflow? = null
         var seeMoreYPosition: Float? = null
         var collapseYPosition: Float? = null
@@ -3276,15 +3272,14 @@ class FlowRowColumnTest {
                 }
             }
             yPositions.clear()
-            overflowState.value =
-                FlowColumnOverflow.expandIndicator {
-                    Box(
-                        Modifier.size(20.dp).onGloballyPositioned {
-                            val positionInParent = it.positionInParent()
-                            seeMoreYPosition = positionInParent.y
-                        }
-                    )
-                }
+            overflowState.value = FlowColumnOverflow.expandIndicator {
+                Box(
+                    Modifier.size(20.dp).onGloballyPositioned {
+                        val positionInParent = it.positionInParent()
+                        seeMoreYPosition = positionInParent.y
+                    }
+                )
+            }
         }
         advanceClock()
         rule.runOnIdle {
@@ -3873,7 +3868,7 @@ class FlowRowColumnTest {
         val maxLinesState = mutableStateOf(1)
         val overflowState = mutableStateOf(FlowRowOverflow.Clip)
         var seeMoreOrCollapse: FlowRowOverflow = FlowRowOverflow.Clip
-        var spacingState = mutableStateOf(0)
+        val spacingState = mutableStateOf(0)
         rule.setContent {
             var maxLines by remember { maxLinesState }
             var overflow by remember { overflowState }
@@ -3951,7 +3946,7 @@ class FlowRowColumnTest {
         val maxLinesState = mutableStateOf(1)
         val overflowState = mutableStateOf(FlowColumnOverflow.Clip)
         var seeMoreOrCollapse: FlowColumnOverflow = FlowColumnOverflow.Clip
-        var spacingState = mutableStateOf(0)
+        val spacingState = mutableStateOf(0)
         rule.setContent {
             var maxLines by remember { maxLinesState }
             var overflow by remember { overflowState }
@@ -3987,8 +3982,9 @@ class FlowRowColumnTest {
             Truth.assertThat(height).isEqualTo(40)
             Truth.assertThat(width).isEqualTo(20)
             Truth.assertThat(itemShown).isEqualTo(2)
-            overflowState.value =
-                FlowColumnOverflow.expandIndicator { Box(Modifier.size(20.dp)) {} }
+            overflowState.value = FlowColumnOverflow.expandIndicator {
+                Box(Modifier.size(20.dp)) {}
+            }
         }
         advanceClock()
         rule.runOnIdle {
@@ -4029,9 +4025,9 @@ class FlowRowColumnTest {
         val maxItemsInMainAxisState = mutableStateOf(2)
         val maxLinesState = mutableStateOf(4)
         val overflowState = mutableStateOf(FlowRowOverflow.Clip)
-        var minLinesToShowCollapseState = mutableStateOf(4)
-        var minHeightToShowCollapseState = mutableStateOf(0.dp)
-        var spacingState = mutableStateOf(0)
+        val minLinesToShowCollapseState = mutableStateOf(4)
+        val minHeightToShowCollapseState = mutableStateOf(0.dp)
+        val spacingState = mutableStateOf(0)
         rule.setContent {
             var maxLines by remember { maxLinesState }
             var maxItemsInMainAxis by remember { maxItemsInMainAxisState }
@@ -4158,9 +4154,9 @@ class FlowRowColumnTest {
         val maxItemsInMainAxisState = mutableStateOf(2)
         val maxLinesState = mutableStateOf(4)
         val overflowState = mutableStateOf(FlowColumnOverflow.Clip)
-        var minLinesToShowCollapseState = mutableStateOf(4)
-        var minWidthToShowCollapseState = mutableStateOf(0.dp)
-        var spacingState = mutableStateOf(0)
+        val minLinesToShowCollapseState = mutableStateOf(4)
+        val minWidthToShowCollapseState = mutableStateOf(0.dp)
+        val spacingState = mutableStateOf(0)
         rule.setContent {
             var maxLines by remember { maxLinesState }
             var maxItemsInMainAxis by remember { maxItemsInMainAxisState }
@@ -5105,7 +5101,7 @@ class FlowRowColumnTest {
         val maxLinesState = mutableStateOf(1)
         val overflowState = mutableStateOf(FlowRowOverflow.Clip)
         var seeMoreOrCollapse: FlowRowOverflow? = null
-        var spacingState = mutableStateOf(0)
+        val spacingState = mutableStateOf(0)
         rule.setContent {
             var maxLines by remember { maxLinesState }
             var overflow by remember { overflowState }
@@ -5183,7 +5179,7 @@ class FlowRowColumnTest {
         val maxLinesState = mutableStateOf(1)
         val overflowState = mutableStateOf(FlowColumnOverflow.Clip)
         var seeMoreOrCollapse: FlowColumnOverflow? = null
-        var spacingState = mutableStateOf(0)
+        val spacingState = mutableStateOf(0)
         rule.setContent {
             var maxLines by remember { maxLinesState }
             var overflow by remember { overflowState }
@@ -5219,8 +5215,9 @@ class FlowRowColumnTest {
             Truth.assertThat(height).isEqualTo(40)
             Truth.assertThat(width).isEqualTo(20)
             Truth.assertThat(itemShown).isEqualTo(2)
-            overflowState.value =
-                FlowColumnOverflow.expandIndicator { Box(Modifier.size(20.dp)) {} }
+            overflowState.value = FlowColumnOverflow.expandIndicator {
+                Box(Modifier.size(20.dp)) {}
+            }
         }
         advanceClock()
         rule.runOnIdle {
@@ -5286,7 +5283,7 @@ class FlowRowColumnTest {
         val maxLinesState = mutableStateOf(1)
         val overflowState = mutableStateOf(FlowRowOverflow.Clip)
         var seeMoreOrCollapse: FlowRowOverflow? = null
-        var spacingState = mutableStateOf(0)
+        val spacingState = mutableStateOf(0)
         rule.setContent {
             var maxLines by remember { maxLinesState }
             var overflow by remember { overflowState }
@@ -5364,7 +5361,7 @@ class FlowRowColumnTest {
         val maxLinesState = mutableStateOf(1)
         val overflowState = mutableStateOf(FlowColumnOverflow.Clip)
         var seeMoreOrCollapse: FlowColumnOverflow? = null
-        var spacingState = mutableStateOf(0)
+        val spacingState = mutableStateOf(0)
         rule.setContent {
             var maxLines by remember { maxLinesState }
             var overflow by remember { overflowState }
@@ -5400,8 +5397,9 @@ class FlowRowColumnTest {
             Truth.assertThat(height).isEqualTo(40)
             Truth.assertThat(width).isEqualTo(20)
             Truth.assertThat(itemShown).isEqualTo(2)
-            overflowState.value =
-                FlowColumnOverflow.expandIndicator { Box(Modifier.size(20.dp)) {} }
+            overflowState.value = FlowColumnOverflow.expandIndicator {
+                Box(Modifier.size(20.dp)) {}
+            }
         }
         advanceClock()
         rule.runOnIdle {
@@ -5613,7 +5611,7 @@ class FlowRowColumnTest {
         val maxItemsInMainAxis = 5
         val maxLinesState = mutableStateOf(2)
 
-        var overflow = mutableStateOf(FlowRowOverflow.expandIndicator {})
+        val overflow = mutableStateOf(FlowRowOverflow.expandIndicator {})
         var seeMoreOrCollapse: FlowRowOverflow? = null
         var seeMoreTwo: FlowRowOverflow? = null
         var measurePolicy: MultiContentMeasurePolicy? = null
@@ -5636,7 +5634,7 @@ class FlowRowColumnTest {
                     minLinesToShowCollapseState,
                     minHeightToShowCollapseState,
                 )
-            var overflowState = remember(overflow.value) { overflow.value.createOverflowState() }
+            val overflowState = remember(overflow.value) { overflow.value.createOverflowState() }
             var maxLines by remember { maxLinesState }
             measurePolicy =
                 rowMeasurementMultiContentHelper(
@@ -5702,7 +5700,7 @@ class FlowRowColumnTest {
         val maxItemsInMainAxis = 5
         val maxLinesState = mutableStateOf(2)
 
-        var overflow = mutableStateOf(FlowColumnOverflow.expandIndicator {})
+        val overflow = mutableStateOf(FlowColumnOverflow.expandIndicator {})
         var seeMoreOrCollapse: FlowColumnOverflow? = null
         var seeMoreTwo: FlowColumnOverflow? = null
         var measurePolicy: MultiContentMeasurePolicy? = null
@@ -5725,7 +5723,7 @@ class FlowRowColumnTest {
                     minLinesToShowCollapseState,
                     minWidthToShowCollapseState,
                 )
-            var overflowState = remember(overflow.value) { overflow.value.createOverflowState() }
+            val overflowState = remember(overflow.value) { overflow.value.createOverflowState() }
             var maxLines by remember { maxLinesState }
             measurePolicy =
                 columnMeasurementMultiContentHelper(

@@ -17,7 +17,6 @@
 package androidx.appsearch.localstorage;
 
 import androidx.annotation.RestrictTo;
-import androidx.appsearch.flags.Flags;
 
 import org.jspecify.annotations.NonNull;
 
@@ -35,11 +34,6 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     @Override
     public int getIndexMergeSize() {
         return DEFAULT_INDEX_MERGE_SIZE;
-    }
-
-    @Override
-    public boolean getDocumentStoreNamespaceIdFingerprint() {
-        return true;
     }
 
     @Override
@@ -73,11 +67,6 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     }
 
     @Override
-    public boolean getUsePersistentHashMap() {
-        return true;
-    }
-
-    @Override
     public int getMaxPageBytesLimit() {
         return DEFAULT_MAX_PAGE_BYTES_LIMIT;
     }
@@ -94,11 +83,6 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     @Override
     public int getLiteIndexSortSize() {
         return DEFAULT_LITE_INDEX_SORT_SIZE;
-    }
-
-    @Override
-    public boolean getBuildPropertyExistenceMetadataHits() {
-        return true;
     }
 
     @Override
@@ -122,8 +106,8 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     }
 
     @Override
-    public boolean enableRepeatedFieldJoins() {
-        return Flags.enableRepeatedFieldJoins();
+    public boolean getAllowRepeatedFieldJoins() {
+        return true;
     }
 
     @Override

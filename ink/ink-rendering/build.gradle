@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+import androidx.build.IosMetalHelper
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.apache.commons.io.FileUtils
+import org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     id("AndroidXPlugin")
@@ -28,17 +32,28 @@ androidXMultiplatform {
         androidResources.enable = true
     }
 
+    ios()
+
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        androidMain.dependencies {
-            implementation("androidx.collection:collection:1.4.3")
-            implementation("androidx.core:core:1.16.0")
-            implementation("androidx.core:core-ktx:1.16.0")
+        commonMain.dependencies {
             implementation(project(":ink:ink-nativeloader"))
             implementation(project(":ink:ink-geometry"))
             implementation(project(":ink:ink-brush"))
             implementation(project(":ink:ink-strokes"))
+        }
+
+        androidMain.dependencies {
+            implementation("androidx.collection:collection:1.4.3")
+            implementation("androidx.core:core:1.16.0")
+            implementation("androidx.core:core-ktx:1.16.0")
+        }
+
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(project(":kruth:kruth"))
+            implementation(project(":ink:ink-storage"))
         }
 
         androidDeviceTest.dependencies {
@@ -47,11 +62,31 @@ androidXMultiplatform {
             implementation(libs.testRunner)
             implementation(libs.espressoCore)
             implementation(libs.junit)
-            implementation(libs.kotlinTest)
             implementation(libs.testParameterInjector)
+	    implementation(libs.truth)
             implementation("androidx.core:core-ktx:1.15.0")
             implementation(project(":test:screenshot:screenshot"))
-            implementation(project(":ink:ink-storage"))
+        }
+    }
+}
+
+IosMetalHelper.enableIosMetalSupport(project, tasks.named("iosSimulatorArm64Test"))
+
+// Put resources into the bundle, so that MetalRendererTest can read them with NSBundle.
+// Technique copied from room3/integration-tests/multiplatformtestapp/build.gradle
+// See https://youtrack.jetbrains.com/issue/KT-39194 for further context.
+tasks.withType(KotlinNativeLink).configureEach { task ->
+    def isAppleOsTarget = task.target in [
+            KonanTarget.IOS_ARM64,
+            KonanTarget.IOS_X64,
+            KonanTarget.IOS_SIMULATOR_ARM64,
+    ].collect { it.INSTANCE.name }
+    if (isAppleOsTarget) {
+        def inputSchemaDir = layout.projectDirectory.dir("src/commonTest/resources").getAsFile()
+        // MetalRendererTest expects to find resources in the root directory of a bundle.
+        def outputSchemaDir = new File(task.destinationDirectory.getAsFile().get(), "/")
+        task.doLast {
+            FileUtils.copyDirectory(inputSchemaDir, outputSchemaDir)
         }
     }
 }
@@ -62,4 +97,11 @@ androidx {
     inceptionYear = "2024"
     description = "Display beautiful strokes"
     addGoldenImageAssets()
+}
+
+tasks.configureEach { task ->
+    if (task.name == "testAndroidHostTest") {
+        // Disabled for AbstractStrokeRendererTest
+        task.failOnNoDiscoveredTests = false
+    }
 }

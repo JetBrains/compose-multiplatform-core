@@ -1,0 +1,68 @@
+
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
+    id("com.android.application")
+}
+
+def jetbrainsComposeExcludeGroups = [
+    "org.jetbrains.androidx.lifecycle",
+    "org.jetbrains.compose.animation",
+    "org.jetbrains.compose.annotation-internal",
+    "org.jetbrains.compose.collection-internal",
+    "org.jetbrains.compose.foundation",
+    "org.jetbrains.compose.runtime",
+    "org.jetbrains.compose.ui",
+    "org.jetbrains.skiko"
+]
+
+dependencies {
+    implementation(project(":a2ui:a2ui-model"))
+    implementation(project(":a2ui:compose:compose-runtime"))
+    implementation(project(":a2ui:compose:compose-ui"))
+    implementation(project(":compose:material3:material3-a2ui"))
+
+    implementation("androidx.compose.foundation:foundation:1.13.0-alpha03")
+    implementation("androidx.compose.material3:material3:1.5.0-alpha28")
+    implementation("androidx.compose.runtime:runtime:1.13.0-alpha03")
+    implementation("androidx.compose.ui:ui:1.13.0-alpha03")
+
+    implementation("androidx.activity:activity:1.12.1")
+    implementation("androidx.activity:activity-compose:1.12.1")
+    implementation("androidx.core:core-ktx:1.17.0")
+
+    implementation("io.coil-kt.coil3:coil-compose-android:3.1.0") {
+        jetbrainsComposeExcludeGroups.each { group ->
+            exclude group: group
+        }
+    }
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+}
+
+android {
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
+    namespace = "androidx.compose.material3.integration.a2ui"
+    buildTypes {
+        release {
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
+        }
+    }
+}

@@ -39,12 +39,11 @@ import androidx.wear.compose.materialcore.screenHeightDp
 import androidx.wear.compose.materialcore.screenWidthDp
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 class PlaceholderTest {
-    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
@@ -362,8 +361,10 @@ class PlaceholderTest {
     @OptIn(ExperimentalWearMaterialApi::class)
     @Composable
     fun TestPlaceholderChip(contents: String?, currentState: StableRef<PlaceholderState?>) {
-        val placeholderState =
-            rememberPlaceholderState { contents != null }.also { currentState.value = it }
+        val placeholderState = rememberPlaceholderState {
+            contents != null
+        }
+            .also { currentState.value = it }
         Chip(
             modifier = Modifier.testTag("test-item").placeholderShimmer(placeholderState),
             content = {},

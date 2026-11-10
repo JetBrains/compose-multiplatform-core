@@ -93,6 +93,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLocaleList
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -113,6 +114,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.text.input.TextInputSession
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -220,6 +222,7 @@ internal fun CoreTextField(
     // CompositionLocals
     val density = LocalDensity.current
     val fontFamilyResolver = LocalFontFamilyResolver.current
+    val localeList = LocalLocaleList.current
     val selectionBackgroundColor = LocalTextSelectionColors.current.backgroundColor
     val focusManager = LocalFocusManager.current
     val windowInfo = LocalWindowInfo.current
@@ -266,6 +269,7 @@ internal fun CoreTextField(
                     softWrap = softWrap,
                     density = density,
                     fontFamilyResolver = fontFamilyResolver,
+                    defaultLocaleList = localeList,
                 ),
                 recomposeScope = scope,
                 keyboardController = keyboardController,
@@ -278,6 +282,7 @@ internal fun CoreTextField(
         softWrap,
         density,
         fontFamilyResolver,
+        localeList,
         onValueChange,
         keyboardActions,
         focusManager,
@@ -309,7 +314,10 @@ internal fun CoreTextField(
     @OptIn(ExperimentalFoundationApi::class)
     if (ComposeFoundationFlags.isSmartSelectionEnabled) {
         manager.platformSelectionBehaviors =
-            rememberPlatformSelectionBehaviors(SelectedTextType.EditableText, textStyle.localeList)
+            rememberPlatformSelectionBehaviors(
+                SelectedTextType.EditableText,
+                textStyle.localeList ?: LocalLocaleList.current,
+            )
     }
 
     rememberClipboardEventsHandler(
@@ -399,41 +407,40 @@ internal fun CoreTextField(
 
     val drawModifier = Modifier.textFieldDraw(state, value, offsetMapping)
 
-    val onPositionedModifier =
-        Modifier.onGloballyPositioned {
-            state.layoutCoordinates = it
-            state.layoutResult?.innerTextFieldCoordinates = it
-            if (enabled) {
-                if (state.handleState == HandleState.Selection) {
-                    if (state.showFloatingToolbar && windowInfo.isWindowFocused) {
-                        manager.showSelectionToolbar()
-                    } else {
-                        manager.hideSelectionToolbar()
-                    }
-                    state.showSelectionHandleStart =
-                        manager.isSelectionHandleInVisibleBound(isStartHandle = true)
-                    state.showSelectionHandleEnd =
-                        manager.isSelectionHandleInVisibleBound(isStartHandle = false)
-                    state.showCursorHandle = value.selection.collapsed
-                } else if (state.handleState == HandleState.Cursor) {
-                    state.showCursorHandle =
-                        manager.isSelectionHandleInVisibleBound(isStartHandle = true)
+    val onPositionedModifier = Modifier.onGloballyPositioned {
+        state.layoutCoordinates = it
+        state.layoutResult?.innerTextFieldCoordinates = it
+        if (enabled) {
+            if (state.handleState == HandleState.Selection) {
+                if (state.showFloatingToolbar && windowInfo.isWindowFocused) {
+                    manager.showSelectionToolbar()
+                } else {
+                    manager.hideSelectionToolbar()
                 }
-                notifyFocusedRect(state, value, offsetMapping)
-                state.layoutResult?.let { layoutResult ->
-                    state.inputSession?.let { inputSession ->
-                        if (state.hasFocus) {
-                            TextFieldDelegate.updateTextLayoutResult(
-                                inputSession,
-                                value,
-                                offsetMapping,
-                                layoutResult,
-                            )
-                        }
+                state.showSelectionHandleStart =
+                    manager.isSelectionHandleInVisibleBound(isStartHandle = true)
+                state.showSelectionHandleEnd =
+                    manager.isSelectionHandleInVisibleBound(isStartHandle = false)
+                state.showCursorHandle = value.selection.collapsed
+            } else if (state.handleState == HandleState.Cursor) {
+                state.showCursorHandle =
+                    manager.isSelectionHandleInVisibleBound(isStartHandle = true)
+            }
+            notifyFocusedRect(state, value, offsetMapping)
+            state.layoutResult?.let { layoutResult ->
+                state.inputSession?.let { inputSession ->
+                    if (state.hasFocus) {
+                        TextFieldDelegate.updateTextLayoutResult(
+                            inputSession,
+                            value,
+                            offsetMapping,
+                            layoutResult,
+                        )
                     }
                 }
             }
         }
+    }
 
     val isPassword = visualTransformation is PasswordVisualTransformation
     val semanticsModifier =
@@ -511,15 +518,14 @@ internal fun CoreTextField(
             color = LocalAutofillHighlightColor.current,
             defaultColor = autofillHighlightColor(),
         )
-    val drawDecorationModifier =
-        Modifier.drawWithContent {
-            drawContent()
-            // Autofill highlight is drawn on top of the content — this way the coloring appears
-            // over any Material background applied.
-            if (state.autofillHighlightOn || state.justAutofilled) {
-                drawRect(brush = autofillHighlightBrush)
-            }
+    val drawDecorationModifier = Modifier.drawWithContent {
+        drawContent()
+        // Autofill highlight is drawn on top of the content — this way the coloring appears
+        // over any Material background applied.
+        if (state.autofillHighlightOn || state.justAutofilled) {
+            drawRect(brush = autofillHighlightBrush)
         }
+    }
 
     val overscrollEffect = rememberTextFieldOverscrollEffect()
 
@@ -562,10 +568,10 @@ internal fun CoreTextField(
                         singleLineHeightProvider = state,
                         minLines = minLines,
                         maxLines = maxLines,
-                        singleLine =
-                            maxLines ==
-                                1, // in legacy code heightForSingleLineField was calculated for
+                        // in legacy code heightForSingleLineField was calculated for
                         // `maxLines == 1` instead of a more narrow `isSingleLine` check.
+                        useSingleLineHeightProvider = maxLines == 1,
+                        unboundedWidth = singleLine,
                     )
                 } else {
                     Modifier
@@ -616,8 +622,9 @@ internal fun CoreTextField(
                                 measurables: List<Measurable>,
                                 constraints: Constraints,
                             ): MeasureResult {
-                                val prevProxy =
-                                    Snapshot.withoutReadObservation { state.layoutResult }
+                                val prevProxy = Snapshot.withoutReadObservation {
+                                    state.layoutResult
+                                }
                                 val prevResult = prevProxy?.value
                                 val (width, height, result) =
                                     TextFieldDelegate.layout(
@@ -953,6 +960,7 @@ internal class LegacyTextFieldState(
         softWrap: Boolean,
         density: Density,
         fontFamilyResolver: FontFamily.Resolver,
+        defaultLocaleList: LocaleList,
         onValueChange: (TextFieldValue) -> Unit,
         keyboardActions: KeyboardActions,
         focusManager: FocusManager,
@@ -974,6 +982,7 @@ internal class LegacyTextFieldState(
                 softWrap = softWrap,
                 density = density,
                 fontFamilyResolver = fontFamilyResolver,
+                defaultLocaleList = defaultLocaleList,
                 placeholders = emptyList(),
             )
 
@@ -1062,6 +1071,7 @@ internal suspend fun BringIntoViewRequester.bringSelectionEndIntoView(
                         textDelegate.style,
                         textDelegate.density,
                         textDelegate.fontFamilyResolver,
+                        textDelegate.defaultLocaleList,
                     )
                 Rect(0f, 0f, 1.0f, defaultSize.height.toFloat())
             }

@@ -19,6 +19,7 @@ package androidx.benchmark
 import android.os.Process
 import androidx.annotation.RestrictTo
 import androidx.benchmark.InMemoryTracing.commitToTrace
+import androidx.benchmark.InMemoryTracing.counterNameToTrackUuid
 import perfetto.protos.CounterDescriptor
 import perfetto.protos.ThreadDescriptor
 import perfetto.protos.Trace
@@ -42,7 +43,7 @@ import perfetto.protos.TrackEvent
  * on-disk.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-object InMemoryTracing {
+public object InMemoryTracing {
     /**
      * All events emitted by the benchmark annotation should have the same value. the value needs to
      * not conflict with any sequence id emitted in the trace. You can rely on the fact that traces
@@ -59,9 +60,6 @@ object InMemoryTracing {
      */
     private const val UUID = 123_456_543_210L
 
-    /** Clock id for clock used by tracing events - this corresponds to CLOCK_MONOTONIC */
-    private const val CLOCK_ID = 3
-
     /** Tag to enable post-filtering of events in the trace. */
     private val TRACK_EVENT_CATEGORIES = listOf("benchmark")
 
@@ -69,7 +67,7 @@ object InMemoryTracing {
      * For perf/simplicity, this isn't protected by a lock - it should only ever be accessed by the
      * test thread, and dumped/reset between tests.
      */
-    val events = mutableListOf<TracePacket>()
+    public val events: MutableList<TracePacket> = mutableListOf()
 
     /** Map of counter name to UUID, populated by [counterNameToTrackUuid] */
     private val counterTracks = mutableMapOf<String, Long>()
@@ -78,33 +76,30 @@ object InMemoryTracing {
         return counterTracks.getOrPut(name) { UUID + 1 + counterTracks.size }
     }
 
-    fun clearEvents() {
+    public fun clearEvents() {
         events.clear()
         counterTracks.clear()
     }
 
     /** Capture trace state, and return as a Trace(), which can be appended to a trace file. */
-    fun commitToTrace(label: String): Trace {
+    public fun commitToTrace(label: String): Trace {
         val capturedEvents = events.toList()
-        val capturedCounterDescriptors =
-            counterTracks.map { (name, uuid) ->
-                TracePacket(
-                    timestamp_clock_id = CLOCK_ID,
-                    track_descriptor =
-                        TrackDescriptor(
-                            uuid = uuid,
-                            parent_uuid = UUID,
-                            name = name,
-                            counter = CounterDescriptor(),
-                        ),
-                )
-            }
+        val capturedCounterDescriptors = counterTracks.map { (name, uuid) ->
+            TracePacket(
+                track_descriptor =
+                    TrackDescriptor(
+                        uuid = uuid,
+                        parent_uuid = UUID,
+                        name = name,
+                        counter = CounterDescriptor(),
+                    )
+            )
+        }
 
         clearEvents()
         return Trace(
             listOf(
                 TracePacket(
-                    timestamp_clock_id = CLOCK_ID,
                     track_descriptor =
                         TrackDescriptor(
                             uuid = UUID,
@@ -114,13 +109,13 @@ object InMemoryTracing {
                             // a visible
                             // track name, but not override the thread name
                             disallow_merging_with_system_tracks = true,
-                        ),
+                        )
                 )
             ) + capturedCounterDescriptors + capturedEvents
         )
     }
 
-    fun beginSection(
+    public fun beginSection(
         label: String,
         nanoTime: Long = System.nanoTime(),
         counterNames: List<String> = emptyList(),
@@ -130,7 +125,6 @@ object InMemoryTracing {
         events.add(
             TracePacket(
                 timestamp = nanoTime,
-                timestamp_clock_id = CLOCK_ID,
                 trusted_packet_sequence_id = TRUSTED_PACKET_SEQUENCE_ID,
                 track_event =
                     TrackEvent(
@@ -146,22 +140,20 @@ object InMemoryTracing {
         )
     }
 
-    fun endSection(nanoTime: Long = System.nanoTime()) {
+    public fun endSection(nanoTime: Long = System.nanoTime()) {
         events.add(
             TracePacket(
                 timestamp = nanoTime,
-                timestamp_clock_id = CLOCK_ID,
                 trusted_packet_sequence_id = TRUSTED_PACKET_SEQUENCE_ID,
                 track_event = TrackEvent(type = TrackEvent.Type.TYPE_SLICE_END, track_uuid = UUID),
             )
         )
     }
 
-    fun counter(name: String, value: Double, nanoTime: Long = System.nanoTime()) {
+    public fun counter(name: String, value: Double, nanoTime: Long = System.nanoTime()) {
         events.add(
             TracePacket(
                 timestamp = nanoTime,
-                timestamp_clock_id = CLOCK_ID,
                 trusted_packet_sequence_id = TRUSTED_PACKET_SEQUENCE_ID,
                 track_event =
                     TrackEvent(
@@ -176,7 +168,7 @@ object InMemoryTracing {
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-inline fun <T> inMemoryTrace(label: String, block: () -> T): T {
+public inline fun <T> inMemoryTrace(label: String, block: () -> T): T {
     InMemoryTracing.beginSection(label)
     return try {
         block()

@@ -1081,31 +1081,40 @@ internal sealed class Operation(
             val to = getObject(To)
             val parentCompositionContext = getObject(ParentCompositionContext)
 
+            val providedResolvedState = getObject(ResolvedState)
+            // If the provided state did not exist when this operation was scheduled,
+            // resolve the state from the parent context. This also requires cleanup
+            // at the end of operation to ensure the objects are gc'd.
+            val fallbackState =
+                if (providedResolvedState == null) {
+                    parentCompositionContext.movableContentStateResolve(from)
+                } else {
+                    null
+                }
             val resolvedState =
-                getObject(ResolvedState)
-                    ?: parentCompositionContext.movableContentStateResolve(from)
+                providedResolvedState
+                    ?: fallbackState
                     ?: composeRuntimeError("Could not resolve state for movable content")
 
             val resolvedTable = resolvedState.slotStorage.asLinkBufferSlotTable()
-            val newGroup =
-                resolvedTable.edit {
-                    // At this point, slots' currentGroup and the root of the resolvedTable both
-                    // point to the wrapper group containing the MovableContent instance and the
-                    // IsMovableContent flag. We want to move the content itself, which is the
-                    // grandchild of this group (the child group is from invokeMovableContentLambda,
-                    // which we also don't want to copy)
-                    startGroup()
-                    startGroup()
-                    slots.moveFrom(
-                        sourceEditor = this@edit,
-                        sourceHandle = handle(),
-                        destination =
-                            makeGroupHandle(
-                                groupContext = slots.firstChildOf(slots.currentGroup),
-                                group = NULL_ADDRESS,
-                            ),
-                    )
-                }
+            val newGroup = resolvedTable.edit {
+                // At this point, slots' currentGroup and the root of the resolvedTable both
+                // point to the wrapper group containing the MovableContent instance and the
+                // IsMovableContent flag. We want to move the content itself, which is the
+                // grandchild of this group (the child group is from invokeMovableContentLambda,
+                // which we also don't want to copy)
+                startGroup()
+                startGroup()
+                slots.moveFrom(
+                    sourceEditor = this@edit,
+                    sourceHandle = handle(),
+                    destination =
+                        makeGroupHandle(
+                            groupContext = slots.firstChildOf(slots.currentGroup),
+                            group = NULL_ADDRESS,
+                        ),
+                )
+            }
 
             // For all the anchors that moved, if the anchor is tracking a recompose
             // scope, update it to reference its new composer.
@@ -1113,6 +1122,10 @@ internal sealed class Operation(
                 group = newGroup.group,
                 newOwner = to.composition as RecomposeScopeOwner,
             )
+
+            // Cleanup state resolved during this operation, as [DisposeMovableContentState] is not
+            // scheduled in this case and this state is not used anywhere else.
+            fallbackState?.dispose()
         }
     }
 

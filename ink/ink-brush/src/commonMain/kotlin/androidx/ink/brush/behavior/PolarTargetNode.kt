@@ -17,12 +17,16 @@
 package androidx.ink.brush.behavior
 
 import androidx.collection.MutableIntObjectMap
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import kotlin.jvm.JvmField
 
 /**
  * A [TerminalNode] that consumes two inputs, an angle and a magnitude, to affect a vector brush tip
  * property.
  */
+@OptIn(InkInternalOnlyApi::class)
 public class PolarTargetNode
 private constructor(
     nativeAlloc: () -> Long,
@@ -158,6 +162,16 @@ private constructor(
 
         override fun hashCode(): Int = value.hashCode()
 
+        /**
+         * Returns the minimum required [Version] for this [PolarTarget].
+         *
+         * By default, decoding a [androidx.ink.brush.BrushFamily] containing a [PolarTarget] with a
+         * minimum required version higher than [Version.MAX_SUPPORTED] will fail.
+         */
+        @ExperimentalInkCustomBrushApi
+        public fun calculateMinimumRequiredVersion(): Version =
+            Version.fromInt(PolarTargetNodeNative.getPolarTargetMinimumRequiredVersion(value))
+
         public companion object {
             private val VALUE_TO_INSTANCE = MutableIntObjectMap<PolarTarget>()
 
@@ -218,4 +232,6 @@ expect internal object PolarTargetNodeNative {
     fun getMagnitudeRangeStart(nativePointer: Long): Float
 
     fun getMagnitudeRangeEnd(nativePointer: Long): Float
+
+    fun getPolarTargetMinimumRequiredVersion(targetInt: Int): Int
 }

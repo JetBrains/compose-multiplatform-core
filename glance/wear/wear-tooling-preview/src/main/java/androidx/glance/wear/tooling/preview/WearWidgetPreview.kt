@@ -28,11 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.glance.wear.GlanceWearProfiles
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.WearWidgetBrush
 import androidx.glance.wear.WearWidgetData
 import androidx.glance.wear.WearWidgetDocument
 import androidx.glance.wear.color
+import androidx.glance.wear.core.RendererVersion
 import androidx.glance.wear.core.WearWidgetParams
 import kotlinx.coroutines.runBlocking
 
@@ -50,24 +52,43 @@ import kotlinx.coroutines.runBlocking
  * @param modifier The [Modifier] to be applied to the container box hosting the widget preview.
  *   Note that the preview's dimensions are enforced internally based on the provided [params].
  *   Applying layout-modifying modifiers here might conflict with these internal specifications.
+ * @param useBaselineHostVersion Whether to render using a baseline host version (a foundational,
+ *   definitively supported version representing older hosts). This allows developers to test widget
+ *   compatibility against older versions of the Wear OS host. If false, the preview renders using
+ *   the latest host version. Defaults to false.
  */
 @Composable
 public fun WearWidgetPreview(
     widget: GlanceWearWidget,
     params: WearWidgetParams,
     modifier: Modifier = Modifier,
+    useBaselineHostVersion: Boolean = false,
 ) {
     val context = LocalContext.current
-    val document =
-        remember(widget, params, context) {
+    val activeRendererVersion =
+        if (useBaselineHostVersion) {
+            RendererVersion.SAFE_FALLBACK_VERSION
+        } else {
+            RendererVersion.MAX_RENDERER_VERSION
+        }
+    val rcBytes =
+        remember(widget, params, activeRendererVersion, context) {
+            val updatedParams = params.copy(rendererVersion = activeRendererVersion)
             runBlocking {
-                val widgetData = widget.provideWidgetData(context, params)
-                widgetData.captureRawContent(context, params, isInspectionMode = true).rcDocument
+                val widgetData = widget.provideWidgetData(context, updatedParams)
+                widgetData
+                    .captureRawContent(context, updatedParams, isInspectionMode = true)
+                    .rcDocument
             }
+        }
+    val profile =
+        remember(activeRendererVersion) {
+            GlanceWearProfiles.wearWidgets(activeRendererVersion.supportedOperations)
         }
 
     RemoteDocumentPreview(
-        document,
+        document = rcBytes,
+        profile = profile,
         modifier =
             modifier
                 .width((params.widthDp + 2f * params.horizontalPaddingDp).dp)
@@ -92,6 +113,10 @@ public fun WearWidgetPreview(
  * @param modifier The [Modifier] to be applied to the container box hosting the widget preview.
  * @param background The [WearWidgetBrush] to be used as the background of the widget. Defaults to a
  *   transparent solid color.
+ * @param useBaselineHostVersion Whether to render using a baseline host version (a foundational,
+ *   definitively supported version representing older hosts). This allows developers to test widget
+ *   compatibility against older versions of the Wear OS host. If false, the preview renders using
+ *   the latest host version. Defaults to false.
  * @param content The [Composable] content of the widget to be previewed.
  */
 @Composable
@@ -99,6 +124,7 @@ public fun WearWidgetPreview(
     params: WearWidgetParams,
     modifier: Modifier = Modifier,
     background: WearWidgetBrush = WearWidgetBrush.color(Color.Transparent.rc),
+    useBaselineHostVersion: Boolean = false,
     content: @RemoteComposable @Composable () -> Unit,
 ) {
     val widget =
@@ -110,5 +136,28 @@ public fun WearWidgetPreview(
                 ): WearWidgetData = WearWidgetDocument(background, content)
             }
         }
-    WearWidgetPreview(widget, params, modifier)
+    WearWidgetPreview(
+        widget = widget,
+        params = params,
+        modifier = modifier,
+        useBaselineHostVersion = useBaselineHostVersion,
+    )
 }
+
+private fun WearWidgetParams.copy(
+    rendererVersion: RendererVersion = this.rendererVersion
+): WearWidgetParams =
+    if (this.rendererVersion == rendererVersion) {
+        this
+    } else {
+        WearWidgetParams(
+            instanceId = instanceId,
+            containerType = containerType,
+            widthDp = widthDp,
+            heightDp = heightDp,
+            horizontalPaddingDp = horizontalPaddingDp,
+            verticalPaddingDp = verticalPaddingDp,
+            cornerRadiusDp = cornerRadiusDp,
+            rendererVersion = rendererVersion,
+        )
+    }

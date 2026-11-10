@@ -25,7 +25,7 @@ plugins {
 dependencies {
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("androidx.lifecycle:lifecycle-runtime:2.8.2")
+    implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
 
     androidTestImplementation(project(":core:locationbutton:locationbutton-testing"))
     androidTestImplementation(libs.truth)
@@ -37,9 +37,6 @@ dependencies {
 android {
     namespace = "androidx.core.locationbutton"
     compileSdk { version = release(37) }
-    defaultConfig {
-        minSdk { version = release(24) }
-    }
 
 }
 

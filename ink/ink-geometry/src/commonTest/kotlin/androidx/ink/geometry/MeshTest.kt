@@ -16,11 +16,13 @@
 
 package androidx.ink.geometry
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(InkInternalOnlyApi::class)
 class MeshTest {
 
     @Test
@@ -93,7 +95,7 @@ class MeshTest {
             // The MeshFormat object is only created as part of Mesh, so can only test it through
             // this.
             // It's currently created on init, not lazily, but this test shouldn't depend on that.
-            val unused = mesh.format
+            @Suppress("UNUSED_VARIABLE") val unused = mesh.format
         }
     }
 }

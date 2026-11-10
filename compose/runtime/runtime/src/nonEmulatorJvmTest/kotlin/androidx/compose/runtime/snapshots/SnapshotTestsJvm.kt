@@ -24,11 +24,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.runTest
+import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -143,6 +145,353 @@ class SnapshotTestsJvm {
             }
         }
     }
+
+    @Test
+    fun writableRecordRegressionTest_forced() = runTest {
+        // The println's in this test are load-bearing.
+        // With them the test will fail regularly with older version of withCurrent
+        // but only sporadically without them.
+        val pause = Semaphore(0)
+        val resume = Semaphore(0)
+        val state = PausingStateObject(0, pause, resume)
+        var exception: IllegalStateException? = null
+        coroutineScope {
+            Snapshot.notifyObjectsInitialized()
+            val threadA = thread {
+                try {
+                    state.intValue = 1
+                    state.intValue = 2
+                    state.intValue = 3
+                } catch (e: IllegalStateException) {
+                    exception = e
+                }
+                resume.release(100)
+            }
+            val threadB = thread {
+                try {
+                    state.intValueNoWait = 100
+                    Snapshot.notifyObjectsInitialized()
+                    Snapshot.notifyObjectsInitialized()
+                    Snapshot.notifyObjectsInitialized()
+                    pause.release()
+                    resume.acquire()
+                    println("resume acquire() returned")
+
+                    println("Set 200, 300 - before")
+                    state.intValueNoWait = 200
+                    Snapshot.notifyObjectsInitialized()
+                    state.intValueNoWait = 300
+                    println("pause.release()")
+                    pause.release()
+                    println("pause.release() returned")
+                    println("resume.acquire()")
+                    resume.acquire()
+                    println("resume acquire() returned")
+
+                    println("Set 400 - before")
+                    state.intValueNoWait = 400
+                    Snapshot.notifyObjectsInitialized()
+                    println("pause.release()")
+                    pause.release()
+                    println("pause.release() returned")
+                } catch (e: IllegalStateException) {
+                    exception = e
+                }
+                pause.release(100)
+            }
+
+            threadA.join()
+            threadB.join()
+        }
+        exception?.let { throw it }
+    }
+
+    private class TestRecord(snapshotId: SnapshotId) : StateRecord(snapshotId) {
+        var value: Int = 0
+
+        override fun assign(value: StateRecord) {
+            this.value = (value as TestRecord).value
+        }
+
+        override fun create(): StateRecord = TestRecord(snapshotId).also { it.value = this.value }
+    }
+
+    private class MyStateObject(first: StateRecord) : StateObject {
+        private var _first: StateRecord = first
+        override val firstStateRecord: StateRecord
+            get() = _first
+
+        override fun prependStateRecord(value: StateRecord) {
+            value.next = _first
+            _first = value
+        }
+
+        override fun mergeRecords(
+            previous: StateRecord,
+            current: StateRecord,
+            applied: StateRecord,
+        ): StateRecord? = null
+    }
+
+    @Test
+    fun writableRecordRegressionTestDeterministic() {
+        val b = TestRecord(0L) // 0L is INVALID_SNAPSHOT (SnapshotIdZero)
+        val a = TestRecord(Snapshot.current.snapshotId)
+        a.next = b
+        val state = MyStateObject(a)
+
+        // Verify that calling the new `withCurrent(state)` overload succeeds and returns `a`
+        // by starting the traversal from `state.firstStateRecord` under the sync fallback.
+        val result = b.withCurrent(state) { it }
+        kotlin.test.assertEquals(a, result)
+
+        // Verify that calling the old `current(b)` (without state object) still fails for
+        // compatibility.
+        val exception = kotlin.test.assertFailsWith<IllegalStateException> { current(b) }
+        kotlin.test.assertEquals(
+            exception.message?.contains("Reading a state that was created after the snapshot"),
+            true,
+        )
+    }
+
+    @Test
+    fun readOnly_onlyAppliesToCurrentThread_globalScope() {
+        val state = mutableStateOf(0)
+        val threadAInsideReadOnly = Semaphore(0)
+        val threadBFinishedWrite = Semaphore(0)
+        var threadBException: Throwable? = null
+        var threadAInsideException: Throwable? = null
+        var threadAOutsideException: Throwable? = null
+
+        val threadA = thread {
+            try {
+                Snapshot.readOnly {
+                    threadAInsideReadOnly.release()
+                    threadBFinishedWrite.acquire()
+
+                    try {
+                        state.value = 100
+                    } catch (e: Throwable) {
+                        threadAInsideException = e
+                    }
+                }
+                // Outside readOnly on Thread A
+                try {
+                    state.value = 200
+                } catch (e: Throwable) {
+                    threadAOutsideException = e
+                }
+            } catch (e: Throwable) {
+                threadAInsideException = e
+                threadAInsideReadOnly.release()
+            }
+        }
+
+        val threadB = thread {
+            try {
+                threadAInsideReadOnly.acquire()
+                // Thread A is currently in readOnly on the global snapshot.
+                // Thread B writing on the global snapshot should succeed without throwing.
+                state.value = 42
+            } catch (e: Throwable) {
+                threadBException = e
+            } finally {
+                threadBFinishedWrite.release()
+            }
+        }
+
+        threadA.join()
+        threadB.join()
+
+        // Thread B should not have thrown any exception
+        threadBException?.let { throw it }
+
+        // Thread A should have had an IllegalStateException inside readOnly
+        assertTrue(
+            threadAInsideException is IllegalStateException,
+            "Thread A should have thrown IllegalStateException inside readOnly, but got: $threadAInsideException",
+        )
+
+        // Thread A should not have thrown outside readOnly
+        threadAOutsideException?.let { throw it }
+    }
+
+    @Test
+    fun readOnly_onlyAppliesToCurrentThread_mutableSnapshot() {
+        val state = mutableStateOf(0)
+        val snapshot = Snapshot.takeMutableSnapshot()
+        val threadAInsideReadOnly = Semaphore(0)
+        val threadBFinishedWrite = Semaphore(0)
+        var threadBException: Throwable? = null
+        var threadAInsideException: Throwable? = null
+        var threadAOutsideException: Throwable? = null
+
+        try {
+            val threadA = thread {
+                try {
+                    snapshot.enter {
+                        Snapshot.readOnly {
+                            threadAInsideReadOnly.release()
+                            threadBFinishedWrite.acquire()
+
+                            try {
+                                state.value = 100
+                            } catch (e: Throwable) {
+                                threadAInsideException = e
+                            }
+                        }
+
+                        // Outside readOnly on Thread A
+                        try {
+                            state.value = 200
+                        } catch (e: Throwable) {
+                            threadAOutsideException = e
+                        }
+                    }
+                } catch (e: Throwable) {
+                    threadAInsideException = e
+                    threadAInsideReadOnly.release()
+                }
+            }
+
+            val threadB = thread {
+                try {
+                    threadAInsideReadOnly.acquire()
+                    // Thread A is currently in readOnly on this snapshot.
+                    // Thread B enters the same snapshot and writes; it should succeed without
+                    // throwing.
+                    snapshot.enter {
+                        state.value = 42
+                    }
+                } catch (e: Throwable) {
+                    threadBException = e
+                } finally {
+                    threadBFinishedWrite.release()
+                }
+            }
+
+            threadA.join()
+            threadB.join()
+        } finally {
+            snapshot.dispose()
+        }
+
+        // Thread B should not have thrown any exception
+        threadBException?.let { throw it }
+
+        // Thread A should have had an IllegalStateException inside readOnly
+        assertTrue(
+            threadAInsideException is IllegalStateException,
+            "Thread A should have thrown IllegalStateException inside readOnly, but got: $threadAInsideException",
+        )
+
+        // Thread A should not have thrown outside readOnly
+        threadAOutsideException?.let { throw it }
+    }
+
+    @Test
+    fun readOnly_independentReadOnlyOnConcurrentThreads() {
+        val state = mutableStateOf(0)
+        val bothInsideReadOnly = Semaphore(0)
+        val threadAExitedReadOnly = Semaphore(0)
+        var threadAException: Throwable? = null
+        var threadBException: Throwable? = null
+
+        val threadA = thread {
+            try {
+                Snapshot.readOnly {
+                    bothInsideReadOnly.release()
+                }
+                // Thread A exited readOnly
+                threadAExitedReadOnly.release()
+                // Thread A writes outside readOnly - should succeed
+                state.value = 10
+            } catch (e: Throwable) {
+                threadAException = e
+                bothInsideReadOnly.release()
+                threadAExitedReadOnly.release()
+            }
+        }
+
+        val threadB = thread {
+            try {
+                Snapshot.readOnly {
+                    bothInsideReadOnly.acquire()
+                    threadAExitedReadOnly.acquire()
+                    // Thread A exited readOnly and wrote, but Thread B is STILL in readOnly.
+                    // Thread B attempting to write should throw IllegalStateException.
+                    try {
+                        state.value = 20
+                        error("Thread B should not have been allowed to write")
+                    } catch (e: IllegalStateException) {
+                        // Expected
+                    }
+                }
+            } catch (e: Throwable) {
+                threadBException = e
+            }
+        }
+
+        threadA.join()
+        threadB.join()
+
+        threadAException?.let { throw it }
+        threadBException?.let { throw it }
+    }
 }
 
 private fun AtomicInt.postIncrement(): Int = add(1) - 1
+
+private class PausingStateObject(value: Int, val pause: Semaphore, val resume: Semaphore) :
+    StateObject {
+    private var next = PausingStateRecord(currentSnapshot().snapshotId, value)
+
+    var intValueNoWait: Int
+        get() = next.readable(this).value
+        set(value) {
+            next.withCurrent(this) {
+                if (it.value != value) {
+                    next.overwritable(this, it) { this.value = value }
+                }
+            }
+        }
+
+    private val waitingNext: PausingStateRecord
+        get() {
+            val result = next
+            println("pause.acquire()")
+            pause.acquire()
+            println("pause.acquire() returned")
+            println("resume.release()")
+            resume.release()
+            println("resume.release() returned")
+            return result
+        }
+
+    var intValue: Int
+        get() = next.readable(this).value
+        set(value) {
+            waitingNext.withCurrent(this) {
+                if (it.value != value) {
+                    next.overwritable(this, it) { this.value = value }
+                }
+            }
+            println("intValue.set returning")
+        }
+
+    override val firstStateRecord: StateRecord
+        get() = next
+
+    override fun prependStateRecord(value: StateRecord) {
+        next = value as PausingStateRecord
+    }
+
+    private class PausingStateRecord(snapshotId: SnapshotId, var value: Int) :
+        StateRecord(snapshotId) {
+        override fun assign(value: StateRecord) {
+            this.value = (value as PausingStateRecord).value
+        }
+
+        override fun create(): StateRecord = PausingStateRecord(currentSnapshot().snapshotId, value)
+    }
+}

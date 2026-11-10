@@ -31,6 +31,14 @@ package androidx.webkit {
     method public int update(android.net.Uri, android.content.ContentValues?, String?, String![]?);
   }
 
+  public final class HttpCache {
+    method @IntRange(from=0) @UiThread public long getDefaultQuotaBytes();
+    method @IntRange(from=0) @UiThread public long getQuotaBytes();
+    method @UiThread public boolean isUsingDefaultQuota();
+    method @UiThread public void setQuotaBytes(@IntRange(from=0) long);
+    method @UiThread public void useDefaultQuota();
+  }
+
   public class JavaScriptExecutionException extends java.lang.Exception {
     method public int getErrorType();
     field public static final int ERROR_FRAME_DESTROYED = 1; // 0x1
@@ -135,8 +143,9 @@ package androidx.webkit {
     method public java.util.Map<java.lang.String!,java.lang.String!> getAdditionalHeaders();
     method @Deprecated public androidx.webkit.NoVarySearchHeader? getExpectedNoVarySearchData();
     method public androidx.webkit.NoVarySearchHeader? getExpectedNoVarySearchHeader();
+    method public boolean getShouldSendClientHints();
     method public Integer? getVariationsId();
-    method public boolean isJavaScriptEnabled();
+    method @Deprecated public boolean isJavaScriptEnabled();
   }
 
   @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public static final class PrefetchParameters.Builder {
@@ -146,7 +155,8 @@ package androidx.webkit {
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters build();
     method @Deprecated @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setExpectedNoVarySearchData(androidx.webkit.NoVarySearchHeader);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setExpectedNoVarySearchHeader(androidx.webkit.NoVarySearchHeader);
-    method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setJavaScriptEnabled(boolean);
+    method @Deprecated @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setJavaScriptEnabled(boolean);
+    method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setShouldSendClientHints(boolean);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setVariationsId(Integer?);
   }
 
@@ -199,24 +209,29 @@ package androidx.webkit {
 
   public interface Profile {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default void addCustomHeader(androidx.webkit.CustomHeader);
-    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.ADD_QUIC_HINTS_V1, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalAddQuicHints public default void addQuicHints(java.util.Set<java.lang.String>);
+    method @Deprecated @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.ADD_QUIC_HINTS_V1, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalAddQuicHints public default void addQuicHints(java.util.Set<java.lang.String>);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default void clearAllCustomHeaders();
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default void clearCustomHeader(String);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default void clearCustomHeader(String, String);
     method @SuppressCompatibility @RequiresFeature(name="SET_MAX_PRERENDERS_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public default void clearMaxPrerenders();
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.ENQUEUE_PRECONNECT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalPreconnect public default void enqueuePreconnect(String);
     method @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public android.webkit.CookieManager getCookieManager();
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.CROSS_ORIGIN_ISOLATED_ALLOWLIST, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default java.util.Set<java.lang.String!> getCrossOriginIsolatedAllowlist();
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default java.util.Set<androidx.webkit.CustomHeader!> getCustomHeaders();
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default java.util.Set<androidx.webkit.CustomHeader!> getCustomHeaders(String);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default java.util.Set<androidx.webkit.CustomHeader!> getCustomHeaders(String, String);
     method @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public android.webkit.GeolocationPermissions getGeolocationPermissions();
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.HTTP_CACHE_MANAGER, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default androidx.webkit.HttpCache getHttpCache();
     method @SuppressCompatibility @RequiresFeature(name="SET_MAX_PRERENDERS_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public default int getMaxPrerenders();
     method @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public String getName();
     method @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public android.webkit.ServiceWorkerController getServiceWorkerController();
     method @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public android.webkit.WebStorage getWebStorage();
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default boolean hasCustomHeader(String);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.PRECONNECT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalPreconnect public default void preconnect(String);
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.ADD_QUIC_HINTS_V1, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalAddQuicHints public default void preferQuicFor(java.util.Set<java.lang.String>);
     method @Deprecated @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor?, androidx.webkit.SpeculativeLoadingParameters, androidx.webkit.WebViewOutcomeReceiver<java.lang.Void?,androidx.webkit.PrefetchException!>);
     method @Deprecated @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor?, androidx.webkit.WebViewOutcomeReceiver<java.lang.Void?,androidx.webkit.PrefetchException!>);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.CROSS_ORIGIN_ISOLATED_ALLOWLIST, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default void setCrossOriginIsolatedAllowlist(java.util.Set<java.lang.String!>);
     method @SuppressCompatibility @RequiresFeature(name="SET_MAX_PRERENDERS_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public default void setMaxPrerenders(@IntRange(from=1) int);
     method @Deprecated @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.SPECULATIVE_LOADING_CONFIG, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public void setSpeculativeLoadingConfig(androidx.webkit.SpeculativeLoadingConfig);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.WARM_UP_RENDERER_PROCESS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalWarmUpRendererProcess public void warmUpRendererProcess();
@@ -293,7 +308,7 @@ package androidx.webkit {
   }
 
   public interface ScriptHandler {
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.DOCUMENT_START_SCRIPT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public void remove();
+    method @UiThread public void remove();
   }
 
   public abstract class ServiceWorkerClientCompat {
@@ -398,7 +413,7 @@ package androidx.webkit {
     method public String? getArchitecture();
     method public int getBitness();
     method public java.util.List<androidx.webkit.UserAgentMetadata.BrandVersion!> getBrandVersionList();
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public java.util.List<java.lang.String!> getFormFactors();
+    method public java.util.List<java.lang.String!> getFormFactors();
     method public String? getFullVersion();
     method public String? getModel();
     method public String? getPlatform();
@@ -503,10 +518,11 @@ package androidx.webkit {
 
   public class WebSettingsCompat {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.COOKIE_INTERCEPT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static boolean areCookiesIncludedInShouldInterceptRequest(android.webkit.WebSettings);
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static int getAttributionRegistrationBehavior(android.webkit.WebSettings);
+    method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static int getAttributionRegistrationBehavior(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static boolean getBackForwardCacheEnabled(android.webkit.WebSettings);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public static androidx.webkit.BackForwardCacheSettings getBackForwardCacheSettings(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.DISABLED_ACTION_MODE_MENU_ITEMS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static int getDisabledActionModeMenuItems(android.webkit.WebSettings);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.DOWNLOAD_FAVICONS_ENABLED, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static boolean getDownloadFaviconsEnabled(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static boolean getEnterpriseAuthenticationAppLinkPolicyEnabled(android.webkit.WebSettings);
     method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.FORCE_DARK, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static int getForceDark(android.webkit.WebSettings);
     method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.FORCE_DARK_STRATEGY, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static int getForceDarkStrategy(android.webkit.WebSettings);
@@ -521,10 +537,11 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static androidx.webkit.WebViewMediaIntegrityApiStatusConfig getWebViewMediaIntegrityApiStatus(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static boolean isAlgorithmicDarkeningAllowed(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setAlgorithmicDarkeningAllowed(android.webkit.WebSettings, boolean);
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setAttributionRegistrationBehavior(android.webkit.WebSettings, int);
+    method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setAttributionRegistrationBehavior(android.webkit.WebSettings, int);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setBackForwardCacheEnabled(android.webkit.WebSettings, boolean);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.COOKIE_INTERCEPT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setCookiesIncludedInShouldInterceptRequest(android.webkit.WebSettings, boolean);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.DISABLED_ACTION_MODE_MENU_ITEMS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setDisabledActionModeMenuItems(android.webkit.WebSettings, int);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.DOWNLOAD_FAVICONS_ENABLED, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setDownloadFaviconsEnabled(android.webkit.WebSettings, boolean);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setEnterpriseAuthenticationAppLinkPolicyEnabled(android.webkit.WebSettings, boolean);
     method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.FORCE_DARK, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setForceDark(android.webkit.WebSettings, int);
     method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.FORCE_DARK_STRATEGY, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setForceDarkStrategy(android.webkit.WebSettings, int);
@@ -538,16 +555,20 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.USER_AGENT_METADATA, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setUserAgentMetadata(android.webkit.WebSettings, androidx.webkit.UserAgentMetadata);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_AUTHENTICATION, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void setWebAuthenticationSupport(android.webkit.WebSettings, int);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setWebViewMediaIntegrityApiStatus(android.webkit.WebSettings, androidx.webkit.WebViewMediaIntegrityApiStatusConfig);
-    field public static final int ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER = 3; // 0x3
-    field public static final int ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER = 1; // 0x1
-    field public static final int ATTRIBUTION_BEHAVIOR_DISABLED = 0; // 0x0
-    field public static final int ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER = 2; // 0x2
+    field @Deprecated public static final int ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER = 3; // 0x3
+    field @Deprecated public static final int ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER = 1; // 0x1
+    field @Deprecated public static final int ATTRIBUTION_BEHAVIOR_DISABLED = 0; // 0x0
+    field @Deprecated public static final int ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER = 2; // 0x2
     field @Deprecated public static final int DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING = 2; // 0x2
     field @Deprecated public static final int DARK_STRATEGY_USER_AGENT_DARKENING_ONLY = 0; // 0x0
     field @Deprecated public static final int DARK_STRATEGY_WEB_THEME_DARKENING_ONLY = 1; // 0x1
     field @Deprecated public static final int FORCE_DARK_AUTO = 1; // 0x1
     field @Deprecated public static final int FORCE_DARK_OFF = 0; // 0x0
     field @Deprecated public static final int FORCE_DARK_ON = 2; // 0x2
+    field public static final int HYPERLINK_CONTEXT_MENU_DISABLED = 0; // 0x0
+    field public static final int HYPERLINK_CONTEXT_MENU_ITEM_COPY_LINK_ADDRESS = 1; // 0x1
+    field public static final int HYPERLINK_CONTEXT_MENU_ITEM_COPY_LINK_TEXT = 2; // 0x2
+    field public static final int HYPERLINK_CONTEXT_MENU_ITEM_OPEN_LINK = 4; // 0x4
     field @SuppressCompatibility @androidx.webkit.WebSettingsCompat.ExperimentalSpeculativeLoading public static final int SPECULATIVE_LOADING_DISABLED = 0; // 0x0
     field @SuppressCompatibility @androidx.webkit.WebSettingsCompat.ExperimentalSpeculativeLoading public static final int SPECULATIVE_LOADING_PRERENDER_ENABLED = 1; // 0x1
     field public static final int WEB_AUTHENTICATION_SUPPORT_FOR_APP = 1; // 0x1
@@ -690,18 +711,21 @@ package androidx.webkit {
     method public static boolean isStartupFeatureSupported(android.content.Context, String);
     field @SuppressCompatibility @androidx.webkit.Profile.ExperimentalAddQuicHints public static final String ADD_QUIC_HINTS_V1 = "ADD_QUIC_HINTS";
     field public static final String ALGORITHMIC_DARKENING = "ALGORITHMIC_DARKENING";
-    field public static final String ATTRIBUTION_REGISTRATION_BEHAVIOR = "ATTRIBUTION_REGISTRATION_BEHAVIOR";
+    field @Deprecated public static final String ATTRIBUTION_REGISTRATION_BEHAVIOR = "ATTRIBUTION_REGISTRATION_BEHAVIOR";
     field public static final String BACK_FORWARD_CACHE = "BACK_FORWARD_CACHE";
     field public static final String BACK_FORWARD_CACHE_SETTINGS = "BACK_FORWARD_CACHE_SETTINGS";
     field public static final String BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3 = "BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3";
     field @SuppressCompatibility @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public static final String BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4 = "BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4";
     field public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";
     field public static final String CREATE_WEB_MESSAGE_CHANNEL = "CREATE_WEB_MESSAGE_CHANNEL";
+    field public static final String CROSS_ORIGIN_ISOLATED_ALLOWLIST = "CROSS_ORIGIN_ISOLATED_ALLOWLIST";
     field public static final String CUSTOM_REQUEST_HEADERS = "CUSTOM_REQUEST_HEADERS";
     field public static final String DEFAULT_TRAFFICSTATS_TAGGING = "DEFAULT_TRAFFICSTATS_TAGGING";
     field public static final String DELETE_BROWSING_DATA = "DELETE_BROWSING_DATA";
     field public static final String DISABLED_ACTION_MODE_MENU_ITEMS = "DISABLED_ACTION_MODE_MENU_ITEMS";
     field public static final String DOCUMENT_START_SCRIPT = "DOCUMENT_START_SCRIPT";
+    field public static final String DOWNLOAD_FAVICONS_ENABLED = "DOWNLOAD_FAVICONS_ENABLED";
+    field @SuppressCompatibility @androidx.webkit.Profile.ExperimentalPreconnect public static final String ENQUEUE_PRECONNECT = "ENQUEUE_PRECONNECT";
     field public static final String ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY = "ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY";
     field public static final String FORCE_DARK = "FORCE_DARK";
     field public static final String FORCE_DARK_STRATEGY = "FORCE_DARK_STRATEGY";
@@ -710,6 +734,7 @@ package androidx.webkit {
     field public static final String GET_WEB_CHROME_CLIENT = "GET_WEB_CHROME_CLIENT";
     field public static final String GET_WEB_VIEW_CLIENT = "GET_WEB_VIEW_CLIENT";
     field public static final String GET_WEB_VIEW_RENDERER = "GET_WEB_VIEW_RENDERER";
+    field public static final String HTTP_CACHE_MANAGER = "HTTP_CACHE_MANAGER";
     field public static final String HYPERLINK_CONTEXT_MENU_ITEMS = "HYPERLINK_CONTEXT_MENU_ITEMS";
     field public static final String JS_INJECTION_IN_FRAME_AND_WORLD = "JS_INJECTION_IN_FRAME_AND_WORLD";
     field public static final String MULTI_PROCESS = "MULTI_PROCESS";
@@ -766,6 +791,7 @@ package androidx.webkit {
     field @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V1 = "WEBVIEW_BUILDER_EXPERIMENTAL_V1";
     field @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V2 = "WEBVIEW_BUILDER_EXPERIMENTAL_V2";
     field public static final String WEBVIEW_MEDIA_INTEGRITY_API_STATUS = "WEBVIEW_MEDIA_INTEGRITY_API_STATUS";
+    field @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalNavigate public static final String WEBVIEW_NAVIGATE_DRAIN_PREFETCH = "WEBVIEW_NAVIGATE_DRAIN_PREFETCH";
     field @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalNavigate public static final String WEBVIEW_NAVIGATE_EXPERIMENTAL_V1 = "WEBVIEW_NAVIGATE_EXPERIMENTAL_V1";
     field public static final String WEB_AUTHENTICATION = "WEB_AUTHENTICATION";
     field public static final String WEB_MESSAGE_ARRAY_BUFFER = "WEB_MESSAGE_ARRAY_BUFFER";

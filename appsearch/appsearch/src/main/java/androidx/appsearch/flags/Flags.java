@@ -20,7 +20,6 @@ package androidx.appsearch.flags;
 
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
-import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 
 import java.util.Collection;
 
@@ -53,10 +52,6 @@ public final class Flags {
     /** Enable the "hasProperty" function in list filter query expressions. */
     public static final String FLAG_ENABLE_LIST_FILTER_HAS_PROPERTY_FUNCTION =
             FLAG_PREFIX + "enable_list_filter_has_property_function";
-
-    /** Enable the "matchScoreExpression" function in list filter query expressions. */
-    public static final String FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION =
-            FLAG_PREFIX + "enable_list_filter_match_score_expression_function";
 
     /** Enable Schema Type Grouping related features. */
     public static final String FLAG_ENABLE_GROUPING_TYPE_PER_SCHEMA =
@@ -136,14 +131,6 @@ public final class Flags {
     public static final String FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS =
             FLAG_PREFIX + "enable_informational_ranking_expressions";
 
-    /** Enable {@link androidx.appsearch.app.AppSearchResult#RESULT_ALREADY_EXISTS}. */
-    public static final String FLAG_ENABLE_RESULT_ALREADY_EXISTS =
-            FLAG_PREFIX + "enable_result_already_exists";
-
-    /** Enable {@link androidx.appsearch.app.GenericDocument#writeToParcel}. */
-    public static final String FLAG_ENABLE_GENERIC_DOCUMENT_OVER_IPC =
-            FLAG_PREFIX + "enable_generic_document_over_ipc";
-
     /** Enable empty batch result fix for enterprise GetDocuments. */
     public static final String FLAG_ENABLE_ENTERPRISE_EMPTY_BATCH_RESULT_FIX =
             FLAG_PREFIX + "enable_enterprise_empty_batch_result_fix";
@@ -180,6 +167,14 @@ public final class Flags {
     public static final String FLAG_ENABLE_SEARCH_RESULT_PARENT_TYPES =
             FLAG_PREFIX + "enable_search_result_parent_types";
 
+    /** Enable multi-certificate support in PackageIdentifier for PWAs and key rotation. */
+    public static final String FLAG_ENABLE_PACKAGE_IDENTIFIER_MULTI_CERT =
+            FLAG_PREFIX + "enable_package_identifier_multi_cert";
+
+    /** Enable multi-certificate apps indexing and visibility support for PWAs. */
+    public static final String FLAG_ENABLE_APPS_INDEXER_PWA_MULTI_CERT =
+            FLAG_PREFIX + "enable_apps_indexer_pwa_multi_cert";
+
     /** Enables AppSearch to manage blob files. */
     public static final String FLAG_ENABLE_APP_SEARCH_MANAGE_BLOB_FILES =
             FLAG_PREFIX + "enable_app_search_manage_blob_files";
@@ -197,22 +192,10 @@ public final class Flags {
             FLAG_PREFIX + "enable_result_unavailable";
 
     /**
-     * Enables throwing {@link androidx.appsearch.exceptions.AppSearchException} with code
-     * {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED} if the search result page token
-     * is not found in native.
-     */
-    public static final String FLAG_ENABLE_THROW_EXCEPTION_FOR_NATIVE_NOT_FOUND_PAGE_TOKEN =
-            FLAG_PREFIX + "enable_throw_exception_for_native_not_found_page_token";
-
-    /**
      * Enable retrying the critical section of initialization before resetting as a last resort.
      */
     public static final String FLAG_ENABLE_INITIALIZATION_RETRIES_BEFORE_RESET =
             FLAG_PREFIX + "enable_initialization_retries_before_reset";
-
-    /** Enable reset visibility store during initialization. */
-    public static final String FLAG_ENABLE_RESET_VISIBILITY_STORE =
-            FLAG_PREFIX + "enable_reset_visibility_store";
 
     /**
      * Whether to skip interacting with icing if the set schema call is a noop.
@@ -242,13 +225,6 @@ public final class Flags {
     public static final String FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS =
             FLAG_PREFIX + "enable_optimize_improvements";
 
-    /**
-     * Controls whether repeated fields may set joinable value type to
-     * {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
-     */
-    public static final String FLAG_ENABLE_REPEATED_FIELD_JOINS =
-            FLAG_PREFIX + "enable_repeated_field_joins";
-
     /** Enables delete propagation API. */
     public static final String FLAG_ENABLE_DELETE_PROPAGATION_RW =
             FLAG_PREFIX + "enable_delete_propagation_rw";
@@ -265,16 +241,6 @@ public final class Flags {
      */
     public static final String FLAG_ENABLE_NON_EXISTENT_QUALIFIED_ID_JOIN =
             FLAG_PREFIX + "enable_non_existent_qualified_id_join";
-
-    /** Enables visibility access for Private Compute Core UIDs. */
-    public static final String FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS =
-            FLAG_PREFIX + "enable_private_compute_core_uid_access";
-
-    /**
-     * Whether to enable skipping the unnecessary schema type equality check.
-     */
-    public static final String FLAG_ENABLE_SKIP_SET_SCHEMA_TYPE_EQUALITY_CHECK =
-            FLAG_PREFIX + "enable_skip_set_schema_type_equality_check";
 
     /** Enables set SearchFeatures and RankingFeatures APIs. */
     public static final String FLAG_ENABLE_SET_SEARCH_AND_RANKING_FEATURE =
@@ -294,6 +260,44 @@ public final class Flags {
     public static final String FLAG_ENABLE_EMBEDDING_PRE_QUANTIZED_DATA =
             FLAG_PREFIX + "enable_embedding_pre_quantized_data";
 
+    /** Enables database stableness log in Icing. */
+    public static final String FLAG_ENABLE_DATABASE_STABLENESS_LOG =
+            FLAG_PREFIX + "enable_database_stableness_log";
+
+    /** Enables incompatibility check when promoting a regular property to an account property. */
+    public static final String FLAG_ENABLE_ACCOUNT_PROPERTY_INCOMPATIBILITY_CHECK =
+            FLAG_PREFIX + "enable_account_property_incompatibility_check";
+
+    /** Controls whether to release schema store cached proto after initialization. */
+    public static final String FLAG_RELEASE_SCHEMA_CACHE_AFTER_INITIALIZATION =
+            FLAG_PREFIX + "release_schema_cache_after_initialization";
+
+    /**
+     * Controls whether to remove schema store move assignment during schema store set schema.
+     */
+    public static final String FLAG_REMOVE_SCHEMA_STORE_MOVE_ASSIGNMENT =
+            FLAG_PREFIX + "remove_schema_store_move_assignment";
+
+    /**
+     * Whether to enable fine-grained index rebuilding when schema changes occur.
+     */
+    public static final String FLAG_ENABLE_FINE_GRAINED_INDEX_REBUILD =
+            FLAG_PREFIX + "enable_fine_grained_index_rebuild";
+
+    /**
+     * Whether to unblock read requests during ANN index maintenance.
+     */
+    public static final String FLAG_ENABLE_READ_DURING_ANN_MAINTENANCE =
+            FLAG_PREFIX + "enable_read_during_ann_maintenance";
+
+    /** Whether to enable result states optimization. */
+    public static final String FLAG_ENABLE_OPTIMIZE_RESULT_STATES =
+            FLAG_PREFIX + "enable_optimize_result_states";
+
+    /** Whether to enable the fix for index restoration critical error handling. */
+    public static final String FLAG_ENABLE_INDEX_RESTORATION_CRITICAL_ERROR_HANDLING_FIX =
+            FLAG_PREFIX + "enable_index_restoration_critical_error_handling_fix";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -305,14 +309,6 @@ public final class Flags {
 
     /** Whether the "hasProperty" function in list filter query expressions should be enabled. */
     public static boolean enableListFilterHasPropertyFunction() {
-        return true;
-    }
-
-    /**
-     * Whether the "matchScoreExpression" function in list filter query expressions should be
-     * enabled.
-     */
-    public static boolean enableListFilterMatchScoreExpressionFunction() {
         return true;
     }
 
@@ -406,14 +402,6 @@ public final class Flags {
         return true;
     }
 
-    /**
-     * Whether {@link androidx.appsearch.app.AppSearchResult#RESULT_ALREADY_EXISTS} should be
-     * enabled.
-     */
-    public static boolean enableResultAlreadyExists() {
-        return true;
-    }
-
     /** Whether AppSearch manages blob files. */
     public static boolean enableAppSearchManageBlobFiles() {
         return true;
@@ -502,15 +490,6 @@ public final class Flags {
     }
 
     /**
-     * Whether {@link androidx.appsearch.exceptions.AppSearchException} with code
-     * {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED} should be thrown if the search
-     * result page token is not found in native.
-     */
-    public static boolean enableThrowExceptionForNativeNotFoundPageToken() {
-        return true;
-    }
-
-    /**
      * Whether to batch put visibility documents.
      */
     public static boolean enableBatchPutVisibilityDocuments() {
@@ -525,12 +504,6 @@ public final class Flags {
         return true;
     }
 
-    /**
-     * Whether to enable reset visibility store during initialization.
-     */
-    public static boolean enableResetVisibilityStore() {
-        return true;
-    }
 
     /**
      * Whether to skip interacting with icing if the set schema call is a noop.
@@ -568,14 +541,6 @@ public final class Flags {
     }
 
     /**
-     * Controls whether repeated fields may set joinable value type to
-     * {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
-     */
-    public static boolean enableRepeatedFieldJoins() {
-        return true;
-    }
-
-    /**
      * Whether delete propagation API should be enabled.
      *
      * <p>Note: delete propagation depends on qualified id join index v3 and soft index restoration.
@@ -596,20 +561,6 @@ public final class Flags {
      * Whether to enable indexing non existent parent qualified id in the join index.
      */
     public static boolean enableNonExistentQualifiedIdJoin() {
-        return true;
-    }
-
-    /**
-     * Whether visibility access for Private Compute Core UIDs should be enabled.
-     */
-    public static boolean enablePrivateComputeCoreUidAccess() {
-        return true;
-    }
-
-    /*
-     * Whether to enable skipping the unnecessary schema type equality check.
-     */
-    public static boolean enableSkipSetSchemaTypeEqualityCheck() {
         return true;
     }
 
@@ -637,6 +588,73 @@ public final class Flags {
 
     /** Whether embedding pre-quantized data should be enabled. */
     public static boolean enableEmbeddingPreQuantizedData() {
+        return true;
+    }
+
+    /** Whether to enable database stableness log in Icing. */
+    public static boolean enableDatabaseStablenessLog() {
+        return false;
+    }
+
+    /**
+     * Whether incompatibility check when promoting a regular property to an account property
+     * should be enabled.
+     */
+    public static boolean enableAccountPropertyIncompatibilityCheck() {
+        // TODO(b/506060010): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether to release schema store cached proto after initialization.
+     */
+    public static boolean releaseSchemaCacheAfterInitialization() {
+        // TODO(b/490448633): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether to remove schema store move assignment during schema store set schema.
+     */
+    public static boolean removeSchemaStoreMoveAssignment() {
+        // TODO(b/521549968): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable fine-grained index rebuilding when schema changes occur.
+     */
+    public static boolean enableFineGrainedIndexRebuild() {
+        return true;
+    }
+
+    /**
+     * Whether to unblock read requests during ANN index maintenance.
+     */
+    public static boolean enableReadDuringAnnMaintenance() {
+        return true;
+    }
+    /** Whether to enable result states optimization. */
+    public static boolean enableOptimizeResultStates() {
+        // TODO(b/446719537): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /** Whether to enable the fix for index restoration critical error handling. */
+    public static boolean enableIndexRestorationCriticalErrorHandlingFix() {
+        // TODO(b/494334634): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /** Whether multi-certificate support in PackageIdentifier should be enabled. */
+    public static boolean enablePackageIdentifierMultiCert() {
+        return true;
+    }
+
+    /**
+     * Whether multi-certificate apps indexing and visibility support for PWAs should be enabled.
+     */
+    public static boolean enableAppsIndexerPwaMultiCert() {
         return true;
     }
 }

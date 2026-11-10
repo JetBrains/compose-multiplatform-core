@@ -77,15 +77,14 @@ public class ActivitySpaceImpl(
     // The bounds are kept in sync with the Extensions in the onBoundsChangedEvent callback. We
     // only invoke getSpatialState if they've never been set.
     override val bounds: Dimensions
-        get() =
-            _bounds.updateAndGet { oldBounds ->
-                if (oldBounds == null) {
-                    val bounds = spatialStateProvider.get().bounds
-                    Dimensions(bounds.width, bounds.height, bounds.depth)
-                } else {
-                    oldBounds
-                }
+        get() = _bounds.updateAndGet { oldBounds ->
+            if (oldBounds == null) {
+                val bounds = spatialStateProvider.get().bounds
+                Dimensions(bounds.width, bounds.height, bounds.depth)
+            } else {
+                oldBounds
             }
+        }
 
     public val poseInPerceptionSpace: Pose
         get() {
@@ -117,25 +116,24 @@ public class ActivitySpaceImpl(
      * @return a [BoundingBox] sized to place content in.
      */
     override val recommendedContentBoxInFullSpace: BoundingBox
-        get() =
-            cachedRecommendedContentBox.updateAndGet { currentBox ->
-                currentBox
-                    ?: run {
-                        val recommendedBox = extensions.recommendedContentBoxInFullSpace
-                        BoundingBox.fromMinMax(
-                            Vector3(
-                                recommendedBox.min.x,
-                                recommendedBox.min.y,
-                                recommendedBox.min.z,
-                            ),
-                            Vector3(
-                                recommendedBox.max.x,
-                                recommendedBox.max.y,
-                                recommendedBox.max.z,
-                            ),
-                        )
-                    }
-            }
+        get() = cachedRecommendedContentBox.updateAndGet { currentBox ->
+            currentBox
+                ?: run {
+                    val recommendedBox = extensions.recommendedContentBoxInFullSpace
+                    BoundingBox.fromMinMax(
+                        Vector3(
+                            recommendedBox.min.x,
+                            recommendedBox.min.y,
+                            recommendedBox.min.z,
+                        ),
+                        Vector3(
+                            recommendedBox.max.x,
+                            recommendedBox.max.y,
+                            recommendedBox.max.z,
+                        ),
+                    )
+                }
+        }
 
     override fun getPose(@SpaceValue relativeTo: Int): Pose {
         return when (relativeTo) {
@@ -182,7 +180,7 @@ public class ActivitySpaceImpl(
      * Handles the updates to scene core root transform.
      * <pre>
      * Hierarchy:
-     * OpenXR Unbounded Reference Space Origin
+     * Platform Reference Space Origin (OpenXR Unbounded in XROS)
      * └── Scene Parent Node (Intermediate system-managed node)
      * └── Scene Root Node (ActivitySpace Node)
      *
@@ -193,14 +191,15 @@ public class ActivitySpaceImpl(
      * </pre>
      * <p>By inverting the inherited scale and roll and pitch rotations of the scene parent
      * transform, SceneCore effectively re-orients the ActivitySpace to be unscaled and
-     * gravity-aligned like its grandparent OpenXR unbounded space, while preserving its yaw
-     * rotation (i.e. facing user direction).
+     * gravity-aligned like its grandparent platform unbounded space (OpenXR Unbounded in XROS),
+     * while preserving its yaw rotation (i.e. facing user direction).
      *
      * <p>To maintain continuity when entering FSM, SceneCore provides the original rotation and
      * scale of the scene parent transform via the onSpatialModeChanged callback. This ensures FSM
      * continuity when spatial modes change.
      *
-     * @param newTransform New scene parent transform relative to OpenXR unbounded reference space.
+     * @param newTransform New scene parent transform relative to platform reference space (OpenXR
+     *   Unbounded in XROS).
      */
     public fun handleOriginUpdate(newTransform: Matrix4) {
         if (lastSceneParentTransform.getAndSet(newTransform) == newTransform) {
@@ -267,8 +266,9 @@ public class ActivitySpaceImpl(
      * block it.
      */
     public fun onBoundsChanged(newBounds: Bounds) {
-        val newDimensions =
-            _bounds.updateAndGet { Dimensions(newBounds.width, newBounds.height, newBounds.depth) }
+        val newDimensions = _bounds.updateAndGet {
+            Dimensions(newBounds.width, newBounds.height, newBounds.depth)
+        }
         synchronized(boundsListeners) {
             for (listener in boundsListeners) {
                 listener.onBoundsChanged(newDimensions)

@@ -55,6 +55,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -215,6 +216,12 @@ class MovableComponentTest {
         mFakePerceptionManager = mFakeRuntime.perceptionManager
         timeSource = mFakeRuntime.timeSource
         SystemClock.setCurrentTimeMillis(mCurrentTimeMillis)
+    }
+
+    @Before
+    fun setup() {
+        // TODO: b/537470420 Remove once Anchors are properly detached in unit tests.
+        androidx.xr.arcore.testing.FakeRuntimeAnchor.anchorsCreatedCount = 0
     }
 
     @After
@@ -426,7 +433,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        var expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
+        var expectedEvent = requireNotNull(rtMoveEvent.toMoveEvent(session.scene.entityRegistry))
 
         assertThat(moveListener.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -448,7 +455,7 @@ class MovableComponentTest {
         // Simulates a move ongoing event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
+        expectedEvent = requireNotNull(rtMoveEvent.toMoveEvent(session.scene.entityRegistry))
 
         assertThat(moveListener.onMoveUpdatedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -471,10 +478,50 @@ class MovableComponentTest {
         // Simulates a move end event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
+        expectedEvent = requireNotNull(rtMoveEvent.toMoveEvent(session.scene.entityRegistry))
 
         assertThat(moveListener.onMoveEndedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
+    }
+
+    @Test
+    fun movableComponent_ignoresMoveEvent_whenParentNotRegistered() {
+        createCustomSession()
+        val entity = Entity.create(session, "test")
+
+        assertThat(entity).isNotNull()
+
+        val movableComponent = MovableComponent.createSystemMovable(session)
+
+        assertThat(entity.addComponent(movableComponent)).isTrue()
+
+        val moveListener = FakeEntityMoveListener()
+        movableComponent.addMoveListener(directExecutor(), moveListener)
+
+        val rtMoveEvent =
+            RtMoveEvent(
+                MoveEvent.MOVE_STATE_START,
+                Ray(Vector3(0f, 0f, 0f), Vector3(1f, 1f, 1f)),
+                Ray(Vector3(1f, 1f, 1f), Vector3(2f, 2f, 2f)),
+                Pose(),
+                Pose(),
+                Vector3(1f, 1f, 1f),
+                Vector3(1f, 1f, 1f),
+                fakeActivitySpace,
+                updatedParent = null,
+                disposedEntity = null,
+            )
+        // We remove fakeActivitySpace from registry to simulate it being GC'd
+        session.scene.entityRegistry.removeEntity(fakeActivitySpace)
+
+        val rtMovableComponent = movableComponent.rtMovableComponent as FakeMovableComponent
+        // Simulates a move start event from runtime.
+        rtMovableComponent.onMoveEvent(rtMoveEvent)
+
+        // Expects the listener NOT to be called
+        assertThat(moveListener.onMoveStartedCount).isEqualTo(0)
+        assertThat(moveListener.onMoveUpdatedCount).isEqualTo(0)
+        assertThat(moveListener.onMoveEndedCount).isEqualTo(0)
     }
 
     @Test
@@ -511,7 +558,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
+        val expectedEvent = requireNotNull(rtMoveEvent.toMoveEvent(session.scene.entityRegistry))
 
         assertThat(moveListener1.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener1.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -553,7 +600,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
+        val expectedEvent = requireNotNull(rtMoveEvent.toMoveEvent(session.scene.entityRegistry))
 
         assertThat(moveListener1.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener1.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -614,7 +661,7 @@ class MovableComponentTest {
     @Test
     fun customMovableComponent_invokesInitialListener() {
         createCustomSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             val entity = Entity.create(session, "test")
             assertThat(entity).isNotNull()
             val moveListener = FakeEntityMoveListener()
@@ -645,7 +692,7 @@ class MovableComponentTest {
             // Simulates a move start event from runtime.
             rtMovableComponent.onMoveEvent(rtMoveEvent)
             // Expects to receive a scenecore event.
-            val moveEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
+            val moveEvent = requireNotNull(rtMoveEvent.toMoveEvent(session.scene.entityRegistry))
             advanceUntilIdle()
 
             assertThat(moveListener.onMoveStartedCount).isEqualTo(1)
@@ -659,7 +706,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_updatesThePoseBasedOnPlanes() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -726,7 +773,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_nullParent_updatesThePoseBasedOnPlanes() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -794,7 +841,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withNonActivityParent_updatesPoseBasedOnPlanesAndParent() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -866,7 +913,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_scaledParent_updatesThePoseBasedOnPlanes() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpaceScale = Vector3(2f, 2f, 2f)
@@ -937,7 +984,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withinAnchorDistance_setsAnchorSpace() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1024,7 +1071,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withinAnchorDistanceAboveAnchor_resetsPose() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1117,7 +1164,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withIncorrectPlaneType_doesNotCreateAnchor() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1206,7 +1253,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withinAnchorDistanceAndScale_setsAnchorEntityAndScales() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpaceScale = Vector3(2f, 2f, 2f)
@@ -1297,7 +1344,7 @@ class MovableComponentTest {
     @Test
     fun createAnchorable_noPlanes_keepsProposedPose() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1350,7 +1397,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_validPlaneButNotTracking_keepsProposedPose() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1415,7 +1462,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_outsideExtents_keepsProposedPose() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1480,7 +1527,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_resetsToScenePoseAfterAnchoring() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1590,7 +1637,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_resetsAndScaleToScenePoseAfterAnchoring() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpaceScale = Vector3(2f, 2f, 2f)
@@ -1708,7 +1755,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_childOfEntity_resetsToActivityPoseAfterAnchoring() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1824,7 +1871,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_shouldDispose_disposesAnchorAfterUnparenting() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -1939,7 +1986,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_shouldDispose_doeNotDisposeIfAnchorHasChildren() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -2061,7 +2108,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_nearPlane_callsSetPlanePoseWithNonNullPose() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -2126,7 +2173,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_awayFromPlane_callsSetPlanePoseWithNonNullPose() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
@@ -2192,7 +2239,7 @@ class MovableComponentTest {
     // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_unsupportedEntityType_throwsIllegalArgumentException() {
         createSession()
-        runTest(testDispatcher) {
+        return runTest(testDispatcher) {
             activityController.create().start().resume()
 
             val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)

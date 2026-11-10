@@ -17,6 +17,7 @@
 package androidx.xr.compose.testapp.rotatetolookatuser
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -31,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +45,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.xr.arcore.Anchor
+import androidx.xr.arcore.AnchorCreateResourcesExhausted
+import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
@@ -52,7 +58,10 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.StereoMode
 import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.compose.subspace.animation.follow.FollowTarget
 import androidx.xr.compose.subspace.layout.ExperimentalRotateToLookAtUserApi
+import androidx.xr.compose.subspace.layout.MovePolicy
+import androidx.xr.compose.subspace.layout.PitchLimits
 import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SpatialMoveEvent
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -64,7 +73,6 @@ import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.rotateToLookAtUser
-import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.ui.components.TopBarWithBackArrow
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
@@ -73,8 +81,11 @@ import androidx.xr.compose.testapp.ui.theme.PurpleGrey40
 import androidx.xr.compose.testapp.ui.theme.PurpleGrey80
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.scene
 
 /**
  * Integration test activity for the [rotateToLookAtUser] modifier.
@@ -87,11 +98,11 @@ import androidx.xr.runtime.math.Vector3
  *    applied to a [SpatialPanel], [SpatialRow], [SpatialColumn], and [SpatialExternalSurface].
  * 2. Nested Hierarchies: Validates that the tracking logic correctly handles coordinate
  *    transformations when the child tracks the user inside a rotated [SpatialBox].
- * 3. Custom Up Vector: Validates tracking behavior when a specific 'up' orientation is provided,
- *    useful for tilted or non-standard tracking requirements.
- * 4. Billboard: Demonstrates and validates the "Billboard" effect, achieved by chaining
+ * 3. Billboard: Demonstrates and validates the "Billboard" effect, achieved by chaining
  *    [rotateToLookAtUser] with [gravityAligned]. This should result in horizontal-only tracking
  *    while the panel remains vertically upright.
+ * 4. Rotation Constraints: Demonstrates and validates that yaw tracking can be disabled and pitch
+ *    tracking can be constrained using the [isYawUpdateEnabled] and [pitchLimits] parameters.
  *
  * Usage
  * - Use the global switch in the top control panel to toggle the tracking behavior for all test
@@ -106,7 +117,7 @@ class RotateToLookAtUserActivity : ComponentActivity() {
         setContent { MainContent() }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalFollowingSubspaceApi::class)
     @SubspaceComposable
     @Composable
     private fun MainContent() {
@@ -114,21 +125,44 @@ class RotateToLookAtUserActivity : ComponentActivity() {
         session.configure(
             Config.Builder(session.config).setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
         )
+        var anchor by remember { mutableStateOf<Anchor?>(null) }
+        DisposableEffect(session) {
+            val listener = Runnable {
+                createAnchor(session, Pose(Vector3(-1f, 0f, 1.5f)))?.let { newAnchor ->
+                    anchor?.detach()
+                    anchor = newAnchor
+                }
+            }
+            session.scene.activitySpace.addOriginChangedListener(listener)
+            onDispose {
+                session.scene.activitySpace.removeOriginChangedListener(listener)
+                anchor?.detach()
+            }
+        }
 
         var isRotateToLookAtUserOn by remember { mutableStateOf(true) }
 
         IntegrationTestsAppTheme {
-            Subspace(modifier = SubspaceModifier.width(2100.dp).height(1400.dp)) {
+            Subspace(modifier = SubspaceModifier.width(2100.dp).height(1200.dp)) {
                 SpatialRow(
-                    modifier = SubspaceModifier.offset(y = 100.dp),
+                    modifier = SubspaceModifier.offset(y = 50.dp),
                     horizontalArrangement = SpatialArrangement.spacedBy(40.dp),
                 ) {
-                    SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(20.dp)) {
+                    SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(12.dp)) {
                         ControlPanel(
                             isRotateToLookAtUserOn = isRotateToLookAtUserOn,
                             onToggle = { isRotateToLookAtUserOn = it },
                         )
                         TestGrid(isFeatureOn = isRotateToLookAtUserOn)
+                    }
+                }
+            }
+            anchor?.let { anchor ->
+                Subspace(follow = FollowTarget.anchor(anchor)) {
+                    TestPanelContainer(title = "Anchored Panel", isFeatureOn = true) {
+                        modifier,
+                        content ->
+                        SpatialPanel(modifier = modifier, content = content)
                     }
                 }
             }
@@ -139,11 +173,11 @@ class RotateToLookAtUserActivity : ComponentActivity() {
     @SubspaceComposable
     @Composable
     private fun ControlPanel(isRotateToLookAtUserOn: Boolean, onToggle: (Boolean) -> Unit) {
-        SpatialPanel(modifier = SubspaceModifier.width(550.dp).height(200.dp).padding(25.dp)) {
+        SpatialPanel(modifier = SubspaceModifier.width(550.dp).height(150.dp).padding(15.dp)) {
             Column(
                 modifier = Modifier.fillMaxSize().background(PurpleGrey80),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 // TopBar
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -163,7 +197,7 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                     Text(
                         "rotateToLookAtUser()",
                         color = PurpleGrey40,
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(end = 20.dp),
                     )
@@ -183,9 +217,11 @@ class RotateToLookAtUserActivity : ComponentActivity() {
         title: String,
         isFeatureOn: Boolean,
         modifier: SubspaceModifier = SubspaceModifier,
-        upVector: Vector3? = null,
-        width: Int = 400,
-        height: Int = 200,
+        width: Int = 360,
+        height: Int = 130,
+        isYawUpdateEnabled: Boolean = true,
+        isPitchUpdateEnabled: Boolean = true,
+        pitchLimits: PitchLimits = PitchLimits.FullRange,
         container:
             @Composable
             @SubspaceComposable
@@ -194,10 +230,11 @@ class RotateToLookAtUserActivity : ComponentActivity() {
         var finalModifier = modifier.width(width.dp).height(height.dp)
         if (isFeatureOn) {
             finalModifier =
-                when {
-                    upVector != null -> finalModifier.rotateToLookAtUser(upDirection = upVector)
-                    else -> finalModifier.rotateToLookAtUser()
-                }
+                finalModifier.rotateToLookAtUser(
+                    isYawUpdateEnabled = isYawUpdateEnabled,
+                    isPitchUpdateEnabled = isPitchUpdateEnabled,
+                    pitchLimits = pitchLimits,
+                )
         }
 
         val innerContent: @Composable () -> Unit = {
@@ -205,13 +242,13 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                 modifier =
                     Modifier.fillMaxSize()
                         .background(if (isFeatureOn) Purple40 else PurpleGrey40)
-                        .padding(16.dp),
+                        .padding(12.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = title,
                     color = Color.White,
-                    fontSize = 22.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                 )
@@ -223,10 +260,92 @@ class RotateToLookAtUserActivity : ComponentActivity() {
 
     @SubspaceComposable
     @Composable
+    private fun InteractiveConstraintsPanel(isFeatureOn: Boolean) {
+        var isYawEnabled: Boolean by remember { mutableStateOf(true) }
+        var isPitchEnabled: Boolean by remember { mutableStateOf(true) }
+        var isPitchClamped: Boolean by remember { mutableStateOf(false) }
+
+        var modifier: SubspaceModifier = SubspaceModifier.width(360.dp).height(140.dp)
+        if (isFeatureOn) {
+            modifier =
+                modifier.rotateToLookAtUser(
+                    isYawUpdateEnabled = isYawEnabled,
+                    isPitchUpdateEnabled = isPitchEnabled,
+                    pitchLimits =
+                        if (isPitchClamped) PitchLimits(-15f, 15f) else PitchLimits.FullRange,
+                )
+        }
+
+        SpatialPanel(modifier = modifier) {
+            Column(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .background(if (isFeatureOn) Purple40 else PurpleGrey40)
+                        .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = "Interactive Constraints",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                )
+
+                // Yaw & Pitch Tracking Switches
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text("Yaw", color = Color.White, fontSize = 15.sp)
+                        Switch(
+                            checked = isYawEnabled,
+                            onCheckedChange = { isYawEnabled = it },
+                            enabled = isFeatureOn,
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text("Pitch", color = Color.White, fontSize = 15.sp)
+                        Switch(
+                            checked = isPitchEnabled,
+                            onCheckedChange = { isPitchEnabled = it },
+                            enabled = isFeatureOn,
+                        )
+                    }
+                }
+
+                // Pitch Clamp Switch
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("Clamp Pitch [-15°, 15°]", color = Color.White, fontSize = 15.sp)
+                    Switch(
+                        checked = isPitchClamped,
+                        onCheckedChange = { isPitchClamped = it },
+                        enabled = isFeatureOn && isPitchEnabled,
+                    )
+                }
+            }
+        }
+    }
+
+    @SubspaceComposable
+    @Composable
     private fun TestGrid(isFeatureOn: Boolean) {
         SpatialRow(horizontalArrangement = SpatialArrangement.spacedBy(20.dp)) {
             // Column 1: Core Spatial Components
-            SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(20.dp)) {
+            SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(12.dp)) {
                 TestPanelContainer(title = "SpatialPanel", isFeatureOn = isFeatureOn) {
                     modifier,
                     content ->
@@ -259,7 +378,7 @@ class RotateToLookAtUserActivity : ComponentActivity() {
             }
 
             // Column 2: Specialized Configurations, Edge Cases & Movable Tests
-            SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(30.dp)) {
+            SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(12.dp)) {
                 // Billboard: Horizontal tracking only (upright)
                 TestPanelContainer(
                     title = "Billboard (Look + Gravity)",
@@ -268,21 +387,14 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                     SpatialPanel(modifier = modifier.gravityAligned(), content = content)
                 }
 
-                // Custom up vector: Tracking with a specific 'up' orientation
-                TestPanelContainer(
-                    title = "Up Vector (1, 0, 0)",
-                    isFeatureOn = isFeatureOn,
-                    upVector = Vector3(1f, 0f, 0f),
-                    width = 250,
-                ) { modifier, content ->
-                    SpatialPanel(modifier = modifier, content = content)
-                }
+                // Rotation Constraints: Interactive panel with dynamic yaw/pitch toggles
+                InteractiveConstraintsPanel(isFeatureOn = isFeatureOn)
 
-                // Panel that uses transformingMovable
+                // Panel that uses system movable
                 TestPanelContainer(
-                    title = "RotateToLookAtUser +\ntransformingMovable",
+                    title = "RotateToLookAtUser +\nsystem movable",
                     isFeatureOn = isFeatureOn,
-                    modifier = SubspaceModifier.transformingMovable(),
+                    modifier = SubspaceModifier.movable(),
                 ) { modifier, content ->
                     SpatialPanel(modifier = modifier, content = content)
                 }
@@ -292,12 +404,15 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                 var yValueMovable by remember { mutableStateOf(0.dp) }
                 var zValueMovable by remember { mutableStateOf(0.dp) }
                 val density = LocalDensity.current
-                var rotateValueMovable by remember { mutableStateOf(Quaternion.Identity) }
+                var rotateValueMovable: Quaternion by remember {
+                    mutableStateOf(Quaternion.Identity)
+                }
                 val customMovement: (SpatialMoveEvent) -> Unit = { event ->
-                    val deltaX = event.pose.translation.x - event.previousPose.translation.x
-                    val deltaY = event.pose.translation.y - event.previousPose.translation.y
-                    val deltaZ = event.pose.translation.z - event.previousPose.translation.z
-                    val deltaRot = event.previousPose.rotation.inverse * event.pose.rotation
+                    val deltaX: Float = event.pose.translation.x - event.previousPose.translation.x
+                    val deltaY: Float = event.pose.translation.y - event.previousPose.translation.y
+                    val deltaZ: Float = event.pose.translation.z - event.previousPose.translation.z
+                    val deltaRot: Quaternion =
+                        event.previousPose.rotation.inverse * event.pose.rotation
 
                     with(density) {
                         xValueMovable += deltaX.toDp()
@@ -315,18 +430,21 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                             .rotate(rotateValueMovable),
                 ) { modifier, content ->
                     SpatialPanel(
-                        modifier = modifier.movable(onMove = customMovement),
+                        modifier =
+                            modifier.movable(
+                                movePolicy = MovePolicy.custom(onMove = customMovement)
+                            ),
                         content = content,
                     )
                 }
             }
 
             // Column 3: Hierarchy & Nesting Tests
-            SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(40.dp)) {
+            SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(12.dp)) {
                 // Nested rotation test: Demonstrates a tracking child within a fixed rotated parent
                 val parentRotation = Quaternion.fromEulerAngles(pitch = 0f, yaw = 0f, roll = 10f)
                 SpatialBox(
-                    modifier = SubspaceModifier.width(400.dp).height(200.dp).rotate(parentRotation)
+                    modifier = SubspaceModifier.width(360.dp).height(140.dp).rotate(parentRotation)
                 ) {
                     SpatialPanel(modifier = SubspaceModifier.fillMaxSize()) {
                         Box(modifier = Modifier.fillMaxSize().background(PurpleGrey40)) {
@@ -342,17 +460,18 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                     TestPanelContainer(
                         title = "CHILD (TRACKING)",
                         isFeatureOn = isFeatureOn,
-                        width = 300,
-                        height = 100,
+                        width = 260,
+                        height = 80,
                     ) { modifier, content ->
-                        // Offset by 5dp on Z axis to prevent clipping with parent panel
-                        SpatialPanel(modifier = modifier.offset(z = 5.dp), content = content)
+                        // Offset by 100dp on Z axis to provide 3D clearance when child rotates to
+                        // face user
+                        SpatialPanel(modifier = modifier.offset(z = 100.dp), content = content)
                     }
                 }
 
                 // Nested offset test: Child tracks user inside a translated parent
                 SpatialBox(
-                    modifier = SubspaceModifier.width(400.dp).height(200.dp).offset(x = 200.dp)
+                    modifier = SubspaceModifier.width(360.dp).height(140.dp).offset(x = 200.dp)
                 ) {
                     SpatialPanel(modifier = SubspaceModifier.fillMaxSize()) {
                         Box(modifier = Modifier.fillMaxSize().background(PurpleGrey40)) {
@@ -368,11 +487,12 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                     TestPanelContainer(
                         title = "CHILD (TRACKING)",
                         isFeatureOn = isFeatureOn,
-                        width = 300,
-                        height = 100,
+                        width = 260,
+                        height = 80,
                     ) { modifier, content ->
-                        // Offset by 5dp on Z axis to prevent clipping with parent panel
-                        SpatialPanel(modifier = modifier.offset(z = 5.dp), content = content)
+                        // Offset by 100dp on Z axis to provide 3D clearance when child rotates to
+                        // face user
+                        SpatialPanel(modifier = modifier.offset(z = 100.dp), content = content)
                     }
                 }
                 // Panel with massive manual offset
@@ -385,5 +505,37 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun createAnchor(session: Session, anchorPose: Pose): Anchor? {
+        // Set the Anchor pose to the right of the Activity space.
+        val anchorPose =
+            session.scene.activitySpace.transformPoseTo(
+                anchorPose,
+                session.scene.perceptionSpace,
+            )
+        when (val anchorResult = Anchor.create(session, anchorPose)) {
+            is AnchorCreateSuccess -> {
+                return anchorResult.anchor
+            }
+            is AnchorCreateResourcesExhausted -> {
+                Log.e(
+                    TAG,
+                    "Failed to create anchor: anchor resources exhausted.",
+                )
+                return null
+            }
+            else -> {
+                Log.e(
+                    TAG,
+                    "Failed to create anchor: ${anchorResult::class.simpleName}",
+                )
+                return null
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "FollowingSubspaceApp"
     }
 }

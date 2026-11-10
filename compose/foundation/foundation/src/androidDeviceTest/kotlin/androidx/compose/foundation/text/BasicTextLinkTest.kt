@@ -17,6 +17,8 @@
 package androidx.compose.foundation.text
 
 import android.os.Build
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,7 +51,6 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.testTag
@@ -95,7 +96,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -104,7 +105,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class BasicTextLinkTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val fontSize = 20.sp
     private val focusRequester = FocusRequester()
@@ -122,9 +123,20 @@ class BasicTextLinkTest {
     private val Url2 = "link2"
     private val Url3 = "link3"
 
+    @OptIn(ExperimentalFoundationApi::class) private var initialLinkTouchTargetFlag: Boolean = true
+
+    @OptIn(ExperimentalFoundationApi::class)
     @Before
     fun setup() {
+        initialLinkTouchTargetFlag = ComposeFoundationFlags.isLinkMinimumTouchTargetSizeZeroEnabled
+        ComposeFoundationFlags.isLinkMinimumTouchTargetSizeZeroEnabled = true
         openedUri = null
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @After
+    fun teardown() {
+        ComposeFoundationFlags.isLinkMinimumTouchTargetSizeZeroEnabled = initialLinkTouchTargetFlag
     }
 
     @Test
@@ -1138,11 +1150,8 @@ class BasicTextLinkTest {
             }
         rule.setContent {
             focusManager = LocalFocusManager.current
-            val viewConfiguration =
-                DelegatedViewConfiguration(LocalViewConfiguration.current, DpSize.Zero)
             CompositionLocalProvider(
                 LocalUriHandler provides uriHandler,
-                LocalViewConfiguration provides viewConfiguration,
                 LocalInputModeManager provides keyboardMockManager,
                 content = content,
             )

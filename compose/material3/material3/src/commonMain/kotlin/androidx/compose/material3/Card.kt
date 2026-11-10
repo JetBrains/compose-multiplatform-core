@@ -28,6 +28,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material3.MaterialTheme.LocalMaterialTheme
 import androidx.compose.material3.internal.animateElevation
 import androidx.compose.material3.tokens.ElevatedCardTokens
 import androidx.compose.material3.tokens.FilledCardTokens
@@ -46,7 +47,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.takeOrElse
 
 /**
  * [Material Design filled card](https://m3.material.io/components/cards/overview)
@@ -77,7 +82,7 @@ import androidx.compose.ui.unit.Dp
  * @param content The content displayed on the card
  */
 @Composable
-fun Card(
+public fun Card(
     modifier: Modifier = Modifier,
     shape: Shape = CardDefaults.shape,
     colors: CardColors = CardDefaults.cardColors(),
@@ -133,7 +138,7 @@ fun Card(
  * @param content The content displayed on the card
  */
 @Composable
-fun Card(
+public fun Card(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -188,13 +193,13 @@ fun Card(
  * @param content The content displayed on the card
  */
 @Composable
-fun ElevatedCard(
+public fun ElevatedCard(
     modifier: Modifier = Modifier,
     shape: Shape = CardDefaults.elevatedShape,
     colors: CardColors = CardDefaults.elevatedCardColors(),
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
     content: @Composable ColumnScope.() -> Unit,
-) =
+): Unit =
     Card(
         modifier = modifier,
         shape = shape,
@@ -238,7 +243,7 @@ fun ElevatedCard(
  * @param content The content displayed on the card
  */
 @Composable
-fun ElevatedCard(
+public fun ElevatedCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -247,7 +252,7 @@ fun ElevatedCard(
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
     interactionSource: MutableInteractionSource? = null,
     content: @Composable ColumnScope.() -> Unit,
-) =
+): Unit =
     Card(
         onClick = onClick,
         modifier = modifier,
@@ -288,14 +293,14 @@ fun ElevatedCard(
  * @param content The content displayed on the card
  */
 @Composable
-fun OutlinedCard(
+public fun OutlinedCard(
     modifier: Modifier = Modifier,
     shape: Shape = CardDefaults.outlinedShape,
     colors: CardColors = CardDefaults.outlinedCardColors(),
     elevation: CardElevation = CardDefaults.outlinedCardElevation(),
     border: BorderStroke = CardDefaults.outlinedCardBorder(),
     content: @Composable ColumnScope.() -> Unit,
-) =
+): Unit =
     Card(
         modifier = modifier,
         shape = shape,
@@ -340,7 +345,7 @@ fun OutlinedCard(
  * @param content The content displayed on the card
  */
 @Composable
-fun OutlinedCard(
+public fun OutlinedCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -350,7 +355,7 @@ fun OutlinedCard(
     border: BorderStroke = CardDefaults.outlinedCardBorder(enabled),
     interactionSource: MutableInteractionSource? = null,
     content: @Composable ColumnScope.() -> Unit,
-) =
+): Unit =
     Card(
         onClick = onClick,
         modifier = modifier,
@@ -364,18 +369,18 @@ fun OutlinedCard(
     )
 
 /** Contains the default values used by all card types. */
-object CardDefaults {
+public object CardDefaults {
     // shape Defaults
     /** Default shape for a card. */
-    val shape: Shape
+    public val shape: Shape
         @Composable get() = FilledCardTokens.ContainerShape.value
 
     /** Default shape for an elevated card. */
-    val elevatedShape: Shape
+    public val elevatedShape: Shape
         @Composable get() = ElevatedCardTokens.ContainerShape.value
 
     /** Default shape for an outlined card. */
-    val outlinedShape: Shape
+    public val outlinedShape: Shape
         @Composable get() = OutlinedCardTokens.ContainerShape.value
 
     /**
@@ -390,7 +395,7 @@ object CardDefaults {
      * @param disabledElevation the elevation used when the [Card] is disabled.
      */
     @Composable
-    fun cardElevation(
+    public fun cardElevation(
         defaultElevation: Dp = FilledCardTokens.ContainerElevation,
         pressedElevation: Dp = FilledCardTokens.PressedContainerElevation,
         focusedElevation: Dp = FilledCardTokens.FocusContainerElevation,
@@ -420,7 +425,7 @@ object CardDefaults {
      * @param disabledElevation the elevation used when the [Card] is disabled.
      */
     @Composable
-    fun elevatedCardElevation(
+    public fun elevatedCardElevation(
         defaultElevation: Dp = ElevatedCardTokens.ContainerElevation,
         pressedElevation: Dp = ElevatedCardTokens.PressedContainerElevation,
         focusedElevation: Dp = ElevatedCardTokens.FocusContainerElevation,
@@ -449,7 +454,7 @@ object CardDefaults {
      * @param draggedElevation the elevation used when the [OutlinedCard] is dragged.
      */
     @Composable
-    fun outlinedCardElevation(
+    public fun outlinedCardElevation(
         defaultElevation: Dp = OutlinedCardTokens.ContainerElevation,
         pressedElevation: Dp = defaultElevation,
         focusedElevation: Dp = defaultElevation,
@@ -470,7 +475,7 @@ object CardDefaults {
      * Creates a [CardColors] that represents the default container and content colors used in a
      * [Card].
      */
-    @Composable fun cardColors() = MaterialTheme.colorScheme.defaultCardColors
+    @Composable public fun cardColors(): CardColors = MaterialTheme.colorScheme.defaultCardColors
 
     /**
      * Creates a [CardColors] that represents the default container and content colors used in a
@@ -482,7 +487,7 @@ object CardDefaults {
      * @param disabledContentColor the content color of this [Card] when not enabled.
      */
     @Composable
-    fun cardColors(
+    public fun cardColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = contentColorFor(containerColor),
         disabledContainerColor: Color = Color.Unspecified,
@@ -516,7 +521,9 @@ object CardDefaults {
      * Creates a [CardColors] that represents the default container and content colors used in an
      * [ElevatedCard].
      */
-    @Composable fun elevatedCardColors() = MaterialTheme.colorScheme.defaultElevatedCardColors
+    @Composable
+    public fun elevatedCardColors(): CardColors =
+        MaterialTheme.colorScheme.defaultElevatedCardColors
 
     /**
      * Creates a [CardColors] that represents the default container and content colors used in an
@@ -528,7 +535,7 @@ object CardDefaults {
      * @param disabledContentColor the content color of this [ElevatedCard] when not enabled.
      */
     @Composable
-    fun elevatedCardColors(
+    public fun elevatedCardColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = contentColorFor(containerColor),
         disabledContainerColor: Color = Color.Unspecified,
@@ -565,7 +572,9 @@ object CardDefaults {
      * Creates a [CardColors] that represents the default container and content colors used in an
      * [OutlinedCard].
      */
-    @Composable fun outlinedCardColors() = MaterialTheme.colorScheme.defaultOutlinedCardColors
+    @Composable
+    public fun outlinedCardColors(): CardColors =
+        MaterialTheme.colorScheme.defaultOutlinedCardColors
 
     /**
      * Creates a [CardColors] that represents the default container and content colors used in an
@@ -577,7 +586,7 @@ object CardDefaults {
      * @param disabledContentColor the content color of this [OutlinedCard] when not enabled.
      */
     @Composable
-    fun outlinedCardColors(
+    public fun outlinedCardColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = contentColorFor(containerColor),
         disabledContainerColor: Color = Color.Unspecified,
@@ -611,7 +620,7 @@ object CardDefaults {
      * @param enabled whether the card is enabled
      */
     @Composable
-    fun outlinedCardBorder(enabled: Boolean = true): BorderStroke {
+    public fun outlinedCardBorder(enabled: Boolean = true): BorderStroke {
         val color =
             if (enabled) {
                 OutlinedCardTokens.OutlineColor.value
@@ -631,7 +640,7 @@ object CardDefaults {
  * - See [CardDefaults.outlinedCardElevation] for the default elevation used in an [OutlinedCard].
  */
 @Immutable
-class CardElevation
+public class CardElevation
 internal constructor(
     private val defaultElevation: Dp,
     private val pressedElevation: Dp,
@@ -782,23 +791,23 @@ internal constructor(
  * - See [CardDefaults.outlinedCardColors] for the default colors used in a [OutlinedCard].
  */
 @Immutable
-class CardColors
-constructor(
-    val containerColor: Color,
-    val contentColor: Color,
-    val disabledContainerColor: Color,
-    val disabledContentColor: Color,
+public class CardColors
+public constructor(
+    public val containerColor: Color,
+    public val contentColor: Color,
+    public val disabledContainerColor: Color,
+    public val disabledContentColor: Color,
 ) {
     /**
      * Returns a copy of this CardColors, optionally overriding some of the values. This uses the
      * Color.Unspecified to mean “use the value from the source”
      */
-    fun copy(
+    public fun copy(
         containerColor: Color = this.containerColor,
         contentColor: Color = this.contentColor,
         disabledContainerColor: Color = this.disabledContainerColor,
         disabledContentColor: Color = this.disabledContentColor,
-    ) =
+    ): CardColors =
         CardColors(
             containerColor.takeOrElse { this.containerColor },
             contentColor.takeOrElse { this.contentColor },
@@ -842,5 +851,81 @@ constructor(
         result = 31 * result + disabledContainerColor.hashCode()
         result = 31 * result + disabledContentColor.hashCode()
         return result
+    }
+}
+
+/**
+ * [Material Design card](https://m3.material.io/components/cards/overview) whose appearance is
+ * defined by a [CardStyle]. Use [CardStyle.Elevated] or [CardStyle.Outlined] for those variants.
+ *
+ * @param modifier the [Modifier] to be applied to this card
+ * @param onClick called when this card is clicked. When `null`, the card is not clickable and uses
+ *   a non-clickable [Surface], so it does not gain click semantics, focusability or a minimum touch
+ *   target size.
+ * @param enabled controls the enabled state of this card. When `false`, this component will not
+ *   respond to user input, and it will appear visually disabled and disabled to accessibility
+ *   services.
+ * @param style the [CardStyle] to apply. When `null`, the theme's default card style is used.
+ * @param interactionSource interaction states from this source are applied to [style]; created
+ *   internally when clickable.
+ * @param content the content of this card
+ */
+@Composable
+internal fun StyleableCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+    style: CardStyle? = null,
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    @Suppress("NAME_SHADOWING")
+    val interactionSource =
+        interactionSource ?: if (onClick != null) remember { MutableInteractionSource() } else null
+    val localTheme = LocalMaterialTheme.current
+    val state =
+        ComponentState.enabled(enabled).let {
+            if (interactionSource != null) it.interactionState(interactionSource) else it
+        }
+    val scope =
+        CardStyleScope(theme = localTheme, state = state)
+            .resolve(style ?: localTheme.componentProperties.cardProperties.style)
+
+    // Fallbacks for styles that leave values unset; defaults to the filled card.
+    val shape = scope.shape ?: CardDefaults.shape
+    val containerColor =
+        scope.containerColor.takeOrElse {
+            localTheme.colorScheme.fromToken(FilledCardTokens.ContainerColor)
+        }
+    val contentColor = scope.contentColor.takeOrElse { contentColorFor(containerColor) }
+    // TODO(b/554027431): Animate shadowElevation transitions across interaction states when
+    // enabled.
+    val shadowElevation = scope.shadowElevation.takeOrElse { 0.dp }
+
+    if (onClick != null) {
+        Surface(
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = shape,
+            color = containerColor,
+            contentColor = contentColor,
+            shadowElevation = shadowElevation,
+            border = scope.border,
+            interactionSource = interactionSource,
+        ) {
+            Column(content = content)
+        }
+    } else {
+        Surface(
+            modifier = if (enabled) modifier else modifier.semantics { disabled() },
+            shape = shape,
+            color = containerColor,
+            contentColor = contentColor,
+            shadowElevation = shadowElevation,
+            border = scope.border,
+        ) {
+            Column(content = content)
+        }
     }
 }

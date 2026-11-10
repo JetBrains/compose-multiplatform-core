@@ -16,18 +16,20 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object DampingNodeNative {
     init {
         NativeLoader.load()
     }
 
-    @UsedByNative actual external fun create(dampingSource: Int, dampingGap: Float): Long
+    @UsedByNative actual external fun create(dampOver: Int, strength: Float): Long
 
-    @UsedByNative actual external fun getDampingSourceInt(nativePointer: Long): Int
+    @UsedByNative actual external fun getDampOverInt(nativePointer: Long): Int
 
-    @UsedByNative actual external fun getDampingGap(nativePointer: Long): Float
+    @UsedByNative actual external fun getStrength(nativePointer: Long): Float
 }

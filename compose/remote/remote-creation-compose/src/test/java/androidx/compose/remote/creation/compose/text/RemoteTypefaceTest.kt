@@ -18,23 +18,26 @@ package androidx.compose.remote.creation.compose.text
 
 import android.graphics.Typeface
 import android.os.Build
+import androidx.compose.remote.creation.compose.text.RemoteTypeface.Companion.create
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowLegacyTypeface
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
+@GraphicsMode(GraphicsMode.Mode.LEGACY)
 class RemoteTypefaceTest {
 
     @Test
     fun create_withNullFontName_returnsNamedWithDefault() {
-        val remote = RemoteTypeface.create(null, RemoteTypeface.Style.Normal)
+        val remote = create(null, RemoteTypeface.Style.Normal)
         assertThat(remote).isInstanceOf(RemoteTypeface.Named::class.java)
         remote as RemoteTypeface.Named
         assertThat(remote.name).isEqualTo("default")
@@ -44,7 +47,7 @@ class RemoteTypefaceTest {
 
     @Test
     fun create_withFontName_returnsNamedWithFontName() {
-        val remote = RemoteTypeface.create("my-custom-font", RemoteTypeface.Style.Normal)
+        val remote = create("my-custom-font", RemoteTypeface.Style.Normal)
         assertThat(remote).isInstanceOf(RemoteTypeface.Named::class.java)
         remote as RemoteTypeface.Named
         assertThat(remote.name).isEqualTo("my-custom-font")

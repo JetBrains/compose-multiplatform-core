@@ -38,8 +38,6 @@ public interface IcingOptionsConfig {
 
     int DEFAULT_INDEX_MERGE_SIZE = 1048576; // 1 MiB
 
-    boolean DEFAULT_DOCUMENT_STORE_NAMESPACE_ID_FINGERPRINT = false;
-
     float DEFAULT_OPTIMIZE_REBUILD_INDEX_THRESHOLD = 0.9f;
 
     /**
@@ -55,8 +53,6 @@ public interface IcingOptionsConfig {
     int DEFAULT_COMPRESSION_MEM_LEVEL = 1;
 
     boolean DEFAULT_USE_PREMAPPING_WITH_FILE_BACKED_VECTOR = false;
-
-    boolean DEFAULT_USE_PERSISTENT_HASH_MAP = false;
 
     int DEFAULT_MAX_PAGE_BYTES_LIMIT = Integer.MAX_VALUE;
 
@@ -114,12 +110,6 @@ public interface IcingOptionsConfig {
      * index_merge_size leads to larger resource usage and higher query latency.
      */
     int getIndexMergeSize();
-
-    /**
-     * Whether to use namespace id or namespace name to build up fingerprint for
-     * document_key_mapper_ and corpus_mapper_ in document store.
-     */
-    boolean getDocumentStoreNamespaceIdFingerprint();
 
     /**
      * The threshold of the percentage of invalid documents at which to rebuild index
@@ -180,14 +170,6 @@ public interface IcingOptionsConfig {
     boolean getUsePreMappingWithFileBackedVector();
 
     /**
-     * Flag for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
-     *
-     * <p>Whether or not to use the PersistentHashMap in the QualifiedIdTypeJoinableIndex. If false,
-     * we will use the old IcingDynamicTrie to store key value pairs.
-     */
-    boolean getUsePersistentHashMap();
-
-    /**
      * Flag for {@link com.google.android.icing.proto.ResultSpecProto}.
      *
      * <p>The maximum byte size to allow in a single page. This limit is only loosely binding.
@@ -234,14 +216,6 @@ public interface IcingOptionsConfig {
     int getLiteIndexSortSize();
 
     /**
-     * Flag for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
-     *
-     * <p>Whether to build the metadata hits used for property existence check, which is required
-     * to support the hasProperty function in advanced query.
-     */
-    boolean getBuildPropertyExistenceMetadataHits();
-
-    /**
      * Config for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
      *
      * <p>The maximum time in millisecond for a orphan blob to get recycled and deleted if there is
@@ -271,8 +245,12 @@ public interface IcingOptionsConfig {
     /**
      * Controls whether repeated fields may set joinable value type to
      * {@link AppSearchSchema.StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
+     *
+     * <p>Due to rollback compatibility issues, this feature cannot be enabled in some old versions
+     * of framework AppSearch. Therefore, we need this interface method to have different options
+     * (i.e. local storage vs framework AppSearch).
      */
-    boolean enableRepeatedFieldJoins();
+    boolean getAllowRepeatedFieldJoins();
 
     /**
      * Controls whether enabling Icing background task scheduler or not.
@@ -315,20 +293,15 @@ public interface IcingOptionsConfig {
                 .setBaseDir(baseDir)
                 .setMaxTokenLength(getMaxTokenLength())
                 .setIndexMergeSize(getIndexMergeSize())
-                .setDocumentStoreNamespaceIdFingerprint(
-                        getDocumentStoreNamespaceIdFingerprint())
                 .setOptimizeRebuildIndexThreshold(
                         getOptimizeRebuildIndexThreshold())
                 .setCompressionLevel(getCompressionLevel())
                 .setAllowCircularSchemaDefinitions(
                         getAllowCircularSchemaDefinitions())
                 .setPreMappingFbv(getUsePreMappingWithFileBackedVector())
-                .setUsePersistentHashMap(getUsePersistentHashMap())
                 .setIntegerIndexBucketSplitThreshold(
                         getIntegerIndexBucketSplitThreshold())
                 .setLiteIndexSortSize(getLiteIndexSortSize())
-                .setBuildPropertyExistenceMetadataHits(
-                        getBuildPropertyExistenceMetadataHits())
                 .setOrphanBlobTimeToLiveMs(getOrphanBlobTimeToLiveMs())
                 .setEnableScorableProperties(Flags.enableScorableProperty())
                 .setIcuDataFileAbsolutePath(getIcuDataFileAbsolutePath())
@@ -342,12 +315,23 @@ public interface IcingOptionsConfig {
                 .setEmbeddingIndexNumShards(Math.max(1, getEmbeddingIndexNumShards()))
                 .setEnableOptimizeImprovements(
                         Flags.enableOptimizeImprovements())
-                .setEnableRepeatedFieldJoins(enableRepeatedFieldJoins())
+                .setEnableRepeatedFieldJoins(getAllowRepeatedFieldJoins())
                 .setEnableNonExistentQualifiedIdJoin(Flags.enableNonExistentQualifiedIdJoin())
-                .setEnableSkipSetSchemaTypeEqualityCheck(
-                        Flags.enableSkipSetSchemaTypeEqualityCheck())
+                // TODO(b/519346333): deprecate enableSkipSetSchemaTypeEqualityCheck from proto
+                .setEnableSkipSetSchemaTypeEqualityCheck(true)
                 .setEnableBackgroundTaskScheduler(enableIcingBackgroundTaskScheduler())
                 .setEnableSchemaDefinitionDeduping(Flags.enableSchemaDefinitionDeduping())
+                .setEnableDatabaseStablenessLog(Flags.enableDatabaseStablenessLog())
+                .setEnableAccountPropertyIncompatibilityCheck(
+                        Flags.enableAccountPropertyIncompatibilityCheck())
+                .setSchemaStoreReleaseCachedProtoAfterUse(
+                        Flags.releaseSchemaCacheAfterInitialization())
+                .setRemoveSchemaStoreMoveAssignment(Flags.removeSchemaStoreMoveAssignment())
+                .setEnableFineGrainedIndexRebuild(Flags.enableFineGrainedIndexRebuild())
+                .setEnableReadDuringAnnMaintenance(Flags.enableReadDuringAnnMaintenance())
+                .setEnableOptimizeResultStates(Flags.enableOptimizeResultStates())
+                .setEnableIndexRestorationCriticalErrorHandlingFix(
+                        Flags.enableIndexRestorationCriticalErrorHandlingFix())
                 .build();
     }
 }

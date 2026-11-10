@@ -24,7 +24,7 @@ import kotlin.math.ceil
 
 /** A utility object to invoke composable function by its name and containing class. */
 @Deprecated("Use androidx.compose.runtime.reflect.ComposableMethod instead")
-object ComposableInvoker {
+public object ComposableInvoker {
 
     /**
      * Compares the parameter types taken from the composable method and checks if they are all
@@ -178,7 +178,7 @@ object ComposableInvoker {
                     // changed parameters should be 0 to indicate "uncertain"
                     in changedStartIndex until defaultStartIndex -> 0
                     // Default values mask, all parameters set to use defaults
-                    in defaultStartIndex until totalParams -> 0b111111111111111111111
+                    in defaultStartIndex until totalParams -> DEFAULT_MASK
                     else -> error("Unexpected index")
                 }
             }
@@ -187,6 +187,7 @@ object ComposableInvoker {
 
     private const val SLOTS_PER_INT = 10
     private const val BITS_PER_INT = 31
+    private const val DEFAULT_MASK = 0x7FFFFFFF
 
     private fun changedParamCount(realValueParams: Int, thisParams: Int): Int {
         if (realValueParams == 0) return 1
@@ -204,7 +205,7 @@ object ComposableInvoker {
      * function.
      */
     @ExperimentalComposeUiApi
-    fun invokeComposable(
+    public fun invokeComposable(
         className: String,
         methodName: String,
         composer: Composer,

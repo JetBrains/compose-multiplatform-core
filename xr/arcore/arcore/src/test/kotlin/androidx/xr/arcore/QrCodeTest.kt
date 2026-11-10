@@ -31,7 +31,6 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -49,8 +48,8 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DEPRECATION")
+@OptIn(ExperimentalCoroutinesApi::class)
 class QrCodeTest {
 
     companion object {
@@ -88,7 +87,7 @@ class QrCodeTest {
             advanceUntilIdle()
 
             var underTest = emptyList<QrCode>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 QrCode.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()
@@ -112,7 +111,7 @@ class QrCodeTest {
             advanceUntilIdle()
 
             var underTest = emptyList<QrCode>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 QrCode.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()
@@ -132,17 +131,17 @@ class QrCodeTest {
             val testQrCode = TestQrCode(QR_CODE_DATA)
             arCoreTestRule.addTrackables(testQrCode)
 
-            advanceUntilIdle()
-
             var underTest = emptyList<QrCode>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 QrCode.subscribe(session).collect { underTest = it.toList() }
             }
-
-            activityController.pause()
+            // Gather the QR codes.
             advanceUntilIdle()
+
+            assertThat(underTest).isNotEmpty()
+
             session.configure(Config(qrCodeTracking = QrCodeTrackingMode.DISABLED))
-            activityController.resume()
+            // Propagate the effects of configure().
             advanceUntilIdle()
 
             assertThat(underTest.single().state.value.trackingState)
@@ -158,7 +157,7 @@ class QrCodeTest {
             advanceUntilIdle()
 
             var underTest = emptyList<QrCode>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 QrCode.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()
@@ -181,7 +180,7 @@ class QrCodeTest {
             advanceUntilIdle()
 
             var underTest = emptyList<QrCode>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 QrCode.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()
@@ -204,7 +203,7 @@ class QrCodeTest {
             advanceUntilIdle()
 
             var underTest = emptyList<QrCode>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 QrCode.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()

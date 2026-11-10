@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.testing
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraStream
+import androidx.camera.camera2.pipe.MemoryEstimator
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
@@ -36,7 +37,14 @@ internal class ImageSimulator(
         defaultCameraMetadata ?: FakeCameraMetadata.fromTemplate(HighEndDeviceTemplate)
     val graphConfig = CameraGraph.Config(camera = cameraMetadata.camera, streams = streamConfigs)
 
-    val streamGraph = StreamGraphImpl(cameraMetadata, graphConfig, fakeImageSources, mock())
+    val streamGraph =
+        StreamGraphImpl(
+            cameraMetadata,
+            graphConfig,
+            fakeImageSources,
+            mock(),
+            MemoryEstimator.create(),
+        )
 
     val streamToSurfaceMap = buildMap {
         for (config in graphConfig.streams) {
@@ -53,6 +61,10 @@ internal class ImageSimulator(
 
     fun simulateExpectedOutputs(streamId: StreamId, timestamp: Long, outputIds: Set<OutputId>) {
         return fakeImageSources[streamId]!!.simulateExpectedOutputs(timestamp, outputIds)
+    }
+
+    fun checkImagesClosed() {
+        fakeImageSources.checkImagesClosed()
     }
 
     override fun close() {

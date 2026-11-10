@@ -27,6 +27,7 @@ import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.os.Build
+import android.os.LocaleList
 import android.util.AttributeSet
 import android.util.Log
 import android.view.SurfaceView
@@ -137,6 +138,30 @@ constructor(
             }
         }
 
+    /**
+     * Sets the [LocaleList] that should be used by the button.
+     *
+     * This controls the localized string resolution of the button. If empty, the button will
+     * fallback to using the host [Context]'s configuration locales.
+     */
+    public var locales: LocaleList = LocaleList.getEmptyLocaleList()
+        set(value) {
+            field = value
+            remoteDelegate?.changeConfiguration(effectiveConfiguration)
+            syncLocalButton()
+        }
+
+    internal val effectiveConfiguration: Configuration
+        get() {
+            val currentLocales = locales
+            if (currentLocales.isEmpty) {
+                return context.resources.configuration
+            }
+            val config = Configuration(context.resources.configuration)
+            config.setLocales(currentLocales)
+            return config
+        }
+
     /** Once initialized, can't add more views. */
     private var initialized = false
 
@@ -144,8 +169,8 @@ constructor(
     internal var textColor = 0
     internal var backgroundColor = 0
     internal var iconTint = 0
-    internal var cornerRadius = 0f
-    internal var pressedCornerRadius = 0f
+    internal var cornerRadius = -1f
+    internal var pressedCornerRadius = -1f
     internal var strokeColor = 0
     internal var strokeWidth = 0
     internal var textType = TEXT_TYPE_PRECISE_LOCATION
@@ -355,9 +380,9 @@ constructor(
                 iconTint = a.getColor(R.styleable.LocationButton_iconTint, textColor)
                 strokeColor = a.getColor(R.styleable.LocationButton_strokeColor, 0)
                 strokeWidth = a.getDimensionPixelSize(R.styleable.LocationButton_strokeWidth, 0)
-                cornerRadius = a.getDimension(R.styleable.LocationButton_cornerRadius, 0f)
+                cornerRadius = a.getDimension(R.styleable.LocationButton_cornerRadius, -1f)
                 pressedCornerRadius =
-                    a.getDimension(R.styleable.LocationButton_pressedCornerRadius, 0f)
+                    a.getDimension(R.styleable.LocationButton_pressedCornerRadius, -1f)
                 textType =
                     a.getInt(
                         R.styleable.LocationButton_locationButtonTextType,
@@ -385,11 +410,15 @@ constructor(
             maxLines = maxLines,
             textAllCaps = textAllCaps,
             includeFontPadding = includeFontPadding,
+            locales = locales,
         )
     }
 
     /**
      * Controls the composition order of the underlying SurfaceView.
+     *
+     * This only applies on [Build.VERSION_CODES.CINNAMON_BUN] and later. On older platforms, where
+     * the library falls back to a local button, this call is a safe no-op.
      *
      * By default, this is set on Top in Z-order, as this button is a secure system component.
      * * For developers migrating from legacy SurfaceView APIs:
@@ -644,19 +673,28 @@ constructor(
     }
 
     internal val safePaddingLeft: Int
-        get() = paddingLeft.coerceAtMost(maxPaddingPx)
+        get() = getSafePadding(paddingLeft)
 
     internal val safePaddingTop: Int
-        get() = paddingTop.coerceAtMost(maxPaddingPx)
+        get() = getSafePadding(paddingTop)
 
     internal val safePaddingRight: Int
-        get() = paddingRight.coerceAtMost(maxPaddingPx)
+        get() = getSafePadding(paddingRight)
 
     internal val safePaddingBottom: Int
-        get() = paddingBottom.coerceAtMost(maxPaddingPx)
+        get() = getSafePadding(paddingBottom)
+
+    private fun getSafePadding(padding: Int): Int {
+        val maxPadding = maxPaddingPx
+        val minPadding = minPaddingPx
+        return padding.coerceIn(minPadding, maxPadding)
+    }
 
     private val maxPaddingPx: Int
         get() = (MAX_PADDING_DP * resources.displayMetrics.density).toInt()
+
+    private val minPaddingPx: Int
+        get() = (MIN_PADDING_DP * resources.displayMetrics.density).toInt()
 
     private val maxHeightPx: Int
         get() = (MAX_HEIGHT_DP * resources.displayMetrics.density).toInt()
@@ -692,6 +730,7 @@ constructor(
         // Equivalent to android.view.WindowManagerPolicyConstants.APPLICATION_PANEL_SUBLAYER
         internal const val DEFAULT_COMPOSITION_ORDER = 1
         private const val MAX_PADDING_DP = 8
+        private const val MIN_PADDING_DP = 4
         private const val MAX_HEIGHT_DP = 136
 
         public const val TEXT_TYPE_NONE: Int = LocationButtonSession.TEXT_TYPE_NONE

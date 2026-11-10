@@ -996,7 +996,7 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
         float a = (color >> 24 & 0xff) / 255.0f;
         addOperation(
                 new BorderModifierOperation(
-                        0, 0, 0, 0, borderWidth, borderRoundedCorner, r, g, b, a, shape));
+                        0, 0, 1, 0, borderWidth, borderRoundedCorner, r, g, b, a, shape));
     }
 
     @Override
@@ -1559,18 +1559,19 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     @Override
-    public void setVersion(int documentApiLevel, int profiles) {
-        mApiLevel = documentApiLevel;
-        mProfileMask = profiles;
+    public void setVersion(
+            int documentApiLevel,
+            int operationsProfiles,
+            @Nullable Set<@NonNull Integer> supportedOperations) {
+        super.setVersion(documentApiLevel, operationsProfiles, supportedOperations);
     }
 
     @Override
     public void setVersion(
             int documentApiLevel,
             int operationsProfiles,
-            @NonNull Set<Integer> supportedOperations) {
-        mApiLevel = documentApiLevel;
-        mProfileMask = operationsProfiles;
+            Operations.@NonNull UniqueIntMap<CompanionOperation> customMap) {
+        super.setVersion(documentApiLevel, operationsProfiles, customMap);
     }
 
     @Override
@@ -1723,6 +1724,29 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
             int visibilityEasingType,
             int enterAnimation,
             int exitAnimation) {
+        addAnimationSpecModifier(
+                animationId,
+                motionDuration,
+                motionEasingType,
+                visibilityDuration,
+                visibilityEasingType,
+                enterAnimation,
+                exitAnimation,
+                -1,
+                -1);
+    }
+
+    @Override
+    public void addAnimationSpecModifier(
+            int animationId,
+            float motionDuration,
+            int motionEasingType,
+            float visibilityDuration,
+            int visibilityEasingType,
+            int enterAnimation,
+            int exitAnimation,
+            int enterFunctionId,
+            int exitFunctionId) {
         addOperation(
                 new AnimationSpec(
                         animationId,
@@ -1731,7 +1755,11 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
                         visibilityDuration,
                         visibilityEasingType,
                         AnimationSpec.intToAnimation(enterAnimation),
-                        AnimationSpec.intToAnimation(exitAnimation)));
+                        AnimationSpec.intToAnimation(exitAnimation),
+                        enterFunctionId,
+                        exitFunctionId,
+                        AnimationSpec.intToSequence(enterAnimation >> 8),
+                        AnimationSpec.intToSequence(exitAnimation >> 8)));
     }
 
     @Override
@@ -1897,6 +1925,16 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
 
         @Override
         public void hapticEffect(int type) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        @Override
+        public void loadSound(int soundId, byte @NonNull [] data) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        @Override
+        public void playSound(int soundId) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 

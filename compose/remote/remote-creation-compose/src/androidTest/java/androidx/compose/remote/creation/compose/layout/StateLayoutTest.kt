@@ -24,14 +24,15 @@ import androidx.compose.remote.creation.compose.modifier.border
 import androidx.compose.remote.creation.compose.modifier.clickable
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.state.MutableRemoteEnum
 import androidx.compose.remote.creation.compose.state.RemoteEnum
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteEnum
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -57,17 +58,16 @@ class StateLayoutTest {
         )
 
     @Test
-    fun single() =
-        testRule.runScreenshotTest {
-            NestedStateLayout("one".rs) { one ->
-                RemoteText("Innermost $one".rs, color = Color.Black.rc)
-            }
+    fun single() = testRule.runScreenshotTest {
+        NestedStateLayout("one".rs) { one ->
+            RemoteText("Innermost $one".rs, color = Color.Black.rc)
         }
+    }
 
     @Test
     fun update() {
         testRule.setContent {
-            val currentState = rememberMutableRemoteEnum(LayoutState.First)
+            val currentState = remember { MutableRemoteEnum(LayoutState.First) }
             NestedStateLayout("one".rs, currentState = currentState) { state ->
                 RemoteColumn(modifier = RemoteModifier.fillMaxSize()) {
                     RemoteText("State $state".rs, color = Color.Black.rc)
@@ -103,25 +103,24 @@ class StateLayoutTest {
     }
 
     @Test
-    fun nested() =
-        testRule.runScreenshotTest {
-            NestedStateLayout("one".rs) { one ->
-                NestedStateLayout(
-                    "two".rs,
-                    currentState = rememberMutableRemoteEnum(LayoutState.Second),
-                ) { two ->
-                    NestedStateLayout("three".rs) { three ->
-                        RemoteText("Innermost $one / $two / $three".rs, color = Color.Black.rc)
-                    }
+    fun nested() = testRule.runScreenshotTest {
+        NestedStateLayout("one".rs) { one ->
+            NestedStateLayout(
+                "two".rs,
+                currentState = remember { MutableRemoteEnum(LayoutState.Second) },
+            ) { two ->
+                NestedStateLayout("three".rs) { three ->
+                    RemoteText("Innermost $one / $two / $three".rs, color = Color.Black.rc)
                 }
             }
         }
+    }
 
     @Composable
     @RemoteComposable
     private fun NestedStateLayout(
         label: RemoteString,
-        currentState: RemoteEnum<LayoutState> = rememberMutableRemoteEnum(LayoutState.First),
+        currentState: RemoteEnum<LayoutState> = remember { MutableRemoteEnum(LayoutState.First) },
         content: @Composable @RemoteComposable (LayoutState) -> Unit,
     ) {
         RemoteStateLayout(

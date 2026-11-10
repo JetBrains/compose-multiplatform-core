@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasPerformImeAction
@@ -86,7 +87,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -101,7 +101,7 @@ class TextFieldCursorTest : FocusedWindowTest {
 
     @get:Rule
     val rule =
-        createComposeRule(effectContext = motionDurationScale + StandardTestDispatcher()).also {
+        createComposeRule(ComposeUiTestConfig(effectContext = motionDurationScale)).also {
             it.mainClock.autoAdvance = false
         }
 
@@ -272,10 +272,11 @@ class TextFieldCursorTest : FocusedWindowTest {
 
         rule.mainClock.advanceTimeBy(100)
 
-        rule
-            .onNode(hasSetTextAction())
-            .captureToImage()
-            .assertCursor(cursorTopCenterInLtr - Offset(cursorSizePx.width, 0f))
+        val expectedCursorTopCenter =
+            with(rule.density) {
+                Offset((50.dp - DefaultCursorThickness / 2).toPx(), cursorRect.top)
+            }
+        rule.onNode(hasSetTextAction()).captureToImage().assertCursor(expectedCursorTopCenter)
     }
 
     @Test
@@ -298,10 +299,9 @@ class TextFieldCursorTest : FocusedWindowTest {
 
         rule.mainClock.advanceTimeBy(100)
 
-        rule
-            .onNode(hasSetTextAction())
-            .captureToImage()
-            .assertCursor(cursorTopCenterInRtl + Offset(cursorSizePx.width, 0f))
+        val expectedCursorTopCenter =
+            with(rule.density) { Offset((DefaultCursorThickness / 2).toPx(), cursorRect.top) }
+        rule.onNode(hasSetTextAction()).captureToImage().assertCursor(expectedCursorTopCenter)
     }
 
     @Test

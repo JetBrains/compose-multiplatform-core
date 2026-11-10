@@ -131,9 +131,10 @@ public class GlanceWearWidgetManager {
     public suspend fun fetchActiveWidgets(
         widget: KClass<out GlanceWearWidget>
     ): List<ActiveWearWidgetHandle> {
-        val serviceToWidgetMapping = state.getServiceToWidgetMapping()
+        val targetName = widget.qualifiedName()
+        val serviceToWidgetMapping = state.getServiceToWidgetMapping(targetName)
         return fetchActiveWidgets().filter {
-            serviceToWidgetMapping[it.provider] == widget.qualifiedName
+            serviceToWidgetMapping[it.provider] == targetName
         }
     }
 
@@ -149,8 +150,8 @@ public class GlanceWearWidgetManager {
     internal suspend fun getProviderForWidget(
         widgetClass: KClass<out GlanceWearWidget>
     ): ComponentName? {
-        val serviceToWidgetMapping = state.getServiceToWidgetMapping()
         val targetName = widgetClass.qualifiedName()
+        val serviceToWidgetMapping = state.getServiceToWidgetMapping(targetName)
         return serviceToWidgetMapping.entries.firstOrNull { it.value == targetName }?.key
     }
 
@@ -167,19 +168,18 @@ public class GlanceWearWidgetManager {
             private val continuation: CancellableContinuation<List<ActiveWearWidgetHandle>>
         ) : OutcomeReceiver<List<TileInstance>, Exception> {
             override fun onResult(result: List<TileInstance>) {
-                val widgets =
-                    result.map { instance ->
-                        val provider = instance.tileProvider
-                        ActiveWearWidgetHandle(
-                            provider = provider.componentName,
-                            instanceId =
-                                WidgetInstanceId(
-                                    WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE,
-                                    instance.id,
-                                ),
-                            containerType = provider.getContainerTypeCompat(),
-                        )
-                    }
+                val widgets = result.map { instance ->
+                    val provider = instance.tileProvider
+                    ActiveWearWidgetHandle(
+                        provider = provider.componentName,
+                        instanceId =
+                            WidgetInstanceId(
+                                WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE,
+                                instance.id,
+                            ),
+                        containerType = provider.getContainerTypeCompat(),
+                    )
+                }
                 continuation.resume(widgets)
             }
 
@@ -194,10 +194,16 @@ public class GlanceWearWidgetManager {
      * [GlanceWearWidget].
      */
     private class State(private val context: Context, private val widgetCache: WearWidgetCache) {
-        suspend fun getServiceToWidgetMapping(): Map<ComponentName, String> {
+        suspend fun getServiceToWidgetMapping(
+            targetWidgetName: String
+        ): Map<ComponentName, String> {
+            val cachedMapping = widgetCache.getServiceToWidgetMapping()
             val mapping =
-                widgetCache.getServiceToWidgetMapping().takeIf { it.isNotEmpty() }
-                    ?: recoverServiceToWidgetMapping()
+                if (cachedMapping.containsValue(targetWidgetName)) {
+                    cachedMapping
+                } else {
+                    cachedMapping + recoverServiceToWidgetMapping()
+                }
             return mapping.mapKeys { (serviceName, _) -> ComponentName(context, serviceName) }
         }
 
@@ -243,15 +249,15 @@ public class GlanceWearWidgetManager {
             val serviceName = serviceInfo.name
             val serviceClass =
                 runCatching {
-                        Class.forName(
-                            serviceName,
-                            /* initialize = */ false,
-                            // This needs to be our service loader to ensure that we can load
-                            // classes from the calling provider's package and not use Android's
-                            // service ClassLoader.
-                            GlanceWearWidgetService::class.java.classLoader,
-                        )
-                    }
+                    Class.forName(
+                        serviceName,
+                        /* initialize = */ false,
+                        // This needs to be our service loader to ensure that we can load
+                        // classes from the calling provider's package and not use Android's
+                        // service ClassLoader.
+                        GlanceWearWidgetService::class.java.classLoader,
+                    )
+                }
                     .getOrNull() ?: return null
             val association = serviceClass.getAnnotation(AssociateWithGlanceWearWidget::class.java)
             if (association != null) {
@@ -281,12 +287,10 @@ public class GlanceWearWidgetManager {
              */
             private fun ResolveInfo.maybeGlanceWearWidgetService(
                 serviceClass: Class<*>
-            ): GlanceWearWidgetService? =
-                runCatching {
-                        serviceClass.getDeclaredConstructor().newInstance()
-                            as? GlanceWearWidgetService
-                    }
-                    .getOrNull()
+            ): GlanceWearWidgetService? = runCatching {
+                serviceClass.getDeclaredConstructor().newInstance() as? GlanceWearWidgetService
+            }
+                .getOrNull()
         }
     }
 }

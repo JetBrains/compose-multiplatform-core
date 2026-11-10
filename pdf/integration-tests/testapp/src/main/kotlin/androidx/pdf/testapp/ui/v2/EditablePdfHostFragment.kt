@@ -38,9 +38,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfWriteHandle
+import androidx.pdf.R as PdfR
 import androidx.pdf.ink.EditablePdfViewerFragment
-import androidx.pdf.ink.R
 import androidx.pdf.selection.Selection
 import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.testapp.R as testR
@@ -52,6 +53,7 @@ import java.io.IOException
 import kotlinx.coroutines.launch
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+@OptIn(ExperimentalPdfApi::class)
 class EditablePdfHostFragment : EditablePdfViewerFragment() {
     private val viewModel: EditablePdfHostViewModel by viewModels()
 
@@ -166,7 +168,7 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
     }
 
     private fun onImageSelected(imageSelection: ImageSelection) {
-        val context = context ?: return
+        context ?: return
         val callback =
             ImageSelectionActionModeCallback(
                 requireContext(),
@@ -236,12 +238,12 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
 
     private fun createDiscardDialog(context: Context): AlertDialog =
         MaterialAlertDialogBuilder(context)
-            .setTitle(getString(R.string.discard_changes_dialog_title))
-            .setMessage(getString(R.string.discard_changes_dialog_message))
-            .setNegativeButton(getString(R.string.keep_editing_button)) { dialog, _ ->
+            .setTitle(getString(PdfR.string.discard_changes_dialog_title))
+            .setMessage(getString(PdfR.string.discard_changes_dialog_message))
+            .setNegativeButton(getString(PdfR.string.keep_editing_button)) { _, _ ->
                 viewModel.showDiscardDialog(false)
             }
-            .setPositiveButton(getString(R.string.discard_button)) { dialog, _ ->
+            .setPositiveButton(getString(PdfR.string.discard_button)) { _, _ ->
                 viewModel.showDiscardDialog(false)
                 isEditModeEnabled = false
             }
@@ -253,7 +255,7 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
         uri: Uri,
     ): ParcelFileDescriptor? {
         return try {
-            contentResolver.openFileDescriptor(uri, "rwt")
+            contentResolver.openFileDescriptor(uri, "rw")
         } catch (e: IOException) {
             null
         }

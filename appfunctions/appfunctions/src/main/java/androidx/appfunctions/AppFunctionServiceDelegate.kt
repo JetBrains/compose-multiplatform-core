@@ -21,16 +21,12 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.appfunctions.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.internal.AggregatedAppFunctionInvoker
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
-import androidx.appfunctions.internal.Translator
-import androidx.appfunctions.internal.TranslatorSelector
 import androidx.appfunctions.internal.unsafeBuildReturnValue
 import androidx.appfunctions.internal.unsafeGetParameterValue
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
-import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
-import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionMetadata
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
@@ -40,38 +36,21 @@ import kotlinx.coroutines.withContext
 public class AppFunctionServiceDelegate(
     context: Context,
     private val mainCoroutineContext: CoroutineContext,
-    private val aggregatedInventory: AggregatedAppFunctionInventory,
     private val aggregatedInvoker: AggregatedAppFunctionInvoker,
-    private val translatorSelector: TranslatorSelector,
 ) {
     private val appContext = context.applicationContext
 
     public suspend fun executeFunction(
-        executeAppFunctionRequest: ExecuteAppFunctionRequest
+        executeAppFunctionRequest: ExecuteAppFunctionRequest,
+        metadata: AppFunctionMetadata,
     ): ExecuteAppFunctionResponse =
         try {
-            val appFunctionMetadata =
-                aggregatedInventory.functionIdToMetadataMap[
-                        executeAppFunctionRequest.functionIdentifier]
-            if (appFunctionMetadata == null) {
-                Log.d(
-                    APP_FUNCTIONS_TAG,
-                    "${executeAppFunctionRequest.functionIdentifier} is not available",
-                )
-                throw AppFunctionFunctionNotFoundException(
-                    "${executeAppFunctionRequest.functionIdentifier} is not available"
-                )
-            }
-            val translator = getTranslator(executeAppFunctionRequest, appFunctionMetadata.schema)
-
-            val parameters =
-                extractParameters(executeAppFunctionRequest, appFunctionMetadata, translator)
+            val parameters = extractParameters(executeAppFunctionRequest, metadata)
             unsafeInvokeFunction(
                 executeAppFunctionRequest,
-                appFunctionMetadata,
-                aggregatedInventory.componentsMetadata,
+                metadata,
+                metadata.components,
                 parameters,
-                translator,
             )
         } catch (e: CancellationException) {
             Log.d(
@@ -96,39 +75,23 @@ public class AppFunctionServiceDelegate(
             throw AppFunctionAppUnknownException(e.message)
         }
 
-    private fun getTranslator(
-        request: ExecuteAppFunctionRequest,
-        schemaMetadata: AppFunctionSchemaMetadata?,
-    ): Translator? {
-        if (request.useJetpackSchema) {
-            return null
-        }
-        return schemaMetadata?.let { translatorSelector.getTranslator(it) }
-    }
-
     private fun extractParameters(
         request: ExecuteAppFunctionRequest,
-        appFunctionMetadata: CompileTimeAppFunctionMetadata,
-        translator: Translator?,
+        appFunctionMetadata: AppFunctionMetadata,
     ): Map<String, Any?> {
-        // Upgrade the parameters from the agents, if they are using the old format.
-        val translatedParameters =
-            translator?.upgradeRequest(request.functionParameters) ?: request.functionParameters
-
         return buildMap {
             for (parameterMetadata in appFunctionMetadata.parameters) {
                 this[parameterMetadata.name] =
-                    translatedParameters.unsafeGetParameterValue(parameterMetadata)
+                    request.functionParameters.unsafeGetParameterValue(parameterMetadata)
             }
         }
     }
 
     private suspend fun unsafeInvokeFunction(
         request: ExecuteAppFunctionRequest,
-        appFunctionMetadata: CompileTimeAppFunctionMetadata,
+        appFunctionMetadata: AppFunctionMetadata,
         componentsMetadata: AppFunctionComponentsMetadata,
         parameters: Map<String, Any?>,
-        translator: Translator?,
     ): ExecuteAppFunctionResponse {
         val result =
             withContext(mainCoroutineContext) {
@@ -140,10 +103,7 @@ public class AppFunctionServiceDelegate(
             }
         val returnValue =
             appFunctionMetadata.response.unsafeBuildReturnValue(result, componentsMetadata)
-
-        // Downgrade the return value from the agents, if they are using the old format.
-        val translatedReturnValue = translator?.downgradeResponse(returnValue) ?: returnValue
-        return ExecuteAppFunctionResponse.Success(translatedReturnValue)
+        return ExecuteAppFunctionResponse.Success(returnValue)
     }
 
     private fun buildAppFunctionContext(): AppFunctionContext {

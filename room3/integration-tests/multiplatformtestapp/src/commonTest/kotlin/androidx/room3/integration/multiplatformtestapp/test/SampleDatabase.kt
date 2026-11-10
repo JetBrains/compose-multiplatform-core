@@ -230,6 +230,10 @@ interface SampleDao {
     @Transaction @Query("SELECT * FROM SampleEntity") suspend fun getSample1To2(): Sample1And2
 
     @Transaction
+    @Query("SELECT * FROM SampleEntity ORDER BY RANDOM() ASC LIMIT :limit")
+    suspend fun getRandomSample1To2(limit: Int): List<Sample1And2>
+
+    @Transaction
     @Query("SELECT * FROM SampleEntity1Byte")
     suspend fun getSample1To2Byte(): Sample1And2Byte
 
@@ -251,7 +255,8 @@ interface SampleDao {
 
     data class Sample1AndMany(
         @Embedded val sample1: SampleEntity,
-        @Relation(parentColumns = ["pk"], entityColumns = ["pk2"]) val sample2s: List<SampleEntity2>,
+        @Relation(parentColumns = ["pk"], entityColumns = ["pk2"])
+        val sample2s: List<SampleEntity2>,
     )
 
     data class SampleManyAndMany(

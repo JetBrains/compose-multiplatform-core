@@ -40,7 +40,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import com.google.common.truth.Truth
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,7 +56,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class MaterialTextSelectionColorsScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
 
@@ -196,6 +195,7 @@ private fun TextTestContent(colors: Colors) {
 private fun FilledTextFieldTestContent(colors: Colors) {
     MaterialTheme(colors) {
         Surface(Modifier.testTag(Tag)) {
+            @Suppress("DEPRECATION")
             TextField(
                 value = TextFieldText,
                 onValueChange = {},
@@ -209,6 +209,7 @@ private fun FilledTextFieldTestContent(colors: Colors) {
 private fun OutlinedTextFieldTestContent(colors: Colors) {
     MaterialTheme(colors) {
         Surface(Modifier.testTag(Tag)) {
+            @Suppress("DEPRECATION")
             OutlinedTextField(
                 value = TextFieldText,
                 onValueChange = {},

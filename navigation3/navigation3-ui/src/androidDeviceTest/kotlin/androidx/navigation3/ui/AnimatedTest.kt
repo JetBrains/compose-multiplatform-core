@@ -51,6 +51,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.kruth.assertThat
+import androidx.kruth.assertWithMessage
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.BlueBox
@@ -70,14 +71,13 @@ import androidx.test.filters.LargeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class AnimatedTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testNavigateAnimations() {
@@ -245,7 +245,7 @@ class AnimatedTest {
 
         // advance a third between animations
         composeTestRule.mainClock.advanceTimeBy(
-            DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong() / 3
+            DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong() / 20
         )
 
         composeTestRule.waitForIdle()
@@ -318,9 +318,9 @@ class AnimatedTest {
         // interrupt pop third by pop second as well
         composeTestRule.runOnIdle { backStack.removeLastOrNull() }
 
-        // advance a third between animations
+        // advance a small amount to catch the fast spring interruption midway
         composeTestRule.mainClock.advanceTimeBy(
-            DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong() / 3
+            DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong() / 20
         )
 
         composeTestRule.waitForIdle()
@@ -395,7 +395,7 @@ class AnimatedTest {
 
         // advance a third between animations
         composeTestRule.mainClock.advanceTimeBy(
-            DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong() / 3
+            DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong() / 20
         )
 
         composeTestRule.waitForIdle()
@@ -1372,5 +1372,57 @@ class AnimatedTest {
 
         composeTestRule.onNodeWithText("first").assertIsDisplayed()
         composeTestRule.onNodeWithText("second").assertIsDisplayed()
+    }
+
+    @Test
+    fun testInterruptedConsecutivePop() {
+        var forwardTransitionCount = 0
+        var popTransitionCount = 0
+        lateinit var backStack: MutableList<Any>
+        val testDuration = DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong()
+
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second, third) }
+            NavDisplay(
+                backStack = backStack,
+                transitionSpec = {
+                    forwardTransitionCount++
+                    defaultTransitionSpec<Any>()(this)
+                },
+                popTransitionSpec = {
+                    popTransitionCount++
+                    defaultPopTransitionSpec<Any>()(this)
+                },
+            ) { entry ->
+                NavEntry(entry.toString()) { Text(entry.toString()) }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        forwardTransitionCount = 0
+        popTransitionCount = 0
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        // Perform first pop
+        composeTestRule.runOnIdle { backStack.removeLastOrNull() }
+
+        // Advance halfway through transition
+        composeTestRule.mainClock.advanceTimeBy(testDuration / 2)
+
+        // Perform second pop during interruption
+        composeTestRule.runOnIdle { backStack.removeLastOrNull() }
+
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
+
+        assertWithMessage(
+                "Interrupted consecutive pop should NOT be classified as forward transition"
+            )
+            .that(forwardTransitionCount)
+            .isEqualTo(0)
+        assertWithMessage("Interrupted consecutive pop SHOULD be classified as pop transition")
+            .that(popTransitionCount)
+            .isAtLeast(2)
     }
 }

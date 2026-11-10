@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:kotlin.OptIn(androidx.xr.scenecore.ExperimentalGltfAnimationApi::class)
+
 package androidx.xr.scenecore.testapp.model
 
 import android.annotation.SuppressLint
@@ -23,11 +25,11 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
@@ -38,7 +40,6 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AlphaMode
 import androidx.xr.scenecore.GltfAnimation
-import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.GltfModelNode
@@ -74,7 +75,7 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContentView(R.layout.activity_gltf_model_material_texture)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -144,8 +145,9 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
             }
         }
 
-        val sliderListener =
-            Slider.OnChangeListener { _, _, fromUser -> if (fromUser) updatePoseScaleFromSliders() }
+        val sliderListener = Slider.OnChangeListener { _, _, fromUser ->
+            if (fromUser) updatePoseScaleFromSliders()
+        }
 
         listOf(locX, locY, locZ, rotX, rotY, rotZ, rotW, scaleX, scaleY, scaleZ).forEach {
             it.addOnChangeListener(sliderListener)
@@ -195,10 +197,7 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<Slider>(R.id.gltf_model_metallic_slider).addOnChangeListener {
-            slider,
-            value,
-            fromUser ->
+        findViewById<Slider>(R.id.gltf_model_metallic_slider).addOnChangeListener { _, value, _ ->
             khronosPbrMaterial?.setMetallicFactor(value)
         }
 
@@ -243,11 +242,12 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
         findViewById<Button>(R.id.gltf_model_button4_3).setOnClickListener {
             val entity = dragonModelEntity
             if (entity != null) {
-                val animation = entity.animations.find { it.name == ANIMATION_NAME }
+                val animation = entity.getAnimations().find { it.name == ANIMATION_NAME }
                 if (animation?.animationState == GltfAnimation.AnimationState.PLAYING) {
                     animation.stop()
                 } else {
-                    animation?.start(GltfAnimationStartOptions(shouldLoop = true))
+                    animation?.loop = true
+                    animation?.start()
                 }
             }
         }
@@ -270,9 +270,9 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
                 rotY.value = p.rotation.y.snap().coerceIn(-1f, 1f)
                 rotZ.value = p.rotation.z.snap().coerceIn(-1f, 1f)
                 rotW.value = p.rotation.w.snap().coerceIn(-1f, 1f)
-                scaleX.value = s.x.snap().coerceIn(0f, 10f)
-                scaleY.value = s.y.snap().coerceIn(0f, 10f)
-                scaleZ.value = s.z.snap().coerceIn(0f, 10f)
+                scaleX.value = s.x.snap().coerceIn(0.5f, 10f)
+                scaleY.value = s.y.snap().coerceIn(0.5f, 10f)
+                scaleZ.value = s.z.snap().coerceIn(0.5f, 10f)
             }
         }
         findViewById<Button>(R.id.gltf_model_button5_1).setOnClickListener {

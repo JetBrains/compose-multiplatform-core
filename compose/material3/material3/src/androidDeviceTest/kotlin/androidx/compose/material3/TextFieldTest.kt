@@ -64,7 +64,6 @@ import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.testutils.assertPixels
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -111,7 +110,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
@@ -125,7 +123,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -141,7 +138,7 @@ class TextFieldTest {
     private val TextFieldWidth = 300.dp
     private val TextFieldTag = "textField"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testTextField_setSmallHeight() {
@@ -218,7 +215,7 @@ class TextFieldTest {
     fun testTextField_heightDoesNotChange_duringFocusAnimation_withLargeLabelText() {
         val numTicks = 5
         val tick = TextFieldAnimationDuration / numTicks
-        val tfHeight = Ref<Dp>()
+        val tfHeight = Ref<Float>()
         rule.mainClock.autoAdvance = false
 
         rule.setMaterialContent(lightColorScheme()) {
@@ -226,12 +223,11 @@ class TextFieldTest {
                 typography =
                     MaterialTheme.typography.copy(bodyLarge = MaterialTheme.typography.displayLarge)
             ) {
-                val density = LocalDensity.current
                 TextField(
                     modifier =
                         Modifier.testTag(TextFieldTag).onGloballyPositioned {
                             if (tfHeight.value == null) {
-                                tfHeight.value = with(density) { it.size.height.toDp() }
+                                tfHeight.value = it.size.height.toFloat()
                             }
                         },
                     state = rememberTextFieldState(),
@@ -245,11 +241,10 @@ class TextFieldTest {
 
         repeat(numTicks + 1) {
             if (tfHeight.value != null) {
-                rule
-                    .onNodeWithTag(TextFieldTag)
-                    .getBoundsInRoot()
-                    .height
-                    .assertIsEqualTo(tfHeight.value!!)
+                val height =
+                    rule.onNodeWithTag(TextFieldTag).fetchSemanticsNode().size.height.toFloat()
+                // Allow 1px difference due to sub-pixel font metric rounding.
+                assertThat(height).isWithin(1f).of(tfHeight.value!!)
             }
 
             rule.mainClock.advanceTimeBy(tick)
@@ -400,7 +395,6 @@ class TextFieldTest {
         rule.runOnIdle { assertThat(hostView.isSoftwareKeyboardShown).isFalse() }
     }
 
-    @ExperimentalComposeUiApi
     @Test
     fun testTextField_clickingOnTextAfterDismissingKeyboard_showsKeyboard() {
         val (focusRequester, parentFocusRequester) = FocusRequester.createRefs()
@@ -1712,7 +1706,6 @@ class TextFieldTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun testTextField_imeActionAndKeyboardTypePropagatedDownstream() {
@@ -1730,7 +1723,10 @@ class TextFieldTest {
                     modifier = Modifier.testTag(TextFieldTag),
                     state = rememberTextFieldState(),
                     keyboardOptions =
-                        KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Email),
+                        KeyboardOptions(
+                            imeAction = ImeAction.Go,
+                            keyboardType = KeyboardType.Email,
+                        ),
                 )
             }
         }
@@ -2359,6 +2355,22 @@ class TextFieldTest {
                 outputTransformation = { addStyle(SpanStyle(), 0, length) },
             )
         }
+    }
+
+    @Test
+    fun testTextField_prefixAndSuffix_semantics() {
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                state = rememberTextFieldState("google"),
+                prefix = { Text("www.") },
+                suffix = { Text(".com") },
+                modifier = Modifier.testTag("TextField"),
+            )
+        }
+
+        val rootNode = rule.onNodeWithTag("TextField", useUnmergedTree = false).fetchSemanticsNode()
+        val textList = rootNode.config.getOrNull(SemanticsProperties.Text)?.map { it.text }
+        assertThat(textList).containsExactly("www.", "google", ".com").inOrder()
     }
 }
 

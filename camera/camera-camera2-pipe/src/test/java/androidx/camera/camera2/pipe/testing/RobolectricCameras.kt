@@ -66,16 +66,14 @@ public object RobolectricCameras {
      * CameraDevice objects to be created for tests.
      */
     @Suppress("MissingPermission")
-    fun create(metadata: Map<CameraCharacteristics.Key<*>, Any> = emptyMap()): CameraId {
+    fun create(apply: ShadowCameraCharacteristics.() -> Unit = {}): CameraId {
         val shadowCameraManager = Shadow.extract<Any>(cameraManager) as ShadowCameraManager
 
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         val shadowCharacteristics = Shadow.extract<ShadowCameraCharacteristics>(characteristics)
 
         // Configure the camera characteristics
-        for (entry in metadata) {
-            shadowCharacteristics.set(entry.key, entry.value)
-        }
+        apply(shadowCharacteristics)
 
         val cameraNumber = cameraIds.incrementAndGet()
         val cameraId = CameraId("FakeCamera-$cameraNumber")
@@ -167,10 +165,9 @@ class RobolectricCamerasTest {
 
     @Test
     fun fakeCamerasCanBeOpened() {
-        val fakeCameraId =
-            RobolectricCameras.create(
-                mapOf(CameraCharacteristics.LENS_FACING to CameraCharacteristics.LENS_FACING_BACK)
-            )
+        val fakeCameraId = RobolectricCameras.create {
+            set(CameraCharacteristics.LENS_FACING, CameraCharacteristics.LENS_FACING_BACK)
+        }
         val fakeCamera = RobolectricCameras.open(fakeCameraId)
 
         assertThat(fakeCamera).isNotNull()

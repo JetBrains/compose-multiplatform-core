@@ -17,6 +17,7 @@
 package androidx.benchmark.macro.perfetto
 
 import android.os.Build.VERSION.SDK_INT
+import androidx.benchmark.DeviceInfo
 import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.macro.FileLinkingRule
 import androidx.benchmark.macro.Packages
@@ -52,9 +53,16 @@ class AndroidxTracingTraceTest {
     @get:Rule val linkRule = FileLinkingRule()
 
     @Before
+    fun checkDeviceSupport() {
+        assumeTrue(DeviceInfo.expectedToSupportTracingInTests)
+    }
+
+    @Before
     @After
     fun cleanup() {
-        PerfettoHelper.cleanupPerfettoState()
+        if (DeviceInfo.expectedToSupportTracingInTests) {
+            PerfettoHelper.cleanupPerfettoState()
+        }
     }
 
     @LargeTest
@@ -64,7 +72,7 @@ class AndroidxTracingTraceTest {
         assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(isAbiSupported())
 
-        val traceFilePath = linkRule.createReportedTracePath(Packages.TEST)
+        val traceFilePath = linkRule.createReportedTracePath()
         val perfettoCapture = PerfettoCapture()
 
         perfettoCapture.start(
@@ -101,7 +109,11 @@ class AndroidxTracingTraceTest {
                 }
         }
 
-        perfettoCapture.stop(traceFilePath, null)
+        perfettoCapture.stop(
+            destinationPath = traceFilePath,
+            inMemoryTracingLabel = null,
+            additionalPaths = emptyList(),
+        )
 
         val queryResult =
             TraceProcessor.runSingleSessionServer(traceFilePath) { query(query = QUERY) }

@@ -16,7 +16,6 @@
 
 package androidx.compose.remote.integration.view.demos.examples
 
-import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -29,6 +28,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
+import androidx.compose.remote.creation.compose.state.remotePath
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.text.RemoteTypeface
@@ -38,7 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.tooling.preview.Preview
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to drawPath, drawTextOnPath
 @Composable
 @RemoteComposable
 fun SimplePath() {
@@ -53,11 +53,17 @@ fun SimplePath() {
                 RemoteSize(remote.component.width, remote.component.height),
             )
 
-            val path =
-                RemotePath().apply {
-                    addArc(20f, 20f, 240f, 240f, 240f, 360f)
-                    close()
-                }
+            val path = remotePath {
+                addArc(
+                    left = 20f.rf,
+                    top = 20f.rf,
+                    right = 240f.rf,
+                    bottom = 240f.rf,
+                    startAngle = 240f.rf,
+                    sweepAngle = 360f.rf,
+                )
+                close()
+            }
 
             val textPaint = RemotePaint {
                 color = Color.Red.rc
@@ -76,7 +82,4 @@ fun SimplePath() {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
-@Preview
-@Composable
-private fun SimplePathPreview() = RemoteContentPreview { SimplePath() }
+@Preview @Composable private fun SimplePathPreview() = RemoteContentPreview { SimplePath() }

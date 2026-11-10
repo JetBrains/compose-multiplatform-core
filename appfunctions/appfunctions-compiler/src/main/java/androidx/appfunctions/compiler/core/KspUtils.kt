@@ -100,19 +100,18 @@ fun KSDeclaration.ensureQualifiedName(): String {
  */
 fun KSDeclaration.toClassName(): ClassName {
     val packageName = this.packageName.asString()
-    val simpleNames =
-        buildList {
-                var currentDeclaration: KSDeclaration? = this@toClassName
-                while (currentDeclaration != null) {
-                    add(currentDeclaration.simpleName.asString())
-                    val parent = currentDeclaration.parentDeclaration
-                    if (parent == null || parent is KSFile) {
-                        break
-                    }
-                    currentDeclaration = parent
-                }
+    val simpleNames = buildList {
+        var currentDeclaration: KSDeclaration? = this@toClassName
+        while (currentDeclaration != null) {
+            add(currentDeclaration.simpleName.asString())
+            val parent = currentDeclaration.parentDeclaration
+            if (parent == null || parent is KSFile) {
+                break
             }
-            .reversed()
+            currentDeclaration = parent
+        }
+    }
+        .reversed()
     return ClassName(packageName, simpleNames)
 }
 
@@ -150,6 +149,11 @@ fun KSDeclaration.getJvmQualifiedName(): String {
  */
 fun KSDeclaration.getJvmClassName(): String {
     return toClassName().reflectionName().substringAfterLast('.')
+}
+
+/** Checks if [KSTypeReference] is parameterized */
+fun KSTypeReference.isParametrized(): Boolean {
+    return resolve().arguments.isNotEmpty()
 }
 
 /**
@@ -217,7 +221,14 @@ fun <T : Any> KSAnnotation.requirePropertyValueOfType(
     val propertyValue =
         this.arguments.singleOrNull { it.name?.asString() == propertyName }?.value
             ?: throw ProcessingException("Unable to find property with name: $propertyName", this)
-    return expectedType.cast(propertyValue)
+    return try {
+        expectedType.cast(propertyValue)
+    } catch (e: ClassCastException) {
+        throw ProcessingException(
+            "Property $propertyName is not of expected type ${expectedType.simpleName}",
+            this,
+        )
+    }
 }
 
 // TODO: Import KotlinPoet KSP to replace these KSPUtils.

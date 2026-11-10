@@ -30,7 +30,7 @@ package androidx.navigation3.runtime {
     method @BytecodeOnly public static void addEntryProvider$default(androidx.navigation3.runtime.EntryProviderScope!, Object!, Object!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function3!, int, Object!);
     method @BytecodeOnly public static void addEntryProvider$default(androidx.navigation3.runtime.EntryProviderScope!, kotlin.reflect.KClass!, kotlin.jvm.functions.Function1!, java.util.Map!, kotlin.jvm.functions.Function3!, int, Object!);
     method @BytecodeOnly public static void addEntryProvider$default(androidx.navigation3.runtime.EntryProviderScope!, kotlin.reflect.KClass!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function3!, int, Object!);
-    method @kotlin.PublishedApi internal kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>> build();
+    method @BytecodeOnly @kotlin.PublishedApi internal kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>!> build();
     method public <K extends T> void entry(androidx.navigation3.runtime.EntryProviderScope<T>, K key, optional Object contentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super K,kotlin.Unit> content);
     method @BytecodeOnly public <K extends T> void entry(androidx.navigation3.runtime.EntryProviderScope<T>, K, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super K,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public <K extends T> void entry(androidx.navigation3.runtime.EntryProviderScope<T>, K key, optional Object contentKey, kotlin.jvm.functions.Function1<? super K,? extends java.util.Map<java.lang.String,?>> metadata, kotlin.jvm.functions.Function1<? super K,kotlin.Unit> content);
@@ -46,7 +46,7 @@ package androidx.navigation3.runtime {
 
   @androidx.navigation3.runtime.MetadataDsl public final class MetadataScope {
     ctor public MetadataScope();
-    method @kotlin.PublishedApi internal java.util.Map<java.lang.String,java.lang.Object> build();
+    method @BytecodeOnly @kotlin.PublishedApi internal java.util.Map<java.lang.String!,java.lang.Object!> build();
     method public <K extends androidx.navigation3.runtime.NavMetadataKey<T>, T> void put(K key, T value);
   }
 
@@ -64,7 +64,7 @@ package androidx.navigation3.runtime {
     method public boolean containsAll(java.util.Collection<T> elements);
     method public operator T get(int index);
     method public androidx.compose.runtime.snapshots.StateRecord getFirstStateRecord();
-    method @BytecodeOnly public int getSize();
+    method public int getSize();
     method @BytecodeOnly public int indexOf(Object!);
     method public int indexOf(T element);
     method public boolean isEmpty();
@@ -110,7 +110,7 @@ package androidx.navigation3.runtime {
   }
 
   public final class NavEntryKt {
-    method @kotlin.PublishedApi internal static Object defaultContentKey(Object key);
+    method @BytecodeOnly @kotlin.PublishedApi internal static Object defaultContentKey(Object);
   }
 
   public interface NavKey {
@@ -145,66 +145,127 @@ package androidx.navigation3.runtime {
 
 package androidx.navigation3.runtime.deeplink {
 
-  public abstract class DeepLinkMatcher<T> {
+  public final class BackStackMatchResult<T extends K, K> extends androidx.navigation3.runtime.deeplink.WrappedMatchResult<T> {
+    method @InaccessibleFromKotlin public java.util.List<K> getBackStack();
+    property public java.util.List<K> backStack;
+  }
+
+  public final class BackStackMatcher<T extends K, K> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher<T,androidx.navigation3.runtime.deeplink.BackStackMatchResult<? extends T,K>> {
+    method protected androidx.navigation3.runtime.deeplink.BackStackMatchResult<T,K>? matchRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+  }
+
+  public final class BackStackMatcherKt {
+    method public static <T extends K, K> androidx.navigation3.runtime.deeplink.BackStackMatcher<T,K> withBackStack(androidx.navigation3.runtime.deeplink.DeepLinkMatcher<? extends T,? extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>>, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>,? extends java.util.List<? extends K>> backStackBuilder);
+  }
+
+  public abstract class DeepLinkMatcher<T, R extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>> {
     ctor public DeepLinkMatcher();
     ctor @BytecodeOnly public DeepLinkMatcher(java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public DeepLinkMatcher(optional java.util.List<? extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Filter> filters);
-    method public final androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T>? match(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
-    method protected abstract androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T>? matchRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+    method public final R? match(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+    method protected abstract R? matchRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+    field public static final androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Companion Companion;
+  }
+
+  public static final class DeepLinkMatcher.Companion {
+    method public androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Filter mimeTypeFilter(String mimeType);
   }
 
   public static fun interface DeepLinkMatcher.Filter {
     method public boolean filterRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
   }
 
-  public static class DeepLinkMatcher.MatchResult<T> implements java.lang.Comparable<androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T>> {
+  public static class DeepLinkMatcher.MatchResult<T> implements java.lang.Comparable<androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>> {
     ctor public DeepLinkMatcher.MatchResult(T key);
-    method public int compareTo(androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> other);
+    method public int compareTo(androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T> other);
     method @InaccessibleFromKotlin public final T getKey();
     property public final T key;
   }
 
   public final class DeepLinkRequest {
-    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromAction(String action, optional android.net.Uri? uri, optional String? mimeType);
-    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromMimeType(String mimeType, optional android.net.Uri? uri, optional String? action);
-    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUri(android.net.Uri uri, optional String? mimeType, optional String? action);
-    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUriString(String uri, optional String? mimeType, optional String? action);
-    method @InaccessibleFromKotlin public String? getAction();
-    method @InaccessibleFromKotlin public String? getMimeType();
+    ctor public DeepLinkRequest();
+    ctor public DeepLinkRequest(optional android.net.Uri? uri, optional androidx.navigation3.runtime.deeplink.RequestExtras extras);
+    ctor @BytecodeOnly public DeepLinkRequest(android.net.Uri!, androidx.navigation3.runtime.deeplink.RequestExtras!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public DeepLinkRequest(String uri, optional androidx.navigation3.runtime.deeplink.RequestExtras extras);
+    ctor @BytecodeOnly public DeepLinkRequest(String!, androidx.navigation3.runtime.deeplink.RequestExtras!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public androidx.navigation3.runtime.deeplink.RequestExtras getExtras();
     method @InaccessibleFromKotlin public android.net.Uri? getUri();
-    property public String? action;
-    property public String? mimeType;
+    property public androidx.navigation3.runtime.deeplink.RequestExtras extras;
     property public android.net.Uri? uri;
     field public static final androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion Companion;
   }
 
   public static final class DeepLinkRequest.Companion {
-    method public androidx.navigation3.runtime.deeplink.DeepLinkRequest fromAction(String action, optional android.net.Uri? uri, optional String? mimeType);
-    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! fromAction$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, String!, android.net.Uri!, String!, int, Object!);
-    method public androidx.navigation3.runtime.deeplink.DeepLinkRequest fromMimeType(String mimeType, optional android.net.Uri? uri, optional String? action);
-    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! fromMimeType$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, String!, android.net.Uri!, String!, int, Object!);
-    method public androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUri(android.net.Uri uri, optional String? mimeType, optional String? action);
-    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! fromUri$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, android.net.Uri!, String!, String!, int, Object!);
-    method public androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUriString(String uri, optional String? mimeType, optional String? action);
-    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! fromUriString$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, String!, String!, String!, int, Object!);
+    method public androidx.navigation3.runtime.deeplink.RequestExtras mimeTypeExtra(String mimeType);
+  }
+
+  public static final class DeepLinkRequest.Companion.MimeTypeExtrasKey implements androidx.navigation3.runtime.deeplink.RequestExtrasKey<java.lang.String> {
+    field public static final androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion.MimeTypeExtrasKey INSTANCE;
   }
 
   public final class DeepLinkRequest_androidKt {
-    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromIntent(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion, android.content.Intent intent);
+    method public static androidx.navigation3.runtime.deeplink.RequestExtras actionExtra(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion, String action);
+    method public static androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Filter actionFilter(androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Companion, String action);
+    method @InaccessibleFromKotlin public static androidx.navigation3.runtime.deeplink.RequestExtrasKey<java.lang.String> getActionExtrasKey(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion);
+    method @InaccessibleFromKotlin public static androidx.navigation3.runtime.deeplink.RequestExtrasKey<android.os.Bundle> getIntentExtrasKey(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion);
+    method public static operator androidx.navigation3.runtime.deeplink.DeepLinkRequest invoke(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion, android.content.Intent intent, optional androidx.navigation3.runtime.deeplink.RequestExtras extras);
+    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! invoke$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, android.content.Intent!, androidx.navigation3.runtime.deeplink.RequestExtras!, int, Object!);
+    property public static androidx.navigation3.runtime.deeplink.RequestExtrasKey<java.lang.String> androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion.ActionExtrasKey;
+    property public static androidx.navigation3.runtime.deeplink.RequestExtrasKey<android.os.Bundle> androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion.IntentExtrasKey;
+  }
+
+  public abstract class DeepLinkSerializer<T> implements kotlinx.serialization.KSerializer<T> {
+    ctor public DeepLinkSerializer();
+    method public abstract T deserialize(String value);
+    method public final T deserialize(kotlinx.serialization.encoding.Decoder decoder);
+    method @InaccessibleFromKotlin public final kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public abstract String getSerialName();
+    method public final void serialize(kotlinx.serialization.encoding.Encoder encoder, T value);
+    method public abstract String serialize(T value);
+    property public final kotlinx.serialization.descriptors.SerialDescriptor descriptor;
+    property public abstract String serialName;
   }
 
   public final class DeepLinkUriKt {
     method public static android.net.Uri DeepLinkUri(String uriString);
   }
 
-  public final class StaticKeyDeepLinkMatcher<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher<T> {
+  public final class RequestExtras {
+    method public operator boolean contains(androidx.navigation3.runtime.deeplink.RequestExtrasKey<? extends java.lang.Object?> key);
+    method public operator <T> T? get(androidx.navigation3.runtime.deeplink.RequestExtrasKey<T> key);
+    method @InaccessibleFromKotlin public int getSize();
+    method public boolean isEmpty();
+    method public boolean isNotEmpty();
+    method public operator androidx.navigation3.runtime.deeplink.RequestExtras minus(androidx.navigation3.runtime.deeplink.RequestExtras other);
+    method public operator androidx.navigation3.runtime.deeplink.RequestExtras plus(androidx.navigation3.runtime.deeplink.RequestExtras other);
+    property public int size;
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface RequestExtrasDsl {
+  }
+
+  public interface RequestExtrasKey<T> {
+  }
+
+  public final class RequestExtrasKt {
+    method public static androidx.navigation3.runtime.deeplink.RequestExtras emptyRequestExtras();
+    method public static inline androidx.navigation3.runtime.deeplink.RequestExtras requestExtras(kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.deeplink.RequestExtrasScope,kotlin.Unit> builder);
+  }
+
+  @androidx.navigation3.runtime.deeplink.RequestExtrasDsl public final class RequestExtrasScope {
+    ctor @BytecodeOnly @kotlin.PublishedApi internal RequestExtrasScope();
+    method @BytecodeOnly @kotlin.PublishedApi internal androidx.navigation3.runtime.deeplink.RequestExtras build();
+    method public <T> void put(androidx.navigation3.runtime.deeplink.RequestExtrasKey<T> key, T value);
+  }
+
+  public final class StaticKeyDeepLinkMatcher<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher<T,androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>> {
     ctor public StaticKeyDeepLinkMatcher(T key, java.util.List<? extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Filter> filters);
     method @InaccessibleFromKotlin public T getKey();
     method protected androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> matchRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
     property public T key;
   }
 
-  public class UriDeepLinkMatcher<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher<T> {
+  public class UriDeepLinkMatcher<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher<T,androidx.navigation3.runtime.deeplink.UriMatchResult<? extends T>> {
     ctor @BytecodeOnly public UriDeepLinkMatcher(android.net.Uri!, kotlinx.serialization.KSerializer!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public UriDeepLinkMatcher(android.net.Uri uriPattern, kotlinx.serialization.KSerializer<T> serializer, optional java.util.List<? extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Filter> filters);
     method protected androidx.navigation3.runtime.deeplink.UriMatchResult<T>? matchArguments(optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> pathArgs, optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> queryArgs, optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> fragmentArgs);
@@ -214,12 +275,19 @@ package androidx.navigation3.runtime.deeplink {
   }
 
   public class UriMatchResult<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> {
-    ctor public UriMatchResult(T key, java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> arguments);
+    ctor @BytecodeOnly public UriMatchResult(Object!, java.util.Map!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public UriMatchResult(T key, optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> arguments);
     method @InaccessibleFromKotlin public final java.util.Map<java.lang.String,java.util.List<java.lang.String>> getArguments();
     method @InaccessibleFromKotlin protected final boolean isExactPath();
     method @InaccessibleFromKotlin protected final void setExactPath(boolean);
     property public final java.util.Map<java.lang.String,java.util.List<java.lang.String>> arguments;
     property protected final boolean isExactPath;
+  }
+
+  public abstract class WrappedMatchResult<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> {
+    ctor public WrappedMatchResult(androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T> matchResult);
+    method @InaccessibleFromKotlin public final androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> getMatchResult();
+    property public final androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> matchResult;
   }
 
   public typealias DeepLinkUri = android.net.Uri;

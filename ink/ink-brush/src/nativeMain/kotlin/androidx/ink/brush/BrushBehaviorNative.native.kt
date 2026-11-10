@@ -16,6 +16,8 @@
 
 package androidx.ink.brush
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
+import androidx.ink.nativeloader.cinterop.BrushBehaviorNative_calculateMinimumRequiredVersion
 import androidx.ink.nativeloader.cinterop.BrushBehaviorNative_createFromOrderedNodes
 import androidx.ink.nativeloader.cinterop.BrushBehaviorNative_free
 import androidx.ink.nativeloader.cinterop.BrushBehaviorNative_getDeveloperComment
@@ -28,21 +30,20 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object BrushBehaviorNative {
     actual fun createFromOrderedNodes(
         orderdNodeNativePointers: LongArray,
         developerComment: String,
-    ): Long =
-        orderdNodeNativePointers.usePinned { pinned ->
-            BrushBehaviorNative_createFromOrderedNodes(
-                jni_env_pass_through = null,
-                if (orderdNodeNativePointers.isEmpty()) null else pinned.addressOf(0),
-                orderdNodeNativePointers.size,
-                developerComment,
-                throwForNonOkStatusCallback,
-            )
-        }
+    ): Long = orderdNodeNativePointers.usePinned { pinned ->
+        BrushBehaviorNative_createFromOrderedNodes(
+            jni_env_pass_through = null,
+            if (orderdNodeNativePointers.isEmpty()) null else pinned.addressOf(0),
+            orderdNodeNativePointers.size,
+            developerComment,
+            throwForNonOkStatusCallback,
+        )
+    }
 
     actual fun free(nativePointer: Long) = BrushBehaviorNative_free(nativePointer)
 
@@ -57,4 +58,7 @@ actual internal object BrushBehaviorNative {
 
     actual fun newCopyOfNode(nativePointer: Long, index: Int): Long =
         BrushBehaviorNative_newCopyOfNode(nativePointer, index)
+
+    actual fun calculateMinimumRequiredVersion(nativePointer: Long): Int =
+        BrushBehaviorNative_calculateMinimumRequiredVersion(nativePointer)
 }

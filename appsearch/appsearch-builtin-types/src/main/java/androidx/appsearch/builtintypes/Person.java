@@ -22,6 +22,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
@@ -48,7 +49,7 @@ import java.util.List;
 public class Person extends Thing {
     /** Holds type information for additional names for Person. */
     public static class AdditionalName {
-        /** @exportToFramework:hide */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @IntDef({
                 TYPE_UNKNOWN,
@@ -322,15 +323,13 @@ public class Person extends Thing {
         }
 
         @Override
-        @ExperimentalAppSearchApi
-        @RestrictTo({RestrictTo.Scope.LIBRARY, RestrictTo.Scope.SUBCLASSES})
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         public @NonNull Builder setAdditionalNamesList(@NonNull List<String> additionalNamesList) {
             return super.setAdditionalNamesList(additionalNamesList);
         }
 
         @Override
-        @ExperimentalAppSearchApi
-        @RestrictTo({RestrictTo.Scope.LIBRARY, RestrictTo.Scope.SUBCLASSES})
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         public @NonNull Builder setAdditionalNameTypes(@NonNull List<Long> additionalNameTypes) {
             return super.setAdditionalNameTypes(additionalNameTypes);
         }
@@ -524,8 +523,7 @@ public class Person extends Thing {
          * <p>This should only be called by the AppSearch compiler. All other usages should go
          * through {@link #setAdditionalNames(List)}.
          */
-        @ExperimentalAppSearchApi
-        @RestrictTo({RestrictTo.Scope.LIBRARY, RestrictTo.Scope.SUBCLASSES})
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         public @NonNull T setAdditionalNamesList(@NonNull List<String> additionalNamesList) {
             Preconditions.checkNotNull(additionalNamesList);
             mAdditionalNamesList = new ArrayList<>(additionalNamesList);
@@ -538,8 +536,7 @@ public class Person extends Thing {
          * <p>This should only be called by the AppSearch compiler. All other usages should go
          * through {@link #setAdditionalNames(List)}.
          */
-        @ExperimentalAppSearchApi
-        @RestrictTo({RestrictTo.Scope.LIBRARY, RestrictTo.Scope.SUBCLASSES})
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         public @NonNull T setAdditionalNameTypes(@NonNull List<Long> additionalNameTypes) {
             Preconditions.checkNotNull(additionalNameTypes);
             for (int i = 0; i < additionalNameTypes.size(); ++i) {

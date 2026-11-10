@@ -22,9 +22,11 @@ import androidx.compose.remote.core.operations.ColorAttribute
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.state.RemoteColor.Companion.createNamedRemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteColor.OperationKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
@@ -61,7 +63,7 @@ internal constructor(
     internal val configuredGreen: RemoteFloat? = green
     internal val configuredBlue: RemoteFloat? = blue
 
-    internal enum class OperationKey : DebuggableOperation {
+    internal enum class OperationKey : RemoteOperation {
         FromHSV,
         FromAHSV,
         FromArgb,
@@ -75,6 +77,55 @@ internal constructor(
                 Multiply -> args.formatOp("*", 3)
                 else -> formatCamelCaseFunction(args)
             }
+
+        override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> {
+            return when (this) {
+                FromArgb ->
+                    RemoteColor(
+                        args[0] as RemoteFloat,
+                        args[1] as RemoteFloat,
+                        args[2] as RemoteFloat,
+                        args[3] as RemoteFloat,
+                    )
+                FromHSV ->
+                    hsv(args[0] as RemoteFloat, args[1] as RemoteFloat, args[2] as RemoteFloat)
+                FromAHSV ->
+                    fromAHSV(
+                        asConstantInt(args[0], default = 255),
+                        args[1] as RemoteFloat,
+                        args[2] as RemoteFloat,
+                        args[3] as RemoteFloat,
+                    )
+                Multiply -> asRemoteColor(args[0]) * asRemoteColor(args[1])
+                Tween ->
+                    tween(asRemoteColor(args[0]), asRemoteColor(args[1]), args[2] as RemoteFloat)
+                TweenInt -> {
+                    val from = args[0]
+                    val to = args[1]
+                    val t = args[2] as RemoteFloat
+                    val fromInt = (from.constantValueOrNull as? Number)?.toInt()
+                    val toInt = (to.constantValueOrNull as? Number)?.toInt()
+                    if (fromInt != null && toInt != null) {
+                        tween(fromInt, toInt, t)
+                    } else {
+                        tween(asRemoteColor(from), asRemoteColor(to), t)
+                    }
+                }
+                Component -> {
+                    val color = asRemoteColor(args[0])
+                    when (val component = asConstantInt(args[1]).toShort()) {
+                        ColorAttribute.COLOR_ALPHA -> color.alpha
+                        ColorAttribute.COLOR_RED -> color.red
+                        ColorAttribute.COLOR_GREEN -> color.green
+                        ColorAttribute.COLOR_BLUE -> color.blue
+                        ColorAttribute.COLOR_HUE -> color.hue
+                        ColorAttribute.COLOR_SATURATION -> color.saturation
+                        ColorAttribute.COLOR_BRIGHTNESS -> color.brightness
+                        else -> throw IllegalArgumentException("Unknown component: $component")
+                    }
+                }
+            }
+        }
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -159,13 +210,25 @@ internal constructor(
      * @return The result of multiplying [RemoteColor] by [other].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public operator fun times(other: RemoteColor): RemoteColor =
-        rgb(
-            red = red * other.red,
-            green = green * other.green,
-            blue = blue * other.blue,
-            alpha = alpha * other.alpha,
-        )
+    public operator fun times(other: RemoteColor): RemoteColor {
+        val thisConst = this.constantValueOrNull
+        val otherConst = other.constantValueOrNull
+        return when {
+            thisConst == Color.White -> other
+            otherConst == Color.White -> this
+            thisConst == Color.Transparent -> this
+            otherConst == Color.Transparent -> other
+            thisConst == Color.Black && other.alpha.constantValueOrNull == 1f -> this
+            otherConst == Color.Black && this.alpha.constantValueOrNull == 1f -> other
+            else ->
+                rgb(
+                    red = red * other.red,
+                    green = green * other.green,
+                    blue = blue * other.blue,
+                    alpha = alpha * other.alpha,
+                )
+        }
+    }
 
     /**
      * Creates a copy of this [RemoteColor] with the ability to override individual ARGB components.
@@ -517,16 +580,7 @@ public fun rememberNamedRemoteColor(
     initialValue: Color,
     domain: RemoteState.Domain = RemoteState.Domain.User,
 ): RemoteColor {
-    return rememberNamedState(name, domain) {
-        RemoteColor(
-            cacheKey = RemoteNamedCacheKey(domain, name),
-            idProvider = { cs ->
-                cs.getOrPutVariableId(RemoteNamedCacheKey(domain, name)) {
-                    cs.document.addNamedColor(domain.prefixed(name), initialValue.toArgb())
-                }
-            },
-        )
-    }
+    return remember(name, domain) { createNamedRemoteColor(name, initialValue, domain) }
 }
 
 /**
@@ -539,6 +593,9 @@ public fun rememberNamedRemoteColor(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun tween(@ColorInt from: Int, @ColorInt to: Int, tween: RemoteFloat): RemoteColor {
+    if (from == to) {
+        return RemoteColor(from)
+    }
     tween.constantValueOrNull?.let {
         return RemoteColor(Utils.interpolateColor(from, to, it))
     }
@@ -572,6 +629,9 @@ public fun tween(@ColorInt from: Int, @ColorInt to: Int, tween: RemoteFloat): Re
  * @return A new [RemoteColor] representing the tweened color.
  */
 public fun tween(from: RemoteColor, to: RemoteColor, tween: RemoteFloat): RemoteColor {
+    if (from.cacheKey == to.cacheKey) {
+        return from
+    }
     val constFrom = from.constantValueOrNull
     val constTo = to.constantValueOrNull
     val constTween = tween.constantValueOrNull
@@ -661,10 +721,6 @@ private fun compositeComponent(
     return isZero.select(ifTrue = 0.rf, ifFalse = numerator / a)
 }
 
-/** Extension function to pack a [Color] into a Long for protocol use. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun Color.pack(): Long = android.graphics.Color.pack(toArgb())
-
 private fun constantColorOrNull(
     alpha: RemoteFloat,
     red: RemoteFloat,
@@ -681,3 +737,17 @@ private fun constantColorOrNull(
         return null
     }
 }
+
+private fun asRemoteColor(arg: BaseRemoteState<*>): RemoteColor =
+    when (arg) {
+        is RemoteColor -> arg
+        is RemoteInt ->
+            arg.constantValueOrNull?.let { RemoteColor(it) }
+                ?: throw IllegalArgumentException(
+                    "Dynamic RemoteInt cannot be used as a color: $arg"
+                )
+        else -> throw IllegalArgumentException("Expected RemoteColor or RemoteInt, but found $arg")
+    }
+
+private fun asConstantInt(arg: BaseRemoteState<*>, default: Int = 0): Int =
+    (arg.constantValueOrNull as? Number)?.toInt() ?: default

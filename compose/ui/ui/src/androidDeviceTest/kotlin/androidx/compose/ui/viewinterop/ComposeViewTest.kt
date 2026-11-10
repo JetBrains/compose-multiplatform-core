@@ -91,7 +91,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlin.test.assertNotEquals
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -105,7 +104,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ComposeViewTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @FlakyTest(bugId = 256017578)
     @Test
@@ -806,11 +805,9 @@ class ComposeViewTest {
     fun composeView_changeComposeViewContext() {
         rule.setContent { Box(Modifier.fillMaxSize()) }
 
-        val composeView =
-            rule.runOnUiThread {
-                rule.activity.findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
-                    as ComposeView
-            }
+        val composeView = rule.runOnUiThread {
+            rule.activity.findViewById<ViewGroup>(android.R.id.content).getChildAt(0) as ComposeView
+        }
 
         val originalComposeViewContext = composeView.findViewTreeComposeViewContext()
         assertNotNull(originalComposeViewContext)

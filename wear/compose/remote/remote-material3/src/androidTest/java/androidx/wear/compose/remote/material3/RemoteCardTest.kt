@@ -31,6 +31,8 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.remote.material3.previews.RemoteCardDefault
 import androidx.wear.compose.remote.material3.previews.RemoteCardOutline
+import androidx.wear.compose.remote.material3.previews.RemoteCardWithImage
+import androidx.wear.compose.remote.material3.previews.RemoteCardWithImageAndBorder
 import androidx.wear.compose.remote.material3.util.ComponentContainer
 import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
 import org.junit.Rule
@@ -83,6 +85,16 @@ class RemoteCardTest {
     }
 
     @Test
+    fun card_with_image_and_border() {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+        ) {
+            ComponentContainer { RemoteCardWithImageAndBorder() }
+        }
+    }
+
+    @Test
     fun card_dynamic_color() {
         val colorOverrides = buildObjectIntMap {
             put("WearM3.primary", Color(0xFFB8D0A0).toArgb())
@@ -100,6 +112,16 @@ class RemoteCardTest {
             },
         ) {
             ComponentContainer { RemoteCardDefault() }
+        }
+    }
+
+    @Test
+    fun card_with_image() {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+        ) {
+            ComponentContainer { RemoteCardWithImage() }
         }
     }
 }

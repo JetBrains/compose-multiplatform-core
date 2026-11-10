@@ -30,7 +30,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -43,6 +42,7 @@ import java.io.ByteArrayInputStream
 public fun rememberRemoteDocument(
     creationDisplayInfo: RemoteCreationDisplayInfo = createCreationDisplayInfo(),
     profile: Profile = RcPlatformProfiles.ANDROIDX,
+    remoteDensity: RemoteDensity = RemoteDensity.from(creationDisplayInfo),
     writerEvents: WriterEvents = WriterEvents(),
     onCreate: ((CoreDocument) -> Unit)? = null,
     clock: RemoteClock = RemoteClock.SYSTEM,
@@ -54,7 +54,8 @@ public fun rememberRemoteDocument(
     LaunchedEffect(Unit) {
         val document =
             captureSingleRemoteDocument(
-                creationDisplayInfo = createCreationDisplayInfo(context),
+                creationDisplayInfo = creationDisplayInfo,
+                remoteDensity = remoteDensity,
                 layoutDirection = layoutDirection,
                 context = context,
                 content = content,
@@ -64,9 +65,16 @@ public fun rememberRemoteDocument(
         val coreDocument =
             CoreDocument(clock).apply {
                 trace("CreateRemoteDocument:parsing") {
-                    initFromBuffer(
+                    val buffer =
                         RemoteComposeBuffer.fromInputStream(ByteArrayInputStream(document.bytes))
+                    // Configure version and supported operations from profile to allow custom
+                    // profiles
+                    buffer.setVersion(
+                        profile.apiLevel,
+                        profile.operationsProfiles,
+                        profile.supportedOperations,
                     )
+                    initFromBuffer(buffer)
                 }
             }
         if (onCreate != null) {
@@ -75,26 +83,6 @@ public fun rememberRemoteDocument(
         doc.value = coreDocument
     }
     return doc
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Composable
-public fun rememberRemoteDocument(
-    size: Size,
-    onCreate: ((CoreDocument) -> Unit)? = null,
-    content: @Composable @RemoteComposable () -> Unit,
-): MutableState<CoreDocument?> {
-    return rememberRemoteDocument(
-        creationDisplayInfo =
-            RemoteCreationDisplayInfo(
-                size.width.toInt(),
-                size.height.toInt(),
-                LocalConfiguration.current.densityDpi,
-                LocalConfiguration.current.fontScale,
-            ),
-        onCreate = onCreate,
-        content = content,
-    )
 }
 
 @Composable

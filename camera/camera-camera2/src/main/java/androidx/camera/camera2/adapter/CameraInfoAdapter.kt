@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.adapter
 
 import android.annotation.SuppressLint
@@ -31,6 +33,7 @@ import androidx.camera.camera2.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
 import androidx.camera.camera2.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.compat.quirk.ExcludePhysicalCameraIdQuirk
 import androidx.camera.camera2.compat.quirk.ZslDisablerQuirk
 import androidx.camera.camera2.compat.workaround.isFlashAvailable
 import androidx.camera.camera2.config.CameraConfig
@@ -43,6 +46,7 @@ import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.impl.DeviceInfoLogger
 import androidx.camera.camera2.impl.FocusMeteringControl
 import androidx.camera.camera2.impl.NightModeIndicatorMonitor
+import androidx.camera.camera2.internal.CameraCompatibilityFilter
 import androidx.camera.camera2.internal.IntrinsicZoomCalculator
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -57,7 +61,7 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPreviewStab
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateReprocessing
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
 import androidx.camera.camera2.pipe.CameraPipe
-import androidx.camera.camera2.pipe.UnsafeWrapper
+import androidx.camera.common.UnsafeWrapper
 import androidx.camera.common.unwrapAs
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -114,16 +118,35 @@ constructor(
         DeviceInfoLogger.logDeviceInfo(cameraProperties)
     }
 
-    private val _physicalCameraInfos by lazy {
-        cameraProperties.metadata.physicalCameraIds.mapTo(mutableSetOf<CameraInfo>()) {
-            physicalCameraId ->
-            val cameraProperties =
-                CameraPipeCameraProperties(
-                    CameraConfig(physicalCameraId),
-                    cameraProperties.metadata.awaitPhysicalMetadata(physicalCameraId),
-                )
-            PhysicalCameraInfoAdapter(cameraProperties)
-        }
+    // CameraInfoAdapter is initialized on a background thread during CameraX initialization,
+    // so loading and awaiting physical camera metadata during construction is safe.
+    private val _physicalCameraInfos: Set<CameraInfo> = loadPhysicalCameraInfos()
+
+    private fun loadPhysicalCameraInfos(): Set<CameraInfo> {
+        val quirk = DeviceQuirks[ExcludePhysicalCameraIdQuirk::class.java]
+        val excludedIds = quirk?.excludedPhysicalCameraIds ?: emptySet()
+        return cameraProperties.metadata.physicalCameraIds
+            .filter { it.value !in excludedIds }
+            .mapNotNull { physicalCameraId ->
+                val physicalMetadata =
+                    cameraProperties.metadata.awaitPhysicalMetadata(physicalCameraId)
+                if (!CameraCompatibilityFilter.isBackwardCompatible(physicalMetadata)) {
+                    Camera2Logger.debug {
+                        "Physical camera $physicalCameraId is filtered out because its " +
+                            "capabilities do not contain REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE."
+                    }
+                    null
+                } else {
+                    val cameraProperties =
+                        CameraPipeCameraProperties(CameraConfig(physicalCameraId), physicalMetadata)
+                    PhysicalCameraInfoAdapter(
+                        cameraProperties,
+                        intrinsicZoomCalculator,
+                        parentCameraInfo = this,
+                    )
+                }
+            }
+            .toSet()
     }
 
     private val isLegacyDevice by lazy { cameraProperties.metadata.isHardwareLevelLegacy }
@@ -134,7 +157,8 @@ constructor(
     }
 
     override fun isLogicalMultiCameraSupported(): Boolean {
-        return cameraProperties.metadata.supportsLogicalMultiCamera
+        return cameraProperties.metadata.supportsLogicalMultiCamera &&
+            _physicalCameraInfos.isNotEmpty()
     }
 
     override fun getPhysicalCameraInfos(): Set<CameraInfo> = _physicalCameraInfos
@@ -144,7 +168,7 @@ constructor(
     override fun getLensFacing(): @CameraSelector.LensFacing Int =
         getCameraSelectorLensFacing(cameraProperties.metadata[CameraCharacteristics.LENS_FACING]!!)
 
-    @androidx.annotation.OptIn(ExperimentalLensFacing::class)
+    @OptIn(ExperimentalLensFacing::class)
     override fun isExternalCamera(): Boolean {
         return lensFacing == CameraSelector.LENS_FACING_EXTERNAL ||
             cameraProperties.metadata[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL] ==
@@ -164,7 +188,7 @@ constructor(
             .unwrapAs<CameraCharacteristics>()
     }
 
-    @androidx.annotation.OptIn(ExperimentalLensFacing::class)
+    @OptIn(ExperimentalLensFacing::class)
     private fun getCameraSelectorLensFacing(lensFacingInt: Int): @CameraSelector.LensFacing Int {
         return when (lensFacingInt) {
             CameraCharacteristics.LENS_FACING_FRONT -> CameraSelector.LENS_FACING_FRONT
@@ -312,9 +336,22 @@ constructor(
         cameraProperties.metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES]
             ?.toSet() ?: emptySet()
 
-    @androidx.annotation.OptIn(ExperimentalZeroShutterLag::class)
+    private val zslIntersectionSizes: List<Size> =
+        ZslUtil.computeZslIntersectionSizes(
+            cameraProperties.metadata,
+            android.graphics.ImageFormat.PRIVATE,
+        )
+
+    @OptIn(ExperimentalZeroShutterLag::class)
     override fun isZslSupported(): Boolean {
         return isPrivateReprocessingSupported && DeviceQuirks[ZslDisablerQuirk::class.java] == null
+    }
+
+    override fun canSupportZsl(sizes: List<Size>): Boolean {
+        if (!isZslSupported) {
+            return false
+        }
+        return sizes.any { it in zslIntersectionSizes }
     }
 
     override fun isPrivateReprocessingSupported(): Boolean {
@@ -334,8 +371,8 @@ constructor(
 
     override fun getSupportedHighSpeedFrameRateRangesFor(size: Size): Set<Range<Int>> {
         return runCatching {
-                streamConfigurationMapCompat.getHighSpeedVideoFpsRangesFor(size)?.toSet()
-            }
+            streamConfigurationMapCompat.getHighSpeedVideoFpsRangesFor(size)?.toSet()
+        }
             .getOrNull() ?: emptySet()
     }
 
@@ -345,8 +382,8 @@ constructor(
 
     override fun getSupportedHighSpeedResolutionsFor(fpsRange: Range<Int>): List<Size> {
         return runCatching {
-                streamConfigurationMapCompat.getHighSpeedVideoSizesFor(fpsRange)?.toList()
-            }
+            streamConfigurationMapCompat.getHighSpeedVideoSizesFor(fpsRange)?.toList()
+        }
             .getOrNull() ?: emptyList()
     }
 

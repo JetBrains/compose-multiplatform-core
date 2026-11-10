@@ -17,18 +17,14 @@
 package androidx.benchmark.integration.macrobenchmark.target
 
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.tracing.trace
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import java.util.concurrent.CountDownLatch
-import kotlin.concurrent.thread
 
 class BackgroundWorkActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,10 +39,10 @@ class BackgroundWorkActivity : AppCompatActivity() {
 
     private fun startWork(context: Context) {
         val count = 20
-        var countDownLatch = CountDownLatch(count)
+        val countDownLatch = CountDownLatch(count)
 
         for (i in 0 until count) {
-            var workRequest =
+            val workRequest =
                 OneTimeWorkRequestBuilder<NoOpWorker>()
                     .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                     .build()
@@ -56,27 +52,6 @@ class BackgroundWorkActivity : AppCompatActivity() {
             ) { workInfo ->
                 if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
                     countDownLatch.countDown()
-                }
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        if (Build.VERSION.SDK_INT <= 23) {
-            // temporary logging/tracing to debug b/204572406
-            Log.d("Benchmark", "onResume")
-            trace("onResume") {}
-        }
-    }
-
-    init {
-        if (Build.VERSION.SDK_INT <= 23) {
-            // temporary tracing to debug b/204572406
-            thread {
-                while (true) {
-                    trace("tracing") { Thread.sleep(50) }
                 }
             }
         }

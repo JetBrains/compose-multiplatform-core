@@ -19,6 +19,7 @@ package androidx.compose.foundation.text.modifiers
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.TEST_LOCALE_LIST
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -41,17 +42,21 @@ import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.sp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 class TextStringContentCaptureTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().context
 
     private fun createSubject(text: String): TextStringSimpleElement {
-        return TextStringSimpleElement(text, TextStyle.Default, createFontFamilyResolver(context))
+        return TextStringSimpleElement(
+            text,
+            TextStyle.Default,
+            createFontFamilyResolver(context),
+            TEST_LOCALE_LIST,
+        )
     }
 
     @Test

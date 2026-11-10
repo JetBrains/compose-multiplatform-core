@@ -62,7 +62,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import kotlinx.coroutines.DisposableHandle
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,7 +69,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class ModifierNodeSetContentInAttachTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     /**
      * This test ends up calling setContent() of a separate composition during a modifier update in
@@ -114,16 +113,16 @@ private fun Modifier.drawInOverlay(compositionContext: CompositionContext): Modi
 
 private fun Modifier.container(state: ContainerState): Modifier {
     return layout { measurable, constraints ->
-            val p = measurable.measure(constraints)
-            layout(p.width, p.height) {
-                val coords = coordinates
-                if (coords != null && !isLookingAhead) {
-                    state.lastCoords = coords
-                }
-
-                p.place(0, 0)
+        val p = measurable.measure(constraints)
+        layout(p.width, p.height) {
+            val coords = coordinates
+            if (coords != null && !isLookingAhead) {
+                state.lastCoords = coords
             }
+
+            p.place(0, 0)
         }
+    }
         .drawWithContent {
             drawContent()
             state.drawInOverlay(this)

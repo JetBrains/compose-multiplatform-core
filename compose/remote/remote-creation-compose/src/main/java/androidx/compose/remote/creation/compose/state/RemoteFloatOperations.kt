@@ -485,7 +485,14 @@ public fun cubicEasing(
     return RemoteFloatExpression(
         constantValueOrNull = null,
         cacheKey =
-            RemoteOperationCacheKey.create(RemoteFloat.OperationKey.Cubic, x1, y1, x2, y2, progress),
+            RemoteOperationCacheKey.create(
+                RemoteFloat.OperationKey.Cubic,
+                x1,
+                y1,
+                x2,
+                y2,
+                progress,
+            ),
     ) { creationState ->
         combineToFloatArray(
             creationState,
@@ -617,6 +624,47 @@ public fun animateRemoteFloat(
     initialValue: Float = Float.NaN,
     wrap: Float = Float.NaN,
 ): RemoteFloat {
-    val anim = RemoteComposeBuffer.packAnimation(duration, type, spec, initialValue, wrap)
+    var anim = RemoteComposeBuffer.packAnimation(duration, type, spec, initialValue, wrap)
+    if (anim.isEmpty()) {
+        anim = floatArrayOf(duration)
+    }
     return AnimatedRemoteFloat(rf, anim)
+}
+
+/**
+ * Returns a [RemoteFloat] that represents a random number >= 0 and <= 1.
+ *
+ * @return A [RemoteFloat] evaluating to a random number >= 0 and <= 1
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun rand(): RemoteFloat {
+    return RemoteFloatExpression(
+        constantValueOrNull = null,
+        cacheKey = RemoteOperationCacheKey.create(RemoteFloat.OperationKey.Rand),
+        arrayProvider = { _ ->
+            floatArrayOf(AnimatedFloatExpression.RAND)
+        },
+    )
+}
+
+/**
+ * Returns a [RemoteFloat] that represent a random number >= [from] and <= [to].
+ *
+ * @param from The lower bound
+ * @param to The upper bound
+ * @return A [RemoteFloat] evaluating to a random number >= [from] and <= [to]
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun randRange(from: RemoteFloat, to: RemoteFloat): RemoteFloat {
+    return RemoteFloatExpression(
+        constantValueOrNull = null,
+        cacheKey = RemoteOperationCacheKey.create(RemoteFloat.OperationKey.RandInRange, from, to),
+        arrayProvider = { creationState ->
+            floatArrayOf(
+                *(toArray(from, creationState)),
+                *(toArray(to, creationState)),
+                AnimatedFloatExpression.RAND_IN_RANGE,
+            )
+        },
+    )
 }

@@ -177,7 +177,9 @@ public interface CameraInfo {
      *
      * <p>The LiveData will be updated whenever the set zoom state has been changed. This can
      * occur when the application updates the zoom via {@link CameraControl#setZoomRatio(float)}
-     * or {@link CameraControl#setLinearZoom(float)}. The zoom state can also change anytime a
+     * or {@link CameraControl#setLinearZoom(float)}. When a valid zoom value is set through those
+     * methods, the {@link ZoomState} value in this {@link LiveData} is updated without waiting for
+     * the asynchronous camera operation to complete. The zoom state can also change anytime a
      * camera starts up, for example when a {@link UseCase} is bound to it.
      */
     @NonNull LiveData<ZoomState> getZoomState();
@@ -244,6 +246,7 @@ public interface CameraInfo {
      * {@link #IMPLEMENTATION_TYPE_UNKNOWN}, {@link #IMPLEMENTATION_TYPE_CAMERA2_LEGACY},
      * {@link #IMPLEMENTATION_TYPE_CAMERA2}, {@link #IMPLEMENTATION_TYPE_FAKE}.
      */
+    @SuppressWarnings("HiddenAbstractMethodInInterface")
     @RestrictTo(Scope.LIBRARY_GROUP)
     @ImplementationType
     @NonNull String getImplementationType();

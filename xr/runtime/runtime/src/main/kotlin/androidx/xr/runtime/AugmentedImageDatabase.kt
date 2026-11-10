@@ -19,15 +19,23 @@ package androidx.xr.runtime
 import android.graphics.Bitmap
 
 /**
- * Defines an augmented image database that is going to be used by the image tracker to detect
- * images by setting it through the [androidx.xr.runtime.Config.augmentedImageDatabase] parameter
+ * Database of target images used by the tracker via [Config.augmentedImageDatabase].
+ *
+ * Supported device types:
+ * - Immersive
+ *
+ * Supported runtimes:
+ * - OpenXR
+ *
+ * Required permissions:
+ * - [SCENE_UNDERSTANDING_COARSE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE]
  */
 public class AugmentedImageDatabase {
 
     private val _entries: MutableList<AugmentedImageDatabaseEntry> = mutableListOf()
 
     /**
-     * @property entries The list of [AugmentedImageDatabaseEntry] objects currently in the database
+     * @property entries the list of [AugmentedImageDatabaseEntry] objects currently in the database
      */
     public val entries: List<AugmentedImageDatabaseEntry>
         get() = _entries.toList()
@@ -35,7 +43,7 @@ public class AugmentedImageDatabase {
     /**
      * Creates a copy of this [AugmentedImageDatabase]
      *
-     * @return A new [AugmentedImageDatabase] instance with the same entries
+     * @return a new [AugmentedImageDatabase] instance with the same entries
      */
     public fun copy(): AugmentedImageDatabase {
         val newDatabase = AugmentedImageDatabase()
@@ -57,17 +65,16 @@ public class AugmentedImageDatabase {
     }
 
     /**
-     * Creates a new augmented image database entry from a bitmap and adds it to the augmented image
-     * database
+     * Adds a bitmap to the database as a tracking target.
      *
-     * @param mode The mode used to detect the image
-     * @param bitmap The bitmap of the image in [android.graphics.Bitmap.Config.ARGB_8888] format
-     * @param widthInMeters The physical width of the image in meters. If zero, the physical width
+     * @param mode the mode used to detect the image
+     * @param bitmap the bitmap of the image in [android.graphics.Bitmap.Config.ARGB_8888] format
+     * @param widthInMeters the physical width of the image in meters. If zero, the physical width
      *   will be estimated if the device supports it. If physical size estimation is not supported,
      *   configuring the [Session] adding an entry with widthInMeters being 0f or lower will throw
      *   an [IllegalArgumentException]
-     * @return The zero-based positional index of the image within the database
-     * @throws IllegalArgumentException if the bitmap format is different from `ARGB_8888`
+     * @return the zero-based positional index of the image within the database
+     * @throws [IllegalArgumentException] if the bitmap format is different from `ARGB_8888`
      */
     @JvmOverloads
     public fun addAugmentedImageDatabaseEntry(
@@ -83,4 +90,11 @@ public class AugmentedImageDatabase {
         _entries.add(imageDatabaseEntry)
         return _entries.indexOf(imageDatabaseEntry)
     }
+
+    /**
+     * Returns a string representation of [AugmentedImageDatabase] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "AugmentedImageDatabase(entries=$entries)"
 }

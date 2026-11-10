@@ -31,14 +31,50 @@ import androidx.xr.arcore.testing.internal.FakeRuntimeRenderViewpoint
 import androidx.xr.arcore.testing.internal.PendingTrackablesProvider
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.PreviewSpatialApi
+import androidx.xr.runtime.ExperimentalSpatialAnnotationsApi
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 import org.junit.rules.ExternalResource
 
 /**
- * A JUnit Rule for creating a test environment for ARCore for Jetpack XR applications. This rule
- * allows you to write unit tests where you alter the state of the perception system.
+ * A JUnit `TestRule` that provides a way to simulate ARCore for Jetpack XR's perception of the real
+ * world, enabling you to write reliable and clean tests for ARCore for Jetpack XR applications
+ * without needing a physical device or emulator. You can control various aspects of the XR
+ * environment, such as the presence of planes, augmented objects, images, QR codes, the user's face
+ * or hands, etc.
+ *
+ * Writing effective ARCore for Jetpack XR tests involves the
+ * [kotlinx-coroutines-test](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/)
+ * library, namely `TestScopes` and `TestDispatchers`. Unit tests should typically execute within a
+ * [runTest](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/run-test.html)
+ * block and pass a
+ * [StandardTestDispatcher](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-standard-test-dispatcher.html)
+ * to the appropriate [androidx.xr.runtime.Session].
+ *
+ * Any changes to the simulated environment require coroutines to be executed to enable ARCore for
+ * Jetpack XR to consume the new information. To achieve this, follow any set of changes to your
+ * `ArCoreTestRule` trackables and tester objects with a call to
+ * [advanceUntilIdle()](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/advance-until-idle.html).
+ * This will execute the `TestDispatcher`'s queued coroutines until they complete or suspend, at
+ * which point the ARCore for Jetpack XR runtime will have consumed the data based on the state of
+ * the `ArCoreTestRule`. Further, any new coroutine that the test launches, whose results later test
+ * steps depend on (e.g. `Plane.subscribe`), should also be followed by `advanceUntilIdle()`. This
+ * will delay the test until the coroutine has completed or yields.
+ *
+ * Tests using `ArCoreTestRule` typically follow these phases:
+ * 1. **Environment Setup**: Configure the XR environment by setting properties on the
+ *    `ArCoreTestRule`. Follow any set of changes to the `ArCoreTestRule` values with a call to
+ *    `advanceUntilIdle()`.
+ * 2. **Action/Collection**: Perform actions that would trigger changes to ARCore for Jetpack XR's
+ *    perception system, such as launching coroutines (e.g., subscribing to `Trackable` objects) or
+ *    modifying the [androidx.xr.runtime.Session] configuration. For these actions, follow
+ *    immediately with a call to `advanceUntilIdle()` to ensure the changes are processed. If the
+ *    action is simply to read the state of static objects (like a hand or the device pose),
+ *    `advanceUntilIdle()` is not required.
+ * 3. **Assertion**: Check the state of ARCore for Jetpack XR objects (e.g., `Plane`,
+ *    `AugmentedImage`, `ArDevice`) to verify that the data was consumed and read correctly.
+ *
+ * @sample androidx.xr.arcore.samples.arCoreTestSamples
  */
 public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
 
@@ -48,6 +84,8 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
     private val _images: MutableList<TestAugmentedImage> = mutableListOf()
     private val _qrCodes: MutableList<TestQrCode> = mutableListOf()
     private val _faceMeshes: MutableList<TestFace> = mutableListOf()
+    @OptIn(ExperimentalSpatialAnnotationsApi::class)
+    private val _spatialAnnotations: MutableList<TestSpatialAnnotation> = mutableListOf()
 
     internal lateinit var runtime: FakePerceptionRuntime
         private set
@@ -106,6 +144,14 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     public val faces: List<TestFace>
         get() = _faceMeshes.toList()
+
+    /**
+     * A list of all [TestSpatialAnnotation] objects in the environment. Tracking must be configured
+     * via [androidx.xr.runtime.Session.configure] in order for an added object to be ingested by
+     * the runtime.
+     */
+    @ExperimentalSpatialAnnotationsApi
+    public fun getSpatialAnnotations(): List<TestSpatialAnnotation> = _spatialAnnotations.toList()
 
     /** A Map of [UUID] to `Anchor` [Poses][Pose] stored outside the session. */
     public val persistedAnchorPoses: Map<UUID, Pose>
@@ -213,7 +259,6 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
     /** A test representation of the device's Conversation Scene Signal. */
     @get:android.annotation.SuppressLint("ExperimentalPropertyAnnotation")
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @PreviewSpatialApi
     public val conversationSceneSignal: ConversationSceneSignalTester by lazy {
         ConversationSceneSignalTester(
             this,
@@ -230,6 +275,7 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
      *
      * @param trackables [TestTrackable] objects to add
      */
+    @OptIn(ExperimentalSpatialAnnotationsApi::class)
     public fun addTrackables(vararg trackables: TestTrackable) {
         trackables.forEach {
             if (it.isAddedToTestRule) return@forEach
@@ -249,6 +295,9 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
                 }
                 is TestQrCode -> {
                     _qrCodes.add(it)
+                }
+                is TestSpatialAnnotation -> {
+                    _spatialAnnotations.add(it)
                 }
             }
             pendingTrackables.add(it)

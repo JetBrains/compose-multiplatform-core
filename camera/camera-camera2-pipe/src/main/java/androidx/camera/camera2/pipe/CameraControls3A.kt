@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe
 
+import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.CameraGraph.Constants3A.DEFAULT_FRAME_LIMIT
@@ -46,8 +47,8 @@ public interface CameraControls3A {
      *   [CaptureRequest.CONTROL_AWB_MODE](https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#CONTROL_AWB_MODE).
      *   If `null`, the current AWB mode is not modified.
      * @param controlMode the desired overall mode of 3A. Corresponds to
-     *   [CaptureRequest.CONTROL_MODE](https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#CONTROL_MODE.
-     *   If `null`, the current flash mode is not modified.
+     *   [CaptureRequest.CONTROL_MODE](https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#CONTROL_MODE).
+     *   If `null`, the current control mode is not modified.
      * @param flashMode the desired flash mode. Corresponds to
      *   [CaptureRequest.FLASH_MODE](https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#FLASH_MODE).
      *   If `null`, the current flash mode is not modified.
@@ -127,7 +128,7 @@ public interface CameraControls3A {
     /**
      * Applies the given 3A parameters to the camera device but for only one frame.
      *
-     * @return the FrameNumber for which these parameters were applied.
+     * @return the CameraFrameNumber for which these parameters were applied.
      */
     public fun submit3A(
         aeMode: AeMode? = null,
@@ -149,8 +150,13 @@ public interface CameraControls3A {
      * AE mode after the torch control has been used. The [setTorchOff] or [update3A] method can be
      * used to restore the AE state to a previous value.
      *
-     * @return the FrameNumber at which the turn was fully turned on if switch was ON, or the
-     *   FrameNumber at which it was completely turned off when the switch was OFF.
+     * If the camera device does not have a flash unit (see
+     * [CameraCharacteristics.FLASH_INFO_AVAILABLE]), the torch cannot be turned on. In that case
+     * the returned [Deferred] completes immediately with [Result3A.Status.SUBMIT_FAILED] and the
+     * current 3A state, including the AE mode, is left unchanged.
+     *
+     * @return the CameraFrameNumber at which the torch was fully turned on if switch was ON, or the
+     *   CameraFrameNumber at which it was completely turned off when the switch was OFF.
      */
     public fun setTorchOn(): Deferred<Result3A>
 
@@ -159,8 +165,31 @@ public interface CameraControls3A {
      *
      * @param aeMode The [AeMode] to set while disabling the torch value. If null which is the
      *   default value, the current AE mode is used.
-     * @return the FrameNumber at which the turn was fully turned on if switch was ON, or the
-     *   FrameNumber at which it was completely turned off when the switch was OFF.
+     * @return the CameraFrameNumber at which the torch was fully turned on if switch was ON, or the
+     *   CameraFrameNumber at which it was completely turned off when the switch was OFF.
      */
     public fun setTorchOff(aeMode: AeMode? = null): Deferred<Result3A>
+
+    /**
+     * [CaptureRequest] keys related to 3A state machine and controls. These should ideally be not
+     * set directly on CameraGraph, and it is recommended to use the dedicated 3A methods to achieve
+     * the designed 3A.
+     */
+    public companion object {
+        public val REQUEST_3A_KEYS: Set<CaptureRequest.Key<*>> =
+            setOf(
+                CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.CONTROL_AF_MODE,
+                CaptureRequest.CONTROL_AWB_MODE,
+                CaptureRequest.CONTROL_MODE,
+                CaptureRequest.FLASH_MODE,
+                CaptureRequest.CONTROL_AE_REGIONS,
+                CaptureRequest.CONTROL_AF_REGIONS,
+                CaptureRequest.CONTROL_AF_TRIGGER,
+                CaptureRequest.CONTROL_AWB_REGIONS,
+                CaptureRequest.CONTROL_AE_LOCK,
+                CaptureRequest.CONTROL_AWB_LOCK,
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+            )
+    }
 }

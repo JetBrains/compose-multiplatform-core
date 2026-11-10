@@ -252,7 +252,7 @@ internal class ContentInViewNode(
                                 // TODO(b/239671493) Should this trigger nested scrolling?
                                 animationJob.cancel(
                                     "Scroll animation cancelled because scroll was not consumed " +
-                                        "($consumedScroll < $delta)"
+                                        "(|$consumedScroll| < |$delta|)"
                                 )
                             }
                         },
@@ -492,7 +492,8 @@ internal class ContentInViewNode(
     }
 }
 
-private val UnspecifiedIntSize = IntSize(-1, -1)
+private val UnspecifiedIntSize
+    get() = IntSize(-1, -1)
 
 private inline fun IntSize.takeOrElse(other: () -> IntSize) =
     if (this == UnspecifiedIntSize) other() else this

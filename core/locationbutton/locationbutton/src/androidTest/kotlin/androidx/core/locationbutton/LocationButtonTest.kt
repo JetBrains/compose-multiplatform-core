@@ -19,6 +19,7 @@ package androidx.core.locationbutton
 import android.app.permissionui.LocationButtonRequest
 import android.app.permissionui.LocationButtonSession
 import android.os.Build
+import android.os.LocaleList
 import android.view.View.MeasureSpec
 import android.widget.FrameLayout
 import androidx.core.locationbutton.testing.TestLocationButtonProvider
@@ -29,6 +30,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,14 +49,13 @@ public class LocationButtonTest {
 
     @Test
     public fun testLocationButtonIsRendered() {
-        val provider = TestLocationButtonProvider.create()
         lateinit var button: LocationButton
 
         activityRule.scenario.onActivity { activity ->
             button =
                 LocationButton(activity).apply {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
-                        setLocationButtonProvider(provider)
+                        setLocationButtonProvider(TestLocationButtonProvider.create())
                     }
                     activity.setContentView(this)
                 }
@@ -116,6 +117,71 @@ public class LocationButtonTest {
         assertThat(request.strokeColor).isEqualTo(android.graphics.Color.BLACK)
         assertThat(request.strokeWidth).isEqualTo(4)
         assertThat(request.textType).isEqualTo(LocationButton.TEXT_TYPE_USE_PRECISE_LOCATION)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.CINNAMON_BUN)
+    public fun testLocationButtonLocales_remoteSystemUI() {
+        val provider = TestLocationButtonProvider.create()
+        var button1: LocationButton? = null
+        var button2: LocationButton? = null
+
+        activityRule.scenario.onActivity { activity ->
+            val parent = android.widget.LinearLayout(activity)
+
+            button1 =
+                LocationButton(activity).apply {
+                    setLocationButtonProvider(provider)
+                    locales = LocaleList.forLanguageTags("en-US")
+                    parent.addView(this)
+                }
+
+            button2 =
+                LocationButton(activity).apply {
+                    setLocationButtonProvider(provider)
+                    locales = LocaleList.forLanguageTags("fr-CA")
+                    parent.addView(this)
+                }
+
+            activity.setContentView(parent)
+        }
+
+        instrumentation.waitForIdleSync()
+
+        assertThat(button1!!.isRemoteSessionActive).isTrue()
+        assertThat(button2!!.isRemoteSessionActive).isTrue()
+        assertThat(button1!!.locales).isEqualTo(LocaleList.forLanguageTags("en-US"))
+        assertThat(button2!!.locales).isEqualTo(LocaleList.forLanguageTags("fr-CA"))
+    }
+
+    @Test
+    public fun testLocationButtonLocales_localFallback() {
+        assumeTrue(Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN)
+        var button1: LocationButton? = null
+        var button2: LocationButton? = null
+
+        activityRule.scenario.onActivity { activity ->
+            val parent = android.widget.LinearLayout(activity)
+
+            button1 =
+                LocationButton(activity).apply {
+                    locales = LocaleList.forLanguageTags("en-US")
+                    parent.addView(this)
+                }
+
+            button2 =
+                LocationButton(activity).apply {
+                    locales = LocaleList.forLanguageTags("fr-CA")
+                    parent.addView(this)
+                }
+
+            activity.setContentView(parent)
+        }
+
+        instrumentation.waitForIdleSync()
+
+        assertThat(button1!!.locales).isEqualTo(LocaleList.forLanguageTags("en-US"))
+        assertThat(button2!!.locales).isEqualTo(LocaleList.forLanguageTags("fr-CA"))
     }
 
     @Test
@@ -239,7 +305,6 @@ public class LocationButtonTest {
             val button = LocationButton(activity)
 
             // Apply large padding to test clamping (Max 8dp)
-            val maxPaddingPx = (8 * activity.resources.displayMetrics.density).toInt()
             button.setPadding(100, 100, 100, 100)
 
             // Request EXACTLY 500dp width and EXACTLY 300dp height
@@ -286,6 +351,7 @@ public class LocationButtonTest {
             button.setStrokeWidth(4)
             button.setTextType(LocationButton.TEXT_TYPE_USE_PRECISE_LOCATION)
             button.setCompositionOrder(1)
+            button.locales = LocaleList.forLanguageTags("en-US,fr")
 
             assertThat(button).isNotNull()
         }
@@ -554,5 +620,45 @@ public class LocationButtonTest {
         assertThat(button.surfaceView).isNotNull()
         val compositionOrder = button.surfaceView!!.compositionOrder
         assertThat(compositionOrder).isEqualTo(LocationButton.DEFAULT_COMPOSITION_ORDER)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.CINNAMON_BUN)
+    public fun testLocationButtonCustomCompositionOrderIsPreserved() {
+        val provider = TestLocationButtonProvider.create()
+        lateinit var button: LocationButton
+
+        activityRule.scenario.onActivity { activity ->
+            button =
+                LocationButton(activity).apply {
+                    setLocationButtonProvider(provider)
+                    setCompositionOrder(2)
+                    activity.setContentView(this)
+                }
+        }
+
+        instrumentation.waitForIdleSync()
+
+        val surfaceView = checkNotNull(button.surfaceView)
+        val compositionOrder = surfaceView.compositionOrder
+        assertThat(compositionOrder).isEqualTo(2)
+    }
+
+    @Test
+    public fun testSafePaddingEnforcesMinimum() {
+        activityRule.scenario.onActivity { activity ->
+            val button = LocationButton(activity)
+
+            button.setPadding(0, 0, 0, 0)
+
+            val density = activity.resources.displayMetrics.density
+            val minPaddingPx = (4 * density).toInt()
+
+            // Padding MUST be clamped to minimum 4dp on all platforms
+            assertThat(button.safePaddingLeft).isEqualTo(minPaddingPx)
+            assertThat(button.safePaddingTop).isEqualTo(minPaddingPx)
+            assertThat(button.safePaddingRight).isEqualTo(minPaddingPx)
+            assertThat(button.safePaddingBottom).isEqualTo(minPaddingPx)
+        }
     }
 }

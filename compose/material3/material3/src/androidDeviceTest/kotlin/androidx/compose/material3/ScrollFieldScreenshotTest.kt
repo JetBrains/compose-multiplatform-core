@@ -18,18 +18,19 @@ package androidx.compose.material3
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,10 +38,9 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class ScrollFieldScreenshotTest() {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -56,6 +56,46 @@ class ScrollFieldScreenshotTest() {
         assertScrollFieldAgainstGolden("scrollField_darkTheme")
     }
 
+    @Test
+    fun scrollField_lightTheme_disabled() {
+        rule.setMaterialContent(lightColorScheme()) { TestContent(enabled = false) }
+        assertScrollFieldAgainstGolden("scrollField_lightTheme_disabled")
+    }
+
+    @Test
+    fun scrollField_darkTheme_disabled() {
+        rule.setMaterialContent(darkColorScheme()) { TestContent(enabled = false) }
+        assertScrollFieldAgainstGolden("scrollField_darkTheme_disabled")
+    }
+
+    @Test
+    fun scrollField_focused() {
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingThemeConfiguration
+            ) {
+                TestContent()
+            }
+        }
+        rule.onNodeWithTag(ScrollFieldTestTag).requestFocus()
+        assertScrollFieldAgainstGolden("scrollField_focused")
+    }
+
+    @Test
+    fun scrollField_lightTheme_focused_defaultIndication() {
+        rule.setMaterialContent(lightColorScheme()) { TestContent() }
+        rule.onNodeWithTag(ScrollFieldTestTag).requestFocus()
+        assertScrollFieldAgainstGolden("scrollField_lightTheme_focused_defaultIndication")
+    }
+
+    @Test
+    fun scrollField_darkTheme_focused_defaultIndication() {
+        rule.setMaterialContent(darkColorScheme()) { TestContent() }
+        rule.onNodeWithTag(ScrollFieldTestTag).requestFocus()
+        assertScrollFieldAgainstGolden("scrollField_darkTheme_focused_defaultIndication")
+    }
+
     private fun assertScrollFieldAgainstGolden(goldenIdentifier: String) {
         rule
             .onNodeWithTag(ScrollFieldTestTag)
@@ -65,9 +105,8 @@ class ScrollFieldScreenshotTest() {
 
     private val ScrollFieldTestTag = "scrollField"
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
-    private fun TestContent() {
+    private fun TestContent(enabled: Boolean = true) {
         val itemCount = 100
         // The hoisted state ensures the Pager starts exactly at our 'index'
         // for a deterministic screenshot.
@@ -75,8 +114,10 @@ class ScrollFieldScreenshotTest() {
 
         ScrollField(
             state = state,
+            enabled = enabled,
+            contentDescription = null,
             // Since this is a static screenshot, a no-op is appropriate.
-            modifier = Modifier.size(width = 80.dp, height = 160.dp).testTag(ScrollFieldTestTag),
+            modifier = Modifier.size(width = 100.dp, height = 120.dp).testTag(ScrollFieldTestTag),
         )
     }
 }

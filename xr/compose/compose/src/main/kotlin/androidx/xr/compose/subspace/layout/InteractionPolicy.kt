@@ -27,13 +27,14 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InputEvent.Action
 import androidx.xr.scenecore.InteractableComponent
+import androidx.xr.scenecore.PixelDensity
 import androidx.xr.scenecore.scene
 import java.util.function.Consumer
-import kotlin.hashCode
 
 /**
- * Defines the interaction policy for a spatial object. This policy enables reacting to a user's
- * spatial inputs.
+ * Defines the [InteractionPolicy] for a spatial object. This policy enables reacting to a
+ * [SpatialInputEvent] from the user. An [InteractionPolicy] will not propagate to children, for
+ * example, an attached [androidx.xr.compose.spatial.Orbiter].
  */
 public interface InteractionPolicy {
     /**
@@ -101,7 +102,6 @@ private class InteractableElement(
 
 internal class InteractableNode(
     var enabled: Boolean,
-    var onClick: (() -> Unit)? = null,
     var onInputEvent: ((SpatialInputEvent) -> Unit)? = null,
 ) :
     SubspaceModifier.Node(),
@@ -114,6 +114,9 @@ internal class InteractableNode(
     private inline val session: Session
         get() = checkNotNull(currentValueOf(LocalSession)) { "Interactable requires a Session." }
 
+    private inline val pixelDensity: PixelDensity
+        get() = session.scene.virtualPixelDensity
+
     private var component: InteractableComponent? = null
 
     override fun CoreEntityScope.modifyCoreEntity() {
@@ -125,6 +128,8 @@ internal class InteractableNode(
         super.onAttach()
         updateState()
     }
+
+    private var isIgnoringCurrentActionSequence = false
 
     override fun onDetach() {
         if (component != null) {
@@ -166,22 +171,42 @@ internal class InteractableNode(
     }
 
     override fun accept(event: InputEvent) {
-        val localizedHitPosition =
-            event.hitInfoList.firstOrNull()?.let { hitInfo ->
-                val hitPosition = hitInfo.hitPosition
-                if (hitPosition != null) {
-                    session.scene.activitySpace
-                        .transformPoseTo(Pose(translation = hitPosition), hitInfo.inputEntity)
-                        .convertMetersToPixels(density)
-                        .translation
-                } else {
-                    null
-                }
-            }
+        val hitInfo = event.hitInfoList.firstOrNull()
 
-        if (event.action == Action.UP && localizedHitPosition != null) {
-            onClick?.invoke()
+        // The first entity in hitInfoList will always be the Entity from which the start of the
+        // action sequence originated. If this doesn't match the CoreEntity of the component, we can
+        // ignore the rest of the action sequence as this means the interaction originated from a
+        // child.
+        if (event.action == Action.DOWN || event.action == Action.HOVER_ENTER) {
+            isIgnoringCurrentActionSequence =
+                !coreEntity.isUnderlyingEntityEqualTo(hitInfo?.inputEntity)
         }
+        if (isIgnoringCurrentActionSequence) {
+            if (
+                event.action == Action.UP ||
+                    event.action == Action.CANCEL ||
+                    event.action == Action.HOVER_EXIT
+            ) {
+                isIgnoringCurrentActionSequence = false
+            }
+            return
+        }
+
+        // Edge case where an input event is received after the Composable is destroyed. Can occur
+        // if a previous input event initiated the disposal of the Composable.
+        if (hitInfo?.inputEntity?.isDisposed == true) {
+            return
+        }
+
+        // Events that stop hitting an interactable object (hitInfo != null) will have a null hit
+        // position.
+        val localizedHitPosition =
+            hitInfo?.hitPosition?.let { hitPosition ->
+                session.scene.activitySpace
+                    .transformPoseTo(Pose(translation = hitPosition), hitInfo.inputEntity)
+                    .metersToPx(pixelDensity)
+                    .translation
+            }
 
         onInputEvent?.invoke(
             SpatialInputEvent(
@@ -190,8 +215,8 @@ internal class InteractableNode(
                 pointerType = event.pointerType,
                 timestamp = event.timestamp,
                 hitPosition = localizedHitPosition,
-                origin = event.origin.convertMetersToPixels(density),
-                direction = event.direction.convertMetersToPixels(density),
+                origin = event.origin.metersToPx(pixelDensity),
+                direction = event.direction.metersToPx(pixelDensity),
             )
         )
     }

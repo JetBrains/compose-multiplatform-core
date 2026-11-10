@@ -67,6 +67,8 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.SpatialApiVersionHelper
+import androidx.xr.runtime.SpatialApiVersions
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
@@ -87,7 +89,6 @@ import java.nio.file.Paths
 import kotlinx.coroutines.launch
 
 private const val TAG = "JXR-SurfaceEntity-SurfaceEntityImageActivity"
-private const val MAX_CORNER_RADIUS = 0.5f
 
 object VideoButtonColors {
     val StandardPlayback = Color(0xFF42A5F5) // Blue 400
@@ -115,6 +116,14 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     private var alphaMaskTexture: Texture? = null
     private var movieParent: Entity? = null
 
+    // Hoisted out of the controls UI so resizing the canvas can clamp them.
+    private var cornerRadius by mutableFloatStateOf(0.0f)
+    private var maxCornerRadius by mutableFloatStateOf(0.0f)
+
+    // The extents the Quad canvas was last sized to, so switching away from and back to a Quad
+    // restores the size instead of collapsing to a unit square.
+    private var quadExtents = FloatSize2d(1.0f, 1.0f)
+
     // This is a custom move listener which moves the movieParent instead of the surfaceEntity
     // directly. This allows for the SurfaceEntity to be independently rotated without impacting
     // the player controls which are attached to the movieParent.
@@ -129,7 +138,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 check(entity == surfaceEntity) {
                     "Listener should only be attached to surfaceEntity."
                 }
-                var curParentPose = movieParent!!.getPose()
+                val curParentPose = movieParent!!.getPose()
                 // Apply the currentPose to the movieParent to move the surfaceEntity.
                 movieParent?.setPose(curParentPose.compose(currentPose))
             }
@@ -189,6 +198,19 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // The content must be installed before the Session is created. Creating a Session
+        // registers this Activity's window as an XR "window leash", and the platform reads
+        // Window.peekDecorView() without a null check when a compositor transform update
+        // arrives, which crashes the process if no content view has been set yet. The content
+        // renders nothing until the Session is ready.
+        // See b/562983987.
+        val sessionState = mutableStateOf<Pair<Session, ArDevice>?>(null)
+        setContent {
+            sessionState.value?.let { (session, arDevice) ->
+                HelloWorld(session, arDevice, activity)
+            }
+        }
+
         lifecycleScope.launch {
             val sessionResult = Session.create(context = this@SurfaceEntityImageActivity)
             if (sessionResult is SessionCreateSuccess) {
@@ -219,7 +241,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                     )
 
                 alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
-                setContent { HelloWorld(session, arDevice, activity) }
+                sessionState.value = session to arDevice
             } else {
                 finish()
             }
@@ -332,6 +354,20 @@ class SurfaceEntityImageActivity : ComponentActivity() {
 
         currentImageSize = null
         currentVideoRotationDegrees = 0
+        cornerRadius = 0.0f
+        maxCornerRadius = 0.0f
+        quadExtents = FloatSize2d(1.0f, 1.0f)
+    }
+
+    // Shape.Quad throws if cornerRadius exceeds half the smaller extent, so clamp on every resize.
+    private fun setQuadShape(extents: FloatSize2d) {
+        quadExtents = extents
+        maxCornerRadius = maxOf(0.0f, minOf(extents.width, extents.height) / 2.0f)
+        cornerRadius = cornerRadius.coerceIn(0.0f, maxCornerRadius)
+        surfaceEntity!!.shape = SurfaceEntity.Shape.Quad(extents, cornerRadius)
+        // Keep the resize affordance on top of the canvas. Synced here, after the shape is
+        // applied, so every caller gets it and dimensions already reflect the new extents.
+        movableComponent?.size = surfaceEntity!!.dimensions
     }
 
     fun getCanvasAspectRatio(
@@ -378,6 +414,21 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         return view
     }
 
+    /**
+     * Checks if the runtime supports rounded corners on [SurfaceEntity.Shape.Quad], which require
+     * Spatial API [SpatialApiVersions.SPATIAL_API_V4], either as a stable API or as a preview API
+     * on top of [SpatialApiVersions.SPATIAL_API_V3]. The latter is what the Aura emulator ADS
+     * release reports.
+     */
+    private fun isCornerRadiusSupported(): Boolean {
+        val apiVersion = SpatialApiVersionHelper.spatialApiVersion
+        return apiVersion >= SpatialApiVersions.SPATIAL_API_V4 ||
+            (apiVersion == SpatialApiVersions.SPATIAL_API_V3 &&
+                SpatialApiVersionHelper.previewSpatialApiVersion ==
+                    SpatialApiVersions.SPATIAL_API_V4)
+    }
+
+    @Suppress("DEPRECATION")
     @Composable
     fun VideoPlayerControls(session: Session, arDevice: ArDevice) {
         var featherRadiusX by remember { mutableFloatStateOf(0.0f) }
@@ -385,7 +436,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         var isQuadShape by remember {
             mutableStateOf(surfaceEntity?.shape is SurfaceEntity.Shape.Quad)
         }
-        var cornerRadius by remember { mutableFloatStateOf(0.0f) }
+        val isCornerRadiusSupported = remember { isCornerRadiusSupported() }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -424,27 +475,34 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                     )
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Corner Radius", fontSize = 10.sp, color = Color.White)
-                Slider(
-                    value = cornerRadius,
-                    onValueChange = {
-                        cornerRadius = it
-                        val currentShape = surfaceEntity!!.shape
-                        if (currentShape is SurfaceEntity.Shape.Quad) {
-                            surfaceEntity!!.shape =
-                                SurfaceEntity.Shape.Quad(currentShape.extents, cornerRadius)
-                        }
-                    },
-                    valueRange = 0.0f..MAX_CORNER_RADIUS,
-                    enabled = isQuadShape,
-                )
+            // Rounded corners need Spatial API v4, so hide the control outright rather than
+            // showing a slider that can never do anything on this device.
+            if (isCornerRadiusSupported) {
+                val cornerRadiusEnabled = isQuadShape && maxCornerRadius > 0.0f
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Corner Radius",
+                        fontSize = 10.sp,
+                        color = if (cornerRadiusEnabled) Color.White else Color.Gray,
+                    )
+                    Slider(
+                        value = cornerRadius,
+                        onValueChange = {
+                            val currentShape = surfaceEntity!!.shape
+                            if (currentShape is SurfaceEntity.Shape.Quad) {
+                                cornerRadius = it
+                                setQuadShape(currentShape.extents)
+                            }
+                        },
+                        valueRange = 0.0f..maxCornerRadius,
+                        enabled = cornerRadiusEnabled,
+                    )
+                }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Button(
                     onClick = {
-                        surfaceEntity!!.shape =
-                            SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f), cornerRadius)
+                        setQuadShape(quadExtents)
                         isQuadShape = true
                         // Move the Quad-shaped canvas to a spot in front of the User.
                         surfaceEntity!!.setPose(
@@ -505,20 +563,19 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 currentImageSize!!.height,
                 currentPixelAspectRatio,
             )
+        // Track the size the current image wants even while a non-Quad shape is active, so
+        // switching back to a Quad restores it.
+        quadExtents = FloatSize2d(newShapeDimensions.width, newShapeDimensions.height)
         if (surfaceEntity!!.shape is SurfaceEntity.Shape.Quad) {
-            surfaceEntity!!.shape =
-                SurfaceEntity.Shape.Quad(
-                    FloatSize2d(newShapeDimensions.width, newShapeDimensions.height)
-                )
-            movableComponent?.size = surfaceEntity!!.dimensions
+            setQuadShape(quadExtents)
         }
 
         var controlOffsetY: Float = 0.0f
         var controlOffsetZ: Float = 0.0f
 
-        var rotation =
+        val rotation =
             Quaternion.fromAxisAngle(Vector3.Forward, currentVideoRotationDegrees.toFloat())
-        var newPose = surfaceEntity!!.getPose().compose(Pose(Vector3.Zero, rotation))
+        val newPose = surfaceEntity!!.getPose().compose(Pose(Vector3.Zero, rotation))
         surfaceEntity!!.setPose(newPose)
         controlPanelEntity!!.parent = movieParent!!
 

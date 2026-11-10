@@ -33,7 +33,6 @@ import androidx.camera.camera2.pipe.Converge3ABehavior
 import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
@@ -50,6 +49,7 @@ import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
 import androidx.camera.camera2.pipe.internal.GraphSessionLock
+import androidx.camera.common.CameraFrameNumber
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
@@ -132,7 +132,7 @@ constructor(
     override val graphState: StateFlow<GraphState>
         get() = graphProcessor.graphState
 
-    override val latestFrameNumber: Flow<FrameNumber>
+    override val latestFrameNumber: Flow<CameraFrameNumber>
         get() = callbackFlow {
             val listener = LatestFrameNumberListener { trySend(it) }
             listeners.add(listener)
@@ -309,18 +309,21 @@ constructor(
         lockedTimeLimitNs: Long,
     ): Deferred<Result3A> = withSessionLockAsync {
         controller3A.lock3A(
-            aeRegions,
-            afRegions,
-            awbRegions,
-            aeLockBehavior,
-            afLockBehavior,
-            awbLockBehavior,
-            afTriggerStartAeMode,
-            convergedCondition,
-            lockedCondition,
-            frameLimit,
-            convergedTimeLimitNs,
-            lockedTimeLimitNs,
+            aeMode = aeMode,
+            afMode = afMode,
+            awbMode = awbMode,
+            aeRegions = aeRegions,
+            afRegions = afRegions,
+            awbRegions = awbRegions,
+            aeLockBehavior = aeLockBehavior,
+            afLockBehavior = afLockBehavior,
+            awbLockBehavior = awbLockBehavior,
+            afTriggerStartAeMode = afTriggerStartAeMode,
+            convergedCondition = convergedCondition,
+            lockedCondition = lockedCondition,
+            frameLimit = frameLimit,
+            convergedTimeLimitNs = convergedTimeLimitNs,
+            lockedTimeLimitNs = lockedTimeLimitNs,
         )
     }
 
@@ -354,14 +357,7 @@ constructor(
     override fun toString(): String = id.toString()
 
     private fun createSessionFromToken(token: Token) =
-        CameraGraphSessionImpl(
-            token,
-            graphProcessor,
-            controller3A,
-            frameCaptureQueue,
-            parameters,
-            listeners,
-        )
+        CameraGraphSessionImpl(token, graphProcessor, controller3A, parameters, listeners)
 
     /**
      * Acquires a [GraphSessionLock] token and executes the given code block. The code block(s) will

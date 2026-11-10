@@ -25,12 +25,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertIsEqualTo
-import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -47,12 +49,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.matchers.MSSIMMatcher
+import androidx.xr.glimmer.testutils.assertGlimmerSurfaceShape
 import androidx.xr.glimmer.testutils.captureToImage
 import androidx.xr.glimmer.testutils.createGlimmerRule
 import androidx.xr.glimmer.testutils.toIntArray
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,7 +64,8 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class IconButtonTest {
 
-    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0)
+    val rule = createComposeRule(config = ComposeUiTestConfig(inputMode = InputMode.Keyboard))
     @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
@@ -136,28 +139,55 @@ class IconButtonTest {
         val expectedShape = RoundedCornerShape(42.dp)
         val expectedColor = Color.Red
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             IconButton(
                 onClick = {},
                 shape = expectedShape,
                 color = expectedColor,
                 modifier = Modifier.testTag("icon_button"),
-                border = null,
             ) {
                 Box(Modifier.size(100.dp))
             }
         }
 
-        rule
-            .onNodeWithTag("icon_button")
-            .captureToImage()
-            .assertShape(
-                density = rule.density,
+        val image = rule.onNodeWithTag("icon_button").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = Color.Black,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(expectedColor)
+    }
+
+    @Test
+    fun containerShapeAndColorWhenFocused() {
+        val expectedShape = RoundedCornerShape(42.dp)
+        val expectedColor = Color.Red
+        var expectedSurfaceColor: Color? = null
+
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = false) {
+            expectedSurfaceColor = SurfaceDefaults.focusedColor(expectedColor)
+            IconButton(
+                onClick = {},
                 shape = expectedShape,
-                shapeColor = expectedColor,
-                backgroundColor = Color.Black,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
-            )
+                color = expectedColor,
+                modifier = Modifier.testTag("icon_button"),
+            ) {
+                Box(Modifier.size(100.dp))
+            }
+        }
+
+        rule.waitForIdle()
+
+        val image = rule.onNodeWithTag("icon_button").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = Color.Black,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(expectedSurfaceColor)
     }
 
     @Test

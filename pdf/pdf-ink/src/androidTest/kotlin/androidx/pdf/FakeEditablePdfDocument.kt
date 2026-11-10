@@ -84,6 +84,12 @@ internal open class FakeEditablePdfDocument(
 
     internal var editHistory: MutableList<FormEditInfo> = mutableListOf()
 
+    /**
+     * If set, [applyEdits] will throw a [PdfEditApplyException] when it reaches this operation
+     * index.
+     */
+    internal var failAtIndex: Int? = null
+
     // Store annotations keyed by Page Number
     private val edits = mutableMapOf<Int, MutableList<KeyedPdfAnnotation>>()
 
@@ -113,6 +119,7 @@ internal open class FakeEditablePdfDocument(
         } ?: emptyList()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
         return null
     }
@@ -135,10 +142,14 @@ internal open class FakeEditablePdfDocument(
         return emptyList()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
         val results = mutableListOf<String>()
 
-        for (operation in editsDraft.operations) {
+        editsDraft.operations.forEachIndexed { index, operation ->
+            if (index == failAtIndex) {
+                throw PdfEditApplyException(index, results, Exception("Simulated failure"))
+            }
             when (operation) {
                 is InsertDraftEditOperation -> {
                     val id = UUID.randomUUID().toString()
@@ -149,13 +160,11 @@ internal open class FakeEditablePdfDocument(
                 is UpdateDraftEditOperation -> {
                     val pageNum = operation.annotation.pageNum
                     val pageEdits = edits[pageNum]
-                    val index = pageEdits?.indexOfFirst { it.key == operation.id } ?: -1
-                    if (index != -1) {
-                        pageEdits!![index] = KeyedPdfAnnotation(operation.id, operation.annotation)
+                    val indexInPage = pageEdits?.indexOfFirst { it.key == operation.id } ?: -1
+                    if (indexInPage != -1) {
+                        pageEdits!![indexInPage] =
+                            KeyedPdfAnnotation(operation.id, operation.annotation)
                         results.add(operation.id)
-                    } else {
-                        // Simulate failure or ignore if not found in fake
-                        // Real service might throw, but fake can be lenient or throw
                     }
                 }
                 is RemoveDraftEditOperation -> {
@@ -299,6 +308,7 @@ internal open class FakeEditablePdfDocument(
         override fun close() {}
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun addOnEditAppliedListener(
         executor: Executor,
         listener: PdfDocument.OnEditAppliedListener,
@@ -306,8 +316,14 @@ internal open class FakeEditablePdfDocument(
         TODO("Not yet implemented")
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun removeOnEditAppliedListener(listener: PdfDocument.OnEditAppliedListener) {
         TODO("Not yet implemented")
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    override suspend fun addPageObject(pageNum: Int, newObject: PdfObject): String {
+        return "fake_embedded_object_${System.currentTimeMillis()}"
     }
 
     override fun addOnPdfContentInvalidatedListener(

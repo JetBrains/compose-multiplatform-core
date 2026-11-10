@@ -33,7 +33,6 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -51,8 +50,8 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DEPRECATION")
+@OptIn(ExperimentalCoroutinesApi::class)
 class AugmentedImageTest {
     @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
 
@@ -95,7 +94,7 @@ class AugmentedImageTest {
             advanceUntilIdle()
 
             var underTest = emptyList<AugmentedImage>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 AugmentedImage.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()
@@ -119,7 +118,7 @@ class AugmentedImageTest {
             advanceUntilIdle()
 
             var underTest = emptyList<AugmentedImage>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 AugmentedImage.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()
@@ -138,18 +137,17 @@ class AugmentedImageTest {
         runTest(testDispatcher) {
             val testImage = TestAugmentedImage(0)
             arCoreTestRule.addTrackables(testImage)
-
-            advanceUntilIdle()
-
             var underTest = emptyList<AugmentedImage>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 AugmentedImage.subscribe(session).collect { underTest = it.toList() }
             }
-
-            activityController.pause()
+            // Gather the augmented images.
             advanceUntilIdle()
+
+            assertThat(underTest).isNotEmpty()
+
             session.configure(Config.Builder().setAugmentedImageDatabase(null).build())
-            activityController.resume()
+            // Propagate the effects of configure().
             advanceUntilIdle()
 
             assertThat(underTest.single().state.value.trackingState)
@@ -165,7 +163,7 @@ class AugmentedImageTest {
             advanceUntilIdle()
 
             var underTest = emptyList<AugmentedImage>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 AugmentedImage.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()
@@ -188,7 +186,7 @@ class AugmentedImageTest {
             advanceUntilIdle()
 
             var underTest = emptyList<AugmentedImage>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 AugmentedImage.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()
@@ -211,7 +209,7 @@ class AugmentedImageTest {
             advanceUntilIdle()
 
             var underTest = emptyList<AugmentedImage>()
-            testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            testScope.launch() {
                 AugmentedImage.subscribe(session).collect { underTest = it.toList() }
             }
             advanceUntilIdle()

@@ -16,12 +16,15 @@
 
 package androidx.ink.strokes
 
+import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.geometry.BoxAccumulator
 import androidx.ink.geometry.MeshFormat
 import androidx.ink.geometry.MutableVec
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointer
 import kotlin.jvm.JvmOverloads
 
@@ -44,10 +47,13 @@ import kotlin.jvm.JvmOverloads
  * 6. For best performance, reuse this object and go back to step 1 rather than allocating a new
  *    instance.
  */
+@OptIn(InkInternalOnlyApi::class, ExperimentalInkAnimationApi::class)
 public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
 
     /** A handle to the underlying native [InProgressStroke] object. */
-    internal val nativePointer: Long by NativePointer(nativeAlloc, InProgressStrokeNative::free)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
+    public val nativePointer: Long by NativePointer(nativeAlloc, InProgressStrokeNative::free)
 
     public constructor() : this(InProgressStrokeNative::create)
 
@@ -61,16 +67,22 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
      * Incremented when the stroke is changed, to know if data obtained from the other functions on
      * this class is still accurate. This can be used for cache invalidation.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public var version: Long = 0L
-        private set
+    internal var version: Long = 0L
+
+    /**
+     * Returns the current version of the in progress stroke.
+     *
+     * This internal API is used for cache invalidation in the renderer.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
+    public fun getVersion(): Long = version
 
     /**
      * Clears the in progress stroke without starting a new one.
      *
      * This includes clearing or resetting any existing inputs, mesh data, and updated region.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun clear() {
         InProgressStrokeNative.clear(nativePointer)
         this.brush = null
@@ -86,7 +98,9 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
      * [enqueueInputs] or [updateShape].
      */
     @JvmOverloads
-    public fun start(brush: Brush, noiseSeed: Int = 0): Unit = start(brush, noiseSeed, 0.0f)
+    public fun start(brush: Brush, noiseSeed: Int = 0) {
+        start(brush, noiseSeed, 0.0f)
+    }
 
     /**
      * Clears and starts a new stroke with the given [brush], using the given per-stroke seed value
@@ -98,6 +112,7 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
      * [enqueueInputs] or [updateShape].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkAnimationApi
     public fun start(brush: Brush, noiseSeed: Int, baseAnimationPhase: Float) {
         InProgressStrokeNative.start(
             nativePointer,
@@ -153,8 +168,9 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
      * [changesWithTime] returns false. Until that condition is met, keep calling [updateShape]
      * periodically and rendering the result.
      */
-    public fun finishInput(): Unit =
+    public fun finishInput() {
         InProgressStrokeNative.finishInput(nativePointer).also { version++ }
+    }
 
     /**
      * Updates the stroke geometry up to the given duration since the start of the stroke. This will
@@ -237,8 +253,7 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
         }
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toImmutableWithUnusedAttributesPruned(): Stroke {
+    internal fun toImmutableWithUnusedAttributesPruned(): Stroke {
         return Stroke.wrapNative(requireNotNull(brush)) {
             InProgressStrokeNative.newStrokeFromPrunedCopy(nativePointer)
         }
@@ -297,6 +312,17 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
     }
 
     /**
+     * Returns the [0, 1) value that will determine the stroke's overall animation progress at some
+     * arbitrary zero clock state, so that different strokes can be animated correctly relative to
+     * each other.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkAnimationApi
+    @FloatRange(from = 0.0, to = 1.0, toInclusive = false)
+    public fun getBaseAnimationPhase(): Float =
+        InProgressStrokeNative.getBaseAnimationPhase(nativePointer)
+
+    /**
      * Returns the number of `BrushCoats` for the current brush, or zero if [start] has not been
      * called.
      */
@@ -343,7 +369,9 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
     }
 
     /** Call after making use of a value from [populateUpdatedRegion] to reset the accumulation. */
-    public fun resetUpdatedRegion(): Unit = InProgressStrokeNative.resetUpdatedRegion(nativePointer)
+    public fun resetUpdatedRegion() {
+        InProgressStrokeNative.resetUpdatedRegion(nativePointer)
+    }
 
     /**
      * Returns the number of outlines for the specified brush coat.
@@ -436,7 +464,8 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
      *   (exclusive) for the same [coatIndex] and [partitionIndex].
      * @param outPosition the pre-allocated [MutableVec] to be filled with the result.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public fun populatePosition(
         @IntRange(from = 0) coatIndex: Int,
         @IntRange(from = 0) partitionIndex: Int,
@@ -462,7 +491,8 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
     // native InProgressStroke manages the memory for its meshes.
 
     /** Returns the number of individual meshes in the specified brush coat of this stroke. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public fun getMeshPartitionCount(@IntRange(from = 0) coatIndex: Int): Int {
         require(coatIndex >= 0 && coatIndex < getBrushCoatCount()) {
             "coatIndex=$coatIndex must be between 0 and brushCoatCount=${getBrushCoatCount()}"
@@ -474,7 +504,8 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
      * Gets the number of vertices in the mesh from the mesh at [partitionIndex] for brush coat
      * [coatIndex] which must be less than that coat's [getMeshPartitionCount].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public fun getVertexCount(@IntRange(from = 0) coatIndex: Int, partitionIndex: Int): Int {
         require(partitionIndex >= 0 && partitionIndex < getMeshPartitionCount(coatIndex)) {
             "Cannot get vertex count at partitionIndex $partitionIndex out of range " +
@@ -487,7 +518,8 @@ public class InProgressStroke private constructor(nativeAlloc: () -> Long) {
      * Gets the [MeshFormat] for brush coat [coatIndex] which must be between 0 and
      * [getBrushCoatCount].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public fun getMeshFormat(@IntRange(from = 0) coatIndex: Int): MeshFormat {
         require(coatIndex >= 0 && coatIndex < getBrushCoatCount()) {
             "Cannot get mesh format at coatIndex $coatIndex out of range [0, ${getBrushCoatCount()})."
@@ -547,6 +579,8 @@ internal expect object InProgressStrokeNative {
     )
 
     fun getAndOverwriteInput(nativePointer: Long, input: StrokeInput, index: Int)
+
+    fun getBaseAnimationPhase(nativePointer: Long): Float
 
     fun getBrushCoatCount(nativePointer: Long): Int
 

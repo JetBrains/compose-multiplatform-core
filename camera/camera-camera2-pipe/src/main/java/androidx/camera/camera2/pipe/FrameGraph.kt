@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe
 
 import androidx.annotation.RestrictTo
+import androidx.camera.common.UnsafeWrapper
 
 /** [FrameGraph] extends the capabilities of [CameraGraph] to provide stream controls. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -29,7 +30,7 @@ public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, CameraControl
     ) {
         init {
             val cameraGraphCount = cameraGraphConfigs.graphConfigs.size
-            val frameGraphCount = cameraGraphConfigs.graphConfigs.size
+            val frameGraphCount = frameGraphConfigs.size
 
             require(frameGraphCount == cameraGraphCount) {
                 "Invalid FrameGraph.ConcurrentConfig! Expected $cameraGraphCount configs, but " +
@@ -65,7 +66,7 @@ public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, CameraControl
 
     /**
      * Add the set of [streamIds] and [parameters] to the current repeating request, updating and
-     * submitting a new repeating repeating request as needed.
+     * submitting a new repeating request as needed.
      *
      * Returns a buffer with [capacity] that will accumulate and cycle Frames that are produced by
      * the FrameGraph that have the attached [streamIds] and [parameters] until closed.
@@ -93,10 +94,28 @@ public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, CameraControl
      * short-lived state updates, or for interactive capture sequences that must not be altered.
      * (Flash photo sequences, for example).
      *
-     * While this object is thread-safe, it should not shared or held for long periods of time.
+     * While this object is thread-safe, it should not be shared or held for long periods of time.
      * Example: A [Session] should *not* be held during video recording.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public interface Session : CameraGraph.Session
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public interface Session : CameraGraph.Session {
+        /**
+         * Submit the [Request] to the camera, and aggregate the results into a [FrameCapture],
+         * which can be used to wait for the [Frame] to start using [FrameCapture.awaitFrame].
+         *
+         * The [FrameCapture] **must** be closed, or it will result in a memory leak.
+         */
+        public fun capture(request: Request): FrameCapture
+
+        /**
+         * Submit the [Request]s to the camera, and aggregate the results into a list of
+         * [FrameCapture]s, which can be used to wait for the associated [Frame] using
+         * [FrameCapture.awaitFrame].
+         *
+         * Each [FrameCapture] **must** be closed, or it will result in a memory leak.
+         */
+        public fun capture(requests: List<Request>): List<FrameCapture>
+    }
 
     public companion object {
         private const val DEFAULT_FRAME_BUFFER_CAPACITY = 1

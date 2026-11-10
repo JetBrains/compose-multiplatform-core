@@ -27,13 +27,14 @@ import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.CaptureSequences.invokeOnRequest
 import androidx.camera.camera2.pipe.FrameMetadata
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.GraphState.GraphStateError
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.common.CameraFrameNumber
+import androidx.camera.common.Metadata
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.test.TestScope
 
@@ -53,6 +54,7 @@ internal constructor(
     private val fakeImageSources: FakeImageSources,
     private val realCameraGraph: CameraGraph,
     public val config: CameraGraph.Config,
+    private val testThreadScope: TestThreadScope? = null,
 ) : CameraGraph by realCameraGraph, AutoCloseable, CameraSimulator {
 
     @Deprecated("CameraGraphSimulator directly implements CameraGraph")
@@ -103,7 +105,7 @@ internal constructor(
 
     init {
         check(config.camera == cameraMetadata.camera) {
-            "CameraGraphSimulator must be creating with a camera id that matches the provided " +
+            "CameraGraphSimulator must be created with a camera id that matches the provided " +
                 "cameraMetadata! Received ${config.camera}, but expected " +
                 "${cameraMetadata.camera}"
         }
@@ -166,9 +168,7 @@ internal constructor(
     }
 
     override fun initializeSurfaces() {
-        check(!closed.value) {
-            "Cannot call simulateFakeSurfaceConfiguration on $this after close."
-        }
+        check(!closed.value) { "Cannot call initializeSurfaces on $this after close." }
         for (stream in streams.streams) {
             if (externalSurfaces.contains(stream.id)) {
                 // This stream is configured with an external Surface. Skip.
@@ -197,11 +197,40 @@ internal constructor(
         }
     }
 
-    override fun simulateNextFrame(advanceClockByNanos: Long): FrameSimulator =
-        generateNextFrame().also {
-            val clockNanos = frameClockNanos.addAndGet(advanceClockByNanos)
-            it.simulateStarted(clockNanos)
+    override fun simulateNextFrame(
+        advanceClockByNanos: Long,
+        advanceBarrier: Boolean,
+    ): FrameSimulator {
+        val clockNanos = frameClockNanos.addAndGet(advanceClockByNanos)
+        if (advanceBarrier) testThreadScope?.advanceTimeBy(advanceClockByNanos.nanoseconds)
+        return generateNextFrame().also { it.simulateStarted(clockNanos) }
+    }
+
+    override fun simulateAndCompleteNextFrame(
+        resultMetadata: Map<CaptureResult.Key<*>, Any?>,
+        physicalCameraIds: Set<CameraId>,
+        hardwareBuffers: Map<OutputId, HardwareBuffer>,
+        advanceClockByNanos: Long,
+    ): FrameSimulator {
+        val frame = simulateNextFrame(advanceClockByNanos = advanceClockByNanos)
+        for (streamId in frame.request.streams) {
+            val stream = checkNotNull(streams[streamId])
+            if (stream.outputs.size > 1) {
+                val outputIds =
+                    stream.outputs
+                        .filter { physicalCameraIds.contains(it.camera) }
+                        .map { it.id }
+                        .toSet()
+                frame.simulateExpectedOutputs(streamId, outputIds = outputIds)
+            }
         }
+        frame.simulateImages(
+            physicalCameraIds = physicalCameraIds,
+            hardwareBuffers = hardwareBuffers,
+        )
+        frame.simulateComplete(resultMetadata)
+        return frame
+    }
 
     private fun generateNextFrame(): FrameSimulator {
         val captureSequenceProcessor = cameraController.currentCaptureSequenceProcessor
@@ -344,7 +373,8 @@ internal constructor(
     ) {
         private val requestMetadata = requestSequence.requestMetadata[request]!!
 
-        public val frameNumber: FrameNumber = FrameNumber(frameCounter.incrementAndGet())
+        public val frameNumber: CameraFrameNumber =
+            CameraFrameNumber(frameCounter.incrementAndGet())
         public var timestampNanos: Long? = null
 
         public fun simulateStarted(timestampNanos: Long) {
@@ -521,7 +551,7 @@ internal constructor(
         ): FakeFrameMetadata =
             FakeFrameMetadata(
                 camera = cameraMetadata.camera,
-                frameNumber = frameNumber,
+                frameNumber = CameraFrameNumber(frameNumber.value),
                 resultMetadata = resultMetadata.toMap(),
                 extraResultMetadata = extraResultMetadata.toMap(),
                 extraMetadata = extraMetadata.toMap(),

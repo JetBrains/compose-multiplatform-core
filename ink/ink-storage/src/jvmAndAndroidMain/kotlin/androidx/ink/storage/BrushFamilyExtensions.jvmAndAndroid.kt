@@ -21,7 +21,9 @@ package androidx.ink.storage
 
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.BrushFamily
+import androidx.ink.brush.ExperimentalInkBrushCompatibilityApi
 import androidx.ink.brush.Version
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 import java.io.IOException
@@ -79,10 +81,13 @@ public fun BrushFamily.Companion.decode(
  * [BrushFamily].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkBrushCompatibilityApi
 public fun List<BrushFamily>.encodeMultiple(
     output: OutputStream,
     textureIdToPngBytes: TexturePngBytesLookup? = null,
-): Unit = GZIPOutputStream(output).use { it.write(encodeMultipleUncompressed(textureIdToPngBytes)) }
+) {
+    GZIPOutputStream(output).use { it.write(encodeMultipleUncompressed(textureIdToPngBytes)) }
+}
 
 /**
  * Read a serialized [BrushFamily] from the given [InputStream] and parse it into a [List] of
@@ -102,6 +107,7 @@ public fun List<BrushFamily>.encodeMultiple(
  *   message, or any of the corresponding [BrushFamily]s are invalid.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkBrushCompatibilityApi
 @Throws(IOException::class)
 public fun BrushFamily.Companion.decodeMultiple(
     input: InputStream,
@@ -130,7 +136,9 @@ public object BrushFamilySerialization {
         brushFamily: BrushFamily,
         output: OutputStream,
         textureIdToPngBytes: TexturePngBytesLookup? = null,
-    ): Unit = brushFamily.encode(output, textureIdToPngBytes)
+    ) {
+        brushFamily.encode(output, textureIdToPngBytes)
+    }
 
     /**
      * Write a gzip-compressed serialized `ink.proto.BrushFamily` proto message representing the
@@ -222,6 +230,7 @@ public object BrushFamilySerialization {
      * [BrushFamily].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @JvmStatic
     @JvmOverloads
     @Throws(IOException::class)
@@ -229,7 +238,9 @@ public object BrushFamilySerialization {
         brushFamilies: List<BrushFamily>,
         output: OutputStream,
         textureIdToPngBytes: TexturePngBytesLookup? = null,
-    ): Unit = brushFamilies.encodeMultiple(output, textureIdToPngBytes)
+    ) {
+        brushFamilies.encodeMultiple(output, textureIdToPngBytes)
+    }
 
     /**
      * Write a gzip-compressed serialized `ink.proto.BrushFamily` proto message representing the
@@ -244,6 +255,7 @@ public object BrushFamilySerialization {
      * [BrushFamily].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @JvmStatic
     @JvmOverloads
     @Throws(IOException::class)
@@ -271,6 +283,7 @@ public object BrushFamilySerialization {
      *   proto message, or any of the corresponding [BrushFamily]s are invalid.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @JvmStatic
     @JvmOverloads
     @Throws(IOException::class)
@@ -282,6 +295,7 @@ public object BrushFamilySerialization {
 
     /** See [decodeMultiple] above. This overload uses [Version.MAX_SUPPORTED]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @JvmStatic
     @Throws(IOException::class)
     public fun decodeMultiple(
@@ -308,6 +322,7 @@ public object BrushFamilySerialization {
      *   proto message, or any of the corresponding [BrushFamily]s are invalid.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @JvmStatic
     @JvmOverloads
     @Throws(IOException::class)
@@ -319,6 +334,7 @@ public object BrushFamilySerialization {
 
     /** See [decodeMultiple] above. This overload uses [Version.MAX_SUPPORTED]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkBrushCompatibilityApi
     @JvmStatic
     @Throws(IOException::class)
     public fun decodeMultiple(
@@ -328,6 +344,7 @@ public object BrushFamilySerialization {
 }
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object BrushFamilySerializationNative {
     init {
         NativeLoader.load()
@@ -392,6 +409,7 @@ actual internal object BrushFamilySerializationNative {
 }
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object MultipleBrushFamiliesNative {
     init {
         NativeLoader.load()

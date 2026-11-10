@@ -49,9 +49,10 @@ internal class RemoteColumnNode : RemoteComposeNode() {
     var layoutDirection: LayoutDirection = LayoutDirection.Ltr
 
     override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
-        val recordingModifier = creationState.toRecordingModifier(modifier)
+        val scope = overriddenScope(creationState)
+        val recordingModifier = scope.toRecordingModifier(modifier)
         (verticalArrangement as? RemoteSpaced)?.let {
-            recordingModifier.spacedBy(it.space.getFloatIdForCreationState(creationState))
+            recordingModifier.spacedBy(it.getSpacingFloatId(creationState))
         }
         creationState.document.startColumn(
             recordingModifier,
@@ -69,6 +70,8 @@ internal class RemoteColumnNode : RemoteComposeNode() {
  * `RemoteColumn` allows you to arrange children vertically and control their [verticalArrangement]
  * (spacing) and [horizontalAlignment].
  *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteColumnSample
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteColumnWeightSample
  * @param modifier The modifier to be applied to this column.
  * @param verticalArrangement The vertical arrangement of the children.
  * @param horizontalAlignment The horizontal alignment of the children.

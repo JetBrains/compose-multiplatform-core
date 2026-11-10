@@ -16,56 +16,27 @@
 
 package androidx.ink.brush
 
-import androidx.ink.brush.behavior.DampingNode
-import androidx.ink.brush.behavior.EasingFunction
 import androidx.ink.brush.behavior.OutOfRange
-import androidx.ink.brush.behavior.ProgressDomain
-import androidx.ink.brush.behavior.ResponseNode
 import androidx.ink.brush.behavior.SourceNode
 import androidx.ink.brush.behavior.SourceNode.Source
 import androidx.ink.brush.behavior.TargetNode
 import androidx.ink.brush.behavior.TargetNode.Target
-import androidx.ink.brush.behavior.ToolTypeFilterNode
+import androidx.ink.brush.samples.createPressureToSizeBehavior
 import androidx.ink.geometry.Angle
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.testing.awaitNativePointerCleanupAfter
 import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
+@OptIn(InkInternalOnlyApi::class)
 class BrushTipTest {
-    private val customBehavior =
-        BrushBehavior(
-            TargetNode(
-                target = Target.HEIGHT_MULTIPLIER,
-                targetModifierRangeStart = 1.1f,
-                targetModifierRangeEnd = 1.7f,
-                input =
-                    DampingNode(
-                        dampingSource = ProgressDomain.TIME_IN_SECONDS,
-                        dampingGap = 0.001f,
-                        input =
-                            ResponseNode(
-                                responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
-                                input =
-                                    ToolTypeFilterNode(
-                                        enabledToolTypes = setOf(InputToolType.STYLUS),
-                                        input =
-                                            SourceNode(
-                                                source = Source.TILT_IN_RADIANS,
-                                                sourceValueRangeStart = 0.2f,
-                                                sourceValueRangeEnd = .8f,
-                                                sourceOutOfRangeBehavior = OutOfRange.MIRROR,
-                                            ),
-                                    ),
-                            ),
-                    ),
-            )
-        )
+    private val customBehavior = createPressureToSizeBehavior()
 
     @Test
     fun brushTipNativePointers_cleanedUpWhenOutOfScope() {
         awaitNativePointerCleanupAfter {
-            val unused = BrushTip(behaviors = listOf(customBehavior))
+            @Suppress("UNUSED_VARIABLE") val unused = BrushTip(behaviors = listOf(customBehavior))
         }
     }
 
@@ -385,5 +356,34 @@ class BrushTipTest {
                     behaviors = listOf(customBehavior),
                 )
             )
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun calculateMinimumRequiredVersion_returnsExpectedValue() {
+        assertThat(BrushTip().calculateMinimumRequiredVersion()).isEqualTo(Version.V0)
+        assertThat(
+                BrushTip(
+                        behaviors =
+                            listOf(
+                                BrushBehavior(
+                                    TargetNode(
+                                        target = Target.HUE_OFFSET_IN_RADIANS,
+                                        targetModifierRangeStart = 0f,
+                                        targetModifierRangeEnd = 1f,
+                                        input =
+                                            SourceNode(
+                                                source = Source.TIME_SINCE_STROKE_END_IN_SECONDS,
+                                                sourceValueRangeStart = 0f,
+                                                sourceValueRangeEnd = 1f,
+                                                sourceOutOfRangeBehavior = OutOfRange.CLAMP,
+                                            ),
+                                    )
+                                )
+                            )
+                    )
+                    .calculateMinimumRequiredVersion()
+            )
+            .isEqualTo(Version.V1)
     }
 }

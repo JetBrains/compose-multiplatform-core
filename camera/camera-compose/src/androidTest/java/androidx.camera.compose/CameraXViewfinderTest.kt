@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.compose
 
 import android.content.Context
@@ -27,6 +29,7 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.AndroidUtil
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
@@ -57,7 +60,6 @@ import androidx.concurrent.futures.await
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
@@ -77,11 +79,12 @@ import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assume
+import org.junit.Assume.assumeFalse
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -94,7 +97,15 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
-    @get:Rule val composeTest = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTest = createComposeRule()
+
+    @Before
+    fun setUp() {
+        assumeFalse(
+            "CameraXViewfinder tests are flaky on API 24 emulator (b/552066686, b/538633901)",
+            AndroidUtil.isEmulator(24),
+        )
+    }
 
     @Test
     fun viewfinderIsDisplayed_withValidSurfaceRequest() = runViewfinderTest {
@@ -254,7 +265,6 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
         assertThat(newSurfaceRequest).isNotNull()
     }
 
-    @SdkSuppress(minSdkVersion = 24) // b/441562610
     @Test
     fun movableContentOf_recoversAfterMove() = runViewfinderTest {
         val moveViewfinderContent = mutableStateOf(false)
@@ -459,7 +469,6 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 24)
     fun cameraxViewfinder_pinchToZoom_triggersCallback() = runViewfinderTest {
         var latestZoomRatio = 1f
         composeTest.setContent {
@@ -501,7 +510,7 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
         composeTest.setContent {
             val currentSurfaceRequest: SurfaceRequest? by surfaceRequests.collectAsState()
             val context = LocalContext.current
-            val window = (context as? android.app.Activity)?.window
+            (context as? android.app.Activity)?.window
             currentSurfaceRequest?.let { surfaceRequest ->
                 CameraXViewfinder(
                     surfaceRequest = surfaceRequest,
@@ -558,17 +567,16 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
                         .build()
 
                 val surfaceRequests = MutableStateFlow<SurfaceRequest?>(null)
-                val resetPreviewSurfaceProvider =
-                    suspend {
-                            withContext(Dispatchers.Main) {
-                                // Reset the surface provider to a new lambda that will continue to
-                                // publish to surfaceRequests
-                                preview.setSurfaceProvider { surfaceRequest ->
-                                    surfaceRequests.value = surfaceRequest
-                                }
-                            }
+                val resetPreviewSurfaceProvider = suspend {
+                    withContext(Dispatchers.Main) {
+                        // Reset the surface provider to a new lambda that will continue to
+                        // publish to surfaceRequests
+                        preview.setSurfaceProvider { surfaceRequest ->
+                            surfaceRequests.value = surfaceRequest
                         }
-                        .also { it.invoke() }
+                    }
+                }
+                    .also { it.invoke() }
 
                 val startCamera = suspend {
                     withContext(Dispatchers.Main) {

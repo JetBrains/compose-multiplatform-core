@@ -51,9 +51,9 @@ import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.movable
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.size
-import androidx.xr.compose.subspace.layout.transformingMovable
-import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
@@ -103,8 +103,8 @@ class HelloArObjectActivity : ComponentActivity() {
                             SpatialPanel(
                                 modifier =
                                     SubspaceModifier.size(DpVolumeSize(640.dp, 480.dp, 0.dp))
-                                        .transformingMovable()
-                                        .transformingResizable()
+                                        .movable()
+                                        .resizable()
                             ) {
                                 HelloObjects(session)
                             }
@@ -148,41 +148,40 @@ class HelloArObjectActivity : ComponentActivity() {
             AugmentedObject.subscribe(session).collect { objects ->
                 for (augmentedObject in objects) {
                     if (!objectJobs.contains(augmentedObject)) {
-                        objectJobs[augmentedObject] =
-                            lifecycleScope.launch {
-                                augmentedObject.state.collect { state ->
-                                    updateModelForObject(augmentedObject, state)
-                                    objectEntitiesMap[augmentedObject]?.let { entity ->
-                                        when (state.trackingState) {
-                                            TrackingState.TRACKING -> {
-                                                entity.setAlpha(TRACKED_ALPHA)
-                                            }
-                                            TrackingState.PAUSED -> {
-                                                entity.setAlpha(PAUSED_ALPHA)
-                                            }
-                                            TrackingState.STOPPED -> {
-                                                objectJobs[augmentedObject]!!.cancel()
-                                                objectJobs.remove(augmentedObject)
-                                                return@collect
-                                            }
+                        objectJobs[augmentedObject] = lifecycleScope.launch {
+                            augmentedObject.state.collect { state ->
+                                updateModelForObject(augmentedObject, state)
+                                objectEntitiesMap[augmentedObject]?.let { entity ->
+                                    when (state.trackingState) {
+                                        TrackingState.TRACKING -> {
+                                            entity.setAlpha(TRACKED_ALPHA)
                                         }
-                                        entity.setPose(
-                                            session.scene.perceptionSpace.transformPoseTo(
-                                                state.centerPose,
-                                                session.scene.activitySpace,
-                                            )
-                                        )
-                                        @SuppressLint("RestrictedApiAndroidX")
-                                        entity.setScale(
-                                            Vector3(
-                                                state.extents.width,
-                                                state.extents.height,
-                                                state.extents.depth,
-                                            )
-                                        )
+                                        TrackingState.PAUSED -> {
+                                            entity.setAlpha(PAUSED_ALPHA)
+                                        }
+                                        TrackingState.STOPPED -> {
+                                            objectJobs[augmentedObject]!!.cancel()
+                                            objectJobs.remove(augmentedObject)
+                                            return@collect
+                                        }
                                     }
+                                    entity.setPose(
+                                        session.scene.perceptionSpace.transformPoseTo(
+                                            state.centerPose,
+                                            session.scene.activitySpace,
+                                        )
+                                    )
+                                    @SuppressLint("RestrictedApiAndroidX")
+                                    entity.setScale(
+                                        Vector3(
+                                            state.extents.width,
+                                            state.extents.height,
+                                            state.extents.depth,
+                                        )
+                                    )
                                 }
                             }
+                        }
                     }
                 }
             }
@@ -214,14 +213,17 @@ class HelloArObjectActivity : ComponentActivity() {
                 }
             },
         ) { innerPadding ->
+            // Note that this logic needs to handle races between the ComposeUI and the perception
+            // stack. Sometimes under load this can collect CoreState events which don't include
+            // perceptionState.
             val state by session.state.collectAsStateWithLifecycle()
             Column(modifier = Modifier.padding(innerPadding).background(color = Color.White)) {
                 Text(text = "CoreState: ${state.timeMark}")
                 TrackablesList(
-                    state.perceptionState!!
-                        .trackableStates
-                        .filterIsInstance<AugmentedObject.State>()
-                        .map { it.owner }
+                    state.perceptionState
+                        ?.trackableStates
+                        ?.filterIsInstance<AugmentedObject.State>()
+                        ?.map { it.owner } ?: emptyList()
                 )
             }
         }

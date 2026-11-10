@@ -32,8 +32,11 @@ import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocum
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.RemoteFloat.Companion.createNamedRemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteFloat.Companion.createNamedRemoteFloatExpression
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Size
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
@@ -44,6 +47,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -58,7 +62,7 @@ class RemoteFloatTest {
             useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
         }
     val applicationContext = ApplicationProvider.getApplicationContext<Context>()
-    val time = RemoteFloat.createNamedRemoteFloat("time", 100f).createReference()
+    val time = createNamedRemoteFloat("time", 100f).createReference()
     val JUN_06_2025_UTC =
         RemoteLong(
             LocalDateTime.parse("2025-06-06T01:02:03")
@@ -393,8 +397,7 @@ class RemoteFloatTest {
 
     @Test
     fun toRemoteIntRoundTripRounding_dynamic() {
-        val result =
-            RemoteFloat.createNamedRemoteFloat("testValue", -3.9f).toRemoteInt().toRemoteFloat()
+        val result = createNamedRemoteFloat("testValue", -3.9f).toRemoteInt().toRemoteFloat()
         val resultId = result.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -431,7 +434,7 @@ class RemoteFloatTest {
                     .hasConstantValue
             )
             .isFalse()
-        assertThat(RemoteFloat.createNamedRemoteFloat("value", 1f).hasConstantValue).isFalse()
+        assertThat(createNamedRemoteFloat("value", 1f).hasConstantValue).isFalse()
         assertThat(
                 RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
                     .toRemoteString(DecimalFormat("#0.00"))
@@ -755,7 +758,7 @@ class RemoteFloatTest {
 
     @Test
     fun namedRemoteFloat_initialValue() {
-        val namedRemoteFloat = RemoteFloat.createNamedRemoteFloat("testFloat", 100.0f)
+        val namedRemoteFloat = createNamedRemoteFloat("testFloat", 100.0f)
         val result = namedRemoteFloat * RemoteFloat(10f)
         val resultId = result.getIdForCreationState(creationState)
 
@@ -766,7 +769,7 @@ class RemoteFloatTest {
 
     @Test
     fun namedRemoteFloat_overriddenValue() {
-        val namedRemoteFloat = RemoteFloat.createNamedRemoteFloat("testFloat", 100.0f)
+        val namedRemoteFloat = createNamedRemoteFloat("testFloat", 100.0f)
         val result = namedRemoteFloat * RemoteFloat(10f)
         val resultId = result.getIdForCreationState(creationState)
 
@@ -777,7 +780,7 @@ class RemoteFloatTest {
 
     @Test
     fun namedRemoteFloat_overriddenValue2() {
-        val namedRemoteFloat = RemoteFloat.createNamedRemoteFloat("testFloat", 100f)
+        val namedRemoteFloat = createNamedRemoteFloat("testFloat", 100f)
         val plusOne = namedRemoteFloat + RemoteFloat(1f)
         val result = plusOne * plusOne
         val resultId = result.getIdForCreationState(creationState)
@@ -790,9 +793,7 @@ class RemoteFloatTest {
     @Test
     fun namedRemoteFloatExpression_smokeTest() {
         val namedExpr =
-            RemoteFloat.createNamedRemoteFloatExpression("testExpr") {
-                RemoteFloat(10f) + RemoteFloat(5f)
-            }
+            createNamedRemoteFloatExpression("testExpr") { RemoteFloat(10f) + RemoteFloat(5f) }
         val result = namedExpr * RemoteFloat(2f)
         val resultId = result.getIdForCreationState(creationState)
 
@@ -841,7 +842,7 @@ class RemoteFloatTest {
         // This test checks that when we create a very long expression, we don't just
         // inline everything. The MAX_SAFE_FLOAT_ARRAY is 30, so we create an expression
         // that would be much larger than that if inlined.
-        var longExpression = RemoteFloat.createNamedRemoteFloat("test", 1f)
+        var longExpression = createNamedRemoteFloat("test", 1f)
         for (i in 0..50) {
             longExpression += RemoteFloat(i.toFloat())
         }
@@ -890,12 +891,115 @@ class RemoteFloatTest {
         testTextFromFloat("0.50", 0.5f.rf, DecimalFormat("#,##0.00;(#,##0.00)"))
         testTextFromFloat("(0.50)", (-0.5f).rf, DecimalFormat("#,##0.00;(#,##0.00)"))
         testTextFromFloat("(50,000.50)", (-50000.50001f).rf, DecimalFormat("#,##0.00;(#,##0.00)"))
-        testTextFromFloat("5000000.0", 5000000.rf, DecimalFormat("#0.##"))
+        testTextFromFloat("5000000", 5000000.rf, DecimalFormat("#0.##"))
         testTextFromFloat("050", 50f.rf, DecimalFormat("000"))
 
         //        val indianFormatter = DecimalFormat.getNumberInstance(Locale("hi", "IN")) as
         // DecimalFormat
         //        testTextFromFloat("50,00,000.0", 5000000.rf, indianFormatter)
+    }
+
+    @Test
+    fun textFromFloat_decimalFormat_zeroHash_constantAndNamed() {
+        val formatOptional = DecimalFormat("0.######") // min 0, max 6
+        val formatFixed = DecimalFormat("0.00") // min 2, max 2
+
+        // Constants
+        val c5_0 = RemoteFloat(5.0f).toRemoteString(formatOptional)
+        val c5_1 = RemoteFloat(5.1f).toRemoteString(formatOptional)
+        val c5_12 = RemoteFloat(5.12f).toRemoteString(formatOptional)
+        val c5_123 = RemoteFloat(5.123f).toRemoteString(formatOptional)
+        val c5_1234 = RemoteFloat(5.1234f).toRemoteString(formatOptional)
+
+        // Named (dynamic)
+        val n5_0 = createNamedRemoteFloat("n5_0", 5.0f).toRemoteString(formatOptional)
+        val n5_1 = createNamedRemoteFloat("n5_1", 5.1f).toRemoteString(formatOptional)
+        val n5_12 = createNamedRemoteFloat("n5_12", 5.12f).toRemoteString(formatOptional)
+        val n5_123 = createNamedRemoteFloat("n5_123", 5.123f).toRemoteString(formatOptional)
+        val n5_1234 = createNamedRemoteFloat("n5_1234", 5.1234f).toRemoteString(formatOptional)
+
+        // Constants
+        val c5_0_fixed = RemoteFloat(5.0f).toRemoteString(formatFixed)
+        val c5_1_fixed = RemoteFloat(5.1f).toRemoteString(formatFixed)
+        val c5_123_fixed = RemoteFloat(5.123f).toRemoteString(formatFixed)
+
+        // Named (dynamic)
+        val n5_0_fixed = createNamedRemoteFloat("n5_0_fixed", 5.0f).toRemoteString(formatFixed)
+        val n5_1_fixed = createNamedRemoteFloat("n5_1_fixed", 5.1f).toRemoteString(formatFixed)
+        val n5_123_fixed =
+            createNamedRemoteFloat("n5_123_fixed", 5.123f).toRemoteString(formatFixed)
+
+        // Get IDs
+        val c5_0_id = c5_0.getIdForCreationState(creationState)
+        val c5_1_id = c5_1.getIdForCreationState(creationState)
+        val c5_12_id = c5_12.getIdForCreationState(creationState)
+        val c5_123_id = c5_123.getIdForCreationState(creationState)
+        val c5_1234_id = c5_1234.getIdForCreationState(creationState)
+
+        val n5_0_id = n5_0.getIdForCreationState(creationState)
+        val n5_1_id = n5_1.getIdForCreationState(creationState)
+        val n5_12_id = n5_12.getIdForCreationState(creationState)
+        val n5_123_id = n5_123.getIdForCreationState(creationState)
+        val n5_1234_id = n5_1234.getIdForCreationState(creationState)
+
+        val c5_0_fixed_id = c5_0_fixed.getIdForCreationState(creationState)
+        val c5_1_fixed_id = c5_1_fixed.getIdForCreationState(creationState)
+        val c5_123_fixed_id = c5_123_fixed.getIdForCreationState(creationState)
+
+        val n5_0_fixed_id = n5_0_fixed.getIdForCreationState(creationState)
+        val n5_1_fixed_id = n5_1_fixed.getIdForCreationState(creationState)
+        val n5_123_fixed_id = n5_123_fixed.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        // Assert optional fraction digits
+        assertThat(context.getText(c5_0_id)).isEqualTo("5")
+        assertThat(context.getText(c5_1_id)).isEqualTo("5.1")
+        assertThat(context.getText(c5_12_id)).isEqualTo("5.12")
+        assertThat(context.getText(c5_123_id)).isEqualTo("5.123")
+        assertThat(context.getText(c5_1234_id)).isEqualTo("5.1234")
+
+        assertThat(context.getText(n5_0_id)).isEqualTo("5")
+        assertThat(context.getText(n5_1_id)).isEqualTo("5.1")
+        assertThat(context.getText(n5_12_id)).isEqualTo("5.12")
+        assertThat(context.getText(n5_123_id)).isEqualTo("5.123")
+        assertThat(context.getText(n5_1234_id)).isEqualTo("5.1234")
+
+        // Assert fixed fraction digits (should keep/pad zeros and round)
+        assertThat(context.getText(c5_0_fixed_id)).isEqualTo("5.00")
+        assertThat(context.getText(c5_1_fixed_id)).isEqualTo("5.10")
+        assertThat(context.getText(c5_123_fixed_id)).isEqualTo("5.12")
+
+        assertThat(context.getText(n5_0_fixed_id)).isEqualTo("5.00")
+        assertThat(context.getText(n5_1_fixed_id)).isEqualTo("5.10")
+        assertThat(context.getText(n5_123_fixed_id)).isEqualTo("5.12")
+    }
+
+    @Test
+    fun textFromFloat_precisionError_formattedAsInteger() {
+        val formatOptional = DecimalFormat("0.######") // min 0, max 6
+
+        // Simulate a value that should be 9.0 but has a tiny precision error (9.000001)
+        val n9_error = createNamedRemoteFloat("n9_error", 9.000001f).toRemoteString(formatOptional)
+        val n9_error_id = n9_error.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        // With tolerance, this should be recognized as an integer and formatted as "9"
+        assertThat(context.getText(n9_error_id)).isEqualTo("9")
+    }
+
+    @Test
+    fun textFromFloat_closeToNextInteger_formattedCorrectly() {
+        val formatOptional = DecimalFormat("0.######")
+        // Value close to 10.0
+        val n9_999999 =
+            createNamedRemoteFloat("n9_999999", 9.999999f).toRemoteString(formatOptional)
+        val n9_999999_id = n9_999999.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getText(n9_999999_id)).isEqualTo("10")
     }
 
     @Test
@@ -1001,11 +1105,298 @@ class RemoteFloatTest {
     }
 
     @Test
+    fun animateRemoteFloat_defaultParameters_generatesAnimationInDocument() {
+        val rf = RemoteFloat(10f).createReference(forceRemote = true)
+        val animated = animateRemoteFloat(rf, duration = 1f, type = CUBIC_STANDARD)
+
+        assertThat(animated).isInstanceOf(AnimatedRemoteFloat::class.java)
+        val animatedId = animated.getIdForCreationState(creationState)
+
+        val coreDoc =
+            CoreDocument().apply {
+                val buffer = creationState.document.buffer
+                buffer.buffer.index = 0
+                initFromBuffer(buffer)
+            }
+
+        val floatExpr =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == animatedId }
+        assertThat(floatExpr.mSrcAnimation).isNotNull()
+        assertThat(floatExpr.mSrcAnimation!!.isNotEmpty()).isTrue()
+        assertThat(floatExpr.mFloatAnimation).isNotNull()
+        assertThat(floatExpr.mFloatAnimation!!.duration).isEqualTo(1.0f)
+        assertThat(floatExpr.mFloatAnimation!!.type).isEqualTo(CUBIC_STANDARD)
+    }
+
+    @Test
+    fun animateRemoteFloat_onPreAllocatedRemoteFloatExpression_preservesAnimation() {
+        val seconds = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+        val source = floor(seconds % 4f.rf).toRemoteInt()
+        val targetAngle = (source.toRemoteFloat()) * 90f.rf
+        val angle = animateRemoteFloat(targetAngle, duration = 1.0f, type = CUBIC_STANDARD)
+
+        val angleId = angle.getIdForCreationState(creationState)
+
+        val coreDoc =
+            CoreDocument().apply {
+                val buffer = creationState.document.buffer
+                buffer.buffer.index = 0
+                initFromBuffer(buffer)
+            }
+
+        val floatExpr =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == angleId }
+        assertThat(floatExpr.mSrcAnimation).isNotNull()
+        assertThat(floatExpr.mSrcAnimation!!.isNotEmpty()).isTrue()
+        assertThat(floatExpr.mFloatAnimation).isNotNull()
+        assertThat(floatExpr.mFloatAnimation!!.duration).isEqualTo(1.0f)
+        assertThat(floatExpr.mFloatAnimation!!.type).isEqualTo(CUBIC_STANDARD)
+    }
+
+    @Test
+    fun animateRemoteFloat_onAlreadyWrittenRemoteFloatExpression_preservesAnimation() {
+        val seconds = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+        val source = floor(seconds % 4f.rf).toRemoteInt()
+        val targetAngle = (source.toRemoteFloat()) * 90f.rf
+
+        // Write targetAngle to document first as an un-animated expression
+        val targetAngleId = targetAngle.getIdForCreationState(creationState)
+
+        // Now animate targetAngle
+        val angle = animateRemoteFloat(targetAngle, duration = 1.0f, type = CUBIC_STANDARD)
+        val angleId = angle.getIdForCreationState(creationState)
+
+        val coreDoc =
+            CoreDocument().apply {
+                val buffer = creationState.document.buffer
+                buffer.buffer.index = 0
+                initFromBuffer(buffer)
+            }
+
+        val targetExpr =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == targetAngleId }
+        assertThat(targetExpr.mFloatAnimation).isNull()
+
+        val angleExpr =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == angleId }
+        assertThat(angleExpr.mSrcAnimation).isNotNull()
+        assertThat(angleExpr.mFloatAnimation).isNotNull()
+        assertThat(angleExpr.mFloatAnimation!!.duration).isEqualTo(1.0f)
+        assertThat(angleExpr.mFloatAnimation!!.type).isEqualTo(CUBIC_STANDARD)
+    }
+
+    @Test
+    fun animateRemoteFloat_deduplication_sameAnimationAndExpression() {
+        val rf = RemoteFloat(10f).createReference(forceRemote = true)
+        val anim1 = animateRemoteFloat(rf, duration = 1.0f, type = CUBIC_STANDARD)
+        val anim2 = animateRemoteFloat(rf, duration = 1.0f, type = CUBIC_STANDARD)
+
+        val id1 = anim1.getIdForCreationState(creationState)
+        val id2 = anim2.getIdForCreationState(creationState)
+
+        assertThat(id1).isEqualTo(id2)
+    }
+
+    @Test
+    fun animateRemoteFloat_doesNotDeduplicateWithUnanimatedExpression() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) * 2f
+        val animated = animateRemoteFloat(expr, duration = 1.0f, type = CUBIC_STANDARD)
+
+        val exprId = expr.getIdForCreationState(creationState)
+        val animatedId = animated.getIdForCreationState(creationState)
+
+        assertThat(animatedId).isNotEqualTo(exprId)
+
+        val coreDoc =
+            CoreDocument().apply {
+                val buffer = creationState.document.buffer
+                buffer.buffer.index = 0
+                initFromBuffer(buffer)
+            }
+
+        val exprOp =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == exprId }
+        val animOp =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == animatedId }
+
+        assertThat(exprOp.mFloatAnimation).isNull()
+        assertThat(animOp.mFloatAnimation).isNotNull()
+    }
+
+    @Test
+    fun animateRemoteFloat_onMutableRemoteFloat_preservesAnimation() {
+        val mutableFloat = MutableRemoteFloat(5f)
+        val animated = animateRemoteFloat(mutableFloat, duration = 1.0f, type = CUBIC_STANDARD)
+        val mutableId = mutableFloat.getIdForCreationState(creationState)
+        val animatedId = animated.getIdForCreationState(creationState)
+
+        assertThat(animatedId).isNotEqualTo(mutableId)
+
+        val coreDoc =
+            CoreDocument().apply {
+                val buffer = creationState.document.buffer
+                buffer.buffer.index = 0
+                initFromBuffer(buffer)
+            }
+
+        val animOp =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == animatedId }
+        assertThat(animOp.mFloatAnimation).isNotNull()
+        assertThat(animOp.mFloatAnimation!!.duration).isEqualTo(1.0f)
+    }
+
+    @Test
+    fun animateRemoteFloatAsState_withTween() {
+        val rf = RemoteFloat(10f).createReference(forceRemote = true)
+        val animated =
+            animateRemoteFloatAsState(
+                targetValue = rf,
+                animationSpec = remoteTween(durationMillis = 500, easing = RemoteEasing.Decelerate),
+            )
+
+        assertThat(animated).isInstanceOf(AnimatedRemoteFloat::class.java)
+        val animatedId = animated.getIdForCreationState(creationState)
+
+        val coreDoc =
+            CoreDocument().apply {
+                val buffer = creationState.document.buffer
+                buffer.buffer.index = 0
+                initFromBuffer(buffer)
+            }
+
+        val floatExpr =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == animatedId }
+        assertThat(floatExpr.mFloatAnimation).isNotNull()
+        assertThat(floatExpr.mFloatAnimation!!.duration).isEqualTo(0.5f)
+        assertThat(floatExpr.mFloatAnimation!!.type).isEqualTo(CUBIC_DECELERATE)
+    }
+
+    @Test
+    fun animateRemoteFloatAsState_withSpring() {
+        val rf = RemoteFloat(10f).createReference(forceRemote = true)
+        val animated =
+            animateRemoteFloatAsState(
+                targetValue = rf,
+                animationSpec = remoteSpring(stiffness = 100f, dampingRatio = 0.8f),
+            )
+
+        assertThat(animated).isInstanceOf(AnimatedRemoteFloat::class.java)
+        val animatedId = animated.getIdForCreationState(creationState)
+
+        val coreDoc =
+            CoreDocument().apply {
+                val buffer = creationState.document.buffer
+                buffer.buffer.index = 0
+                initFromBuffer(buffer)
+            }
+
+        val floatExpr =
+            coreDoc.operations.filterIsInstance<FloatExpression>().first { it.mId == animatedId }
+        assertThat(floatExpr.mSrcAnimation).isNotNull()
+        assertThat(floatExpr.mSrcAnimation!![0]).isEqualTo(0f)
+        assertThat(floatExpr.mSrcAnimation!![1]).isEqualTo(100f)
+        assertThat(floatExpr.mSrcAnimation!![2]).isEqualTo(16f)
+        assertThat(floatExpr.mSrcAnimation!![3]).isEqualTo(0.001f)
+        assertThat(floatExpr.mSrcAnimation!![4]).isEqualTo(Float.fromBits(0))
+    }
+
+    @Test
+    fun remoteEasing_spline_defensiveCopy() {
+        val points = floatArrayOf(0f, 0f, 1f, 1f)
+        val easing = RemoteEasing.Spline(points)
+        points[0] = 99f
+        assertThat(easing.spec!![0]).isEqualTo(0f)
+    }
+
+    @Test
+    fun remoteEasing_equalsAndHashCode() {
+        val easing1 = RemoteEasing.Cubic(0.2f, 0.4f, 0.6f, 0.8f)
+        val easing2 = RemoteEasing.Cubic(0.2f, 0.4f, 0.6f, 0.8f)
+        val easing3 = RemoteEasing.Cubic(0.1f, 0.4f, 0.6f, 0.8f)
+
+        assertThat(easing1).isEqualTo(easing2)
+        assertThat(easing1.hashCode()).isEqualTo(easing2.hashCode())
+        assertThat(easing1).isNotEqualTo(easing3)
+    }
+
+    @Test
+    fun remoteTweenSpec_equalsAndHashCode() {
+        val spec1 = remoteTween(durationMillis = 400, easing = RemoteEasing.Linear)
+        val spec2 = remoteTween(durationMillis = 400, easing = RemoteEasing.Linear)
+        val spec3 = remoteTween(durationMillis = 500, easing = RemoteEasing.Linear)
+
+        assertThat(spec1).isEqualTo(spec2)
+        assertThat(spec1.hashCode()).isEqualTo(spec2.hashCode())
+        assertThat(spec1).isNotEqualTo(spec3)
+    }
+
+    @Test
+    fun remoteSpringSpec_equalsAndHashCode() {
+        val spec1 =
+            remoteSpring(
+                stiffness = 100f,
+                dampingRatio = 0.5f,
+                stopThreshold = 0.01f,
+                boundaryMode = 1,
+            )
+        val spec2 =
+            remoteSpring(
+                stiffness = 100f,
+                dampingRatio = 0.5f,
+                stopThreshold = 0.01f,
+                boundaryMode = 1,
+            )
+        val spec3 =
+            remoteSpring(
+                stiffness = 200f,
+                dampingRatio = 0.5f,
+                stopThreshold = 0.01f,
+                boundaryMode = 1,
+            )
+
+        assertThat(spec1).isEqualTo(spec2)
+        assertThat(spec1.hashCode()).isEqualTo(spec2.hashCode())
+        assertThat(spec1).isNotEqualTo(spec3)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun remoteTweenSpec_negativeDuration_throws() {
+        remoteTween(durationMillis = -1)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun remoteSpringSpec_nonPositiveStiffness_throws() {
+        remoteSpring(stiffness = 0f)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun remoteSpringSpec_negativeDamping_throws() {
+        remoteSpring(dampingRatio = -0.1f)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun remoteSpringSpec_nonPositiveStopThreshold_throws() {
+        remoteSpring(stopThreshold = 0f)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun remoteSpringSpec_withInitialValue_throws() {
+        val rf = RemoteFloat(10f)
+        remoteSpring().animate(rf, initialValue = 5f)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun remoteSpringSpec_withWrap_throws() {
+        val rf = RemoteFloat(10f)
+        remoteSpring().animate(rf, wrap = 360f)
+    }
+
+    @Test
     fun cacheKeys() {
         val constant = RemoteFloat(10f)
         assertThat(constant.cacheKey).isEqualTo(RemoteConstantCacheKey(10f))
 
-        val named = RemoteFloat.createNamedRemoteFloat("test", 1f)
+        val named = createNamedRemoteFloat("test", 1f)
         assertThat(named.cacheKey).isEqualTo(RemoteNamedCacheKey(RemoteState.Domain.User, "test"))
 
         val op = constant + named
@@ -1129,6 +1520,274 @@ class RemoteFloatTest {
     }
 
     @Test
+    fun peepholeOptimization_select_div() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val expr = myBool.select(10f.rf, 20f.rf) / 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (10.0 5.0 [43] ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_select_rem() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val expr = myBool.select(10f.rf, 20f.rf) % 3f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (2.0 1.0 [43] ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_select_remByZero_doesNotCrashDuringPeepHole() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val expr = myBool.select(10f.rf, 20f.rf) % 0f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (20.0 10.0 [43] ifElse 0.0 % )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_select_times() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val expr = myBool.select(10f.rf, 20f.rf) * 3f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (60.0 30.0 [43] ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_select_plus() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val expr = myBool.select(10f.rf, 20f.rf) + 5f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (25.0 15.0 [43] ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_select_minus() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val expr = myBool.select(10f.rf, 20f.rf) - 5f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (15.0 5.0 [43] ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_select_unaryMinus() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val expr = -myBool.select(10f.rf, 20f.rf)
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (-20.0 -10.0 [43] ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_select_chained() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val expr = (myBool.select(10f.rf, 20f.rf) + 10f) * 2f / 4f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (15.0 10.0 [43] ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_selectIfLt_div() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 5f)
+        val y = RemoteFloat.createNamedRemoteFloat("y", 10f)
+        val expr = selectIfLt(x, y, 100f.rf, 200f.rf) / 10f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:y\" type=1",
+                "FloatConstant[43] = 10.0",
+                "VariableName[44] = \"USER:x\" type=1",
+                "FloatConstant[44] = 5.0",
+                "FloatExpression[45] = (20.0 10.0 [43] [44] - ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_selectIfGt_times() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 5f)
+        val expr = selectIfGt(x, 10f.rf, 10f.rf, 20f.rf) * 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:x\" type=1",
+                "FloatConstant[43] = 5.0",
+                "FloatExpression[44] = (40.0 20.0 [43] 10.0 - ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_selectIfLe_plus() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 5f)
+        val expr = selectIfLe(x, 10f.rf, 10f.rf, 20f.rf) + 5f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:x\" type=1",
+                "FloatConstant[43] = 5.0",
+                "FloatExpression[44] = (15.0 25.0 [43] 10.0 - ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_selectIfGe_minus() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 5f)
+        val expr = selectIfGe(x, 10f.rf, 10f.rf, 20f.rf) - 5f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:x\" type=1",
+                "FloatConstant[43] = 5.0",
+                "FloatExpression[44] = (5.0 15.0 10.0 [43] - ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_booleanComparisonSelect_times() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 5f)
+        val y = RemoteFloat.createNamedRemoteFloat("y", 10f)
+        val expr = (x.isLessThan(y)).select(10f.rf, 20f.rf) * 3f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:y\" type=1",
+                "FloatConstant[43] = 10.0",
+                "VariableName[44] = \"USER:x\" type=1",
+                "FloatConstant[44] = 5.0",
+                "FloatExpression[45] = (60.0 30.0 [43] [44] - ifElse )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_selectWithConsumingCondition_doesNotFoldBranches() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 5f)
+        val y = RemoteFloat.createNamedRemoteFloat("y", 10f)
+
+        // Represents: [10.0, 20.0, x, SUB, y, IFELSE]
+        // Here, 20.0 is consumed by (20.0 - x). It is NOT the true branch for IFELSE.
+        val rawSelect =
+            RemoteFloatExpression(
+                constantValueOrNull = null,
+                cacheKey = RemoteStateInstanceKey(),
+            ) { creationState ->
+                floatArrayOf(
+                    10f,
+                    20f,
+                    x.getFloatIdForCreationState(creationState),
+                    AnimatedFloatExpression.SUB,
+                    y.getFloatIdForCreationState(creationState),
+                    AnimatedFloatExpression.IFELSE,
+                )
+            }
+
+        val expr = rawSelect * 2f
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:x\" type=1",
+                "FloatConstant[43] = 5.0",
+                "VariableName[44] = \"USER:y\" type=1",
+                "FloatConstant[44] = 10.0",
+                "FloatExpression[45] = (10.0 20.0 [43] - [44] ifElse 2.0 * )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_foldTrailingConstant_nanResult_doesNotCorruptArray() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 5f)
+        val inf = Float.POSITIVE_INFINITY
+        val expr = (x + inf) - inf
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:x\" type=1",
+                "FloatConstant[43] = 5.0",
+                "FloatExpression[44] = ([43] Infinity + Infinity - )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_foldSelectBranches_nanResult_doesNotCorruptArray() {
+        val myBool = RemoteBoolean.createNamedRemoteBoolean("myBool", true)
+        val inf = Float.POSITIVE_INFINITY
+        val expr = myBool.select(inf.rf, 10f.rf) - inf
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:myBool\" type=4",
+                "IntegerConstant[43] = 1",
+                "FloatExpression[44] = (10.0 Infinity [43] ifElse Infinity - )",
+            )
+            .inOrder()
+    }
+
+    @Test
     fun peepholeOptimization_zeroDiv() {
         val expr = RemoteFloat(0f) / time
 
@@ -1193,7 +1852,9 @@ class RemoteFloatTest {
                 creationDisplayInfo = displayInfo,
                 context = applicationContext,
             ) {
-                val myFloatFromConstant = rememberNamedRemoteFloat("C") { 5.rf }
+                val myFloatFromConstant = remember {
+                    createNamedRemoteFloatExpression("C") { 5.rf }
+                }
                 RemoteBox(modifier = RemoteModifier.size(myFloatFromConstant.asRemoteDp()))
             }
 
@@ -1215,10 +1876,11 @@ class RemoteFloatTest {
                 creationDisplayInfo = displayInfo,
                 context = applicationContext,
             ) {
-                val myFloatFromConstant =
-                    rememberNamedRemoteFloat("E") {
+                val myFloatFromConstant = remember {
+                    createNamedRemoteFloatExpression("E") {
                         RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
                     }
+                }
                 RemoteBox(modifier = RemoteModifier.size(myFloatFromConstant.asRemoteDp()))
             }
 
@@ -1241,7 +1903,7 @@ class RemoteFloatTest {
                 creationDisplayInfo = displayInfo,
                 context = applicationContext,
             ) {
-                val myFloatFromConstant = rememberMutableRemoteFloat { 5.rf }
+                val myFloatFromConstant = remember { MutableRemoteFloat { 5.rf } }
                 RemoteBox(modifier = RemoteModifier.size(myFloatFromConstant.asRemoteDp()))
             }
 
@@ -1268,8 +1930,10 @@ class RemoteFloatTest {
                 creationDisplayInfo = displayInfo,
                 context = applicationContext,
             ) {
-                val myFloatFromConstant = rememberMutableRemoteFloat {
-                    RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+                val myFloatFromConstant = remember {
+                    MutableRemoteFloat {
+                        RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+                    }
                 }
                 RemoteBox(modifier = RemoteModifier.size(myFloatFromConstant.asRemoteDp()))
             }
@@ -1297,7 +1961,7 @@ class RemoteFloatTest {
                 creationDisplayInfo = displayInfo,
                 context = applicationContext,
             ) {
-                val myFloatFromConstant = MutableRemoteFloat(5f)
+                val myFloatFromConstant = remember { MutableRemoteFloat(5f) }
                 RemoteBox(modifier = RemoteModifier.size(myFloatFromConstant.asRemoteDp()))
             }
 
@@ -1425,7 +2089,7 @@ class RemoteFloatTest {
 
     @Test
     fun toDebugString_variables() {
-        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val x = createNamedRemoteFloat("x", 10f)
         assertThat(x.toDebugString()).isEqualTo("user:x")
 
         val contSec = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
@@ -1454,13 +2118,13 @@ class RemoteFloatTest {
 
     @Test
     fun toDebugString_function_abs() {
-        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val x = createNamedRemoteFloat("x", 10f)
         assertThat(abs(-x).toDebugString()).isEqualTo("abs(-user:x)")
     }
 
     @Test
     fun toDebugString_arithmetic_compound() {
-        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val x = createNamedRemoteFloat("x", 10f)
         val c = RemoteFloat(45.5f)
         val expr = (x + c) * abs(-x)
         assertThat(expr.toDebugString()).isEqualTo("(user:x + 45.5) * abs(-user:x)")
@@ -1468,7 +2132,7 @@ class RemoteFloatTest {
 
     @Test
     fun toDebugString_arithmetic_associativityWrapping() {
-        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val x = createNamedRemoteFloat("x", 10f)
         val c = RemoteFloat(45.5f)
         val assocExpr = x - (c + x)
         assertThat(assocExpr.toDebugString()).isEqualTo("user:x - (user:x + 45.5)")
@@ -1482,23 +2146,60 @@ class RemoteFloatTest {
 
     @Test
     fun toDebugString_typeConversions() {
-        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val x = createNamedRemoteFloat("x", 10f)
         assertThat(x.toRemoteString().toDebugString()).isEqualTo("user:x.toRemoteString()")
         assertThat(x.toRemoteInt().toDebugString()).isEqualTo("user:x.toRemoteInt()")
     }
 
     @Test
     fun toDebugString_customFormatting_options() {
-        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val x = createNamedRemoteFloat("x", 10f)
         val customFormatted = x.toRemoteStringOptions(before = 10, after = 2, flags = 5)
         assertThat(customFormatted.toDebugString()).isEqualTo("user:x.toRemoteString(10, 2, 5)")
     }
 
     @Test
     fun toDebugString_customFormatting_singleArgFallback() {
-        val x = RemoteFloat.createNamedRemoteFloat("x", 10f)
+        val x = createNamedRemoteFloat("x", 10f)
         val singleArgKey =
             RemoteOperationCacheKey.create(RemoteFloat.OperationKey.ToRemoteString, x)
         assertThat(singleArgKey.toDebugString()).isEqualTo("user:x.toRemoteString()")
+    }
+
+    @Ignore("b/521688885: CoreDocument.evaluateFloatExpression ignores overrides")
+    @Test
+    fun evaluateFloatExpression_respectsOverride() = runTest {
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1, 1.0f)
+        val document =
+            captureSingleRemoteDocument(
+                creationDisplayInfo = displayInfo,
+                context = applicationContext,
+            ) {
+                val myFloat = remember { MutableRemoteFloat { 5.rf } }
+                RemoteBox(modifier = RemoteModifier.size(myFloat.asRemoteDp()))
+            }
+
+        var floatId = 0
+        val coreDoc =
+            makeAndUpdateCoreDocument(
+                RemoteComposeBuffer.fromInputStream(ByteArrayInputStream(document.bytes))
+            ) {
+                floatId =
+                    (it.getRootLayoutComponent()!!.list.first { it is FloatExpression }
+                            as FloatExpression)
+                        .mId
+            }
+
+        assertThat(context.getFloat(floatId)).isEqualTo(5f)
+
+        // Override the mutable variable
+        context.mRemoteComposeState.overrideFloat(floatId, 20f)
+
+        // Evaluate the variable as an expression pointing to targetId
+        val targetId = 100
+        coreDoc.evaluateFloatExpression(floatId, targetId, context)
+
+        // Should be 20f (from override), not 5f (initial value)
+        assertThat(context.getFloat(targetId)).isEqualTo(20f)
     }
 }

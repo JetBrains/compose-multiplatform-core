@@ -1,0 +1,337 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@file:Suppress("RestrictedApiAndroidX")
+
+package androidx.compose.remote.player.compose.embedded
+
+import androidx.annotation.RestrictTo
+import androidx.compose.animation.BoundsTransform
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope.ResizeMode
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.remote.core.Operation
+import androidx.compose.remote.core.operations.layout.ClickModifierOperation
+import androidx.compose.remote.core.operations.layout.Component
+import androidx.compose.remote.core.operations.layout.LayoutComponent
+import androidx.compose.remote.core.operations.layout.MultiClickModifier
+import androidx.compose.remote.core.operations.layout.animation.AnimationSpec
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.BackgroundModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.CollapsiblePriorityModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.ComponentModifiers
+import androidx.compose.remote.core.operations.layout.modifiers.ComponentVisibilityOperation
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.DrawContentOperation
+import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.HeightInModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.HeightModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation
+import androidx.compose.remote.core.operations.layout.modifiers.MarqueeModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.OffsetModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.PaddingModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.RippleModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.RoundedClipRectModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.ScrollModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.WidthInModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.WidthModifierOperation
+import androidx.compose.remote.core.operations.layout.modifiers.ZIndexModifierOperation
+import androidx.compose.remote.core.semantics.AccessibleComponent
+import androidx.compose.remote.core.semantics.CoreSemantics
+import androidx.compose.remote.player.compose.embedded.modifier.background
+import androidx.compose.remote.player.compose.embedded.modifier.border
+import androidx.compose.remote.player.compose.embedded.modifier.click
+import androidx.compose.remote.player.compose.embedded.modifier.clipRect
+import androidx.compose.remote.player.compose.embedded.modifier.dimensionConstraints
+import androidx.compose.remote.player.compose.embedded.modifier.graphicsLayer
+import androidx.compose.remote.player.compose.embedded.modifier.height
+import androidx.compose.remote.player.compose.embedded.modifier.heightIn
+import androidx.compose.remote.player.compose.embedded.modifier.marquee
+import androidx.compose.remote.player.compose.embedded.modifier.multiClick
+import androidx.compose.remote.player.compose.embedded.modifier.offset
+import androidx.compose.remote.player.compose.embedded.modifier.padding
+import androidx.compose.remote.player.compose.embedded.modifier.ripple
+import androidx.compose.remote.player.compose.embedded.modifier.roundedClipRect
+import androidx.compose.remote.player.compose.embedded.modifier.scroll
+import androidx.compose.remote.player.compose.embedded.modifier.width
+import androidx.compose.remote.player.compose.embedded.modifier.widthIn
+import androidx.compose.remote.player.compose.embedded.modifier.zIndex
+import androidx.compose.remote.player.compose.embedded.state.rememberRemoteIntAsState
+import androidx.compose.remote.player.compose.embedded.state.rememberRemoteStringAsState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.fastForEach
+
+@Composable
+@Suppress("ModifierFactoryExtensionFunction")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun ComponentModifiers.toModifier(
+    drawOpsList: List<Operation>? = null,
+    ignoreVisibility: Boolean = false,
+): Modifier = toModifier(drawOpsList, ignoreVisibility, ignoreClicks = false)
+
+/**
+ * Variant of [toModifier] that can skip click operations ([ignoreClicks]), used when a custom
+ * component plugin dispatches the clicks itself (see [CustomComposablePlugin.handlesClick]).
+ */
+@Composable
+@Suppress("ModifierFactoryExtensionFunction")
+internal fun ComponentModifiers.toModifier(
+    drawOpsList: List<Operation>?,
+    ignoreVisibility: Boolean,
+    ignoreClicks: Boolean,
+): Modifier {
+    var modifier: Modifier = Modifier
+    // Track whether a DrawContentOperation has already been attached to the modifier chain, so
+    // that subsequent clip operations are hoisted before drawWithContent without bypassing
+    // preceding padding.
+    var drawContentProcessed = false
+    var multiClickProcessed = ignoreClicks
+    val hasClickModifier =
+        !ignoreClicks && list.fastAny { it is ClickModifierOperation || it is MultiClickModifier }
+    list.fastForEach { op ->
+        modifier = modifier.rcModifierInspector(op)
+        modifier =
+            when (op) {
+                is PaddingModifierOperation -> modifier.padding(op)
+                is WidthModifierOperation -> modifier.width(op)
+                is HeightModifierOperation -> modifier.height(op)
+                is BorderModifierOperation -> modifier.border(op)
+                is BackgroundModifierOperation -> modifier.background(op)
+                is OffsetModifierOperation -> modifier.offset(op)
+                is ClipRectModifierOperation -> modifier.clipRect(op)
+                is RoundedClipRectModifierOperation ->
+                    modifier.roundedClipRect(op, drawContentProcessed)
+                is ZIndexModifierOperation -> modifier.zIndex(op)
+                is GraphicsLayerModifierOperation -> modifier.graphicsLayer(op)
+                is RippleModifierOperation -> modifier.ripple(op, hasClickModifier)
+                is ScrollModifierOperation -> modifier.scroll(op)
+                is WidthInModifierOperation -> modifier.widthIn(op)
+                is HeightInModifierOperation -> modifier.heightIn(op)
+                is DimensionConstraintsModifierOperation -> modifier.dimensionConstraints(op)
+                is ClickModifierOperation -> if (ignoreClicks) modifier else modifier.click(op)
+                is MultiClickModifier -> {
+                    // RemoteCompose emits a separate MultiClickModifier operation per gesture type
+                    // (e.g. CLICK_TYPE_SINGLE, CLICK_TYPE_DOUBLE, CLICK_TYPE_LONG) on the same
+                    // component. Chaining multiple separate combinedClickable modifiers in Compose
+                    // causes the outer pointer handler to consume gestures before inner handlers
+                    // see them, so we coalesce all MultiClickModifier ops into a single
+                    // combinedClickable at the position of the first MultiClickModifier.
+                    if (!multiClickProcessed) {
+                        multiClickProcessed = true
+                        val multiClickOps =
+                            ArrayList<MultiClickModifier>().apply {
+                                list.fastForEach { if (it is MultiClickModifier) add(it) }
+                            }
+                        modifier.multiClick(multiClickOps)
+                    } else {
+                        modifier
+                    }
+                }
+                is ComponentVisibilityOperation ->
+                    if (ignoreVisibility) modifier else modifier.visible(op)
+                is MarqueeModifierOperation -> modifier.marquee(op)
+                is CoreSemantics -> modifier.semantics(op)
+                is DrawContentOperation -> {
+                    drawContentProcessed = true
+                    if (drawOpsList != null) {
+                        val textMeasurer = rememberTextMeasurer()
+                        val remoteContext = LocalRemoteContext.current
+                        val graph = LocalGraphContext.current
+                        modifier.drawWithContent {
+                            executeOperations(
+                                operations = drawOpsList,
+                                remoteContext = remoteContext,
+                                textMeasurer = textMeasurer,
+                                onDrawContent = { drawContent() },
+                                graph = graph,
+                            )
+                        }
+                    } else {
+                        modifier
+                    }
+                }
+                // AlignBy is applied per-child inside Row/Column scope (RcPlayerRow), where the
+                // alignment lines are available; it is a no-op in the generic modifier chain.
+                is AlignByModifierOperation -> modifier
+                // CollapsiblePriority is a hint for collapsible layouts (which currently render as
+                // plain Row/Column), and LayoutCompute is custom measure/position logic the
+                // embedded
+                // player doesn't support — consume both rather than warn.
+                is CollapsiblePriorityModifierOperation -> modifier
+                is LayoutComputeOperation -> modifier
+                is AnimationSpec -> modifier
+                else -> {
+                    println("Warning: Unsupported modifier $op")
+                    modifier
+                }
+            }
+    }
+    if (drawOpsList != null && !drawContentProcessed) {
+        val textMeasurer = rememberTextMeasurer()
+        val remoteContext = LocalRemoteContext.current
+        val graph = LocalGraphContext.current
+        modifier = modifier.drawWithContent {
+            executeOperations(
+                operations = drawOpsList,
+                remoteContext = remoteContext,
+                textMeasurer = textMeasurer,
+                onDrawContent = { drawContent() },
+                graph = graph,
+            )
+        }
+    }
+    return modifier
+}
+
+@Composable
+internal fun rememberComponentVisibility(op: ComponentVisibilityOperation): Int {
+    val rawInt by rememberRemoteIntAsState(op.getVisibilityIdReflection())
+    return when {
+        Component.Visibility.isVisible(rawInt) -> Component.Visibility.VISIBLE
+        Component.Visibility.isGone(rawInt) -> Component.Visibility.GONE
+        else -> Component.Visibility.INVISIBLE
+    }
+}
+
+@Composable
+private fun Modifier.visible(op: ComponentVisibilityOperation): Modifier {
+    val visible = rememberComponentVisibility(op)
+
+    return this.layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                if (visible != Component.Visibility.GONE) {
+                    placeable.place(0, 0)
+                }
+            }
+        }
+        .graphicsLayer { alpha = if (visible == Component.Visibility.VISIBLE) 1f else 0f }
+}
+
+@Composable
+private fun Modifier.semantics(op: CoreSemantics): Modifier {
+    val contentDescriptionId = op.getContentDescriptionIdReflection()
+    val contentDescription = contentDescriptionId?.let { rememberRemoteStringAsState(it).value }
+    val text = op.mTextId.takeIf { it != 0 }?.let { rememberRemoteStringAsState(it).value }
+
+    if (contentDescription == null && text == null && op.mRole == null) return this
+
+    val properties: SemanticsPropertyReceiver.() -> Unit = {
+        if (contentDescription != null) {
+            this.contentDescription = contentDescription
+        }
+
+        if (text != null) {
+            this.text = AnnotatedString(text)
+        }
+
+        op.mRole?.let { this.role = it.toComposeRole() }
+    }
+    return when (op.mMode) {
+        AccessibleComponent.Mode.SET -> this.semantics(properties = properties)
+        AccessibleComponent.Mode.CLEAR_AND_SET -> this.clearAndSetSemantics(properties = properties)
+        AccessibleComponent.Mode.MERGE ->
+            this.semantics(mergeDescendants = true, properties = properties)
+    }
+}
+
+private fun AccessibleComponent.Role.toComposeRole(): Role {
+    return when (this) {
+        AccessibleComponent.Role.BUTTON -> Role.Button
+        AccessibleComponent.Role.CHECKBOX -> Role.Checkbox
+        AccessibleComponent.Role.SWITCH -> Role.Switch
+        AccessibleComponent.Role.RADIO_BUTTON -> Role.RadioButton
+        AccessibleComponent.Role.TAB -> Role.Tab
+        AccessibleComponent.Role.IMAGE -> Role.Image
+        AccessibleComponent.Role.DROPDOWN_LIST -> Role.DropdownList
+        // No direct Compose Role equivalents; Button is the closest interactive fallback.
+        AccessibleComponent.Role.PICKER -> Role.Button
+        AccessibleComponent.Role.CAROUSEL -> Role.Button
+        else -> Role.Button
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+internal fun Modifier.sharedElementTransition(component: Component): Modifier {
+    val sharedTransitionScope = LocalSharedTransitionScope.current ?: return this
+    val animatedVisibilityScope = LocalAnimatedVisibilityScope.current ?: return this
+
+    val animationId = component.animationId
+    if (animationId == -1 || animationId == 0) return this
+
+    val layout = component as? LayoutComponent
+    val spec =
+        layout?.componentModifiers?.list?.fastFirstOrNull { it is AnimationSpec } as? AnimationSpec
+            ?: component.animationSpecReflection
+            ?: AnimationSpec.DEFAULT
+
+    val motionDuration = spec.motionDuration.toInt()
+    val motionEasing = mapEasing(spec.motionEasingType)
+
+    val boundsTransform =
+        remember(motionDuration, motionEasing) {
+            BoundsTransform { _, _ ->
+                if (motionDuration <= 0) {
+                    snap()
+                } else {
+                    tween(durationMillis = motionDuration, easing = motionEasing)
+                }
+            }
+        }
+
+    val fadeSpec =
+        remember(motionDuration, motionEasing) {
+            if (motionDuration <= 0) {
+                snap()
+            } else {
+                tween<Float>(durationMillis = motionDuration, easing = motionEasing)
+            }
+        }
+
+    with(sharedTransitionScope) {
+        return this@sharedElementTransition.sharedBounds(
+            sharedContentState = rememberSharedContentState(key = animationId),
+            animatedVisibilityScope = animatedVisibilityScope,
+            enter = fadeIn(animationSpec = fadeSpec),
+            exit = fadeOut(animationSpec = fadeSpec),
+            boundsTransform = boundsTransform,
+            resizeMode = ResizeMode.RemeasureToBounds,
+        )
+    }
+}

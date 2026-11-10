@@ -21,6 +21,7 @@ import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.ImmutableCollections.unmodifiableList
 import androidx.ink.geometry.AngleDegreesFloat
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointer
 import kotlin.jvm.JvmStatic
 
@@ -40,12 +41,15 @@ import kotlin.jvm.JvmStatic
  * parameters, the tip shape can be circular, or pill-shaped, or a rounded triangle, or a rounded
  * convex quadrilateral.
  *
- * Through [BrushBehavior]s, the tip can also produce a per-vertex HSLA color shift that can be used
- * to augment the [Brush] color when drawing.
+ * Through [BrushBehavior]s, the tip can also produce a per-vertex HCLA (hue, chroma, lightness,
+ * alpha) color shift that can be used to augment the [Brush] color when drawing.
  *
  * The default parameters produce a static circular tip shape, with diameter equal to the [Brush]
  * size and no color shift.
+ *
+ * @sample androidx.ink.brush.samples.createParallelogramBrushTip
  */
+@OptIn(InkInternalOnlyApi::class)
 public class BrushTip
 private constructor(
     nativeAlloc: () -> Long,
@@ -53,7 +57,8 @@ private constructor(
     behaviors: List<BrushBehavior>? = null,
 ) {
     /** A handle to the underlying native [BrushTip] object. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public val nativePointer: Long by NativePointer(nativeAlloc, BrushTipNative::free)
 
     /**
@@ -284,7 +289,9 @@ private constructor(
         /** Sets the corner rounding for this brush tip. */
         public fun setCornerRounding(
             @FloatRange(from = 0.0, to = 1.0) cornerRounding: Float
-        ): Builder = apply { this.cornerRounding = cornerRounding }
+        ): Builder = apply {
+            this.cornerRounding = cornerRounding
+        }
 
         /** Sets the slant angle for this brush tip. */
         public fun setSlantDegrees(
@@ -371,12 +378,24 @@ private constructor(
             " particleGapDistanceScale=$particleGapDistanceScale," +
             " particleGapDurationMillis=$particleGapDurationMillis, behaviors=$behaviors)"
 
+    /**
+     * Returns the minimum required [Version] for this [BrushTip].
+     *
+     * By default, decoding a [BrushFamily] containing a [BrushTip] with a minimum required version
+     * higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(BrushTipNative.calculateMinimumRequiredVersion(nativePointer))
+
     public companion object {
         /** Returns a new [BrushTip.Builder]. */
         @JvmStatic public fun builder(): Builder = Builder()
 
         /** Construct a [BrushTip], taking a callback that heap-allocates a native `BrushTip`. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @InkInternalOnlyApi
+        @Suppress("MissingJvmstatic") // Internal-only API
         public fun wrapNative(nativeAlloc: () -> Long): BrushTip = BrushTip(nativeAlloc)
     }
 }
@@ -416,4 +435,6 @@ expect internal object BrushTipNative {
     fun getBehaviorCount(nativePointer: Long): Int
 
     fun newCopyOfBrushBehavior(nativePointer: Long, index: Int): Long
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

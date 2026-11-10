@@ -26,6 +26,7 @@ import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
+import androidx.camera.camera2.pipe.MemoryEstimator
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
@@ -55,10 +56,9 @@ import org.robolectric.annotation.internal.DoNotInstrument
 internal class Camera2CaptureSequenceProcessorTest {
 
     private val mainLooper = Shadows.shadowOf(Looper.getMainLooper())
-    private val cameraId =
-        RobolectricCameras.create(
-            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
-        )
+    private val cameraId = RobolectricCameras.create {
+        set(INFO_SUPPORTED_HARDWARE_LEVEL, INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
+    }
     private val testCamera = RobolectricCameras.open(cameraId)
 
     private val stream1Config = CameraStream.Config.create(Size(640, 480), StreamFormat.YUV_420_888)
@@ -93,10 +93,17 @@ internal class Camera2CaptureSequenceProcessorTest {
             sessionMode = CameraGraph.OperatingMode.HIGH_SPEED,
         )
 
-    private val streamGraph = StreamGraphImpl(testCamera.metadata, graphConfig, mock(), mock())
+    private val streamGraph =
+        StreamGraphImpl(testCamera.metadata, graphConfig, mock(), mock(), MemoryEstimator.create())
 
     private val highSpeedStreamGraph =
-        StreamGraphImpl(testCamera.metadata, highSpeedGraphConfig, mock(), mock())
+        StreamGraphImpl(
+            testCamera.metadata,
+            highSpeedGraphConfig,
+            mock(),
+            mock(),
+            MemoryEstimator.create(),
+        )
 
     private val surface1 =
         Surface(
@@ -172,11 +179,10 @@ internal class Camera2CaptureSequenceProcessorTest {
         val request = requestBuilder.build()
         assertThat(request).isNotNull()
 
-        // TODO: Add support for checking parameters when robolectric supports it.
-        // assertThat(request[CaptureRequest.CONTROL_AE_MODE])
-        //    .isEqualTo(CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
-        // assertThat(request[CaptureRequest.CONTROL_AF_MODE])
-        //    .isEqualTo(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+        assertThat(request[CaptureRequest.CONTROL_AE_MODE])
+            .isEqualTo(CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
+        assertThat(request[CaptureRequest.CONTROL_AF_MODE])
+            .isEqualTo(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
     }
 
     @Test
@@ -223,6 +229,11 @@ internal class Camera2CaptureSequenceProcessorTest {
         assertThat(result).isGreaterThan(0)
         assertThat(fakeCaptureSessionWrapper.lastCapture).hasSize(1)
         assertThat(fakeCaptureSessionWrapper.lastRepeating).isNull()
+
+        assertThat(fakeCaptureSessionWrapper.lastCapture!![0][CaptureRequest.CONTROL_AE_MODE])
+            .isEqualTo(CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
+        assertThat(fakeCaptureSessionWrapper.lastCapture!![0][CaptureRequest.CONTROL_AF_MODE])
+            .isEqualTo(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
 
         // TODO: Add support for checking parameters when robolectric supports it.
     }
@@ -359,6 +370,11 @@ internal class Camera2CaptureSequenceProcessorTest {
         assertThat(result).isGreaterThan(0)
         assertThat(fakeCaptureSessionWrapper.lastCapture).hasSize(1)
         assertThat(fakeCaptureSessionWrapper.lastRepeating).isNull()
+
+        assertThat(fakeCaptureSessionWrapper.lastCapture!![0][CaptureRequest.CONTROL_AE_MODE])
+            .isEqualTo(CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
+        assertThat(fakeCaptureSessionWrapper.lastCapture!![0][CaptureRequest.CONTROL_AF_MODE])
+            .isEqualTo(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
 
         // TODO: Add support for checking parameters when robolectric supports it.
     }

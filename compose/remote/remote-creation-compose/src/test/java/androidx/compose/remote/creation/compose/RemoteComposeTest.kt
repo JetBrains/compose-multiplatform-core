@@ -24,22 +24,22 @@ import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInf
 import androidx.compose.remote.creation.compose.capture.WriterEvents
 import androidx.compose.remote.creation.compose.capture.captureRemoteDocument
 import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
-import androidx.compose.remote.creation.compose.layout.FitBox
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteCollapsibleColumn
 import androidx.compose.remote.creation.compose.layout.RemoteCollapsibleRow
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
+import androidx.compose.remote.creation.compose.layout.RemoteFitBox
 import androidx.compose.remote.creation.compose.layout.RemoteRow
-import androidx.compose.remote.creation.compose.layout.RemoteSpacer
 import androidx.compose.remote.creation.compose.layout.RemoteStateLayout
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.state.MutableRemoteEnum
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteEnum
 import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.first
@@ -90,7 +90,7 @@ class RemoteComposeTest {
         val document =
             captureSingleRemoteDocument(creationDisplayInfo = displayInfo, context = context) {
                 RemoteRow {
-                    RemoteSpacer(modifier = RemoteModifier.weight(1f))
+                    RemoteBox(modifier = RemoteModifier.weight(1f))
                     RemoteText(text = "End".rs)
                 }
             }
@@ -107,8 +107,8 @@ class RemoteComposeTest {
                 // Using V1 components inside V2 capture
                 RemoteBox {
                     RemoteColumn {
-                        RemoteText(text = "V1 Text")
-                        RemoteRow { RemoteText(text = "Nested V1 Text") }
+                        RemoteText(text = "V1 Text".rs)
+                        RemoteRow { RemoteText(text = "Nested V1 Text".rs) }
                     }
                 }
             }
@@ -130,13 +130,12 @@ class RemoteComposeTest {
     }
 
     @Test
-    fun testFitBoxV2() = runTest {
+    fun testRemoteFitBoxV2() = runTest {
         val displayInfo = RemoteCreationDisplayInfo(500, 500, 1, 1.0f)
         val document =
             captureSingleRemoteDocument(creationDisplayInfo = displayInfo, context = context) {
-                FitBox { RemoteText(text = "Fit Content") }
+                RemoteFitBox { RemoteText(text = "Fit Content".rs) }
             }
-
         assertNotNull(document)
         assertTrue(document.bytes.isNotEmpty())
     }
@@ -147,9 +146,9 @@ class RemoteComposeTest {
         val document =
             captureSingleRemoteDocument(creationDisplayInfo = displayInfo, context = context) {
                 RemoteCollapsibleColumn {
-                    RemoteText(text = "Fixed")
+                    RemoteText(text = "Fixed".rs)
                     RemoteCollapsibleRow(modifier = RemoteModifier.weight(1f)) {
-                        RemoteText(text = "Weighted Row Content")
+                        RemoteText(text = "Weighted Row Content".rs)
                     }
                 }
             }
@@ -163,7 +162,7 @@ class RemoteComposeTest {
         val displayInfo = RemoteCreationDisplayInfo(500, 500, 1, 1.0f)
         val document =
             captureSingleRemoteDocument(creationDisplayInfo = displayInfo, context = context) {
-                val checked = rememberMutableRemoteEnum(ToggleState.On)
+                val checked = remember { MutableRemoteEnum(ToggleState.On) }
                 RemoteStateLayout(currentState = checked) { state ->
                     RemoteText(text = "State $state".rs)
                 }

@@ -28,6 +28,7 @@ import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfDocument.Companion.LINEARIZATION_STATUS_UNKNOWN
 import androidx.pdf.PdfFeature
@@ -47,7 +48,6 @@ import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
 import java.util.concurrent.Executor
-import kotlin.collections.emptyList
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -135,6 +135,7 @@ internal open class FakePdfDocument(
         } ?: emptyList()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
         return null
     }
@@ -165,6 +166,7 @@ internal open class FakePdfDocument(
         return annotationsPerPage[pageNum] ?: emptyList()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun getPageObjects(pageNum: Int, types: Long): List<KeyedPdfObject> {
         if (exceptionToThrow != null) throw exceptionToThrow
         return pageObjectsPerPage[pageNum]?.mapNotNull { keyedObject ->
@@ -271,7 +273,14 @@ internal open class FakePdfDocument(
         pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
         if (exceptionToThrow != null) throw exceptionToThrow
-        return searchResults
+        val filtered = SparseArray<List<PageMatchBounds>>()
+        for (page in pageRange) {
+            val results = searchResults.get(page)
+            if (results != null) {
+                filtered.put(page, results)
+            }
+        }
+        return filtered
     }
 
     override suspend fun getPageInfos(pageRange: IntRange): List<PdfDocument.PageInfo> {

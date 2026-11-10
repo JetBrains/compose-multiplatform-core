@@ -25,7 +25,6 @@ package androidx.xr.compose.material3.integration.testapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -46,21 +45,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.xr.compose.material3.DefaultNavigationBarOrbiterProperties
-import androidx.xr.compose.material3.DefaultNavigationRailOrbiterProperties
-import androidx.xr.compose.material3.DefaultWideNavigationRailOrbiterProperties
-import androidx.xr.compose.material3.EnableXrComponentOverrides
+import androidx.core.view.WindowCompat
+import androidx.xr.compose.material3.DefaultSpatialNavigationBarOrbiterProperties
+import androidx.xr.compose.material3.DefaultSpatialNavigationRailOrbiterProperties
+import androidx.xr.compose.material3.DefaultSpatialWideNavigationRailOrbiterProperties
 import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
-import androidx.xr.compose.material3.LocalNavigationBarOrbiterProperties
-import androidx.xr.compose.material3.LocalNavigationRailOrbiterProperties
-import androidx.xr.compose.material3.LocalShortNavigationBarOrbiterProperties
-import androidx.xr.compose.material3.LocalWideNavigationRailOrbiterProperties
+import androidx.xr.compose.material3.LocalSpatialNavigationBarOrbiterProperties
+import androidx.xr.compose.material3.LocalSpatialNavigationRailOrbiterProperties
+import androidx.xr.compose.material3.LocalSpatialShortNavigationBarOrbiterProperties
+import androidx.xr.compose.material3.LocalSpatialWideNavigationRailOrbiterProperties
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent { EnableXrComponentOverrides { Content() } }
+        WindowCompat.enableEdgeToEdge(window)
+        setContent { Content() }
     }
 }
 
@@ -69,31 +68,25 @@ class MainActivity : ComponentActivity() {
 private fun Content() {
     var navSuiteType: NavigationSuiteType? by remember { mutableStateOf(null) }
     var orbiterPosition: OrbiterPosition by remember { mutableStateOf(OrbiterPosition.Outside) }
-    val orbiterOffsetType = orbiterPosition.getOffsetType()
-    val orbiterOffset = navSuiteType.calculateOffsetForPosition(orbiterPosition)
 
     var navSuiteSelectedItem by remember { mutableStateOf(NavSuiteItem.HOME) }
 
     CompositionLocalProvider(
-        LocalNavigationBarOrbiterProperties provides
-            DefaultNavigationBarOrbiterProperties.copy(
-                offset = orbiterOffset,
-                offsetType = orbiterOffsetType,
+        LocalSpatialNavigationBarOrbiterProperties provides
+            DefaultSpatialNavigationBarOrbiterProperties.copy(
+                position = orbiterPosition.toHorizontalAlignment()
             ),
-        LocalNavigationRailOrbiterProperties provides
-            DefaultNavigationRailOrbiterProperties.copy(
-                offset = orbiterOffset,
-                offsetType = orbiterOffsetType,
+        LocalSpatialNavigationRailOrbiterProperties provides
+            DefaultSpatialNavigationRailOrbiterProperties.copy(
+                position = orbiterPosition.toVerticalAlignment()
             ),
-        LocalShortNavigationBarOrbiterProperties provides
-            DefaultNavigationBarOrbiterProperties.copy(
-                offset = orbiterOffset,
-                offsetType = orbiterOffsetType,
+        LocalSpatialShortNavigationBarOrbiterProperties provides
+            DefaultSpatialNavigationBarOrbiterProperties.copy(
+                position = orbiterPosition.toHorizontalAlignment()
             ),
-        LocalWideNavigationRailOrbiterProperties provides
-            DefaultWideNavigationRailOrbiterProperties.copy(
-                offset = orbiterOffset,
-                offsetType = orbiterOffsetType,
+        LocalSpatialWideNavigationRailOrbiterProperties provides
+            DefaultSpatialWideNavigationRailOrbiterProperties.copy(
+                position = orbiterPosition.toVerticalAlignment()
             ),
     ) {
         NavigationSuiteScaffold(

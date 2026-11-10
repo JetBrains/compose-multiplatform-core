@@ -19,7 +19,6 @@ package androidx.wear.compose.material3.demos
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,18 +37,95 @@ import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.integration.demos.common.ActivityDemo
+import androidx.wear.compose.integration.demos.common.ComposableDemo
+import androidx.wear.compose.integration.demos.common.Material3DemoCategory
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.ChildButton
+import androidx.wear.compose.material3.FilledTonalButton
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.OutlinedButton
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.onehandedgesture.GestureAction
-import androidx.wear.compose.material3.onehandedgesture.GesturePriority
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicatorState
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureDefaults
-import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGesturePriority
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureScrollIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureScrollIndicatorState
 import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
+import androidx.wear.compose.material3.onehandedgesture.rememberOneHandedGestureConfiguration
+import androidx.wear.compose.material3.samples.AppCardContentWithOneHandedGestureSample
+import androidx.wear.compose.material3.samples.ButtonContentWithOneHandedGestureSample
+import androidx.wear.compose.material3.samples.CompactButtonContentWithOneHandedGestureSample
+import androidx.wear.compose.material3.samples.OneHandedGestureButtonInAmbientSample
+import androidx.wear.compose.material3.samples.OneHandedGestureButtonSample
+import androidx.wear.compose.material3.samples.OneHandedGestureDisableButtonSample
+import androidx.wear.compose.material3.samples.OneHandedGestureHorizontalPagerSample
+import androidx.wear.compose.material3.samples.OneHandedGestureScalingLazyColumnSample
+import androidx.wear.compose.material3.samples.OneHandedGestureScalingLazyColumnScrollToNextItemSample
+import androidx.wear.compose.material3.samples.OneHandedGestureTransformingLazyColumnSample
+import androidx.wear.compose.material3.samples.OneHandedGestureTransformingLazyColumnScrollToNextItemSample
+import androidx.wear.compose.material3.samples.OneHandedGestureVerticalPagerSample
+import androidx.wear.compose.material3.samples.TitleCardContentWithOneHandedGestureSample
+import androidx.wear.compose.material3.samples.icons.FavoriteIcon
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import kotlinx.coroutines.launch
+
+val OneHandedGestureDemos =
+    listOf(
+        ComposableDemo("Button") { OneHandedGestureButtonSample() },
+        ComposableDemo("Button in ambient") { OneHandedGestureButtonInAmbientSample() },
+        ComposableDemo("Enable/Disable Gestures") { OneHandedGestureDisableButtonSample() },
+        ComposableDemo("TLC scrollDown with EdgeButton") {
+            OneHandedGestureTransformingLazyColumnSample()
+        },
+        ComposableDemo("SLC scrollDown with EdgeButton") {
+            OneHandedGestureScalingLazyColumnSample()
+        },
+        ComposableDemo("TLC scrollToNextItem with EdgeButton") {
+            OneHandedGestureTransformingLazyColumnScrollToNextItemSample()
+        },
+        ComposableDemo("SLC scrollToNextItem with EdgeButton") {
+            OneHandedGestureScalingLazyColumnScrollToNextItemSample()
+        },
+        ComposableDemo("TransformingLazyColumn with Button") {
+            OneHandedGestureTransformingLazyColumnWithButtonDemo()
+        },
+        ComposableDemo("Horizontal Pager") { OneHandedGestureHorizontalPagerSample() },
+        ComposableDemo("Vertical Pager") { OneHandedGestureVerticalPagerSample() },
+        ComposableDemo("Two Buttons with the same priority") {
+            OneHandedGestureTwoButtonsSamePriorityDemo()
+        },
+        ComposableDemo("Primary/Dismiss Buttons") { OneHandedGesturePrimaryDismissButtons() },
+        ActivityDemo(
+            "SwipeDismissableNavHost",
+            OneHandedGestureSwipeDismissableNavHostDemoActivity::class,
+        ),
+        Material3DemoCategory(
+            "Multi-slot Cards",
+            listOf(
+                ComposableDemo("App Card") { AppCardContentWithOneHandedGestureSample() },
+                ComposableDemo("Title Card") { TitleCardContentWithOneHandedGestureSample() },
+            ),
+        ),
+        Material3DemoCategory(
+            "Multi-slot Buttons",
+            listOf(
+                ComposableDemo("Filled Button") { ButtonContentWithOneHandedGestureSample() },
+                ComposableDemo("Filled Tonal Button") { OHGTonalButtonDemo() },
+                ComposableDemo("Outlined Button") { OHGOutlinedButtonDemo() },
+                ComposableDemo("Child Button") { OHGChildButtonDemo() },
+                ComposableDemo("Compact Button") {
+                    CompactButtonContentWithOneHandedGestureSample()
+                },
+            ),
+        ),
+    )
 
 @Composable
 fun OneHandedGestureTwoButtonsSamePriorityDemo() {
@@ -60,7 +137,12 @@ fun OneHandedGestureTwoButtonsSamePriorityDemo() {
         repeat(2) { idx ->
             var label by remember { mutableStateOf("Gesturable Button $idx") }
 
-            OneHandedGestureButton(onClick = { label = "Clicked/Gestured $idx" }) { Text(label) }
+            OneHandedGestureButton(
+                gestureLabel = "activate the button",
+                onClick = { label = "Clicked/Gestured $idx" },
+            ) {
+                Text(label)
+            }
         }
     }
 }
@@ -68,12 +150,14 @@ fun OneHandedGestureTwoButtonsSamePriorityDemo() {
 @Composable
 fun OneHandedGesturePrimaryDismissButtons() {
     var primaryLabel by remember { mutableStateOf("Confirm") }
-    val primaryOnClick = remember { { primaryLabel = "Confirmed" } }
+    val primaryOnClick = { primaryLabel = "Confirmed" }
     val primaryInteractionSource = remember { MutableInteractionSource() }
 
     var dismissLabel by remember { mutableStateOf("Dismiss") }
-    val dismissOnClick = remember { { dismissLabel = "Dismissed" } }
+    val dismissOnClick = { dismissLabel = "Dismissed" }
     val dismissInteractionSource = remember { MutableInteractionSource() }
+
+    val coroutineScope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
@@ -86,17 +170,27 @@ fun OneHandedGesturePrimaryDismissButtons() {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                val primaryGestureConfig =
+                    rememberOneHandedGestureConfiguration(action = OneHandedGestureAction.Primary)
+                val primaryIndicatorState = remember { OneHandedGestureClickIndicatorState() }
+                val dismissGestureConfig =
+                    rememberOneHandedGestureConfiguration(action = OneHandedGestureAction.Dismiss)
+                val dismissIndicatorState = remember { OneHandedGestureClickIndicatorState() }
                 Button(
                     onClick = dismissOnClick,
                     interactionSource = dismissInteractionSource,
                     modifier =
                         Modifier.oneHandedGesture(
-                            action = GestureAction.Dismiss,
+                            gestureConfiguration = dismissGestureConfig,
                             interactionSource = dismissInteractionSource,
+                            onGestureLabel = "dismiss",
+                            onGestureAvailable = {
+                                coroutineScope.launch { dismissIndicatorState.showIndicator() }
+                            },
                             onGesture = dismissOnClick,
                         ),
                 ) {
-                    OneHandedGestureIndicator(interactionSource = dismissInteractionSource) {
+                    OneHandedGestureClickIndicator(dismissGestureConfig, dismissIndicatorState) {
                         Text(dismissLabel)
                     }
                 }
@@ -106,12 +200,16 @@ fun OneHandedGesturePrimaryDismissButtons() {
                     interactionSource = primaryInteractionSource,
                     modifier =
                         Modifier.oneHandedGesture(
-                            action = GestureAction.Primary,
+                            gestureConfiguration = primaryGestureConfig,
                             interactionSource = primaryInteractionSource,
+                            onGestureLabel = "confirm",
+                            onGestureAvailable = {
+                                coroutineScope.launch { primaryIndicatorState.showIndicator() }
+                            },
                             onGesture = primaryOnClick,
                         ),
                 ) {
-                    OneHandedGestureIndicator(interactionSource = primaryInteractionSource) {
+                    OneHandedGestureClickIndicator(primaryGestureConfig, primaryIndicatorState) {
                         Text(primaryLabel)
                     }
                 }
@@ -132,7 +230,10 @@ fun OneHandedGestureSwipeDismissableNavHostDemo() {
             ) {
                 Text("First screen")
                 Spacer(Modifier.height(4.dp))
-                OneHandedGestureButton(onClick = { navController.navigate("second") }) {
+                OneHandedGestureButton(
+                    gestureLabel = "move to the second screen",
+                    onClick = { navController.navigate("second") },
+                ) {
                     Text("Go to Second screen")
                 }
             }
@@ -145,7 +246,10 @@ fun OneHandedGestureSwipeDismissableNavHostDemo() {
             ) {
                 Text("Second screen")
                 Spacer(Modifier.height(4.dp))
-                OneHandedGestureButton(onClick = { navController.popBackStack() }) {
+                OneHandedGestureButton(
+                    gestureLabel = "move to the first screen",
+                    onClick = { navController.popBackStack() },
+                ) {
                     Text("Go to Previous screen")
                 }
             }
@@ -156,16 +260,24 @@ fun OneHandedGestureSwipeDismissableNavHostDemo() {
 @Composable
 fun OneHandedGestureTransformingLazyColumnWithButtonDemo() {
     var buttonText by remember { mutableStateOf("Gesture me") }
-    val onClick = remember { { buttonText = "Gestured" } }
+    val onClick = { buttonText = "Gestured" }
     val scrollState = rememberTransformingLazyColumnState()
-    val scrollInteractionSource = remember { MutableInteractionSource() }
+    val scrollGestureConfig =
+        rememberOneHandedGestureConfiguration(
+            action = OneHandedGestureAction.Primary,
+            priority = OneHandedGesturePriority.Scrollable,
+        )
+    val scrollIndicatorState =
+        remember(scrollGestureConfig) { OneHandedGestureScrollIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
 
     ScreenScaffold(
         scrollState = scrollState,
         scrollIndicator = {
             OneHandedGestureScrollIndicator(
-                interactionSource = scrollInteractionSource,
-                state = scrollState,
+                gestureConfiguration = scrollGestureConfig,
+                indicatorState = scrollIndicatorState,
+                scrollState = scrollState,
                 modifier = Modifier.align(Alignment.CenterEnd),
             )
         },
@@ -176,9 +288,11 @@ fun OneHandedGestureTransformingLazyColumnWithButtonDemo() {
             modifier =
                 Modifier.fillMaxSize()
                     .oneHandedGesture(
-                        action = GestureAction.Primary,
-                        priority = GesturePriority.Scrollable,
-                        interactionSource = scrollInteractionSource,
+                        gestureConfiguration = scrollGestureConfig,
+                        onGestureLabel = "scroll",
+                        onGestureAvailable = {
+                            coroutineScope.launch { scrollIndicatorState.showIndicator() }
+                        },
                         onGesture = { OneHandedGestureDefaults.scrollDown(scrollState) },
                     ),
         ) {
@@ -186,6 +300,12 @@ fun OneHandedGestureTransformingLazyColumnWithButtonDemo() {
             item {
                 var buttonVisible by remember { mutableStateOf(false) }
                 val buttonInteractionSource = remember { MutableInteractionSource() }
+                val buttonGestureConfig =
+                    rememberOneHandedGestureConfiguration(
+                        action = OneHandedGestureAction.Primary,
+                        priority = OneHandedGesturePriority.Clickable,
+                    )
+                val buttonIndicatorState = remember { OneHandedGestureClickIndicatorState() }
                 Button(
                     onClick = onClick,
                     interactionSource = buttonInteractionSource,
@@ -195,16 +315,21 @@ fun OneHandedGestureTransformingLazyColumnWithButtonDemo() {
                                 // Apply the one-handed gesture modifier only when the button is
                                 // visible
                                 Modifier.oneHandedGesture(
-                                    action = GestureAction.Primary,
-                                    priority = GesturePriority.Clickable,
+                                    gestureConfiguration = buttonGestureConfig,
                                     interactionSource = buttonInteractionSource,
+                                    onGestureLabel = "click",
+                                    onGestureAvailable = {
+                                        coroutineScope.launch {
+                                            buttonIndicatorState.showIndicator()
+                                        }
+                                    },
                                     onGesture = onClick,
                                 )
                             } else {
                                 Modifier
                             },
                 ) {
-                    OneHandedGestureIndicator(interactionSource = buttonInteractionSource) {
+                    OneHandedGestureClickIndicator(buttonGestureConfig, buttonIndicatorState) {
                         Text(buttonText)
                     }
                 }
@@ -214,19 +339,156 @@ fun OneHandedGestureTransformingLazyColumnWithButtonDemo() {
 }
 
 @Composable
-private fun OneHandedGestureButton(onClick: () -> Unit, content: @Composable BoxScope.() -> Unit) {
+private fun OneHandedGestureButton(
+    gestureLabel: String,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) {
     val interactionSource = remember { MutableInteractionSource() }
+    val gestureConfig =
+        rememberOneHandedGestureConfiguration(action = OneHandedGestureAction.Primary)
+    val indicatorState = remember { OneHandedGestureClickIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Button(
         onClick = onClick,
         interactionSource = interactionSource,
         modifier =
             Modifier.oneHandedGesture(
-                action = GestureAction.Primary,
+                gestureConfiguration = gestureConfig,
                 interactionSource = interactionSource,
+                onGestureLabel = gestureLabel,
+                onGestureAvailable = { coroutineScope.launch { indicatorState.showIndicator() } },
                 onGesture = onClick,
             ),
     ) {
-        OneHandedGestureIndicator(interactionSource = interactionSource, content = content)
+        OneHandedGestureClickIndicator(
+            gestureConfiguration = gestureConfig,
+            state = indicatorState,
+            content = content,
+        )
+    }
+}
+
+@Composable
+fun OHGTonalButtonDemo() {
+    var label by remember { mutableStateOf("Tonal Button") }
+    val onClick = { label = "Gestured" }
+    val interactionSource = remember { MutableInteractionSource() }
+    val gestureConfig =
+        rememberOneHandedGestureConfiguration(action = OneHandedGestureAction.Primary)
+    val indicatorState = remember { OneHandedGestureClickIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        FilledTonalButton(
+            onClick = onClick,
+            interactionSource = interactionSource,
+            modifier =
+                Modifier.oneHandedGesture(
+                    gestureConfiguration = gestureConfig,
+                    onGestureLabel = "click",
+                    interactionSource = interactionSource,
+                    onGestureAvailable = {
+                        coroutineScope.launch { indicatorState.showIndicator() }
+                    },
+                    onGesture = onClick,
+                ),
+        ) {
+            OneHandedGestureClickIndicator(
+                gestureConfiguration = gestureConfig,
+                state = indicatorState,
+                gestureIndicatorTint = MaterialTheme.colorScheme.onSurfaceVariant,
+            ) {
+                ButtonDefaults.Content(
+                    secondaryLabel = { Text("Secondary Label") },
+                    icon = { FavoriteIcon(ButtonDefaults.IconSize) },
+                    colors = ButtonDefaults.filledTonalButtonColors(),
+                    label = { Text(label) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun OHGOutlinedButtonDemo() {
+    var label by remember { mutableStateOf("Outlined Button") }
+    val onClick = { label = "Gestured" }
+    val interactionSource = remember { MutableInteractionSource() }
+    val gestureConfig =
+        rememberOneHandedGestureConfiguration(action = OneHandedGestureAction.Primary)
+    val indicatorState = remember { OneHandedGestureClickIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        OutlinedButton(
+            onClick = onClick,
+            interactionSource = interactionSource,
+            modifier =
+                Modifier.oneHandedGesture(
+                    gestureConfiguration = gestureConfig,
+                    onGestureLabel = "click",
+                    interactionSource = interactionSource,
+                    onGestureAvailable = {
+                        coroutineScope.launch { indicatorState.showIndicator() }
+                    },
+                    onGesture = onClick,
+                ),
+        ) {
+            OneHandedGestureClickIndicator(
+                gestureConfiguration = gestureConfig,
+                state = indicatorState,
+                gestureIndicatorTint = MaterialTheme.colorScheme.primary,
+            ) {
+                ButtonDefaults.Content(
+                    secondaryLabel = { Text("Secondary Label") },
+                    icon = { FavoriteIcon(ButtonDefaults.IconSize) },
+                    colors = ButtonDefaults.outlinedButtonColors(),
+                    label = { Text(label) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun OHGChildButtonDemo() {
+    var label by remember { mutableStateOf("Child Button") }
+    val onClick = { label = "Gestured" }
+    val interactionSource = remember { MutableInteractionSource() }
+    val gestureConfig =
+        rememberOneHandedGestureConfiguration(action = OneHandedGestureAction.Primary)
+    val indicatorState = remember { OneHandedGestureClickIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        ChildButton(
+            onClick = onClick,
+            interactionSource = interactionSource,
+            modifier =
+                Modifier.oneHandedGesture(
+                    gestureConfiguration = gestureConfig,
+                    onGestureLabel = "click",
+                    interactionSource = interactionSource,
+                    onGestureAvailable = {
+                        coroutineScope.launch { indicatorState.showIndicator() }
+                    },
+                    onGesture = onClick,
+                ),
+        ) {
+            OneHandedGestureClickIndicator(
+                gestureConfiguration = gestureConfig,
+                state = indicatorState,
+                gestureIndicatorTint = MaterialTheme.colorScheme.onSurface,
+            ) {
+                ButtonDefaults.Content(
+                    secondaryLabel = { Text("Secondary Label") },
+                    icon = { FavoriteIcon(ButtonDefaults.IconSize) },
+                    colors = ButtonDefaults.childButtonColors(),
+                    label = { Text(label) },
+                )
+            }
+        }
     }
 }

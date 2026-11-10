@@ -18,6 +18,7 @@ package androidx.compose.remote.player.compose.context
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapShader
+import android.graphics.Color
 import android.graphics.DiscretePathEffect
 import android.graphics.LinearGradient
 import android.graphics.Matrix
@@ -144,7 +145,13 @@ internal class ComposePaintChanges(
      */
     override fun setTypeFace(fontType: String, weight: Int, italic: Boolean) {
         val path = getFontPath(fontType)
+        if (path == null) {
+            return
+        }
         fontBuilder = Font.Builder(File(path!!))
+        if (fontBuilder == null) {
+            return
+        }
         fontBuilder!!.setWeight(weight)
         fontBuilder!!.setSlant(
             if (italic) FontStyle.FONT_SLANT_ITALIC else FontStyle.FONT_SLANT_UPRIGHT
@@ -169,6 +176,9 @@ internal class ComposePaintChanges(
 
     private fun setAxis(axis: Array<FontVariationAxis?>?) {
         var font: Font?
+        if (fontBuilder == null) {
+            return
+        }
         try {
             if (axis != null) {
                 fontBuilder!!.setFontVariationSettings(axis)
@@ -421,6 +431,43 @@ internal class ComposePaintChanges(
             .setShader(RadialGradient(centerX, centerY, radius, colors, stops, tileModes[tileMode]))
     }
 
+    override fun setRadialGradient(
+        colors: IntArray,
+        stops: FloatArray?,
+        startX: Float,
+        startY: Float,
+        startRadius: Float,
+        endX: Float,
+        endY: Float,
+        endRadius: Float,
+        tileMode: Int,
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // The two-circle (focal) constructor only accepts packed colors.
+            val packed = LongArray(colors.size) { Color.pack(colors[it]) }
+            getNativePaint()
+                .setShader(
+                    RadialGradient(
+                        startX,
+                        startY,
+                        startRadius,
+                        endX,
+                        endY,
+                        endRadius,
+                        packed,
+                        stops,
+                        tileModes[tileMode],
+                    )
+                )
+        } else {
+            // Degrade to the end circle so the document still renders something sensible.
+            getNativePaint()
+                .setShader(
+                    RadialGradient(endX, endY, endRadius, colors, stops, tileModes[tileMode])
+                )
+        }
+    }
+
     override fun setSweepGradient(
         colors: IntArray,
         stops: FloatArray?,
@@ -435,7 +482,7 @@ internal class ComposePaintChanges(
         getNativePaint().setColorFilter(PorterDuffColorFilter(color, porterDuffMode))
     }
 
-    @Suppress("DEPRECATION")
+    @Suppress("DEPRECATION", "DEPRECATION_ERROR")
     private fun getNativePaint(): android.graphics.Paint = getPaint().asFrameworkPaint()
 
     private fun getShaderData(id: Int): ShaderData? {

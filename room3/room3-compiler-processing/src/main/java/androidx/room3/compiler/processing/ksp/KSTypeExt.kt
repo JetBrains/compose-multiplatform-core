@@ -74,6 +74,7 @@ internal fun KSType.replaceTypeAliases(resolver: Resolver): KSType {
                 .type
                 .resolve()
                 .replaceTypeArgs(resolver, typeParamNameToTypeArgs)
+                .replaceTypeAliases(resolver)
         } else {
             this
         }
@@ -154,8 +155,9 @@ internal fun KSType.withNullability(nullability: XNullability) =
         else -> throw IllegalArgumentException("Cannot set KSType nullability to platform")
     }
 
-private fun KSAnnotated.hasAnnotation(qName: String) =
-    annotations.any { it.hasQualifiedNameOrAlias(qName) }
+private fun KSAnnotated.hasAnnotation(qName: String) = annotations.any {
+    it.hasQualifiedNameOrAlias(qName)
+}
 
 internal fun KSAnnotation.hasQualifiedNameOrAlias(qName: String): Boolean {
     return annotationType.resolve().hasQualifiedNameOrAlias(qName)

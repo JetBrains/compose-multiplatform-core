@@ -20,8 +20,9 @@ import android.graphics.Matrix
 import android.graphics.Path
 import androidx.annotation.AnyThread
 import androidx.annotation.UiThread
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.annotation.VisibleForTesting
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.InProgressShape
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.geometry.MutableBox
@@ -43,7 +44,7 @@ import androidx.ink.geometry.MutableBox
  * - Stroke cohort: A group of strokes that are in progress at the same time, which means that they
  *   need to be handed off to HWUI rendering at the same time.
  */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalInkCustomShapeWorkflowApi::class)
 internal abstract class InProgressStrokesRenderHelper<
     ShapeSpecT : Any,
     InProgressShapeT : InProgressShape<ShapeSpecT, CompletedShapeT>,
@@ -99,7 +100,7 @@ internal abstract class InProgressStrokesRenderHelper<
      * This is not synchronous, the [runnable] should not be executed immediately even if the render
      * thread is the same as the UI thread.
      */
-    @UiThread abstract fun executeOnRenderThread(runnable: Runnable)
+    @VisibleForTesting @UiThread abstract fun executeOnRenderThread(runnable: Runnable)
 
     /**
      * Called by [InProgressStrokesManager] when new content must be drawn. Will lead to

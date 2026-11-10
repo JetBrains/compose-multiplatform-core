@@ -27,6 +27,7 @@ import androidx.ink.brush.color.Color as ComposeColor
 import androidx.ink.brush.color.toArgb
 import androidx.ink.geometry.AngleDegreesFloat
 import androidx.ink.geometry.MeshFormat
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointer
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
@@ -43,6 +44,11 @@ import kotlin.jvm.JvmStatic
  * - The final combined texture (source) is blended with the (possibly adjusted per-vertex) brush
  *   color (destination) according to the blend mode of the last texture layer.
  */
+@OptIn(
+    InkInternalOnlyApi::class,
+    ExperimentalInkCustomBrushApi::class,
+    ExperimentalInkAnimationApi::class,
+)
 public class BrushPaint
 private constructor(
     nativeAlloc: () -> Long,
@@ -52,7 +58,8 @@ private constructor(
     colorFunctions: List<ColorFunction>? = null,
 ) {
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public val nativePointer: Long by NativePointer(nativeAlloc, BrushPaintNative::free)
 
     /** An immutable list of the textures to apply to the stroke. */
@@ -117,7 +124,9 @@ private constructor(
     )
 
     /** Uses this paint's color functions (if any) to transform the given brush color. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
+    @Suppress("ValueClassUsageWithoutJvmName") // Internal-only API
     public fun applyColorFunctions(color: ComposeColor): ComposeColor {
         var transformedColor = color
         for (colorFunction in colorFunctions) {
@@ -144,8 +153,19 @@ private constructor(
         return result
     }
 
+    /**
+     * Returns the minimum required [Version] for this [BrushPaint].
+     *
+     * By default, decoding a [BrushFamily] containing a [BrushPaint] with a minimum required
+     * version higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(BrushPaintNative.calculateMinimumRequiredVersion(nativePointer))
+
     /** Whether the given [MeshFormat] has sufficient attributes to render this [BrushPaint]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @InkInternalOnlyApi
     public fun isCompatibleWithMeshFormat(meshFormat: MeshFormat): Boolean =
         BrushPaintNative.isCompatibleWithMeshFormat(nativePointer, meshFormat.nativePointer)
 
@@ -153,9 +173,19 @@ private constructor(
     public abstract class TextureLayer internal constructor(nativeAlloc: () -> Long) {
         internal val nativePointer: Long by NativePointer(nativeAlloc, TextureLayerNative::free)
 
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public val mappingInt: Int
-            get() = TextureLayerNative.getMappingInt(nativePointer)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @InkInternalOnlyApi
+        public fun mappingInt(): Int = TextureLayerNative.getMappingInt(nativePointer)
+
+        /**
+         * Returns the minimum required [Version] for this [TextureLayer].
+         *
+         * By default, decoding a [BrushFamily] containing a [TextureLayer] with a minimum required
+         * version higher than [Version.MAX_SUPPORTED] will fail.
+         */
+        @ExperimentalInkCustomBrushApi
+        public fun calculateMinimumRequiredVersion(): Version =
+            Version.fromInt(TextureLayerNative.calculateMinimumRequiredVersion(nativePointer))
 
         /**
          * The rule by which the texture layers up to and including this one are combined with the
@@ -172,11 +202,14 @@ private constructor(
             )
 
         public companion object {
-            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+
+            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+            @InkInternalOnlyApi
             @JvmField
             public val MAPPING_TILING: Int = 0
 
-            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+            @InkInternalOnlyApi
             @JvmField
             public val MAPPING_STAMPING: Int = 1
 
@@ -184,7 +217,9 @@ private constructor(
              * Constructs a [TextureLayer], taking a callback that heap-allocates a C++
              * `BrushPaint::TextureLayer` with the given mapping mode integer.
              */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+            @InkInternalOnlyApi
+            @Suppress("MissingJvmstatic") // Internal-only API
             public fun wrapNative(mappingInt: Int, nativeAlloc: () -> Long): TextureLayer =
                 when (mappingInt) {
                     MAPPING_TILING -> TilingTexture.wrapNative(nativeAlloc)
@@ -202,6 +237,16 @@ private constructor(
             }
 
             override fun toString(): String = "TextureLayer.SizeUnit.$name"
+
+            /**
+             * Returns the minimum required [Version] for this [SizeUnit].
+             *
+             * By default, decoding a [BrushFamily] containing a [SizeUnit] with a minimum required
+             * version higher than [Version.MAX_SUPPORTED] will fail.
+             */
+            @ExperimentalInkCustomBrushApi
+            public fun calculateMinimumRequiredVersion(): Version =
+                Version.fromInt(BrushPaintNative.getTextureSizeUnitMinimumRequiredVersion(value))
 
             public companion object {
                 private val VALUE_TO_INSTANCE = MutableIntObjectMap<SizeUnit>()
@@ -225,6 +270,16 @@ private constructor(
             }
 
             override fun toString(): String = "TextureLayer.Wrap.$name"
+
+            /**
+             * Returns the minimum required [Version] for this [Wrap].
+             *
+             * By default, decoding a [BrushFamily] containing a [Wrap] with a minimum required
+             * version higher than [Version.MAX_SUPPORTED] will fail.
+             */
+            @ExperimentalInkCustomBrushApi
+            public fun calculateMinimumRequiredVersion(): Version =
+                Version.fromInt(BrushPaintNative.getTextureWrapMinimumRequiredVersion(value))
 
             public companion object {
                 private val VALUE_TO_INSTANCE = MutableIntObjectMap<Wrap>()
@@ -262,6 +317,16 @@ private constructor(
             }
 
             override fun toString(): String = "TextureLayer.BlendMode.$name"
+
+            /**
+             * Returns the minimum required [Version] for this [BlendMode].
+             *
+             * By default, decoding a [BrushFamily] containing a [BlendMode] with a minimum required
+             * version higher than [Version.MAX_SUPPORTED] will fail.
+             */
+            @ExperimentalInkCustomBrushApi
+            public fun calculateMinimumRequiredVersion(): Version =
+                Version.fromInt(BrushPaintNative.getBlendModeMinimumRequiredVersion(value))
 
             public companion object {
                 private val VALUE_TO_INSTANCE = MutableIntObjectMap<BlendMode>()
@@ -420,6 +485,49 @@ private constructor(
                  * preserve alpha adjustments from anti-aliasing).
                  */
                 @JvmField public val XOR: BlendMode = BlendMode(11, "XOR")
+            }
+        }
+
+        /** Specifies what should happen when a brush paint animation repeats. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+        @ExperimentalInkAnimationApi
+        public class AnimationRepeatMode
+        private constructor(internal val value: Int, private val name: String) {
+            init {
+                check(value !in VALUE_TO_INSTANCE) {
+                    "Duplicate AnimationRepeatMode value: $value."
+                }
+                VALUE_TO_INSTANCE[value] = this
+            }
+
+            override fun toString(): String = "TextureLayer.AnimationRepeatMode.$name"
+
+            /**
+             * Returns the minimum required [Version] for this [AnimationRepeatMode].
+             *
+             * By default, decoding a [BrushFamily] containing an [AnimationRepeatMode] with a
+             * minimum required version higher than [Version.MAX_SUPPORTED] will fail.
+             */
+            @ExperimentalInkAnimationApi
+            public fun calculateMinimumRequiredVersion(): Version =
+                Version.fromInt(
+                    BrushPaintNative.getAnimationRepeatModeMinimumRequiredVersion(value)
+                )
+
+            public companion object {
+                private val VALUE_TO_INSTANCE = MutableIntObjectMap<AnimationRepeatMode>()
+
+                internal fun fromInt(value: Int): AnimationRepeatMode =
+                    checkNotNull(VALUE_TO_INSTANCE.get(value)) {
+                        "Invalid AnimationRepeatMode value: $value"
+                    }
+
+                /** Return to the start of the animation for the next repetition. */
+                @JvmField
+                public val RESTART: AnimationRepeatMode = AnimationRepeatMode(0, "RESTART")
+                /** Reverse animation direction for the next repetition. */
+                @JvmField
+                public val REVERSE: AnimationRepeatMode = AnimationRepeatMode(1, "REVERSE")
             }
         }
     }
@@ -756,7 +864,9 @@ private constructor(
              * Constructs a [TilingTexture], taking a callback that heap-allocates a C++
              * `BrushPaint::TextureLayer` that holds a `BrushPaint::TilingTexture`.
              */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+            @InkInternalOnlyApi
+            @Suppress("MissingJvmstatic") // Internal-only API
             public fun wrapNative(nativeAlloc: () -> Long): TilingTexture =
                 TilingTexture(nativeAlloc)
         }
@@ -769,6 +879,16 @@ private constructor(
             }
 
             override fun toString(): String = "TilingTexture.Origin.$name"
+
+            /**
+             * Returns the minimum required [Version] for this [Origin].
+             *
+             * By default, decoding a [BrushFamily] containing an [Origin] with a minimum required
+             * version higher than [Version.MAX_SUPPORTED] will fail.
+             */
+            @ExperimentalInkCustomBrushApi
+            public fun calculateMinimumRequiredVersion(): Version =
+                Version.fromInt(BrushPaintNative.getTextureOriginMinimumRequiredVersion(value))
 
             public companion object {
                 private val VALUE_TO_INSTANCE = MutableIntObjectMap<Origin>()
@@ -821,6 +941,7 @@ private constructor(
                 animationRows = 1,
                 animationColumns = 1,
                 animationDurationMillis = 1000L,
+                animationRepeatMode = AnimationRepeatMode.RESTART.value,
                 blendMode = blendMode.value,
             )
         })
@@ -854,11 +975,15 @@ private constructor(
          *   the [animationFrames] frames in the texture (in which case each frame will be displayed
          *   for [animationDurationMillis] / [animationFrames] milliseconds on average), or zero to
          *   disable looping animations (in which case the animation frame is controlled solely by
-         *   any `TEXTURE_ANIMATION_PROGRESS_OFFSET` behavior targets). Must be between 0 and 2^24
+         *   any `PAINT_ANIMATION_PROGRESS_OFFSET` behavior targets). Must be between 0 and 2^24
          *   (inclusive). Ignored if [animationFrames] is 1 (its default value), because that
+         *   indicates that animation is disabled.
+         * @param animationRepeatMode Specifies what should happen when this texture layer's
+         *   animation repeats. Ignored if [animationFrames] is 1 (its default value), because that
          *   indicates that animation is disabled.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+        @ExperimentalInkAnimationApi
         public constructor(
             clientTextureId: String,
             blendMode: BlendMode = BlendMode.MODULATE,
@@ -866,6 +991,7 @@ private constructor(
             @IntRange(from = 1, to = 1 shl 12) animationRows: Int = 1,
             @IntRange(from = 1, to = 1 shl 12) animationColumns: Int = 1,
             @IntRange(from = 0, to = 1 shl 24) animationDurationMillis: Long = 1000L,
+            animationRepeatMode: AnimationRepeatMode = AnimationRepeatMode.RESTART,
         ) : this({
             StampingTextureNative.create(
                 clientTextureId = clientTextureId,
@@ -873,6 +999,7 @@ private constructor(
                 animationRows = animationRows,
                 animationColumns = animationColumns,
                 animationDurationMillis = animationDurationMillis,
+                animationRepeatMode = animationRepeatMode.value,
                 blendMode = blendMode.value,
             )
         })
@@ -882,24 +1009,44 @@ private constructor(
 
         // Caching the native accessors here even for primitive fields because these are accessed
         // mostly
-        // in Kotlin.
+        // Kotlin. Uses lazy to avoid the opt-in annotation not applying to Java callers (can't be
+        // applied to getters, and just applies to the backing field if there is one).
 
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-        @IntRange(from = 1, to = 1 shl 24)
-        public val animationFrames: Int = StampingTextureNative.getAnimationFrames(nativePointer)
+        @ExperimentalInkAnimationApi
+        @get:IntRange(from = 1, to = 1 shl 24)
+        public val animationFrames: Int by lazy {
+            StampingTextureNative.getAnimationFrames(nativePointer)
+        }
 
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-        @IntRange(from = 1, to = 1 shl 12)
-        public val animationRows: Int = StampingTextureNative.getAnimationRows(nativePointer)
+        @ExperimentalInkAnimationApi
+        @get:IntRange(from = 1, to = 1 shl 12)
+        public val animationRows: Int by lazy {
+            StampingTextureNative.getAnimationRows(nativePointer)
+        }
 
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-        @IntRange(from = 1, to = 1 shl 12)
-        public val animationColumns: Int = StampingTextureNative.getAnimationColumns(nativePointer)
+        @ExperimentalInkAnimationApi
+        @get:IntRange(from = 1, to = 1 shl 12)
+        public val animationColumns: Int by lazy {
+            StampingTextureNative.getAnimationColumns(nativePointer)
+        }
 
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-        @IntRange(from = 0, to = 1 shl 24)
-        public val animationDurationMillis: Long =
+        @ExperimentalInkAnimationApi
+        @get:IntRange(from = 0, to = 1 shl 24)
+        public val animationDurationMillis: Long by lazy {
             StampingTextureNative.getAnimationDurationMillis(nativePointer)
+        }
+
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+        @ExperimentalInkAnimationApi
+        public val animationRepeatMode: AnimationRepeatMode by lazy {
+            AnimationRepeatMode.fromInt(
+                StampingTextureNative.getAnimationRepeatModeInt(nativePointer)
+            )
+        }
 
         init {
             require(animationFrames <= animationRows * animationColumns) {
@@ -929,6 +1076,7 @@ private constructor(
                 animationRows = this.animationRows,
                 animationColumns = this.animationColumns,
                 animationDurationMillis = this.animationDurationMillis,
+                animationRepeatMode = this.animationRepeatMode,
             )
         }
 
@@ -939,6 +1087,7 @@ private constructor(
          * Java callers should use [Builder] instead.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+        @ExperimentalInkAnimationApi
         @Suppress("MissingJvmstatic") // no @JvmOverloads; not intended for Java callers
         public fun copy(
             clientTextureId: String = this.clientTextureId,
@@ -948,6 +1097,7 @@ private constructor(
             @IntRange(from = 1, to = 1 shl 12) animationColumns: Int = this.animationColumns,
             @IntRange(from = 0, to = 1 shl 24)
             animationDurationMillis: Long = this.animationDurationMillis,
+            animationRepeatMode: AnimationRepeatMode = this.animationRepeatMode,
         ): StampingTexture {
             if (
                 clientTextureId == this.clientTextureId &&
@@ -955,7 +1105,8 @@ private constructor(
                     animationFrames == this.animationFrames &&
                     animationRows == this.animationRows &&
                     animationColumns == this.animationColumns &&
-                    animationDurationMillis == this.animationDurationMillis
+                    animationDurationMillis == this.animationDurationMillis &&
+                    animationRepeatMode == this.animationRepeatMode
             ) {
                 return this
             }
@@ -966,6 +1117,7 @@ private constructor(
                 animationRows = animationRows,
                 animationColumns = animationColumns,
                 animationDurationMillis = animationDurationMillis,
+                animationRepeatMode = animationRepeatMode,
             )
         }
 
@@ -981,6 +1133,7 @@ private constructor(
                 animationRows = this.animationRows,
                 animationColumns = this.animationColumns,
                 animationDurationMillis = this.animationDurationMillis,
+                animationRepeatMode = this.animationRepeatMode,
                 blendMode = this.blendMode,
             )
 
@@ -991,6 +1144,7 @@ private constructor(
                 animationRows == other.animationRows &&
                 animationColumns == other.animationColumns &&
                 animationDurationMillis == other.animationDurationMillis &&
+                animationRepeatMode == other.animationRepeatMode &&
                 blendMode == other.blendMode
         }
 
@@ -998,7 +1152,7 @@ private constructor(
             "BrushPaint.StampingTexture(clientTextureId=$clientTextureId, " +
                 "animationFrames=$animationFrames, animationRows=$animationRows, " +
                 "animationColumns=$animationColumns, animationDurationMillis=$animationDurationMillis, " +
-                "blendMode=$blendMode)"
+                "animationRepeatMode=$animationRepeatMode, blendMode=$blendMode)"
 
         override fun hashCode(): Int {
             var result = clientTextureId.hashCode()
@@ -1006,6 +1160,7 @@ private constructor(
             result = 31 * result + animationRows.hashCode()
             result = 31 * result + animationColumns.hashCode()
             result = 31 * result + animationDurationMillis.hashCode()
+            result = 31 * result + animationRepeatMode.hashCode()
             result = 31 * result + blendMode.hashCode()
             return result
         }
@@ -1027,6 +1182,7 @@ private constructor(
             @IntRange(from = 1, to = 1 shl 12) private var animationRows: Int = 1,
             @IntRange(from = 1, to = 1 shl 12) private var animationColumns: Int = 1,
             @IntRange(from = 0, to = 1 shl 24) private var animationDurationMillis: Long = 1000L,
+            private var animationRepeatMode: AnimationRepeatMode = AnimationRepeatMode.RESTART,
             private var blendMode: BlendMode = BlendMode.MODULATE,
         ) {
             /** Sets the client texture ID for this texture layer. */
@@ -1036,27 +1192,41 @@ private constructor(
 
             /** Sets the number of animation frames in this texture layer. */
             @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+            @ExperimentalInkAnimationApi
             public fun setAnimationFrames(
                 @IntRange(from = 1, to = 1 shl 24) animationFrames: Int
             ): Builder = apply { this.animationFrames = animationFrames }
 
             /** Sets the number of animation rows in this texture layer. */
             @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+            @ExperimentalInkAnimationApi
             public fun setAnimationRows(
                 @IntRange(from = 1, to = 1 shl 12) animationRows: Int
-            ): Builder = apply { this.animationRows = animationRows }
+            ): Builder = apply {
+                this.animationRows = animationRows
+            }
 
             /** Sets the number of animation columns in this texture layer. */
             @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+            @ExperimentalInkAnimationApi
             public fun setAnimationColumns(
                 @IntRange(from = 1, to = 1 shl 12) animationColumns: Int
             ): Builder = apply { this.animationColumns = animationColumns }
 
             /** Sets the duration of the animation for this texture layer. */
             @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+            @ExperimentalInkAnimationApi
             public fun setAnimationDurationMillis(
                 @IntRange(from = 0, to = 1 shl 24) animationDurationMillis: Long
             ): Builder = apply { this.animationDurationMillis = animationDurationMillis }
+
+            /** Sets what should happen when this texture layer's animation repeats. */
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+            @ExperimentalInkAnimationApi
+            public fun setAnimationRepeatMode(animationRepeatMode: AnimationRepeatMode): Builder =
+                apply {
+                    this.animationRepeatMode = animationRepeatMode
+                }
 
             /**
              * Sets the blend mode used for blending this and all previous texture layers with the
@@ -1084,6 +1254,7 @@ private constructor(
                     animationRows = animationRows,
                     animationColumns = animationColumns,
                     animationDurationMillis = animationDurationMillis,
+                    animationRepeatMode = animationRepeatMode,
                     blendMode = blendMode,
                 )
             }
@@ -1097,7 +1268,9 @@ private constructor(
              * Constructs a [StampingTexture], taking a callback that heap-allocates a C++
              * `BrushPaint::TextureLayer` that holds a `BrushPaint::StampingTexture`.
              */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+            @InkInternalOnlyApi
+            @Suppress("MissingJvmstatic") // Internal-only API
             public fun wrapNative(nativeAlloc: () -> Long): StampingTexture =
                 StampingTexture(nativeAlloc)
         }
@@ -1109,10 +1282,22 @@ private constructor(
         internal val nativePointer: Long by NativePointer(nativeAlloc, ColorFunctionNative::free)
 
         /**
+         * Returns the minimum required [Version] for this [ColorFunction].
+         *
+         * By default, decoding a [BrushFamily] containing a [ColorFunction] with a minimum required
+         * version higher than [Version.MAX_SUPPORTED] will fail.
+         */
+        @ExperimentalInkCustomBrushApi
+        public fun calculateMinimumRequiredVersion(): Version =
+            Version.fromInt(ColorFunctionNative.calculateMinimumRequiredVersion(nativePointer))
+
+        /**
          * Transforms the input color into a new color. [color] must be in an Ink-supported color
          * space (this is guaranteed to be the case if [color] is coming from a [Brush]).
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @InkInternalOnlyApi
+        @Suppress("ValueClassUsageWithoutJvmName") // Internal-only API
         public open fun transformComposeColor(color: ComposeColor): ComposeColor =
             ComposeColor(
                 ColorFunctionNative.computeTransformedColorLong(
@@ -1136,13 +1321,15 @@ private constructor(
              * Constructs a [ColorFunction], taking a callback that heap-allocates a C++
              * `ColorFunction`.
              */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+            @InkInternalOnlyApi
+            @Suppress("MissingJvmstatic") // Internal-only API
             public fun wrapNative(parametersType: Int, nativeAlloc: () -> Long): ColorFunction =
                 when (parametersType) {
                     0 -> OpacityMultiplier(nativeAlloc)
                     1 -> HueOffset(nativeAlloc)
-                    2 -> SaturationMultiplier(nativeAlloc)
-                    3 -> LuminosityOffset(nativeAlloc)
+                    2 -> ChromaMultiplier(nativeAlloc)
+                    3 -> LightnessOffset(nativeAlloc)
                     4 -> ReplaceColor(nativeAlloc)
                     else -> throw IllegalArgumentException("Invalid color function type")
                 }
@@ -1165,7 +1352,9 @@ private constructor(
             // This override is functionally equivalent to the base class implementation, but faster
             // since
             // it avoids converting between [ComposeColor] and the C++ `ink::Color` type.
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+            @InkInternalOnlyApi
+            @Suppress("ValueClassUsageWithoutJvmName") // Internal-only API
             override fun transformComposeColor(color: ComposeColor): ComposeColor =
                 color.copy(alpha = color.alpha * multiplier)
 
@@ -1184,8 +1373,12 @@ private constructor(
             public companion object
         }
 
-        /** A [ColorFunction] that shifts the color hue by a specified offset. */
+        /**
+         * A [ColorFunction] that shifts the color hue by a specified offset, while maintaining the
+         * same level of perceived lightness.
+         */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+        @ExperimentalInkCustomBrushApi
         public class HueOffset internal constructor(nativeAlloc: () -> Long) :
             ColorFunction(nativeAlloc) {
 
@@ -1211,26 +1404,31 @@ private constructor(
             override fun toString(): String = "ColorFunction.HueOffset($offsetDegrees)"
 
             // Declared to make extension functions available.
-            public companion object
+            @ExperimentalInkCustomBrushApi public companion object
         }
 
-        /** A [ColorFunction] that scales the color saturation by a specified multiplier. */
+        /** A [ColorFunction] that scales the color chroma by a specified multiplier. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-        public class SaturationMultiplier internal constructor(nativeAlloc: () -> Long) :
+        @ExperimentalInkCustomBrushApi
+        public class ChromaMultiplier internal constructor(nativeAlloc: () -> Long) :
             ColorFunction(nativeAlloc) {
 
-            /** Constructs a color function that applies the specified saturation multiplier. */
+            /**
+             * Constructs a color function that applies the specified chroma multiplier. A value
+             * greater than 1 makes the color more saturated, a value less than 1 makes the color
+             * less saturated, and a value of 0 makes the color grayscale.
+             */
             public constructor(
                 @FloatRange(from = 0.0) multiplier: Float
-            ) : this({ ColorFunctionNative.createSaturationMultiplier(multiplier) })
+            ) : this({ ColorFunctionNative.createChromaMultiplier(multiplier) })
 
-            /** The saturation multiplier to apply. */
+            /** The chroma multiplier to apply. */
             @get:FloatRange(from = 0.0)
             public val multiplier: Float
-                get() = ColorFunctionNative.getSaturationMultiplier(nativePointer)
+                get() = ColorFunctionNative.getChromaMultiplier(nativePointer)
 
             override fun equals(other: Any?): Boolean {
-                if (other == null || other !is SaturationMultiplier) {
+                if (other == null || other !is ChromaMultiplier) {
                     return false
                 }
                 return multiplier == other.multiplier
@@ -1238,28 +1436,29 @@ private constructor(
 
             override fun hashCode(): Int = multiplier.hashCode()
 
-            override fun toString(): String = "ColorFunction.SaturationMultiplier($multiplier)"
+            override fun toString(): String = "ColorFunction.ChromaMultiplier($multiplier)"
 
             // Declared to make extension functions available.
-            public companion object
+            @ExperimentalInkCustomBrushApi public companion object
         }
 
-        /** A [ColorFunction] that shifts the color luminosity by a specified offset. */
+        /** A [ColorFunction] that shifts the color perceived lightness by a specified offset. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-        public class LuminosityOffset internal constructor(nativeAlloc: () -> Long) :
+        @ExperimentalInkCustomBrushApi
+        public class LightnessOffset internal constructor(nativeAlloc: () -> Long) :
             ColorFunction(nativeAlloc) {
 
-            /** Constructs a color function that applies the specified luminosity offset. */
+            /** Constructs a color function that applies the specified lightness offset. */
             public constructor(
                 offset: Float
-            ) : this({ ColorFunctionNative.createLuminosityOffset(offset) })
+            ) : this({ ColorFunctionNative.createLightnessOffset(offset) })
 
-            /** The luminosity offset to apply. */
+            /** The lightness offset to apply. */
             public val offset: Float
-                get() = ColorFunctionNative.getLuminosityOffset(nativePointer)
+                get() = ColorFunctionNative.getLightnessOffset(nativePointer)
 
             override fun equals(other: Any?): Boolean {
-                if (other == null || other !is LuminosityOffset) {
+                if (other == null || other !is LightnessOffset) {
                     return false
                 }
                 return offset == other.offset
@@ -1267,10 +1466,10 @@ private constructor(
 
             override fun hashCode(): Int = offset.hashCode()
 
-            override fun toString(): String = "ColorFunction.LuminosityOffset($offset)"
+            override fun toString(): String = "ColorFunction.LightnessOffset($offset)"
 
             // Declared to make extension functions available.
-            public companion object
+            @ExperimentalInkCustomBrushApi public companion object
         }
 
         /**
@@ -1279,9 +1478,7 @@ private constructor(
         public class ReplaceColor internal constructor(nativeAlloc: () -> Long) :
             ColorFunction(nativeAlloc) {
 
-            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-            @Suppress("HiddenTypeParameter") // Internal API.
-            public val internalColor: ComposeColor =
+            internal val internalColor: ComposeColor =
                 // Caching this because the native call is slow. Still doing the round-trip on
                 // construction
                 // to ensure this is exercised by tests and that deserialized color functions are
@@ -1300,7 +1497,9 @@ private constructor(
             // This override is functionally equivalent to the base class implementation, but faster
             // since
             // it avoids converting between [ComposeColor] and the C++ `ink::Color` type.
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+            @InkInternalOnlyApi
+            @Suppress("ValueClassUsageWithoutJvmName") // Internal-only API
             override fun transformComposeColor(color: ComposeColor): ComposeColor =
                 this.internalColor
 
@@ -1320,7 +1519,9 @@ private constructor(
                  * Returns a color function that will replace its input color with the given color.
                  */
                 @JvmStatic
-                @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+                @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+                @InkInternalOnlyApi
+                @Suppress("ValueClassUsageWithoutJvmName") // Internal-only API
                 public fun withComposeColor(color: ComposeColor): ReplaceColor = ReplaceColor {
                     color.toColorInInkSupportedColorSpace().let { convertedColor ->
                         ColorFunctionNative.createReplaceColor(
@@ -1353,7 +1554,9 @@ private constructor(
     // To be extended by extension methods.
     public companion object {
         /** Construct a [BrushPaint], taking a callback that heap-allocates a C++ `BrushPaint`. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @InkInternalOnlyApi
+        @Suppress("MissingJvmstatic") // Internal-only API
         public fun wrapNative(nativeAlloc: () -> Long): BrushPaint = BrushPaint(nativeAlloc)
     }
 }
@@ -1393,6 +1596,18 @@ expect internal object BrushPaintNative {
     fun getSelfOverlapInt(nativePointer: Long): Int
 
     fun isCompatibleWithMeshFormat(nativePointer: Long, meshFormatNativePointer: Long): Boolean
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
+
+    fun getBlendModeMinimumRequiredVersion(blendModeInt: Int): Int
+
+    fun getTextureWrapMinimumRequiredVersion(wrapInt: Int): Int
+
+    fun getTextureOriginMinimumRequiredVersion(originInt: Int): Int
+
+    fun getTextureSizeUnitMinimumRequiredVersion(sizeUnitInt: Int): Int
+
+    fun getAnimationRepeatModeMinimumRequiredVersion(animationRepeatModeInt: Int): Int
 }
 
 expect internal object TextureLayerNative {
@@ -1401,6 +1616,8 @@ expect internal object TextureLayerNative {
     fun getBlendModeInt(nativePointer: Long): Int
 
     fun free(nativePointer: Long)
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }
 
 expect internal object TilingTextureNative {
@@ -1446,6 +1663,7 @@ expect internal object StampingTextureNative {
         animationRows: Int,
         animationColumns: Int,
         animationDurationMillis: Long,
+        animationRepeatMode: Int,
         blendMode: Int,
     ): Long
 
@@ -1458,6 +1676,8 @@ expect internal object StampingTextureNative {
     fun getAnimationColumns(nativePointer: Long): Int
 
     fun getAnimationDurationMillis(nativePointer: Long): Long
+
+    fun getAnimationRepeatModeInt(nativePointer: Long): Int
 }
 
 expect internal object ColorFunctionNative {
@@ -1466,9 +1686,9 @@ expect internal object ColorFunctionNative {
 
     fun createHueOffset(offsetDegrees: Float): Long
 
-    fun createSaturationMultiplier(multiplier: Float): Long
+    fun createChromaMultiplier(multiplier: Float): Long
 
-    fun createLuminosityOffset(offset: Float): Long
+    fun createLightnessOffset(offset: Float): Long
 
     fun createReplaceColor(
         colorRed: Float,
@@ -1484,9 +1704,9 @@ expect internal object ColorFunctionNative {
 
     fun getHueOffsetDegrees(nativePointer: Long): Float
 
-    fun getSaturationMultiplier(nativePointer: Long): Float
+    fun getChromaMultiplier(nativePointer: Long): Float
 
-    fun getLuminosityOffset(nativePointer: Long): Float
+    fun getLightnessOffset(nativePointer: Long): Float
 
     fun computeReplaceColorLong(nativePointer: Long): Long
 
@@ -1498,4 +1718,6 @@ expect internal object ColorFunctionNative {
         colorAlpha: Float,
         colorSpace: Int,
     ): Long
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

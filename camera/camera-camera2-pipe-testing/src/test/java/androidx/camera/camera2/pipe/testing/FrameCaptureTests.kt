@@ -17,10 +17,12 @@
 package androidx.camera.camera2.pipe.testing
 
 import android.content.Context
+import android.hardware.camera2.CaptureResult
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.Frame.Companion.isFrameInfoAvailable
+import androidx.camera.camera2.pipe.FrameGraph
 import androidx.camera.camera2.pipe.GraphState.GraphStateStarted
 import androidx.camera.camera2.pipe.GraphState.GraphStateStarting
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
@@ -49,10 +51,9 @@ class FrameCaptureTests {
     private val testContext = ApplicationProvider.getApplicationContext() as Context
     private val cameraId = FakeCameraIds.next()
     private val physicalCameraIds = List(3) { FakeCameraIds.next() }
-    private val physicalCameraMetadata =
-        physicalCameraIds.associateWith {
-            FakeCameraMetadata.fromTemplate(template = HighEndDeviceTemplate, cameraId = it)
-        }
+    private val physicalCameraMetadata = physicalCameraIds.associateWith {
+        FakeCameraMetadata.fromTemplate(template = HighEndDeviceTemplate, cameraId = it)
+    }
     private val cameraMetadata =
         FakeCameraMetadata.fromTemplate(
             template = HighEndDeviceTemplate,
@@ -117,23 +118,24 @@ class FrameCaptureTests {
                 ),
         )
 
-    private val cameraGraphSimulator = cameraPipeSimulator.createCameraGraphSimulator(graphConfig)
-    private val cameraGraph: CameraGraph = cameraGraphSimulator
+    private val frameGraphSimulator: FrameGraphSimulator =
+        cameraPipeSimulator.createFrameGraph(FrameGraph.Config(graphConfig))
+    private val frameGraph: FrameGraph = frameGraphSimulator
 
-    private val viewfinderStream = cameraGraph.streams[viewfinderStreamConfig]!!
-    private val jpegStream = cameraGraph.streams[jpegStreamConfig]!!
-    private val rawStream = cameraGraph.streams[rawStreamConfig]!!
-    private val concurrentRawStream = cameraGraph.streams[concurrentRawStreamConfig]!!
+    private val viewfinderStream = frameGraph.streams[viewfinderStreamConfig]!!
+    private val jpegStream = frameGraph.streams[jpegStreamConfig]!!
+    private val rawStream = frameGraph.streams[rawStreamConfig]!!
+    private val concurrentRawStream = frameGraph.streams[concurrentRawStreamConfig]!!
 
-    private suspend fun startCameraGraph() {
-        assertThat(cameraGraph.graphState.value).isEqualTo(GraphStateStopped)
+    private suspend fun startFrameGraph() {
+        assertThat(frameGraph.graphState.value).isEqualTo(GraphStateStopped)
 
-        cameraGraph.start() // Tell the cameraGraph to start
-        assertThat(cameraGraph.graphState.value).isEqualTo(GraphStateStarting)
+        frameGraph.start() // Tell the frameGraph to start
+        assertThat(frameGraph.graphState.value).isEqualTo(GraphStateStarting)
 
-        cameraGraphSimulator.initializeSurfaces()
-        cameraGraphSimulator.simulateCameraStarted() // Simulate the camera starting successfully
-        assertThat(cameraGraph.graphState.value).isEqualTo(GraphStateStarted)
+        frameGraphSimulator.initializeSurfaces()
+        frameGraphSimulator.simulateCameraStarted() // Simulate the camera starting successfully
+        assertThat(frameGraph.graphState.value).isEqualTo(GraphStateStarted)
     }
 
     @After
@@ -142,158 +144,213 @@ class FrameCaptureTests {
     }
 
     @Test
-    fun frameCaptureCanBeSimulated() =
-        testScope.runTest {
-            val expectedRawOutputId = rawStream.outputs.last().id
+    fun frameCaptureCanBeSimulated() = testScope.runTest {
+        val expectedRawOutputId = rawStream.outputs.last().id
 
-            startCameraGraph()
+        startFrameGraph()
 
-            // Capture an image using the cameraGraph
-            val frameCapture =
-                cameraGraph.useSession { session ->
-                    session.capture(Request(streams = listOf(jpegStream.id, rawStream.id)))
-                }
-            advanceUntilIdle()
-
-            // Verify a capture sequence with all of the frame interactions
-            val frameCaptureJob = launch {
-                val frame = frameCapture.awaitFrame()
-                assertThat(frame).isNotNull()
-
-                assertThat(frame!!.frameId.value).isGreaterThan(0)
-                assertThat(frame.frameTimestamp.value).isGreaterThan(0)
-
-                val image = frame.awaitImage(jpegStream.id)
-                val rawImages = frame.awaitImages(rawStream.id)
-                assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
-                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
-                assertThat(frame.imageStatus(viewfinderStream.id))
-                    .isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(image).isNotNull()
-                assertThat(image!!.timestamp).isEqualTo(frame.frameTimestamp.value)
-                assertThat(rawImages.size).isEqualTo(1)
-                val rawImage = rawImages.first()
-                assertThat(rawImage.timestamp).isEqualTo(frame.frameTimestamp.value)
-
-                image.close()
-                rawImage.close()
-
-                assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
-                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
-                assertThat(frame.imageStatus(viewfinderStream.id))
-                    .isEqualTo(OutputStatus.UNAVAILABLE)
-
-                println("frame.awaitFrameInfo()")
-                val frameInfo = frame.awaitFrameInfo()
-
-                assertThat(frame.isFrameInfoAvailable).isTrue()
-                assertThat(frameInfo).isNotNull()
-                assertThat(frameInfo!!.frameNumber).isEqualTo(frame.frameNumber)
-
-                println("frame.close()")
-                frame.close()
-
-                assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.imageStatus(viewfinderStream.id))
-                    .isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.isFrameInfoAvailable).isFalse()
-            }
-
-            // Simulate camera interactions:
-            val frameSimulator = cameraGraphSimulator.simulateNextFrame()
-
-            frameSimulator.simulateImage(jpegStream.id)
-            frameSimulator.simulateExpectedOutputs(
-                rawStream.id,
-                outputIds = setOf(expectedRawOutputId),
-            )
-            frameSimulator.simulateImage(rawStream.id, outputId = expectedRawOutputId)
-            frameSimulator.simulateComplete(emptyMap())
-
-            advanceUntilIdle()
-            assertThat(frameCaptureJob.isCompleted).isTrue() // Ensure verification is complete
-            cameraGraphSimulator.close()
+        // Capture an image using the frameGraph
+        val frameCapture = frameGraph.useSession { session ->
+            session.capture(Request(streams = listOf(jpegStream.id, rawStream.id)))
         }
+        advanceUntilIdle()
+
+        // Verify a capture sequence with all of the frame interactions
+        val frameCaptureJob = launch {
+            val frame = frameCapture.awaitFrame()
+            assertThat(frame).isNotNull()
+
+            assertThat(frame!!.frameId.value).isGreaterThan(0)
+            assertThat(frame.frameTimestamp.value).isGreaterThan(0)
+
+            val image = frame.awaitImage(jpegStream.id)
+            val rawImages = frame.awaitImages(rawStream.id)
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(image).isNotNull()
+            assertThat(image!!.timestamp).isEqualTo(frame.frameTimestamp.value)
+            assertThat(rawImages.size).isEqualTo(1)
+            val rawImage = rawImages.first()
+            assertThat(rawImage.timestamp).isEqualTo(frame.frameTimestamp.value)
+
+            image.close()
+            rawImage.close()
+
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+
+            println("frame.awaitFrameInfo()")
+            val frameInfo = frame.awaitFrameInfo()
+
+            assertThat(frame.isFrameInfoAvailable).isTrue()
+            assertThat(frameInfo).isNotNull()
+            assertThat(frameInfo!!.frameNumber).isEqualTo(frame.frameNumber)
+
+            println("frame.close()")
+            frame.close()
+
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.isFrameInfoAvailable).isFalse()
+        }
+
+        // Simulate camera interactions:
+        val frameSimulator = frameGraphSimulator.simulateNextFrame()
+
+        frameSimulator.simulateImage(jpegStream.id)
+        frameSimulator.simulateExpectedOutputs(
+            rawStream.id,
+            outputIds = setOf(expectedRawOutputId),
+        )
+        frameSimulator.simulateImage(rawStream.id, outputId = expectedRawOutputId)
+        frameSimulator.simulateComplete(emptyMap())
+
+        advanceUntilIdle()
+        assertThat(frameCaptureJob.isCompleted).isTrue() // Ensure verification is complete
+        frameGraphSimulator.close()
+    }
 
     @Test
-    fun frameCaptureCanBeSimulatedWithSimulateImages() =
-        testScope.runTest {
-            val expectedPhysicalCameras = physicalCameraIds.take(2).toSet()
+    fun frameCaptureCanBeSimulatedWithSimulateImages() = testScope.runTest {
+        val expectedPhysicalCameras = physicalCameraIds.take(2).toSet()
 
-            startCameraGraph()
+        startFrameGraph()
 
-            // Capture an image using the cameraGraph
-            val frameCapture =
-                cameraGraph.useSession { session ->
-                    session.capture(
-                        Request(streams = listOf(jpegStream.id, concurrentRawStream.id))
-                    )
-                }
-            advanceUntilIdle()
+        // Capture an image using the frameGraph
+        val frameCapture = frameGraph.useSession { session ->
+            session.capture(Request(streams = listOf(jpegStream.id, concurrentRawStream.id)))
+        }
+        advanceUntilIdle()
 
-            // Verify a capture sequence with all of the frame interactions
-            val frameCaptureJob = launch {
-                val frame = frameCapture.awaitFrame()
-                assertThat(frame).isNotNull()
+        // Verify a capture sequence with all of the frame interactions
+        val frameCaptureJob = launch {
+            val frame = frameCapture.awaitFrame()
+            assertThat(frame).isNotNull()
 
-                assertThat(frame!!.frameId.value).isGreaterThan(0)
-                assertThat(frame.frameTimestamp.value).isGreaterThan(0)
+            assertThat(frame!!.frameId.value).isGreaterThan(0)
+            assertThat(frame.frameTimestamp.value).isGreaterThan(0)
 
-                val image = frame.awaitImage(jpegStream.id)
-                val concurrentRawImages = frame.awaitImages(concurrentRawStream.id)
+            val image = frame.awaitImage(jpegStream.id)
+            val concurrentRawImages = frame.awaitImages(concurrentRawStream.id)
 
-                assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
-                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.imageStatus(concurrentRawStream.id))
-                    .isEqualTo(OutputStatus.AVAILABLE)
-                assertThat(frame.imageStatus(viewfinderStream.id))
-                    .isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(concurrentRawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
 
-                assertThat(image).isNotNull()
-                assertThat(image!!.timestamp).isEqualTo(frame.frameTimestamp.value)
-                image.close()
+            assertThat(image).isNotNull()
+            assertThat(image!!.timestamp).isEqualTo(frame.frameTimestamp.value)
+            image.close()
 
-                assertThat(concurrentRawImages).hasSize(expectedPhysicalCameras.size)
-                for (rawImage in concurrentRawImages) {
-                    assertThat(rawImage.timestamp).isEqualTo(frame.frameTimestamp.value)
-                    rawImage.close()
-                }
-
-                assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
-                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.imageStatus(concurrentRawStream.id))
-                    .isEqualTo(OutputStatus.AVAILABLE)
-                assertThat(frame.imageStatus(viewfinderStream.id))
-                    .isEqualTo(OutputStatus.UNAVAILABLE)
-
-                println("frame.awaitFrameInfo()")
-                val frameInfo = frame.awaitFrameInfo()
-
-                assertThat(frame.isFrameInfoAvailable).isTrue()
-                assertThat(frameInfo).isNotNull()
-                assertThat(frameInfo!!.frameNumber).isEqualTo(frame.frameNumber)
-
-                println("frame.close()")
-                frame.close()
-
-                assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.imageStatus(concurrentRawStream.id))
-                    .isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.imageStatus(viewfinderStream.id))
-                    .isEqualTo(OutputStatus.UNAVAILABLE)
-                assertThat(frame.isFrameInfoAvailable).isFalse()
+            assertThat(concurrentRawImages).hasSize(expectedPhysicalCameras.size)
+            for (rawImage in concurrentRawImages) {
+                assertThat(rawImage.timestamp).isEqualTo(frame.frameTimestamp.value)
+                rawImage.close()
             }
 
-            // Simulate camera interactions:
-            val frameSimulator = cameraGraphSimulator.simulateNextFrame()
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(concurrentRawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
 
-            frameSimulator.simulateImages(physicalCameraIds = expectedPhysicalCameras)
-            frameSimulator.simulateComplete(emptyMap())
+            println("frame.awaitFrameInfo()")
+            val frameInfo = frame.awaitFrameInfo()
 
-            advanceUntilIdle()
-            assertThat(frameCaptureJob.isCompleted).isTrue() // Ensure verification is complete
-            cameraGraphSimulator.close()
+            assertThat(frame.isFrameInfoAvailable).isTrue()
+            assertThat(frameInfo).isNotNull()
+            assertThat(frameInfo!!.frameNumber).isEqualTo(frame.frameNumber)
+
+            println("frame.close()")
+            frame.close()
+
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(concurrentRawStream.id))
+                .isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.isFrameInfoAvailable).isFalse()
         }
+
+        // Simulate camera interactions:
+        val frameSimulator = frameGraphSimulator.simulateNextFrame()
+
+        frameSimulator.simulateImages(physicalCameraIds = expectedPhysicalCameras)
+        frameSimulator.simulateComplete(emptyMap())
+
+        advanceUntilIdle()
+        assertThat(frameCaptureJob.isCompleted).isTrue() // Ensure verification is complete
+        frameGraphSimulator.close()
+    }
+
+    @Test
+    fun frameCaptureCanBeSimulatedWithSimulateAndCompleteNextFrame() = testScope.runTest {
+        val expectedPhysicalCameras = physicalCameraIds.take(2).toSet()
+
+        startFrameGraph()
+
+        // Capture an image using the frameGraph
+        val frameCapture = frameGraph.useSession { session ->
+            session.capture(Request(streams = listOf(jpegStream.id, concurrentRawStream.id)))
+        }
+        advanceUntilIdle()
+
+        // Verify a capture sequence with all of the frame interactions
+        val frameCaptureJob = launch {
+            val frame = checkNotNull(frameCapture.awaitFrame())
+
+            assertThat(frame.frameId.value).isGreaterThan(0)
+            assertThat(frame.frameTimestamp.value).isGreaterThan(0)
+
+            val image = checkNotNull(frame.awaitImage(jpegStream.id))
+            val concurrentRawImages = frame.awaitImages(concurrentRawStream.id)
+
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(concurrentRawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+
+            assertThat(image.timestamp).isEqualTo(frame.frameTimestamp.value)
+            image.close()
+
+            assertThat(concurrentRawImages).hasSize(expectedPhysicalCameras.size)
+            for (rawImage in concurrentRawImages) {
+                assertThat(rawImage.timestamp).isEqualTo(frame.frameTimestamp.value)
+                rawImage.close()
+            }
+
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(concurrentRawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+
+            val frameInfo = checkNotNull(frame.awaitFrameInfo())
+
+            assertThat(frame.isFrameInfoAvailable).isTrue()
+            assertThat(frameInfo.frameNumber).isEqualTo(frame.frameNumber)
+            assertThat(frameInfo.metadata[CaptureResult.LENS_APERTURE]).isEqualTo(2.4f)
+
+            frame.close()
+
+            assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(concurrentRawStream.id))
+                .isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.imageStatus(viewfinderStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+            assertThat(frame.isFrameInfoAvailable).isFalse()
+        }
+
+        // Simulate camera interactions end-to-end with simulateAndCompleteNextFrame
+        val resultMetadata = mapOf<CaptureResult.Key<*>, Any?>(CaptureResult.LENS_APERTURE to 2.4f)
+        frameGraphSimulator.simulateAndCompleteNextFrame(
+            resultMetadata = resultMetadata,
+            physicalCameraIds = expectedPhysicalCameras,
+        )
+
+        advanceUntilIdle()
+        assertThat(frameCaptureJob.isCompleted).isTrue() // Ensure verification is complete
+        frameGraphSimulator.close()
+    }
 }

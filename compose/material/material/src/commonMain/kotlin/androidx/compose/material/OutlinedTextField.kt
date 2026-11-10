@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/552879150
+
 package androidx.compose.material
 
 import androidx.compose.foundation.ScrollState
@@ -156,7 +158,7 @@ import kotlin.math.roundToInt
  *   interactions will still happen internally.
  */
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -315,8 +317,21 @@ fun OutlinedTextField(
  *   (including label, placeholder, leading and trailing icons, border) for this text field in
  *   different states. See [TextFieldDefaults.outlinedTextFieldColors]
  */
+@Deprecated(
+    "Use the OutlinedTextField(state: TextFieldState, ...) overload instead. To migrate: " +
+        "create a TextFieldState via rememberTextFieldState(initialText) in composition or " +
+        "TextFieldState(initialText) in a state holder; read text from state.text and update " +
+        "it programmatically via state.edit { ... } or state.setTextAndPlaceCursorAtEnd(text); " +
+        "observe text changes for side effects via snapshotFlow { state.text }.collect { ... }; " +
+        "and replace onValueChange input filtering with InputTransformation, visualTransformation " +
+        "with OutputTransformation (or OutlinedSecureTextField for passwords), singleLine/" +
+        "maxLines/minLines with TextFieldLineLimits, and keyboardActions with " +
+        "KeyboardActionHandler. See " +
+        "https://developer.android.com/develop/ui/compose/text/migrate-state-based for full " +
+        "migration guidance."
+)
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -413,7 +428,7 @@ fun OutlinedTextField(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -522,8 +537,21 @@ fun OutlinedTextField(
  *   (including label, placeholder, leading and trailing icons, border) for this text field in
  *   different states. See [TextFieldDefaults.outlinedTextFieldColors]
  */
+@Deprecated(
+    "Use the OutlinedTextField(state: TextFieldState, ...) overload instead. To migrate: " +
+        "create a TextFieldState via rememberTextFieldState(initialText, initialSelection) in " +
+        "composition or TextFieldState(initialText, initialSelection) in a state holder; read " +
+        "text and selection from state.text and state.selection, and update them programmatically " +
+        "via state.edit { ... } or state.setTextAndPlaceCursorAtEnd(text); observe changes for " +
+        "side effects via snapshotFlow { state.text }.collect { ... }; and replace onValueChange " +
+        "input filtering with InputTransformation, visualTransformation with OutputTransformation " +
+        "(or OutlinedSecureTextField for passwords), singleLine/maxLines/minLines with " +
+        "TextFieldLineLimits, and keyboardActions with KeyboardActionHandler. See " +
+        "https://developer.android.com/develop/ui/compose/text/migrate-state-based for full " +
+        "migration guidance."
+)
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -620,7 +648,7 @@ fun OutlinedTextField(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun OutlinedTextField(
+public fun OutlinedTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -1186,7 +1214,8 @@ internal fun Modifier.outlineCutout(labelSize: Size, paddingValues: PaddingValue
         }
     }
 
-private val OutlinedTextFieldInnerPadding = 4.dp
+private val OutlinedTextFieldInnerPadding
+    get() = 4.dp
 
 /**
  * In the focused state, the top half of the label sticks out above the text field. This default
@@ -1194,6 +1223,7 @@ private val OutlinedTextFieldInnerPadding = 4.dp
  * it. It is sufficient when the label is a single line and developers do not override the label's
  * font size/style. Otherwise, developers will need to add additional padding themselves.
  */
-internal val OutlinedTextFieldTopPadding = 8.sp
+internal val OutlinedTextFieldTopPadding
+    get() = 8.sp
 
 internal const val BorderId = "border"

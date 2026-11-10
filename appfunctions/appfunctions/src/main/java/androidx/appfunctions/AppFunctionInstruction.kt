@@ -17,39 +17,56 @@
 package androidx.appfunctions
 
 /**
- * Provides an explicit instruction for an [AppFunction] or an [AppFunctionSerializable] and their
- * respective components.
+ * Provides an explicit instruction for an [AppFunctionDeclaration], an [AppFunctionSignature], or
+ * an [AppFunctionSerializable] and their respective components.
  *
  * Using this annotation will provide instructions to agents that receive the
  * `androidx.appfunctions.metadata.AppFunctionMetadata` to understand how to use the AppFunction.
  *
  * It can be applied to the following targets:
- * - A function annotated with `@AppFunction`: Sets the general description of the AppFunction.
+ * - A function annotated with `@AppFunctionDeclaration`: Sets the general description of the
+ *   AppFunction.
  *
  * ```
- * @AppFunction
+ * @AppFunctionDeclaration
  * @AppFunctionInstruction("Creates a new calendar event.")
  * fun createEvent(title: String)
  * ```
- * - A parameter of an `@AppFunction`: Sets the description for that specific parameter.
+ * - A parameter of an `@AppFunctionDeclaration`: Sets the description for that specific parameter.
  *
  * ```
- * @AppFunction
+ * @AppFunctionDeclaration
  * fun getWeather(
  *   context: AppFunctionContext,
  *   @AppFunctionInstruction("The city to get the weather for, e.g., 'San Francisco'.")
  *   city: String
  * )
  * ```
- * - The return type of `@AppFunction`: Sets the description for the response.
+ * - The return type of `@AppFunctionDeclaration`: Sets the description for the response.
  *
  * ```
- * @AppFunction
+ * @AppFunctionDeclaration
  * fun calculateDistance(
  *     context: AppFunctionContext,
  *     start: Location,
  *     destination: Location
  * ): @AppFunctionInstruction("The distance in miles.") Float
+ * ```
+ * - Components of an `@AppFunctionSignature`: Works in a similar way as for an
+ *   `@AppFunctionDeclaration` by setting the description for the abstract method, its parameters,
+ *   or its return type.
+ *
+ * ```
+ * @AppFunctionSignature
+ * fun interface EnableCaptionsSignature {
+ *     @AppFunctionInstruction("Enables closed captions for media playback.")
+ *     suspend fun enableCaptions(
+ *         @AppFunctionInstruction("The language code for the captions (e.g., 'en', 'es').")
+ *         language: String,
+ *         @AppFunctionInstruction("Whether to display a dark background behind the caption text.")
+ *         showBackground: Boolean
+ *     ): @AppFunctionInstruction("Whether the captions were successfully enabled.") Boolean
+ * }
  * ```
  * - A class annotated with `@AppFunctionSerializable`: Sets the description of the data type.
  *

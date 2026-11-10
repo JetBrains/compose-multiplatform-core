@@ -35,6 +35,8 @@ import androidx.compose.remote.core.operations.ClipPath
 import androidx.compose.remote.core.operations.layout.managers.TextLayout
 import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation
 import androidx.compose.remote.core.operations.paint.PaintBundle
+import androidx.compose.remote.core.operations.utilities.IntMap
+import androidx.compose.remote.player.compose.custom.ComposeCustomSupport
 import androidx.compose.remote.player.compose.utils.FloatsToPath
 import androidx.compose.remote.player.compose.utils.copy
 import androidx.compose.remote.player.compose.utils.getPath
@@ -62,7 +64,7 @@ import kotlin.math.roundToInt
 internal class ComposePaintContext(
     remoteContext: ComposeRemoteContext,
     private var canvas: Canvas,
-) : PaintContext(remoteContext) {
+) : PaintContext(remoteContext), CustomContext {
 
     var paint = Paint()
     var paintList: MutableList<Paint> = mutableListOf()
@@ -74,6 +76,11 @@ internal class ComposePaintContext(
     private var cachedFontMetrics: android.graphics.Paint.FontMetrics? = null
     private val cachedPaintChanges =
         ComposePaintChanges(remoteContext = remoteContext, getPaint = { this.paint })
+    private var customSupport: ComposeCustomSupport? = null
+
+    private val matrixStack = mutableListOf(Matrix())
+    private val currentMatrix: Matrix
+        get() = matrixStack.last()
 
     override fun drawBitmap(
         imageId: Int,
@@ -91,7 +98,8 @@ internal class ComposePaintContext(
         if (androidContext.mRemoteComposeState.containsId(imageId)) {
             val bitmap = androidContext.mRemoteComposeState.getFromId(imageId) as Bitmap?
             bitmap?.let {
-                @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+                @Suppress("DEPRECATION", "DEPRECATION_ERROR")
+                val nativePaint = paint.asFrameworkPaint()
                 nativeCanvas()
                     .drawBitmap(
                         bitmap,
@@ -104,7 +112,43 @@ internal class ComposePaintContext(
     }
 
     override fun setCustomSupport(customSupport: CustomContext) {
-        throw RuntimeException("No Custom components supported")
+        this.customSupport = customSupport as? ComposeCustomSupport
+        this.customSupport?.setRemoteContext(mContext)
+        this.customSupport?.setCanvas(this.canvas)
+    }
+
+    override fun createCustom(id: Int, config: String) {
+        customSupport?.createCustom(id, config)
+    }
+
+    override fun configureCustom(id: Int, type: Int, value: String) {
+        customSupport?.configureCustom(id, type, value)
+    }
+
+    override fun configureCustom(id: Int, type: Int, value: Int) {
+        customSupport?.configureCustom(id, type, value)
+    }
+
+    override fun configureCustom(id: Int, type: Int, value: Float) {
+        customSupport?.configureCustom(id, type, value)
+    }
+
+    override fun measureCustom(id: Int, bounds: FloatArray) {
+        customSupport?.measureCustom(id, bounds)
+    }
+
+    override fun layoutCustom(id: Int, bounds: FloatArray) {
+        customSupport?.layoutCustom(id, bounds)
+    }
+
+    override fun touchCustom(id: Int, type: Int, x: Float, y: Float): Boolean {
+        return customSupport?.touchCustom(id, type, x, y) ?: false
+    }
+
+    override fun drawCustom(id: Int) {
+        val origin = currentMatrix.map(Offset.Zero)
+        customSupport?.updateBounds(id, origin.x, origin.y)
+        customSupport?.drawCustom(id)
     }
 
     override fun scale(scaleX: Float, scaleY: Float) {
@@ -113,6 +157,7 @@ internal class ComposePaintContext(
 
     override fun translate(translateX: Float, translateY: Float) {
         canvas.translate(translateX, translateY)
+        currentMatrix.translate(translateX, translateY)
     }
 
     override fun drawArc(
@@ -143,7 +188,7 @@ internal class ComposePaintContext(
             val bitmap = androidContext.mRemoteComposeState.getFromId(id) as Bitmap?
             val src = Rect(0, 0, bitmap!!.getWidth(), bitmap.getHeight())
             val dst = RectF(left, top, right, bottom)
-            @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+            @Suppress("DEPRECATION", "DEPRECATION_ERROR") val nativePaint = paint.asFrameworkPaint()
             nativeCanvas().drawBitmap(bitmap, src, dst, nativePaint)
         }
     }
@@ -177,7 +222,8 @@ internal class ComposePaintContext(
     }
 
     override fun replacePaint(paint: PaintBundle) {
-        @Suppress("DEPRECATION") val nativePaint = this.paint.asFrameworkPaint()
+        @Suppress("DEPRECATION", "DEPRECATION_ERROR")
+        val nativePaint = this.paint.asFrameworkPaint()
         nativePaint.reset()
         applyPaint(paint)
     }
@@ -194,7 +240,7 @@ internal class ComposePaintContext(
     }
 
     override fun drawTextOnPath(textId: Int, pathId: Int, hOffset: Float, vOffset: Float) {
-        @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+        @Suppress("DEPRECATION", "DEPRECATION_ERROR") val nativePaint = paint.asFrameworkPaint()
         nativeCanvas()
             .drawTextOnPath(
                 getText(textId)!!,
@@ -213,7 +259,7 @@ internal class ComposePaintContext(
                 str!!.length
             } else end
 
-        @Suppress("DEPRECATION") val paint = paint.asFrameworkPaint()
+        @Suppress("DEPRECATION", "DEPRECATION_ERROR") val paint = paint.asFrameworkPaint()
         if (cachedFontMetrics == null) {
             cachedFontMetrics = paint.getFontMetrics()
         }
@@ -270,7 +316,7 @@ internal class ComposePaintContext(
             } else end
 
         val textPaint = TextPaint()
-        @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+        @Suppress("DEPRECATION", "DEPRECATION_ERROR") val nativePaint = paint.asFrameworkPaint()
         textPaint.set(nativePaint)
         val staticLayoutBuilder =
             StaticLayout.Builder.obtain(str, start, endSanitized, textPaint, maxWidth.toInt())
@@ -300,11 +346,31 @@ internal class ComposePaintContext(
         staticLayoutBuilder.setIncludePad(false)
 
         val staticLayout = staticLayoutBuilder.build()
+        val lineCount = staticLayout.lineCount
+        var minLeft = Float.MAX_VALUE
+        var maxRight = 0f
+        for (i in 0 until lineCount) {
+            val lineLeft = staticLayout.getLineLeft(i)
+            val lineRight = staticLayout.getLineRight(i)
+            if (lineLeft < minLeft) {
+                minLeft = lineLeft
+            }
+            if (lineRight > maxRight) {
+                maxRight = lineRight
+            }
+        }
+        if (minLeft == Float.MAX_VALUE) {
+            minLeft = 0f
+        }
+        val left = minLeft
+        val width = kotlin.math.ceil(maxRight - minLeft)
+
         return AndroidComputedTextLayout(
             staticLayout,
-            staticLayout.width.toFloat(),
+            left,
+            width,
             staticLayout.height.toFloat(),
-            staticLayout.getLineCount(),
+            staticLayout.lineCount,
             false,
         )
     }
@@ -333,7 +399,7 @@ internal class ComposePaintContext(
             textToPaint = textToPaint.substring(start, end)
         }
 
-        @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+        @Suppress("DEPRECATION", "DEPRECATION_ERROR") val nativePaint = paint.asFrameworkPaint()
         nativeCanvas().drawText(textToPaint, x, y, nativePaint)
     }
 
@@ -341,8 +407,16 @@ internal class ComposePaintContext(
         if (computedTextLayout == null) {
             return
         }
-        val staticLayout = (computedTextLayout as AndroidComputedTextLayout).get()
-        staticLayout.draw(nativeCanvas())
+        val androidLayout = computedTextLayout as AndroidComputedTextLayout
+        val staticLayout = androidLayout.get()
+        val left = androidLayout.left
+        if (left != 0f) {
+            nativeCanvas().translate(-left, 0f)
+            staticLayout.draw(nativeCanvas())
+            nativeCanvas().translate(left, 0f)
+        } else {
+            staticLayout.draw(nativeCanvas())
+        }
     }
 
     override fun drawTweenPath(
@@ -392,6 +466,7 @@ internal class ComposePaintContext(
 
     override fun matrixTranslate(translateX: Float, translateY: Float) {
         canvas.translate(translateX, translateY)
+        currentMatrix.translate(translateX, translateY)
     }
 
     override fun matrixSkew(skewX: Float, skewY: Float) {
@@ -408,10 +483,26 @@ internal class ComposePaintContext(
 
     override fun matrixSave() {
         canvas.save()
+        matrixStack.add(Matrix(currentMatrix.values.clone()))
+    }
+
+    private val layerPaint = Paint()
+
+    override fun saveLayer(x: Float, y: Float, width: Float, height: Float) {
+        layerPaint.alpha = paint.alpha
+        canvas.saveLayer(
+            androidx.compose.ui.geometry.Rect(x, y, x + width, y + height),
+            layerPaint,
+        )
+        matrixStack.add(Matrix(currentMatrix.values.clone()))
+        paint.alpha = 1f
     }
 
     override fun matrixRestore() {
         canvas.restore()
+        if (matrixStack.size > 1) {
+            matrixStack.removeAt(matrixStack.lastIndex)
+        }
     }
 
     override fun clipRect(left: Float, top: Float, right: Float, bottom: Float) {
@@ -452,7 +543,7 @@ internal class ComposePaintContext(
     }
 
     override fun reset() {
-        @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+        @Suppress("DEPRECATION", "DEPRECATION_ERROR") val nativePaint = paint.asFrameworkPaint()
         with(nativePaint) {
             // With out calling setTypeface before or after paint is reset()
             // Variable type fonts corrupt memory resulting in a
@@ -460,6 +551,7 @@ internal class ComposePaintContext(
             setTypeface(Typeface.DEFAULT)
             reset()
         }
+        releaseOffscreenBitmaps()
     }
 
     override fun startGraphicsLayer(w: Int, h: Int) {
@@ -487,7 +579,7 @@ internal class ComposePaintContext(
                         node.pivotX = value as Float * node.width
 
                     GraphicsLayerModifierOperation.TRANSFORM_ORIGIN_Y ->
-                        node.pivotY = value as Float * node.width
+                        node.pivotY = value as Float * node.height
 
                     GraphicsLayerModifierOperation.TRANSLATION_X ->
                         node.translationX = value as Float
@@ -610,6 +702,153 @@ internal class ComposePaintContext(
         canvas.concat(matrix)
     }
 
+    /** Geometry for one 2D mesh, already in the shape `Canvas.drawVertices` wants. */
+    private class Mesh2D(
+        val layout: Int,
+        val uCount: Int,
+        val vCount: Int,
+        val verts: FloatArray,
+        val uv: FloatArray,
+        val colors: IntArray?,
+        val indices: ShortArray,
+    )
+
+    private val meshCache = IntMap<Mesh2D>()
+    private val meshShaderCache = IntMap<android.graphics.BitmapShader>()
+
+    override fun setMesh(
+        meshId: Int,
+        layout: Int,
+        uCount: Int,
+        vCount: Int,
+        verts: FloatArray,
+        uv: FloatArray,
+        colors: IntArray,
+        indices: IntArray,
+    ) {
+        // Android's drawVertices takes short[] indices, so narrow once here rather than per frame.
+        val shortIndices = ShortArray(indices.size) { indices[it].toShort() }
+        meshCache.put(
+            meshId,
+            Mesh2D(
+                layout,
+                uCount,
+                vCount,
+                verts.copyOf(),
+                uv.copyOf(),
+                if (colors.isNotEmpty()) colors.copyOf() else null,
+                shortIndices,
+            ),
+        )
+    }
+
+    override fun drawMesh(meshId: Int, blend: Int, imageId: Int) {
+        val mesh = meshCache[meshId] ?: return
+        if (mesh.verts.isEmpty() || mesh.indices.isEmpty()) return
+
+        // Compose's Canvas has no vertex primitive, so drop to the framework canvas - the same
+        // escape hatch the bitmap path already uses.
+        @Suppress("DEPRECATION", "DEPRECATION_ERROR") val nativePaint = paint.asFrameworkPaint()
+        val previousShader = nativePaint.shader
+        var shaderInstalled = false
+        var texs: FloatArray? = null
+
+        try {
+            if (imageId != 0 && mesh.uv.size == mesh.verts.size) {
+                var bitmap = mContext.mRemoteComposeState.getFromId(imageId) as? Bitmap
+                if (bitmap != null) {
+                    var shader = meshShaderCache.get(imageId)
+                    if (shader == null) {
+                        shader =
+                            android.graphics.BitmapShader(
+                                bitmap,
+                                Shader.TileMode.CLAMP,
+                                Shader.TileMode.CLAMP,
+                            )
+                        meshShaderCache.put(imageId, shader)
+                    }
+                    nativePaint.shader = shader
+                    shaderInstalled = true
+
+                    // uv is 0..1 with (0,0) at the top left; both Android and Skia want image
+                    // pixels, so this is a plain multiply with no flip.
+                    val width = bitmap.width
+                    val height = bitmap.height
+                    texs =
+                        FloatArray(mesh.uv.size) { i ->
+                            if (i % 2 == 0) mesh.uv[i] * width else mesh.uv[i] * height
+                        }
+                }
+            }
+
+            if (blend == 0) {
+                // colours only: ignore any texture and let the vertex colours through
+                texs = null
+                if (shaderInstalled) {
+                    nativePaint.shader = previousShader
+                    shaderInstalled = false
+                }
+            }
+
+            nativeCanvas()
+                .drawVertices(
+                    android.graphics.Canvas.VertexMode.TRIANGLES,
+                    mesh.verts.size,
+                    mesh.verts,
+                    0,
+                    texs,
+                    0,
+                    mesh.colors,
+                    0,
+                    mesh.indices,
+                    0,
+                    mesh.indices.size,
+                    nativePaint,
+                )
+        } finally {
+            // Paint is canvas state; a backend that borrows it must give it back.
+            if (shaderInstalled) {
+                nativePaint.shader = previousShader
+            }
+        }
+    }
+
+    override fun matrixFromMesh(meshId: Int, u: Float, v: Float, flags: Int) {
+        val mesh = meshCache[meshId] ?: return
+        val affine = FloatArray(6)
+        if (
+            !androidx.compose.remote.core.operations.utilities.Mesh2DGenerator
+                .computeMatrixFromMesh(
+                    mesh.layout,
+                    mesh.uCount,
+                    mesh.vCount,
+                    mesh.verts,
+                    u,
+                    v,
+                    flags,
+                    affine,
+                )
+        ) {
+            return
+        }
+        val m = android.graphics.Matrix()
+        // [duX, duY, dvX, dvY, originX, originY] -> the 3x3 Android wants, row major
+        m.setValues(
+            floatArrayOf(
+                affine[0],
+                affine[2],
+                affine[4],
+                affine[1],
+                affine[3],
+                affine[5],
+                0f,
+                0f,
+                1f,
+            )
+        )
+        nativeCanvas().concat(m)
+    }
+
     override fun drawToBitmap(bitmapId: Int, mode: Int, color: Int) {
         if (mainCanvas == null) {
             mainCanvas = canvas
@@ -618,6 +857,7 @@ internal class ComposePaintContext(
             canvas = mainCanvas!!
             return
         }
+        paint.alpha = 1f
         val bitmap = mContext.mRemoteComposeState.getFromId(bitmapId)!! as Bitmap
         if (canvasCache.containsKey(bitmap)) {
             canvas = canvasCache[bitmap]!!

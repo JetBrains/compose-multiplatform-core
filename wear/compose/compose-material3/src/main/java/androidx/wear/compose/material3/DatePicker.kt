@@ -115,6 +115,8 @@ public fun DatePicker(
     datePickerType: DatePickerType = DatePickerDefaults.datePickerType,
     colors: DatePickerColors = DatePickerDefaults.datePickerColors(),
 ) {
+    StatusBarSuppression()
+
     val inspectionMode = LocalInspectionMode.current
     val fullyDrawn = remember { Animatable(if (inspectionMode) 1f else 0f) }
 
@@ -259,8 +261,8 @@ public fun DatePicker(
         }
     }
 
+    @Suppress("UnusedBoxWithConstraintsScope")
     BoxWithConstraints(modifier = modifier.fillMaxSize().alpha(fullyDrawn.value)) {
-        val boxConstraints = this
         val heading =
             selectedIndex?.let {
                 when (datePickerOptions.getOrNull(it)) {

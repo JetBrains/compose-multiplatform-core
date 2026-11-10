@@ -16,6 +16,7 @@
 
 package androidx.camera.integration.core
 
+import android.Manifest
 import android.content.Context
 import android.util.Log
 import android.util.Size
@@ -28,9 +29,11 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.mlkit.vision.MlKitAnalyzer
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.LabTestRule
+import androidx.camera.testing.impl.LabTestUtil
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -38,6 +41,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -63,6 +67,10 @@ class MLKitBarcodeTest(private val resolution: Size) {
             CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
         )
 
+    @get:Rule
+    val storageRule: GrantPermissionRule =
+        GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
     companion object {
@@ -83,9 +91,11 @@ class MLKitBarcodeTest(private val resolution: Size) {
     private var targetRotation: Int = Surface.ROTATION_0
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
+    @Volatile private var frameSaveLatch: CountDownLatch? = null
 
     @Before
     fun setup(): Unit = runBlocking {
+        frameSaveLatch = null
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
 
         barcodeScanner =
@@ -101,6 +111,8 @@ class MLKitBarcodeTest(private val resolution: Size) {
 
     @After
     fun tearDown(): Unit = runBlocking {
+        frameSaveLatch?.await(3, TimeUnit.SECONDS)
+
         if (::cameraProvider.isInitialized) {
             withContext(Dispatchers.Main) { cameraProvider.shutdownAsync()[10, TimeUnit.SECONDS] }
         }
@@ -155,7 +167,26 @@ class MLKitBarcodeTest(private val resolution: Size) {
                     Log.d(TAG, "barcode display value: {${it.displayValue}} ")
                 }
             }
-        imageAnalysis.setAnalyzer(ioExecutor(), mlKitAnalyzer)
+        val frameSaved = AtomicBoolean(false)
+        val saveLatch = CountDownLatch(1)
+        frameSaveLatch = saveLatch
+        imageAnalysis.setAnalyzer(ioExecutor()) { imageProxy ->
+            if (frameSaved.compareAndSet(false, true)) {
+                val bitmap = imageProxy.toBitmap()
+                ioExecutor().execute {
+                    try {
+                        LabTestUtil.saveTestBitmap(
+                            bitmap,
+                            "MLKitBarcodeTest_${resolution.width}x${resolution.height}_targetRot${targetRotation}_${System.currentTimeMillis()}",
+                        )
+                    } finally {
+                        bitmap.recycle()
+                        saveLatch.countDown()
+                    }
+                }
+            }
+            mlKitAnalyzer.analyze(imageProxy)
+        }
 
         // Verify it is the CameraX lab test environment and can detect qr-code.
         assertWithMessage(
@@ -166,6 +197,9 @@ class MLKitBarcodeTest(private val resolution: Size) {
             )
             .that(latchForBarcodeDetect.await(DETECT_TIMEOUT, TimeUnit.MILLISECONDS))
             .isTrue()
+
+        // Wait for background test frame saving to complete before exiting test.
+        frameSaveLatch?.await(5, TimeUnit.SECONDS)
     }
 
     @Suppress("DEPRECATION") // legacy resolution API

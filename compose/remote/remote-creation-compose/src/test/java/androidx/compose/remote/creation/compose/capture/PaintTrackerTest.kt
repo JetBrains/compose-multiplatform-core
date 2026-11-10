@@ -18,19 +18,27 @@ package androidx.compose.remote.creation.compose.capture
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.compose.remote.core.Operation
 import androidx.compose.remote.core.PaintContext
+import androidx.compose.remote.core.operations.PaintData
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.core.operations.paint.PaintChanges
 import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
-import androidx.compose.remote.creation.compose.state.AndroidRemotePaint
+import androidx.compose.remote.creation.compose.shaders.RemoteShader
+import androidx.compose.remote.creation.compose.state.CompatAndroidRemotePaint
+import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
+import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3.Companion.createIdentity
+import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3.Companion.createRotate
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.asRemotePaint
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.text.RemoteTypeface
+import androidx.compose.remote.creation.compose.text.RemoteTypeface.Companion.create
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.StrokeCap
@@ -63,8 +71,7 @@ class PaintTrackerTest {
                 size,
             )
         val bitmap = Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888)
-        recordingCanvas = RecordingCanvas(bitmap)
-        recordingCanvas.creationState = creationState
+        recordingCanvas = RecordingCanvas(bitmap, creationState)
         tracker = PaintTracker()
         remoteContext = AndroidRemoteContext()
         remoteContext.useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
@@ -78,7 +85,7 @@ class PaintTrackerTest {
             strokeWidth = 5f.rf
         }
         val bundle = PaintBundle()
-        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+        tracker.updateWithPaint(paint, bundle, creationState)
 
         assertThat(tracker.isChanged).isTrue()
 
@@ -90,12 +97,27 @@ class PaintTrackerTest {
     }
 
     @Test
+    fun testInitialSync_WhiteColor() {
+        val paint = RemotePaint { color = Color.White.rc }
+        val bundle = PaintBundle()
+        tracker.updateWithPaint(paint, bundle, creationState)
+
+        assertThat(tracker.isChanged).isTrue()
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.colorSet).isTrue()
+        assertThat(changes.mColor).isEqualTo(Color.White.toArgb())
+    }
+
+    @Test
     fun testDeltaOptimization() {
         val paint1 = RemotePaint {
             color = Color.Red.rc
             strokeWidth = 5f.rf
         }
-        tracker.updateWithPaint(paint1, PaintBundle(), recordingCanvas)
+        tracker.updateWithPaint(paint1, PaintBundle(), creationState)
         tracker.reset(force = false)
 
         val paint2 = RemotePaint {
@@ -103,7 +125,7 @@ class PaintTrackerTest {
             strokeWidth = 10f.rf // Changed
         }
         val bundle2 = PaintBundle()
-        tracker.updateWithPaint(paint2, bundle2, recordingCanvas)
+        tracker.updateWithPaint(paint2, bundle2, creationState)
 
         assertThat(tracker.isChanged).isTrue()
 
@@ -118,12 +140,12 @@ class PaintTrackerTest {
     @Test
     fun testForceSync() {
         val paint = RemotePaint { color = Color.Red.rc }
-        tracker.updateWithPaint(paint, PaintBundle(), recordingCanvas)
+        tracker.updateWithPaint(paint, PaintBundle(), creationState)
 
         tracker.reset(force = true)
 
         val bundle2 = PaintBundle()
-        tracker.updateWithPaint(paint, bundle2, recordingCanvas)
+        tracker.updateWithPaint(paint, bundle2, creationState)
 
         assertThat(tracker.isChanged).isTrue()
         val changes = TestPaintChanges()
@@ -140,7 +162,7 @@ class PaintTrackerTest {
             strokeJoin = StrokeJoin.Bevel
         }
         val bundle = PaintBundle()
-        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+        tracker.updateWithPaint(paint, bundle, creationState)
 
         val changes = TestPaintChanges()
         bundle.applyPaintChange(paintContext, changes)
@@ -154,7 +176,7 @@ class PaintTrackerTest {
     fun testComposeToAndroidTransition() {
         // Sync with DefaultRemotePaint first
         val paint1 = RemotePaint { color = Color.Blue.rc }
-        tracker.updateWithPaint(paint1, PaintBundle(), recordingCanvas)
+        tracker.updateWithPaint(paint1, PaintBundle(), creationState)
         tracker.reset(force = false)
 
         // Sync with Android Paint
@@ -164,7 +186,7 @@ class PaintTrackerTest {
                 style = android.graphics.Paint.Style.FILL
             }
         val bundle2 = PaintBundle()
-        tracker.updateWithPaint(androidPaint.asRemotePaint(), bundle2, recordingCanvas)
+        tracker.updateWithPaint(androidPaint.asRemotePaint(), bundle2, creationState)
 
         assertThat(tracker.isChanged).isTrue()
         val changes = TestPaintChanges()
@@ -176,13 +198,13 @@ class PaintTrackerTest {
     fun testComposeToComposeTransition() {
         // Sync with DefaultRemotePaint first
         val paint1 = RemotePaint { color = Color.Blue.rc }
-        tracker.updateWithPaint(paint1, PaintBundle(), recordingCanvas)
+        tracker.updateWithPaint(paint1, PaintBundle(), creationState)
         tracker.reset(force = false)
 
         // Sync with Compose Paint
         val composePaint = Paint().apply { color = Color.Yellow }
         val bundle2 = PaintBundle()
-        tracker.updateWithPaint(composePaint.asRemotePaint(), bundle2, recordingCanvas)
+        tracker.updateWithPaint(composePaint.asRemotePaint(), bundle2, creationState)
 
         assertThat(tracker.isChanged).isTrue()
         val changes = TestPaintChanges()
@@ -194,7 +216,7 @@ class PaintTrackerTest {
     fun testTypefaceSync() {
         val paint = RemotePaint { typeface = RemoteTypeface.Monospace }
         val bundle = PaintBundle()
-        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+        tracker.updateWithPaint(paint, bundle, creationState)
 
         val changes = TestPaintChanges()
         bundle.applyPaintChange(paintContext, changes)
@@ -211,7 +233,7 @@ class PaintTrackerTest {
         val typefaceId = creationState.document.addText("RobotoFlex")
         remoteContext.loadText(typefaceId, "RobotoFlex")
 
-        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+        tracker.updateWithPaint(paint, bundle, creationState)
 
         val changes = TestPaintChanges()
         bundle.applyPaintChange(paintContext, changes)
@@ -223,10 +245,10 @@ class PaintTrackerTest {
 
     @Test
     fun testNamedTypefaceMapsToFontType() {
-        val paintDefault = RemotePaint { typeface = RemoteTypeface.create("default") }
-        val paintMono = RemotePaint { typeface = RemoteTypeface.create("monospace") }
-        val paintSerif = RemotePaint { typeface = RemoteTypeface.create("serif") }
-        val paintSansSerif = RemotePaint { typeface = RemoteTypeface.create("sans-serif") }
+        val paintDefault = RemotePaint { typeface = create("default") }
+        val paintMono = RemotePaint { typeface = create("monospace") }
+        val paintSerif = RemotePaint { typeface = create("serif") }
+        val paintSansSerif = RemotePaint { typeface = create("sans-serif") }
 
         val bundleDefault = PaintBundle()
         val bundleMono = PaintBundle()
@@ -238,10 +260,10 @@ class PaintTrackerTest {
         val changesSerif = TestPaintChanges()
         val changesSansSerif = TestPaintChanges()
 
-        tracker.updateWithPaint(paintDefault, bundleDefault, recordingCanvas)
-        tracker.updateWithPaint(paintMono, bundleMono, recordingCanvas)
-        tracker.updateWithPaint(paintSerif, bundleSerif, recordingCanvas)
-        tracker.updateWithPaint(paintSansSerif, bundleSansSerif, recordingCanvas)
+        tracker.updateWithPaint(paintDefault, bundleDefault, creationState)
+        tracker.updateWithPaint(paintMono, bundleMono, creationState)
+        tracker.updateWithPaint(paintSerif, bundleSerif, creationState)
+        tracker.updateWithPaint(paintSansSerif, bundleSansSerif, creationState)
 
         bundleDefault.applyPaintChange(paintContext, changesDefault)
         bundleMono.applyPaintChange(paintContext, changesMono)
@@ -257,16 +279,14 @@ class PaintTrackerTest {
     @Test
     fun testTypefaceStyleSync() {
         val paintNormal = RemotePaint {
-            typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Normal)
+            typeface = create("sans-serif", RemoteTypeface.Style.Normal)
         }
-        val paintBold = RemotePaint {
-            typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Bold)
-        }
+        val paintBold = RemotePaint { typeface = create("sans-serif", RemoteTypeface.Style.Bold) }
         val paintItalic = RemotePaint {
-            typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Italic)
+            typeface = create("sans-serif", RemoteTypeface.Style.Italic)
         }
         val paintBoldItalic = RemotePaint {
-            typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.BoldItalic)
+            typeface = create("sans-serif", RemoteTypeface.Style.BoldItalic)
         }
 
         val bundleNormal = PaintBundle()
@@ -279,10 +299,10 @@ class PaintTrackerTest {
         val changesItalic = TestPaintChanges()
         val changesBoldItalic = TestPaintChanges()
 
-        tracker.updateWithPaint(paintNormal, bundleNormal, recordingCanvas)
-        tracker.updateWithPaint(paintBold, bundleBold, recordingCanvas)
-        tracker.updateWithPaint(paintItalic, bundleItalic, recordingCanvas)
-        tracker.updateWithPaint(paintBoldItalic, bundleBoldItalic, recordingCanvas)
+        tracker.updateWithPaint(paintNormal, bundleNormal, creationState)
+        tracker.updateWithPaint(paintBold, bundleBold, creationState)
+        tracker.updateWithPaint(paintItalic, bundleItalic, creationState)
+        tracker.updateWithPaint(paintBoldItalic, bundleBoldItalic, creationState)
 
         bundleNormal.applyPaintChange(paintContext, changesNormal)
         bundleBold.applyPaintChange(paintContext, changesBold)
@@ -313,7 +333,7 @@ class PaintTrackerTest {
         remoteContext.loadText(wghtId, "wght")
         remoteContext.loadText(wdthId, "wdth")
 
-        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+        tracker.updateWithPaint(paint, bundle, creationState)
 
         assertThat(tracker.isChanged).isTrue()
 
@@ -337,7 +357,7 @@ class PaintTrackerTest {
             val wghtId = creationState.document.addText("wght")
             remoteContext.loadText(wghtId, "wght")
 
-            tracker.updateWithPaint(paint, bundle, recordingCanvas)
+            tracker.updateWithPaint(paint, bundle, creationState)
 
             assertThat(tracker.isChanged).isTrue()
 
@@ -360,15 +380,12 @@ class PaintTrackerTest {
     //
 
     @Test
-    fun testFontVariationSettingsSync_AndroidRemotePaint() {
+    fun testFontVariationSettingsSync_RemotePaint() {
         assumeTrue(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
 
-        val androidPaint = android.graphics.Paint()
-        val paint = AndroidRemotePaint(androidPaint)
-        val bundle = PaintBundle()
-
         val settings = FontVariation.Settings(FontVariation.weight(500), FontVariation.width(100f))
-        paint.fontVariationSettings = settings
+        val paint = RemotePaint { fontVariationSettings = settings }
+        val bundle = PaintBundle()
 
         // TODO fix after https://github.com/robolectric/robolectric/issues/11126
         //         assertThat(paint.fontVariationSettings).isNotNull()
@@ -378,7 +395,7 @@ class PaintTrackerTest {
         remoteContext.loadText(wghtId, "wght")
         remoteContext.loadText(wdthId, "wdth")
 
-        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+        tracker.updateWithPaint(paint, bundle, creationState)
 
         val changes = TestPaintChanges()
         bundle.applyPaintChange(paintContext, changes)
@@ -396,7 +413,7 @@ class PaintTrackerTest {
         val androidPaint = android.graphics.Paint()
         androidPaint.fontVariationSettings = "'wght' 500.0, 'wdth' 100.0"
 
-        val paint = AndroidRemotePaint(androidPaint)
+        val paint = androidPaint.asRemotePaint()
         val bundle = PaintBundle()
 
         val wghtId = creationState.document.addText("wght")
@@ -404,7 +421,7 @@ class PaintTrackerTest {
         remoteContext.loadText(wghtId, "wght")
         remoteContext.loadText(wdthId, "wdth")
 
-        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+        tracker.updateWithPaint(paint, bundle, creationState)
 
         val changes = TestPaintChanges()
         bundle.applyPaintChange(paintContext, changes)
@@ -413,6 +430,179 @@ class PaintTrackerTest {
         //         assertThat(changes.fontVariationAxesSet).isTrue()
         //         assertThat(changes.mFontAxisTags).isEqualTo(arrayOf("wght", "wdth"))
         //         assertThat(changes.mFontAxisValues).isEqualTo(floatArrayOf(500f, 100f))
+    }
+
+    @Test
+    fun paintSnapshotTest() {
+        val paint = CompatAndroidRemotePaint().apply { remoteColor = Color.Red.rc }
+        recordingCanvas.drawRect(0f, 0f, 100f, 100f, paint)
+
+        // Modify the input paint immediately after capturing the draw operation
+        paint.setColor(android.graphics.Color.BLUE)
+
+        // Verify that modifying the input paint does not alter the emitted UsePaint operations
+        recordingCanvas.flush()
+        val buffer = creationState.document.buffer
+        val operations = ArrayList<Operation>()
+        buffer.buffer.index = 0
+        buffer.inflateFromBuffer(operations)
+
+        val paintData = operations.filterIsInstance<PaintData>().first()
+        val changes = TestPaintChanges()
+        paintData.mPaintData.applyPaintChange(paintContext, changes)
+
+        // If snapshotting failed, the mutation to Color.BLUE would have leaked into the recorded
+        // operation
+        assertThat(changes.mColor).isEqualTo(Color.Red.toArgb())
+    }
+
+    @Test
+    fun testShaderMatrix_identityMatrix_noShaderMatrixSet() {
+        val paint = RemotePaint { shader = DummyShader(createIdentity()) }
+        val bundle = PaintBundle()
+        tracker.updateWithPaint(paint, bundle, creationState)
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.mShaderMatrix).isNull()
+    }
+
+    @Test
+    fun testShaderMatrix_nonIdentityMatrix_setsShaderMatrix() {
+        val paint = RemotePaint { shader = DummyShader(createRotate(45f.rf)) }
+        val bundle = PaintBundle()
+        tracker.updateWithPaint(paint, bundle, creationState)
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.mShaderMatrix).isNotNull()
+        assertThat(changes.mShaderMatrix).isNotEqualTo(0f)
+    }
+
+    @Test
+    fun testShaderMatrix_transitionFromNonIdentityToIdentity_resetsShaderMatrix() {
+        val paint1 = RemotePaint { shader = DummyShader(createRotate(45f.rf)) }
+        val bundle1 = PaintBundle()
+        tracker.updateWithPaint(paint1, bundle1, creationState)
+
+        val paint2 = RemotePaint { shader = DummyShader(createIdentity()) }
+        val bundle2 = PaintBundle()
+        tracker.updateWithPaint(paint2, bundle2, creationState)
+
+        val changes = TestPaintChanges()
+        bundle2.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.mShaderMatrix).isEqualTo(0f)
+    }
+
+    @Test
+    fun testShaderMatrix_transitionFromIdentityToIdentity_doesNotSetShaderMatrix() {
+        val paint1 = RemotePaint { shader = DummyShader(createIdentity()) }
+        val bundle1 = PaintBundle()
+        tracker.updateWithPaint(paint1, bundle1, creationState)
+
+        val paint2 = RemotePaint { shader = DummyShader(createIdentity()) }
+        val bundle2 = PaintBundle()
+        tracker.updateWithPaint(paint2, bundle2, creationState)
+
+        val changes = TestPaintChanges()
+        bundle2.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.mShaderMatrix).isNull()
+    }
+
+    @Test
+    fun testFilterQuality_initialSync_default() {
+        val paint = RemotePaint {}
+        val bundle = PaintBundle()
+        tracker.updateWithPaint(paint, bundle, creationState)
+
+        assertThat(tracker.isChanged).isTrue()
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.filterBitmapSet).isTrue()
+        assertThat(changes.mFilterBitmap).isTrue() // Defaults to Low -> true
+    }
+
+    @Test
+    fun testFilterQuality_initialSync_none() {
+        val paint = RemotePaint { filterQuality = FilterQuality.None }
+        val bundle = PaintBundle()
+        tracker.updateWithPaint(paint, bundle, creationState)
+
+        assertThat(tracker.isChanged).isTrue()
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.filterBitmapSet).isTrue()
+        assertThat(changes.mFilterBitmap).isFalse()
+    }
+
+    @Test
+    fun testFilterQuality_initialSync_low() {
+        val paint = RemotePaint { filterQuality = FilterQuality.Low }
+        val bundle = PaintBundle()
+        tracker.updateWithPaint(paint, bundle, creationState)
+
+        assertThat(tracker.isChanged).isTrue()
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.filterBitmapSet).isTrue()
+        assertThat(changes.mFilterBitmap).isTrue()
+    }
+
+    @Test
+    fun testFilterQuality_deltaOptimization() {
+        // Initial draw with Low (filtering on)
+        val paint1 = RemotePaint { filterQuality = FilterQuality.Low }
+        tracker.updateWithPaint(paint1, PaintBundle(), creationState)
+        tracker.reset(force = false)
+
+        // Second draw with None (filtering off) -> should emit update
+        val paint2 = RemotePaint { filterQuality = FilterQuality.None }
+        val bundle2 = PaintBundle()
+        tracker.updateWithPaint(paint2, bundle2, creationState)
+
+        assertThat(tracker.isChanged).isTrue()
+        val changes2 = TestPaintChanges()
+        bundle2.applyPaintChange(paintContext, changes2)
+        assertThat(changes2.filterBitmapSet).isTrue()
+        assertThat(changes2.mFilterBitmap).isFalse()
+
+        // Third draw with None -> delta optimization should NOT re-emit filterBitmap
+        tracker.reset(force = false)
+        val paint3 = RemotePaint { filterQuality = FilterQuality.None }
+        val bundle3 = PaintBundle()
+        tracker.updateWithPaint(paint3, bundle3, creationState)
+        val changes3 = TestPaintChanges()
+        bundle3.applyPaintChange(paintContext, changes3)
+        assertThat(changes3.filterBitmapSet).isFalse()
+    }
+
+    @Test
+    fun testFilterQuality_compatAndroidRemotePaintFilterBitmapFalse() {
+        val compatPaint = CompatAndroidRemotePaint().apply { isFilterBitmap = false }
+        val bundle = PaintBundle()
+        tracker.updateWithPaint(compatPaint.asRemotePaint(), bundle, creationState)
+
+        assertThat(tracker.isChanged).isTrue()
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+        assertThat(changes.filterBitmapSet).isTrue()
+        assertThat(changes.mFilterBitmap).isFalse()
+    }
+
+    private class DummyShader(override var remoteMatrix3x3: RemoteMatrix3x3) : RemoteShader() {
+        override fun apply(creationState: RemoteComposeCreationState, paintBundle: PaintBundle) {
+            paintBundle.setShader(1)
+        }
     }
 
     // Helper classes for verification
@@ -488,13 +678,23 @@ class PaintTrackerTest {
 
         override fun setBlendMode(mode: Int) {}
 
-        override fun setFilterBitmap(filter: Boolean) {}
+        var mFilterBitmap: Boolean = true
+        var filterBitmapSet: Boolean = false
+
+        override fun setFilterBitmap(filter: Boolean) {
+            this.mFilterBitmap = filter
+            this.filterBitmapSet = true
+        }
 
         override fun setAntiAlias(aa: Boolean) {}
 
-        override fun setShaderMatrix(matrixId: Float) {}
+        var mShaderMatrix: Float? = null
 
         override fun setColorFilter(color: Int, mode: Int) {}
+
+        override fun setShaderMatrix(matrixId: Float) {
+            this.mShaderMatrix = matrixId
+        }
 
         override fun clear(mask: Long) {}
 
@@ -514,6 +714,18 @@ class PaintTrackerTest {
             centerX: Float,
             centerY: Float,
             radius: Float,
+            tileMode: Int,
+        ) {}
+
+        override fun setRadialGradient(
+            colors: IntArray,
+            stops: FloatArray?,
+            startX: Float,
+            startY: Float,
+            startRadius: Float,
+            endX: Float,
+            endY: Float,
+            endRadius: Float,
             tileMode: Int,
         ) {}
 

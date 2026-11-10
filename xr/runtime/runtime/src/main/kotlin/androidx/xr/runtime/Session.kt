@@ -23,10 +23,10 @@ import android.content.Context
 import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
@@ -46,7 +46,10 @@ import kotlin.time.ComparableTimeMark
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,6 +57,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * A session is the main entrypoint to features provided by ARCore for Jetpack XR. It manages the
@@ -115,14 +119,27 @@ public constructor(
         check(!contextSessionMap.containsKey(context)) {
             "Session already exists for context: $context"
         }
-        contextSessionMap[context] = this
+        check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+            "Cannot create a new session on a destroyed lifecycleOwner."
+        }
+        if (context is LifecycleOwner && context != lifecycleOwner) {
+            check(context.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+                "Cannot create a new session on a destroyed context."
+            }
+        }
 
-        for (stateExtender in stateExtenders) {
-            stateExtender.initialize(runtimes)
+        try {
+            for (stateExtender in stateExtenders) {
+                stateExtender.initialize(runtimes)
+            }
+            for (sessionConnector in sessionConnectors) {
+                sessionConnector.initialize(runtimes)
+            }
+        } catch (e: Exception) {
+            destroy()
+            throw e
         }
-        for (sessionConnector in sessionConnectors) {
-            sessionConnector.initialize(runtimes)
-        }
+        contextSessionMap[context] = this
     }
 
     public companion object {
@@ -131,7 +148,8 @@ public constructor(
         internal val DEFAULT_CONFIG = Config.Builder().build()
 
         /**
-         * Creates a new [Session].
+         * Creates a new [Session]. If a session already exists for the given [context], that
+         * existing session is returned.
          * > **Thread Safety Warning:** This method performs significant disk I/O, including loading
          * > native libraries. If StrictMode is enabled, calling this on the **Main Thread** (UI
          * > Thread) will trigger a [android.os.StrictMode] `DiskReadViolation`.
@@ -146,16 +164,18 @@ public constructor(
          * }
          * ```
          *
-         * @param context the [context] provided for the session's resources.
+         * @param context the [context] provided for the session's resources
          * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
-         *   coroutines.
+         *   coroutines
          * @param lifecycleOwner the [lifecycleOwner] whose lifecycle controls the runtime state of
-         *   the session. Defaults to using the [context] as the owner if not provided.
+         *   the session. Defaults to using the [context] as the owner if not provided
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
          *   newly created session, or another [SessionCreateResult] if a certain criteria was not
-         *   met.
+         *   met
          * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
-         *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
+         *   [android.Manifest.permission.CAMERA] has not been granted to the calling application
+         * @throws [IllegalStateException] if a session already exists for the given [context] but
+         *   was created with a different [lifecycleOwner].
          */
         @JvmOverloads
         @JvmStatic
@@ -196,6 +216,11 @@ public constructor(
             check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
                 "Cannot create a new session on a destroyed lifecycleOwner."
             }
+            if (context is LifecycleOwner && context != lifecycleOwner) {
+                check(context.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+                    "Cannot create a new session on a destroyed context."
+                }
+            }
 
             val coroutineScope = CoroutineScope(coroutineContext)
 
@@ -214,8 +239,11 @@ public constructor(
                 return it
             }
 
-            if (contextSessionMap.containsKey(context)) {
-                return SessionCreateSuccess(contextSessionMap[context]!!)
+            contextSessionMap[context]?.let { existingSession ->
+                check(existingSession.lifecycleOwner == lifecycleOwner) {
+                    "Cannot retrieve existing session with a different lifecycleOwner."
+                }
+                return SessionCreateSuccess(existingSession)
             }
 
             val features = getDeviceContextFeatures(context)
@@ -299,23 +327,48 @@ public constructor(
                     sessionResultProvider,
                 )
 
-            lifecycleOwner.lifecycleScope.launch {
-                lifecycleOwner.lifecycle.addObserver(session.lifecycleObserver)
-                // Scope the session to the context if it is an Activity.
-                if (context is LifecycleOwner && lifecycleOwner != context) {
-                    context.lifecycle.addObserver(
-                        observer =
-                            LifecycleEventObserver { _, event ->
-                                when (event) {
-                                    Lifecycle.Event.ON_DESTROY -> session.destroy()
-                                    else -> {}
-                                }
-                            }
-                    )
-                }
-            }
+            registerLifecycleObserversWithCancellationCleanup(session, context, lifecycleOwner)
 
             return SessionCreateSuccess(session)
+        }
+
+        private suspend fun registerLifecycleObserversWithCancellationCleanup(
+            session: Session,
+            context: Context,
+            lifecycleOwner: LifecycleOwner,
+        ) {
+            try {
+                withContext(session.mainDispatcher.immediate + NonCancellable) {
+                    if (lifecycleOwner.lifecycle.currentState == Lifecycle.State.DESTROYED) {
+                        session.destroy()
+                        throw IllegalStateException(
+                            "LifecycleOwner was destroyed before Observer could be registered."
+                        )
+                    }
+                    lifecycleOwner.lifecycle.addObserver(session.lifecycleObserver)
+
+                    // Also scope the session to the context if it is a distinct LifecycleOwner.
+                    if (context is LifecycleOwner && lifecycleOwner != context) {
+                        if (context.lifecycle.currentState == Lifecycle.State.DESTROYED) {
+                            session.destroy()
+                            throw IllegalStateException(
+                                "Context was destroyed before Observer could be registered."
+                            )
+                        }
+                        val observer = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_DESTROY) session.destroy()
+                        }
+                        session.contextLifecycleObserver = observer
+                        context.lifecycle.addObserver(observer)
+                    }
+                }
+                currentCoroutineContext().ensureActive()
+            } catch (t: Throwable) {
+                withContext(session.mainDispatcher.immediate + NonCancellable) {
+                    session.destroy()
+                }
+                throw t
+            }
         }
 
         private val RUNTIME_FACTORY_PROVIDERS =
@@ -328,8 +381,8 @@ public constructor(
 
         private val SCENE_RUNTIME_FACTORY_PROVIDERS =
             listOf(
-                "androidx.xr.scenecore.projected.ProjectedSceneRuntimeFactory",
                 "androidx.xr.scenecore.spatial.core.SpatialSceneRuntimeFactory",
+                "androidx.xr.scenecore.openxr.OpenXrSceneRuntimeFactory",
                 "androidx.xr.scenecore.testing.FakeSceneRuntimeFactory",
             )
 
@@ -361,12 +414,19 @@ public constructor(
     /** A [StateFlow] of the current state. */
     public val state: StateFlow<CoreState> = _state.asStateFlow()
 
-    private var updateJob: Job? = null
+    @Volatile private var isConfigured = false
+    @Volatile private var isResumed = false
+    @Volatile private var isDestroyed = false
+    private var contextLifecycleObserver: LifecycleEventObserver? = null
 
-    private val lock = Mutex()
+    @Volatile private var updateJob: Job? = null
+    private val mainDispatcher = MainExecutorDispatcher(ContextCompat.getMainExecutor(context))
+
+    private val configurationMutex = Mutex()
+    private val lifecycleLock = Any()
 
     /** The current state of the runtime configuration. */
-    @GuardedBy("lock")
+    @GuardedBy("configurationMutex")
     public var config: Config = DEFAULT_CONFIG
         private set
 
@@ -383,13 +443,13 @@ public constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     public val activity: Activity
         get() {
+            // Check internal session state first to verify if destroy() has been called.
+            check(!isDestroyed) { "Session has been destroyed." }
+            // Check framework-level lifecycle state to verify if the owner is already dead.
             check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED)
             check(context is Activity)
             return context
         }
-
-    private val Activity.lifecycle: Lifecycle
-        get() = (this as LifecycleOwner).lifecycle
 
     /**
      * Sets or changes the [Config] to use for the Session.
@@ -411,15 +471,15 @@ public constructor(
      * Note that enabling most configurations will increase hardware resource consumption and should
      * only be enabled if needed.
      *
-     * @param config the [Config] that will be enabled if successful.
+     * @param config the [Config] that will be enabled if successful
      * @return the result of the operation. This will be a [SessionConfigureSuccess] if the
      *   configuration was successful, or another [SessionConfigureResult] if a certain
      *   configuration criteria was not met. In the case of the latter, the previous
-     *   [Session.config] will remain active.
-     * @throws [IllegalStateException] if the session has been destroyed.
-     * @throws [UnsupportedOperationException] if the configuration is not supported.
+     *   [Session.config] will remain active
+     * @throws [IllegalStateException] if the session has been destroyed
+     * @throws [UnsupportedOperationException] if the configuration is not supported
      * @throws [SecurityException] if the necessary permissions have not been granted to the calling
-     *   application for the provided configuration.
+     *   application for the provided configuration
      */
     public fun configure(config: Config): SessionConfigureResult {
         check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
@@ -429,7 +489,8 @@ public constructor(
             return it
         }
         return runBlocking {
-            lock.withLock {
+            configurationMutex.withLock {
+                check(!isDestroyed) { "Session has been destroyed." }
                 val runtimesConfigured: MutableList<JxrRuntime> = mutableListOf()
                 try {
                     for (runtime in runtimes) {
@@ -454,6 +515,10 @@ public constructor(
                     }
                 }
                 this@Session.config = config
+                isConfigured = true
+                if (isResumed) {
+                    startUpdateLoop()
+                }
                 SessionConfigureSuccess()
             }
         }
@@ -461,10 +526,23 @@ public constructor(
 
     /** Starts or resumes the session. */
     private fun resume() {
+        executeWithConfigurationMutex { resumeRuntimes() }
+    }
+
+    private fun resumeRuntimes() {
         for (runtime in runtimes) {
             runtime.resume()
         }
-        updateJob = coroutineScope.launch { updateLoop() }
+        if (isConfigured) {
+            startUpdateLoop()
+        }
+        isResumed = true
+    }
+
+    private fun startUpdateLoop() {
+        if (updateJob == null) {
+            updateJob = coroutineScope.launch { updateLoop() }
+        }
     }
 
     /**
@@ -474,20 +552,38 @@ public constructor(
      * Calling this method on an inactive session is a no-op.
      */
     private fun pause() {
+        isResumed = false
         updateJob?.cancel()
         updateJob = null
+
+        executeWithConfigurationMutex { pauseRuntimes() }
+    }
+
+    private fun pauseRuntimes() {
         for (runtime in runtimes) {
             runtime.pause()
         }
     }
 
-    /**
-     * Destroys the session, releasing any resources acquired by the session. Objects tracked by the
-     * system will not receive updates.
-     */
-    private fun destroy() {
-        contextSessionMap.remove(context)
-        coroutineScope.cancel()
+    private fun executeWithConfigurationMutex(action: () -> Unit) {
+        // Fast-path: If the configuration lock is available, execute the action synchronously to
+        // avoid blocking the main thread.
+        if (configurationMutex.tryLock()) {
+            try {
+                action()
+            } finally {
+                configurationMutex.unlock()
+            }
+        } else {
+            // Fallback-path: If the lock is held, launch a Main-thread coroutine to execute the
+            // action asynchronously. This preserves the threading model, as Lifecycle events
+            // are otherwise guaranteed to be executed on the main thread. A new CoroutineScope is
+            // used to avoid cancellation when the session is destroyed.
+            CoroutineScope(mainDispatcher).launch { configurationMutex.withLock { action() } }
+        }
+    }
+
+    private fun destroyRuntimes() {
         for (sessionConnector in sessionConnectors.asReversed()) {
             sessionConnector.close()
         }
@@ -499,15 +595,64 @@ public constructor(
         }
     }
 
+    /**
+     * Destroys the session, releasing any resources acquired by the session. Objects tracked by the
+     * system will not receive updates.
+     */
+    private fun destroy() {
+        synchronized(lifecycleLock) {
+            if (isDestroyed) return
+            isDestroyed = true
+        }
+        contextSessionMap.remove(context)
+        coroutineScope.cancel()
+
+        // Remove lifecycle observers immediately on the main thread to prevent memory leaks.
+        lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+        contextLifecycleObserver?.let { observer ->
+            (context as? LifecycleOwner)?.lifecycle?.removeObserver(observer)
+        }
+        contextLifecycleObserver = null
+        executeWithConfigurationMutex { destroyRuntimes() }
+    }
+
     private suspend fun updateLoop() {
         while (lifecycleOwner.lifecycle.currentState == Lifecycle.State.RESUMED) {
-            lock.withLock { update() }
+            prepareForUpdate()
+            configurationMutex.withLock { update() }
         }
     }
 
-    /** Produces the latest [CoreState] so it can be emitted downstream. */
-    @GuardedBy("lock")
+    /**
+     * Prepares the runtimes for an update.
+     *
+     * This method is effectively used for rate control among implementations of [JxrRuntime] as
+     * follows:
+     * - [androidx.xr.arcore.testing.FakePerceptionRuntime]: Suspends on a semaphore until triggered
+     *   by tests.
+     *
+     * More behaviors will be added in the future.
+     */
+    private suspend fun prepareForUpdate() {
+        if (isDestroyed) return
+        for (runtime in runtimes) {
+            runtime.prepareForUpdate()
+        }
+    }
+
+    /**
+     * Produces the latest [CoreState] so it can be emitted downstream.
+     *
+     * This method has no rate control. Instead, it relies on intentional delay in the [update]
+     * calls from the [JxrRuntime]s in [runtimes] to control how quickly [updateLoop] iterates. Some
+     * examples of these [JxrRuntime.update] delays:
+     * - [androidx.xr.arcore.openxr.OpenXrRuntime.update]: Delays for a fixed frame interval.
+     * - [androidx.xr.arcore.playservices.ArCoreRuntime.update]: Delays based on the camera config's
+     *   average FPS.
+     */
+    @GuardedBy("configurationMutex")
     private suspend fun update() {
+        if (isDestroyed) return
         var timeMark: ComparableTimeMark? = null
         for (runtime in runtimes) {
             runtime.update()?.let { timeMark = it }

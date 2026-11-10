@@ -26,8 +26,9 @@ import com.squareup.wire.ProtoWriter
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.createCoroutine
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
-import kotlin.coroutines.intrinsics.createCoroutineUnintercepted
+import kotlin.coroutines.intrinsics.intercepted
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +42,7 @@ import okio.BufferedSink
  * This implementation converts [androidx.tracing.TraceEvent]s into binary protos using
  * [the Wire library](https://square.github.io/wire/).
  *
- * The outputs created by `WireTraceSync` can be visualized with
+ * The outputs created by [TraceSink] can be visualized with
  * [ui.perfetto.dev](https://ui.perfetto.dev/), and queried by
  * [TraceProcessor](https://developer.android.com/reference/androidx/benchmark/traceprocessor/TraceProcessor)
  * from the `androidx.benchmark:benchmark-traceprocessor` library, the
@@ -50,8 +51,6 @@ import okio.BufferedSink
  *
  * As binary protos embed strings as UTF-8, note that any strings serialized by TraceSink will be
  * serialized as UTF-8.
- *
- * To create a TraceSink for a File, you can use `File("myFile").appendingSink().buffer()`.
  */
 public class TraceSink(
     /**
@@ -65,13 +64,36 @@ public class TraceSink(
      */
     @param:IntRange(from = 1) private val sequenceId: Int,
 
-    /** Output [BufferedSink] the trace will be written to. */
-    private val bufferedSink: BufferedSink,
+    /**
+     * Provide the [BufferedSink] the trace will be written to.
+     *
+     * Note: Sometimes trying to obtain a buffered sink might fail. For e.g. on Android, calling
+     * `context.filesDir` will throw a `NullPointerException` prior to `Application.onCreate()`.
+     */
+    private val sinkProvider: () -> BufferedSink,
 
     /** Coroutine context to execute the serialization on. */
     private val coroutineContext: CoroutineContext = NonCancellable + Dispatchers.IO,
 ) : AbstractTraceSink() {
-    private val protoWriter = ProtoWriter(bufferedSink)
+
+    /**
+     * Constructs an instance of [TraceSink].
+     *
+     * @param sequenceId ID which uniquely identifies the trace capture system. Value must be
+     *   greater than 0.
+     * @param bufferedSink The [BufferedSink] that the trace will be written to.
+     * @param coroutineContext The [CoroutineContext] to execute the serialization on.
+     */
+    public constructor(
+        @IntRange(from = 1) sequenceId: Int,
+        bufferedSink: BufferedSink,
+        coroutineContext: CoroutineContext,
+    ) : this(
+        sequenceId = sequenceId,
+        sinkProvider = { bufferedSink },
+        coroutineContext = coroutineContext,
+    )
+
     private val wireTraceEventSerializer = WireTraceEventSerializer(sequenceId)
 
     // There are 2 distinct mechanisms for thread safety here, and they are not necessarily in sync.
@@ -81,18 +103,28 @@ public class TraceSink(
     // drain request; or on flush() prior to the close() of the Sink.
     // No packets are lost or dropped; and therefore we are still okay with this small
     // compromise with thread safety.
-    private val queue = Queue<PooledTracePacketArray>()
+    internal val queue = Queue<PooledTracePacketArray>()
 
-    private val drainLock = Any() // Lock used to keep drainRequested, resumeDrain in sync.
+    // This lock controls who can consume `PooledTracePacketArray`s and serialize them.
+    // Typically, this only happens on the designated `Dispatcher`. However, this can also happen
+    // on the thread that calls `flush()`. To prevent multiple writers from draining the queue
+    // concurrently, we use this lock.
+    // Also, used to keep drainRequested, resumeDrain in sync.
+    private val consumerControlLock = Any()
 
-    @GuardedBy("drainLock") private var drainRequested = false
+    // We are guarding the creation of bufferedSink, protoWriter with a lock because
+    // enqueue() can be called from any Thread. However, the actual act of draining the queue,
+    // is effectively single threaded. So reads don't have to be guarded.
+    @GuardedBy("consumerControlLock") private var bufferedSink: BufferedSink? = null
+    @GuardedBy("consumerControlLock") private var protoWriter: ProtoWriter? = null
+    @GuardedBy("consumerControlLock") @Volatile private var drainRequested = false
 
     // Once the sink is marked as closed. No more enqueue()'s are allowed. This way we can never
     // race between a new drainRequest() after the last request for flush() happened. This
     // is because we simply disallow adding more items to the underlying queue.
     @Volatile private var closed = false
 
-    @GuardedBy("drainLock") private var resumeDrain: Continuation<Unit>
+    @GuardedBy("consumerControlLock") private var resumeDrain: Continuation<Unit>
 
     init {
         require(sequenceId > 0) {
@@ -102,18 +134,25 @@ public class TraceSink(
             suspend {
                     coroutineContext[Job]?.invokeOnCompletion { makeDrainRequest() }
                     while (true) {
-                        drainQueue()
-                        // Set drainRequested to false on completion
                         suspendCoroutineUninterceptedOrReturn { continuation ->
-                            synchronized(drainLock) {
-                                drainRequested = false
-                                resumeDrain = continuation
+                            synchronized(consumerControlLock) {
+                                drainQueue()
+                                if (queue.isNotEmpty()) {
+                                    // If the queue is not empty, don't suspend yet.
+                                    Unit
+                                } else {
+                                    // Mark completion.
+                                    drainRequested = false
+                                    // Use the intercepted() continuation here, to make sure
+                                    // we dispatch on the correct dispatcher.
+                                    resumeDrain = continuation.intercepted()
+                                    COROUTINE_SUSPENDED // Suspend
+                                }
                             }
-                            COROUTINE_SUSPENDED // Suspend
                         }
                     }
                 }
-                .createCoroutineUnintercepted(Continuation(context = coroutineContext) {})
+                .createCoroutine(Continuation(context = coroutineContext) {})
 
         // Kick things off and suspend
         makeDrainRequest()
@@ -134,17 +173,50 @@ public class TraceSink(
     }
 
     override fun flush() {
-        makeDrainRequest()
-        while (queue.isNotEmpty()) {
-            // Await completion of the drain.
+        // Ideally we do something like:
+
+        // makeDrainRequest()
+        // while(protoWriter != null && queue.isNotEmpty()) {
+        //   // Await completion
+        // }
+        // bufferedSink?.flush()
+
+        // However, flush can never assume that we have a _free_ background worker thread.
+        // When we don't have a dedicated thread to drain the queue, we never end up being able to
+        // drain the queue (because of the busy wait on queue.isNotEmpty()).
+
+        // Therefore, we simply drain the queue directly by holding the drain lock.
+        // We acquire a lock because we don't want *2* writer threads writing packets at the same
+        // time. If we have a free background worker, it simply yields and marks the end of the
+        // trace packet stream after the continuation resumes.
+        synchronized(consumerControlLock) {
+            drainQueue()
+            bufferedSink?.flush()
         }
-        bufferedSink.flush()
     }
 
     private fun makeDrainRequest() {
+        // Fast path
+        // `drainRequested` is volatile, and is safe to read without a `consumerControlLock`.
+        // This is really important to avoid priority inversion for enqueue()'s where we need to
+        // make sure that the current consumer thread knows to drain the queue.
+        if (drainRequested && protoWriter != null) return
+
         // Only make a request if one is not already ongoing
-        synchronized(drainLock) {
-            if (!drainRequested) {
+        synchronized(consumerControlLock) {
+            if (protoWriter == null) {
+                // Try and obtain a buffered sink from the provider. Be graceful, given the provider
+                // may not be ready.
+                val result = runCatching { sinkProvider() }
+                if (result.isSuccess) {
+                    val bufferedSink = result.getOrThrow()
+                    this.bufferedSink = bufferedSink
+                    protoWriter = ProtoWriter(sink = bufferedSink)
+                }
+            }
+            // Even though drainQueue() will do nothing, if the protoWriter is not ready.
+            // This prevents us for scheduling unnecessary work on the Coroutine scheduler.
+            if (protoWriter != null && !drainRequested) {
                 drainRequested = true
                 resumeDrain.resume(Unit)
             }
@@ -152,25 +224,48 @@ public class TraceSink(
     }
 
     @Suppress("NOTHING_TO_INLINE")
+    @GuardedBy("consumerControlLock")
+    // Always guard calls to drainQueue with `consumerControlLock`. Otherwise, we will end up
+    // violating the 1-writer rule given drainQueue() might be called by flush()
+    // or the dispatches to a background worker.
     private inline fun drainQueue() {
+        val protoWriter = protoWriter ?: return
         while (queue.isNotEmpty()) {
             // We are not trying to be accurate about exactly which specific event has the
             // dropped flag set.
             val reportDroppedTraceEvent = queue.isDroppedTraceEvent
-            queue.setDroppedTraceEvent(false)
             val pooledPacketArray = queue.firstOrNull()
             if (pooledPacketArray != null) {
-                var firstEventInBatch = true
-                pooledPacketArray.forEach {
-                    // Only emit the packet dropped signal as part of the first write in a batch.
+                // This is meant to represent the first trace event in a batch.
+                var firstEvent = true
+                // This is set to true only iff we managed to report the dropped event.
+                // Sometimes we may not be able to do it right away, if you only have preamble
+                // packets coming next.
+                var reported = false
+                pooledPacketArray.forEach { event ->
+                    val isPreamble = event.trackDescriptor != null
+                    // Only emit the packet dropped signal as part of the first non preamble
+                    // write event in a batch.
                     val reportDroppedEvent =
-                        if (firstEventInBatch) reportDroppedTraceEvent else false
+                        if (!isPreamble && firstEvent) {
+                            reportDroppedTraceEvent
+                        } else {
+                            false
+                        }
                     wireTraceEventSerializer.writeTraceEvent(
                         protoWriter = protoWriter,
-                        event = it,
+                        event = event,
                         reportDroppedTraceEvent = reportDroppedEvent,
                     )
-                    firstEventInBatch = false
+                    reported = reported || reportDroppedEvent
+                    // Only treat the first non-preamble event as the first event in a batch.
+                    if (!isPreamble) {
+                        firstEvent = false
+                    }
+                }
+                // If there was a dropped event, and we reported it, we can clear the state.
+                if (reported) {
+                    queue.setDroppedTraceEvent(false)
                 }
                 pooledPacketArray.recycle()
                 // Remove the item from the Queue to denote that we have written the underlying
@@ -193,6 +288,6 @@ public class TraceSink(
         // Flushing and closing of the underlying BufferedSink are still allowed.
         closed = true
         flush()
-        bufferedSink.close()
+        bufferedSink?.close()
     }
 }

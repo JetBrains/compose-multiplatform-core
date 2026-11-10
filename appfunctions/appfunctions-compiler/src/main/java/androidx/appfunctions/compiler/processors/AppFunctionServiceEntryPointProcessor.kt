@@ -26,17 +26,24 @@ import androidx.appfunctions.compiler.core.AppFunctionInventoryCodeBuilder
 import androidx.appfunctions.compiler.core.AppFunctionLegacySchemaXmlGenerator
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
 import androidx.appfunctions.compiler.core.AppFunctionXmlGenerator
+import androidx.appfunctions.compiler.core.IntrospectionHelper
 import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTION_FUNCTION_NOT_FOUND_EXCEPTION_CLASS
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionExecutionDispatcherClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInventoryInterface
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInventoryProviderInterface
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionServiceClass
+import androidx.appfunctions.compiler.core.IntrospectionHelper.CancellationSignalClass
+import androidx.appfunctions.compiler.core.IntrospectionHelper.ConsumerClass
+import androidx.appfunctions.compiler.core.IntrospectionHelper.CoroutineScopeClass
+import androidx.appfunctions.compiler.core.IntrospectionHelper.DispatchersClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.ExecuteAppFunctionRequestClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.ExecuteAppFunctionResponseClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.RequiresApiAnnotation
 import androidx.appfunctions.compiler.core.ProcessingException
 import androidx.appfunctions.compiler.core.findAnnotation
 import androidx.appfunctions.compiler.core.fromCamelCaseToScreamingSnakeCase
+import androidx.appfunctions.compiler.core.isOfType
+import androidx.appfunctions.compiler.core.isParametrized
 import androidx.appfunctions.compiler.core.logException
 import androidx.appfunctions.compiler.core.toTypeName
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -53,6 +60,8 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.buildCodeBlock
@@ -65,7 +74,7 @@ import com.squareup.kotlinpoet.buildCodeBlock
  * ```
  * @AppFunctionServiceEntryPoint(serviceName = "MyService")
  * abstract class MyBaseService : AppFunctionService() {
- *   @AppFunction
+ *   @AppFunctionDeclaration
  *   suspend fun doSomething() { ... }
  * }
  * ```
@@ -73,10 +82,10 @@ import com.squareup.kotlinpoet.buildCodeBlock
  * A corresponding `MyService` class will be generated:
  * ```
  * class MyService: MyBaseService() {
- *   override suspend fun executeFunction(
+ *   override suspend fun onExecuteFunction(
  *     request: ExecuteAppFunctionRequest
  *   ): ExecuteAppFunctionResponse {
- *     // Routes the request to the corresponding method annotated with @AppFunction
+ *     // Routes the request to the corresponding method annotated with @AppFunctionDeclaration
  *     ...
  *   }
  * }
@@ -147,6 +156,51 @@ class AppFunctionServiceEntryPointProcessor(
             TypeSpec.classBuilder(serviceName)
                 .superclass(originalClassName)
                 .addAnnotation(AppFunctionCompiler.GENERATED_ANNOTATION)
+                .addProperty(
+                    PropertySpec.builder(PROPERTY_SCOPE, CoroutineScopeClass.CLASS_NAME)
+                        .mutable(true)
+                        .addModifiers(KModifier.PRIVATE, KModifier.LATEINIT)
+                        .build()
+                )
+                .addFunction(
+                    FunSpec.builder(AppFunctionServiceClass.OnCreateMethod.METHOD_NAME)
+                        .addModifiers(KModifier.OVERRIDE)
+                        .addCode(
+                            buildCodeBlock {
+                                addStatement(
+                                    "super.%L()",
+                                    AppFunctionServiceClass.OnCreateMethod.METHOD_NAME,
+                                )
+                                addStatement(
+                                    "%L = %T(%M() + %T.%L)",
+                                    PROPERTY_SCOPE,
+                                    CoroutineScopeClass.CLASS_NAME,
+                                    CoroutineScopeClass.SUPERVISOR_JOB_METHOD_NAME,
+                                    DispatchersClass.CLASS_NAME,
+                                    DispatchersClass.PROPERTY_MAIN,
+                                )
+                            }
+                        )
+                        .build()
+                )
+                .addFunction(
+                    FunSpec.builder(AppFunctionServiceClass.OnDestroyMethod.METHOD_NAME)
+                        .addModifiers(KModifier.OVERRIDE)
+                        .addCode(
+                            buildCodeBlock {
+                                addStatement(
+                                    "%L.%M()",
+                                    PROPERTY_SCOPE,
+                                    CoroutineScopeClass.CANCEL_EXTENSION_METHOD_NAME,
+                                )
+                                addStatement(
+                                    "super.%L()",
+                                    AppFunctionServiceClass.OnDestroyMethod.METHOD_NAME,
+                                )
+                            }
+                        )
+                        .build()
+                )
                 .addFunction(buildExecuteFunction(serviceEntryPoint))
                 .addFunction(buildResolveInventory(serviceEntryPoint))
                 .addType(buildCompanionObject(serviceEntryPoint))
@@ -185,12 +239,25 @@ class AppFunctionServiceEntryPointProcessor(
         serviceEntryPoint: AnnotatedAppFunctionServiceEntryPoint
     ): FunSpec {
         return FunSpec.builder(AppFunctionServiceClass.ExecuteFunctionMethod.METHOD_NAME)
-            .addModifiers(KModifier.OVERRIDE, KModifier.SUSPEND)
+            .addModifiers(KModifier.OVERRIDE)
             .addParameter(
                 AppFunctionServiceClass.ExecuteFunctionMethod.REQUEST_PARAM_NAME,
                 ExecuteAppFunctionRequestClass.CLASS_NAME,
             )
-            .returns(ExecuteAppFunctionResponseClass.CLASS_NAME)
+            .addParameter(
+                AppFunctionServiceClass.ExecuteFunctionMethod.METADATA_PARAM_NAME,
+                IntrospectionHelper.AppFunctionMetadataClass.CLASS_NAME,
+            )
+            .addParameter(
+                AppFunctionServiceClass.ExecuteFunctionMethod.CANCELLATION_SIGNAL_PARAM_NAME,
+                CancellationSignalClass.CLASS_NAME,
+            )
+            .addParameter(
+                AppFunctionServiceClass.ExecuteFunctionMethod.CALLBACK_PARAM_NAME,
+                ConsumerClass.CLASS_NAME.parameterizedBy(
+                    ExecuteAppFunctionResponseClass.CLASS_NAME
+                ),
+            )
             .addCode(buildExecuteFunctionBody(serviceEntryPoint))
             .build()
     }
@@ -217,28 +284,58 @@ class AppFunctionServiceEntryPointProcessor(
     private fun buildExecuteFunctionBody(
         serviceEntryPoint: AnnotatedAppFunctionServiceEntryPoint
     ): CodeBlock {
+        val innerParametersName = "parameters"
         return buildCodeBlock {
             beginControlFlow(
                 """
                 return %T.%L(
-                  %N(),
-                  request
-                ) { parameters ->
+                  %L,
+                  %L,
+                  %L,
+                  %L,
+                  %L,
+                ) { %L ->
                 """
                     .trimIndent(),
                 AppFunctionExecutionDispatcherClass.CLASS_NAME,
-                AppFunctionExecutionDispatcherClass.ExecuteAppFunctionMethod.METHOD_NAME,
-                AppFunctionInventoryProviderInterface.ResolveInventoryMethod.METHOD_NAME,
+                AppFunctionExecutionDispatcherClass.DispatchExecuteAppFunctionMethod.METHOD_NAME,
+                PROPERTY_SCOPE,
+                AppFunctionServiceClass.ExecuteFunctionMethod.REQUEST_PARAM_NAME,
+                AppFunctionServiceClass.ExecuteFunctionMethod.METADATA_PARAM_NAME,
+                AppFunctionServiceClass.ExecuteFunctionMethod.CANCELLATION_SIGNAL_PARAM_NAME,
+                AppFunctionServiceClass.ExecuteFunctionMethod.CALLBACK_PARAM_NAME,
+                innerParametersName,
             )
-            beginControlFlow("when (request.functionIdentifier)")
+            beginControlFlow(
+                "when (%L.%L)",
+                AppFunctionServiceClass.ExecuteFunctionMethod.REQUEST_PARAM_NAME,
+                ExecuteAppFunctionRequestClass.PROPERTY_FUNCTION_IDENTIFIER,
+            )
             for (appFunction in serviceEntryPoint.appFunctions) {
                 val function = appFunction.appFunctionDeclaration
                 beginControlFlow("%L ->", getFunctionIdConstantPropertyName(appFunction))
+                if (appFunction.isDeprecated) {
+                    add("@Suppress(\"DEPRECATION\")\n")
+                }
                 add("this.%N(\n", function.simpleName.asString())
                 indent()
                 for (param in function.parameters) {
                     val paramName = param.name!!.asString()
-                    addStatement("parameters[%S] as %T,", paramName, param.type.toTypeName())
+                    if (param.type.isOfType(LIST) || param.type.isParametrized()) {
+                        addStatement(
+                            "@Suppress(\"UNCHECKED_CAST\") (%L[%S] as %T),",
+                            innerParametersName,
+                            paramName,
+                            param.type.toTypeName(),
+                        )
+                    } else {
+                        addStatement(
+                            "%L[%S] as %T,",
+                            innerParametersName,
+                            paramName,
+                            param.type.toTypeName(),
+                        )
+                    }
                 }
                 unindent()
                 addStatement(")")
@@ -246,8 +343,10 @@ class AppFunctionServiceEntryPointProcessor(
             }
             beginControlFlow("else ->")
             addStatement(
-                "throw %T(\n    \"\${request.functionIdentifier} is not available\"\n)",
+                "throw %T(\n    \"\${%L.%L} is not available\"\n)",
                 APP_FUNCTION_FUNCTION_NOT_FOUND_EXCEPTION_CLASS,
+                AppFunctionServiceClass.ExecuteFunctionMethod.REQUEST_PARAM_NAME,
+                ExecuteAppFunctionRequestClass.PROPERTY_FUNCTION_IDENTIFIER,
             )
             endControlFlow() // end else
             endControlFlow() // end when
@@ -303,5 +402,6 @@ class AppFunctionServiceEntryPointProcessor(
     private companion object {
         const val XML_PACKAGE_NAME = "assets"
         const val FUNCTION_ID_PREFIX = "FUNCTION_ID_"
+        const val PROPERTY_SCOPE = "scope"
     }
 }

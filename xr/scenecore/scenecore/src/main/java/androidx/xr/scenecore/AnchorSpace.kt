@@ -16,7 +16,6 @@
 
 package androidx.xr.scenecore
 
-import android.annotation.SuppressLint
 import android.os.SystemClock
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
@@ -29,10 +28,13 @@ import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.runtime.HandlerExecutor
+import androidx.xr.scenecore.runtime.requiresApiLevel
 import java.lang.ref.WeakReference
 import java.time.Duration
 import java.util.concurrent.Executor
 import java.util.function.Consumer
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -51,7 +53,6 @@ import kotlinx.coroutines.launch
  * strong references to anchor instance in client code, anchor instance may become phantom
  * reachable, and it will be garbage collected.
  */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public class AnchorSpace
 private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegistry) :
     SpaceEntity(rtAnchorEntity, entityRegistry) {
@@ -126,12 +127,24 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
             @JvmField public val TIMED_OUT: State = State(2)
 
             /**
-             * An AnchorSpace in the ERROR state indicates that an unexpected error has occurred and
-             * this AnchorSpace is invalid, without the possibility of recovery. Logcat may include
-             * additional information about the error.
+             * Indicates that an unrecoverable error occurred and this [AnchorSpace] is invalid.
+             *
+             * Note: [create] transitions to [ERROR] if the underlying [Anchor] cannot be exported
+             * or bound to the scene graph (for example, when the
+             * [androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE] permission is not granted).
+             * Check Logcat for additional error details.
              */
             @JvmField public val ERROR: State = State(-1)
         }
+
+        override fun toString(): String =
+            when (this) {
+                UNANCHORED -> "UNANCHORED"
+                ANCHORED -> "ANCHORED"
+                TIMED_OUT -> "TIMED_OUT"
+                ERROR -> "ERROR"
+                else -> "UNKNOWN ($value)"
+            }
     }
 
     internal data class PlaneFindingInfo(
@@ -161,10 +174,13 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
         private fun getAnchorDeadline(anchorSearchTimeout: Duration?): Long? {
             // If the timeout is zero or null then we return null here and the anchor search will
             // continue indefinitely.
-            if (anchorSearchTimeout == null || anchorSearchTimeout.isZero) {
-                return null
+            return requiresApiLevel<Long?>(26) {
+                return if (anchorSearchTimeout == null || anchorSearchTimeout.isZero) {
+                    null
+                } else {
+                    SystemClock.uptimeMillis() + anchorSearchTimeout.toMillis()
+                }
             }
-            return SystemClock.uptimeMillis() + anchorSearchTimeout.toMillis()
         }
 
         private fun findAndSetPlaneAnchor(
@@ -184,16 +200,15 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
                             return@collect
                         }
 
-                        val plane =
-                            planes.firstOrNull {
-                                val planeState = it.state.value
-                                val planeOrientation = it.type.toSceneCoreOrientation()
-                                val planeSemanticType = planeState.label.toSceneCoreSemanticType()
-                                info.orientations.contains(planeOrientation) &&
-                                    info.semanticTypes.contains(planeSemanticType) &&
-                                    info.dimensions.width <= planeState.extents.width &&
-                                    info.dimensions.height <= planeState.extents.height
-                            }
+                        val plane = planes.firstOrNull {
+                            val planeState = it.state.value
+                            val planeOrientation = it.type.toSceneCoreOrientation()
+                            val planeSemanticType = planeState.label.toSceneCoreSemanticType()
+                            info.orientations.contains(planeOrientation) &&
+                                info.semanticTypes.contains(planeSemanticType) &&
+                                info.dimensions.width <= planeState.extents.width &&
+                                info.dimensions.height <= planeState.extents.height
+                        }
 
                         if (plane != null && entity.state != State.ANCHORED) {
                             val anchorCreateResult = plane.createAnchor(Pose.Identity)
@@ -233,7 +248,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
             minimumPlaneExtents: FloatSize2d,
             planeOrientations: Set<PlaneOrientation>,
             planeSemanticTypes: Set<PlaneSemanticType>,
-            timeout: Duration = Duration.ZERO,
+            timeout: Duration,
         ): AnchorSpace {
             check(session.config.planeTracking != PlaneTrackingMode.DISABLED) {
                 "Config.PlaneTrackingMode is set to Disabled."
@@ -308,7 +323,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
             minimumPlaneExtents: FloatSize2d,
             planeOrientation: PlaneOrientation,
             planeSemanticType: PlaneSemanticType,
-            timeout: Duration = Duration.ZERO,
+            timeout: Duration = 0.seconds.toJavaDuration(),
         ): AnchorSpace {
             return create(
                 session,
@@ -346,7 +361,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
             minimumPlaneExtents: FloatSize2d,
             planeOrientations: Set<PlaneOrientation>,
             planeSemanticTypes: Set<PlaneSemanticType>,
-            timeout: Duration = Duration.ZERO,
+            timeout: Duration = 0.seconds.toJavaDuration(),
         ): AnchorSpace {
             return create(
                 session,
@@ -359,10 +374,17 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
         }
 
         /**
-         * Public factory for an AnchorSpace which uses an [Anchor] from ARCore for Jetpack XR.
+         * Creates an [AnchorSpace] backed by an [Anchor] from ARCore for Jetpack XR.
          *
-         * @param session [Session] in which to create the AnchorSpace.
-         * @param anchor The [Anchor] to use for this AnchorSpace.
+         * Note: Exporting and binding [anchor] to the scene graph requires the
+         * [androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE] permission, even when [anchor]
+         * is a spatial anchor created from a static [Pose] via [Anchor.create]. If this permission
+         * is not granted or if [anchor] cannot be bound to the scene graph, the returned
+         * [AnchorSpace] immediately transitions to [State.ERROR].
+         *
+         * @param session [Session] in which to create the [AnchorSpace]
+         * @param anchor [Anchor] to bind to this [AnchorSpace]
+         * @return the created [AnchorSpace]
          */
         @JvmStatic
         public fun create(session: Session, anchor: Anchor): AnchorSpace {
@@ -374,7 +396,9 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
                     entity.updateState(entity.fromRtState(state))
                 }::invoke
             )
-            rtAnchorEntity.setAnchor(anchor)
+            if (!rtAnchorEntity.setAnchor(anchor)) {
+                anchorSpace.updateState(State.ERROR)
+            }
             return anchorSpace
         }
     }

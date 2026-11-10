@@ -39,11 +39,15 @@ package androidx.room3 {
   }
 
   public static final class RoomDatabase.Builder<T extends androidx.room3.RoomDatabase> {
+    ctor @BytecodeOnly @kotlin.PublishedApi internal RoomDatabase.Builder(kotlin.reflect.KClass<T>, String?, kotlin.jvm.functions.Function0<? extends T>?, android.content.Context?);
     method public androidx.room3.RoomDatabase.Builder<T> addAutoMigrationSpec(androidx.room3.migration.AutoMigrationSpec autoMigrationSpec);
     method public androidx.room3.RoomDatabase.Builder<T> addCallback(androidx.room3.RoomDatabase.Callback callback);
     method public androidx.room3.RoomDatabase.Builder<T> addColumnTypeConverter(Object typeConverter);
     method public androidx.room3.RoomDatabase.Builder<T> addDaoReturnTypeConverter(Object daoReturnTypeConverter);
     method public androidx.room3.RoomDatabase.Builder<T> addMigrations(androidx.room3.migration.Migration... migrations);
+    method public androidx.room3.RoomDatabase.Builder<T> allowDataLossOnRecovery();
+    method public androidx.room3.RoomDatabase.Builder<T> allowDataLossOnRecovery(optional boolean allowDataLossOnRecovery);
+    method @BytecodeOnly public static androidx.room3.RoomDatabase.Builder! allowDataLossOnRecovery$default(androidx.room3.RoomDatabase.Builder!, boolean, int, Object!);
     method public androidx.room3.RoomDatabase.Builder<T> allowMainThreadQueries();
     method public T build();
     method public androidx.room3.RoomDatabase.Builder<T> createFromAsset(String databaseFilePath);
@@ -63,6 +67,8 @@ package androidx.room3 {
     method public androidx.room3.RoomDatabase.Builder<T> fallbackToDestructiveMigrationOnDowngrade(optional boolean dropAllTables);
     method @BytecodeOnly public static androidx.room3.RoomDatabase.Builder! fallbackToDestructiveMigrationOnDowngrade$default(androidx.room3.RoomDatabase.Builder!, boolean, int, Object!);
     method @SuppressCompatibility @androidx.room3.ExperimentalRoomApi public androidx.room3.RoomDatabase.Builder<T> setAutoCloseTimeout(@IntRange(from=0L) long autoCloseTimeout, java.util.concurrent.TimeUnit autoCloseTimeUnit);
+    method @KotlinOnly public androidx.room3.RoomDatabase.Builder<T> setConnectionPoolTimeout(kotlin.time.Duration timeout);
+    method @InaccessibleFromKotlin public androidx.room3.RoomDatabase.Builder<T> setConnectionPoolTimeout(long timeout);
     method public androidx.room3.RoomDatabase.Builder<T> setDriver(androidx.sqlite.SQLiteDriver driver);
     method @SuppressCompatibility @androidx.room3.ExperimentalRoomApi public androidx.room3.RoomDatabase.Builder<T> setInMemoryTrackingMode(boolean inMemory);
     method public androidx.room3.RoomDatabase.Builder<T> setJournalMode(androidx.room3.RoomDatabase.JournalMode journalMode);

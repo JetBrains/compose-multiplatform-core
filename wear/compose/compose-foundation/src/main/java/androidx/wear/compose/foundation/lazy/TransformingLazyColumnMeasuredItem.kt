@@ -112,7 +112,9 @@ internal data class TransformingLazyColumnMeasuredItem(
                     // TODO: Save transformedHeight provider.
                     placeable?.let { p ->
                         (p.parentData as? TransformingLazyColumnParentData)?.let {
-                            it.heightProvider?.invoke(p.height, measureScrollProgress)
+                            it.heightProvider
+                                ?.invoke(p.height, measureScrollProgress)
+                                ?.coerceAtLeast(0)
                         } ?: p.height
                     } ?: 0
             }
@@ -193,6 +195,18 @@ internal data class TransformingLazyColumnMeasuredItem(
                         )
 
                 val currentAnimation = animationProvider()
+
+                // If animating, dynamically update the transformed height based on the
+                // animated scroll progress to prevent visual jumps in reverseLayout.
+                if (currentAnimation != null) {
+                    val parentData = placeable.parentData as? TransformingLazyColumnParentData
+                    lastMeasuredTransformedHeight =
+                        parentData
+                            ?.heightProvider
+                            ?.invoke(placeable.height, scrollProgress)
+                            ?.coerceAtLeast(0) ?: placeable.height
+                }
+
                 val animationDelta = currentAnimation?.placementDelta ?: IntOffset.Zero
                 val animatedLogicalY = offset + animationDelta.y
 
@@ -211,6 +225,8 @@ internal data class TransformingLazyColumnMeasuredItem(
                         ?: placeable.placeWithLayer(finalOffset)
                     currentAnimation.finalOffset = finalOffset
                     currentAnimation.logicalOffset = IntOffset(x = xOffset, y = animatedLogicalY)
+                    // Keep the animation's height in sync for the next frame's scroll progress.
+                    currentAnimation.transformedHeight = lastMeasuredTransformedHeight
                 }
             }
         }

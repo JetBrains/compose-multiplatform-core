@@ -32,7 +32,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(37) }
+        compileSdk { version = release(35) }
         namespace = "androidx.compose.material3.adaptive"
     }
     jvmStubs()
@@ -51,6 +51,8 @@ androidXMultiplatform {
             api("androidx.annotation:annotation:1.9.1")
             api("androidx.annotation:annotation-experimental:1.5.1")
             api("androidx.window:window:1.5.0")
+            // Older versions of lifecycle-runtime lint checks use a deleted lint API
+            implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
         }
 
         androidDeviceTest.dependencies {
@@ -75,5 +77,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2023"
     description = "Compose Material Design Adaptive Library"
-    legacyDisableKotlinStrictApiMode = true
 }

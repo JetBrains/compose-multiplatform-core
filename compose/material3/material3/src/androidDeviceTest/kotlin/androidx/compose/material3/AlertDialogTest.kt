@@ -57,7 +57,6 @@ import com.google.common.base.Joiner.on
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withTimeout
 import org.junit.Rule
 import org.junit.Test
@@ -70,7 +69,7 @@ import org.mockito.kotlin.mock
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
 class AlertDialogTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun customStyleProperties_shouldApply() {
@@ -283,7 +282,9 @@ class AlertDialogTest {
                 confirmButton = {
                     TextButton(
                         onClick = { /* doSomething() */ },
-                        Modifier.testTag(ConfirmButtonTestTag).semantics(mergeDescendants = true) {},
+                        Modifier.testTag(ConfirmButtonTestTag).semantics(
+                            mergeDescendants = true
+                        ) {},
                     ) {
                         Text("Confirm")
                     }
@@ -291,7 +292,9 @@ class AlertDialogTest {
                 dismissButton = {
                     TextButton(
                         onClick = { /* doSomething() */ },
-                        Modifier.testTag(DismissButtonTestTag).semantics(mergeDescendants = true) {},
+                        Modifier.testTag(DismissButtonTestTag).semantics(
+                            mergeDescendants = true
+                        ) {},
                     ) {
                         Text("Dismiss")
                     }
@@ -366,7 +369,9 @@ class AlertDialogTest {
                 dismissButton = {
                     TextButton(
                         onClick = { /* doSomething() */ },
-                        Modifier.testTag(DismissButtonTestTag).semantics(mergeDescendants = true) {},
+                        Modifier.testTag(DismissButtonTestTag).semantics(
+                            mergeDescendants = true
+                        ) {},
                     ) {
                         Text("Dismiss")
                     }
@@ -421,7 +426,9 @@ class AlertDialogTest {
                 confirmButton = {
                     TextButton(
                         onClick = { /* doSomething() */ },
-                        Modifier.testTag(ConfirmButtonTestTag).semantics(mergeDescendants = true) {},
+                        Modifier.testTag(ConfirmButtonTestTag).semantics(
+                            mergeDescendants = true
+                        ) {},
                     ) {
                         Text("Confirm with a long text")
                     }
@@ -429,7 +436,9 @@ class AlertDialogTest {
                 dismissButton = {
                     TextButton(
                         onClick = { /* doSomething() */ },
-                        Modifier.testTag(DismissButtonTestTag).semantics(mergeDescendants = true) {},
+                        Modifier.testTag(DismissButtonTestTag).semantics(
+                            mergeDescendants = true
+                        ) {},
                     ) {
                         Text("Dismiss with a long text")
                     }
@@ -458,7 +467,9 @@ class AlertDialogTest {
                 dismissButton = {
                     TextButton(
                         onClick = { /* doSomething() */ },
-                        Modifier.testTag(DismissButtonTestTag).semantics(mergeDescendants = true) {},
+                        Modifier.testTag(DismissButtonTestTag).semantics(
+                            mergeDescendants = true
+                        ) {},
                     ) {
                         Text("Dismiss")
                     }
@@ -522,7 +533,8 @@ class AlertDialogTest {
                                 Icons.Filled.Favorite,
                                 contentDescription = null,
                                 modifier =
-                                    Modifier.size(AlertDialogDefaults.IconSize).testTag(IconTestTag),
+                                    Modifier.size(AlertDialogDefaults.IconSize)
+                                        .testTag(IconTestTag),
                             )
                         },
                         title = { Text(text = "Title", modifier = Modifier.testTag(TitleTestTag)) },

@@ -33,6 +33,8 @@ import androidx.camera.camera2.pipe.compat.Api35Compat
 import androidx.camera.camera2.pipe.compat.Camera2ColorSpaceProfiles
 import androidx.camera.camera2.pipe.compat.Camera2MultiResolutionStreamConfigurationMap
 import androidx.camera.camera2.pipe.compat.Camera2StreamConfigurationMap
+import androidx.camera.common.Metadata
+import androidx.camera.common.UnsafeWrapper
 
 /**
  * [CameraMetadata] is a compatibility wrapper around [CameraCharacteristics].
@@ -47,7 +49,9 @@ import androidx.camera.camera2.pipe.compat.Camera2StreamConfigurationMap
 public interface CameraMetadata : Metadata, UnsafeWrapper {
     public operator fun <T> get(key: CameraCharacteristics.Key<T>): T?
 
-    public fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T
+    public fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T {
+        return get(key) ?: default
+    }
 
     public val camera: CameraId
     public val isRedacted: Boolean
@@ -80,7 +84,7 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
          */
         @JvmStatic
         public val CAMERA_STREAM_CONFIGURATION_MAP: Metadata.Key<CameraStreamConfigurationMap> =
-            Metadata.Key.create("androidx.camera.camera2.pipe.scalar.streamConfigurationMap")
+            Metadata.Key("androidx.camera.camera2.pipe.scalar.streamConfigurationMap")
 
         /**
          * Replacement for [CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP]
@@ -93,7 +97,7 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
         @JvmStatic
         public val CAMERA_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP:
             Metadata.Key<CameraMultiResolutionStreamConfigurationMap> =
-            Metadata.Key.create(
+            Metadata.Key(
                 "androidx.camera.camera2.pipe.scalar.multiResolutionStreamConfigurationMap"
             )
 
@@ -105,9 +109,7 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
          */
         @JvmStatic
         public val CAMERA_AVAILABLE_COLOR_SPACE_PROFILES: Metadata.Key<CameraColorSpaceProfiles> =
-            Metadata.Key.create(
-                "androidx.camera.camera2.pipe.request.availableColorSpaceProfilesMap"
-            )
+            Metadata.Key("androidx.camera.camera2.pipe.request.availableColorSpaceProfilesMap")
 
         /**
          * Extension properties for querying the available capabilities of a camera device across
@@ -288,6 +290,16 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
 
         public val CameraMetadata.supportsAwbLock: Boolean
             @JvmStatic get() = this[CameraCharacteristics.CONTROL_AWB_LOCK_AVAILABLE] ?: false
+
+        /**
+         * Returns `true` if the camera device has a flash unit, otherwise `false`.
+         *
+         * When this is `false`, [CaptureRequest.FLASH_MODE] settings are ignored by the camera
+         * device and the torch cannot be turned on. See
+         * [CameraCharacteristics.FLASH_INFO_AVAILABLE].
+         */
+        public val CameraMetadata.hasFlashUnit: Boolean
+            @JvmStatic get() = this[CameraCharacteristics.FLASH_INFO_AVAILABLE] ?: false
 
         /**
          * Returns `true` if overriding zoom settings is supported on the device, otherwise `false`.

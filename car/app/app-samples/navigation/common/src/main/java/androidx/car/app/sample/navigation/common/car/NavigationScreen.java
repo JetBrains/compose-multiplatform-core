@@ -27,6 +27,7 @@ import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.Distance;
 import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.Destination;
@@ -156,11 +157,10 @@ public final class NavigationScreen extends Screen {
             actionStripBuilder.addAction(
                     new Action.Builder()
                             .setIcon(
-                                    new CarIcon.Builder(
+                                    CarIcon.createTintedIcon(
                                             IconCompat.createWithResource(
                                                     getCarContext(),
-                                                    R.drawable.ic_add_stop))
-                                            .build())
+                                                    R.drawable.ic_add_stop)))
                             .setOnClickListener(this::openFavorites)
                             .build());
         }
@@ -169,10 +169,10 @@ public final class NavigationScreen extends Screen {
         actionStripBuilder.addAction(
                 new Action.Builder()
                         .setTitle("Voice")
-                        .setIcon(new CarIcon.Builder(
-                            IconCompat.createWithResource(getCarContext(),
-                                    R.drawable.ic_mic)).build()).setOnClickListener(
-                            mMicrophoneRecorder::record)
+                        .setIcon(CarIcon.createTintedIcon(
+                                IconCompat.createWithResource(getCarContext(),
+                                        R.drawable.ic_mic))).setOnClickListener(
+                                mMicrophoneRecorder::record)
                         .build());
         if (mIsNavigating) {
             actionStripBuilder.addAction(
@@ -185,35 +185,38 @@ public final class NavigationScreen extends Screen {
                     new Action.Builder()
                             .setTitle("Search")
                             .setIcon(
-                                    new CarIcon.Builder(
+                                    CarIcon.createTintedIcon(
                                             IconCompat.createWithResource(
                                                     getCarContext(),
-                                                    R.drawable.ic_search_black36dp))
-                                            .build())
+                                                    R.drawable.ic_search_black36dp)))
                             .setOnClickListener(this::openSearch)
                             .build());
             actionStripBuilder.addAction(
                     new Action.Builder()
                             .setTitle("Favorites")
                             .setIcon(
-                                    new CarIcon.Builder(
+                                    CarIcon.createTintedIcon(
                                             IconCompat.createWithResource(
                                                     getCarContext(),
-                                                    R.drawable.ic_favorite_white_24dp))
-                                            .build())
+                                                    R.drawable.ic_favorite_white_24dp)))
                             .setOnClickListener(this::openFavorites)
                             .build());
         }
         builder.setActionStrip(actionStripBuilder.build());
 
         // Set the map action strip with the pan and zoom buttons.
-        CarIcon.Builder panIconBuilder = new CarIcon.Builder(
-                IconCompat.createWithResource(
-                        getCarContext(),
-                        R.drawable.ic_pan_24));
-        if (mIsInPanMode) {
-            panIconBuilder.setTint(CarColor.BLUE);
-        }
+        CarIconStyle panStyle =
+                mIsInPanMode
+                        ? new CarIconStyle.Builder(CarIconStyle.TINTED)
+                                .setTint(CarColor.BLUE)
+                                .build()
+                        : CarIconStyle.TINTED;
+        CarIcon.Builder panIconBuilder =
+                new CarIcon.Builder(
+                        IconCompat.createWithResource(
+                                getCarContext(),
+                                R.drawable.ic_pan_24),
+                        panStyle);
 
         builder.setMapActionStrip(new ActionStrip.Builder()
                 .addAction(new Action.Builder(Action.PAN)
@@ -222,22 +225,20 @@ public final class NavigationScreen extends Screen {
                 .addAction(
                         new Action.Builder()
                                 .setIcon(
-                                        new CarIcon.Builder(
+                                        CarIcon.createTintedIcon(
                                                 IconCompat.createWithResource(
                                                         getCarContext(),
-                                                        R.drawable.ic_recenter_24))
-                                                .build())
+                                                        R.drawable.ic_recenter_24)))
                                 .setOnClickListener(
                                         () -> mSurfaceRenderer.handleRecenter())
                                 .build())
                 .addAction(
                         new Action.Builder()
                                 .setIcon(
-                                        new CarIcon.Builder(
+                                        CarIcon.createTintedIcon(
                                                 IconCompat.createWithResource(
                                                         getCarContext(),
-                                                        R.drawable.ic_zoom_out_24))
-                                                .build())
+                                                        R.drawable.ic_zoom_out_24)))
                                 .setOnClickListener(
                                         () -> mSurfaceRenderer.handleScale(INVALID_FOCAL_POINT_VAL,
                                                 INVALID_FOCAL_POINT_VAL,
@@ -246,11 +247,10 @@ public final class NavigationScreen extends Screen {
                 .addAction(
                         new Action.Builder()
                                 .setIcon(
-                                        new CarIcon.Builder(
+                                        CarIcon.createTintedIcon(
                                                 IconCompat.createWithResource(
                                                         getCarContext(),
-                                                        R.drawable.ic_zoom_in_24))
-                                                .build())
+                                                        R.drawable.ic_zoom_in_24)))
                                 .setOnClickListener(
                                         () -> mSurfaceRenderer.handleScale(INVALID_FOCAL_POINT_VAL,
                                                 INVALID_FOCAL_POINT_VAL,
@@ -353,12 +353,12 @@ public final class NavigationScreen extends Screen {
     }
 
     private void createAndSendSuggestion() {
-        CarIcon homeIcon = new CarIcon.Builder(IconCompat.createWithResource(
+        CarIcon homeIcon = CarIcon.createTintedIcon(IconCompat.createWithResource(
                 getCarContext(),
-                R.drawable.ic_home)).build();
-        CarIcon workIcon = new CarIcon.Builder(IconCompat.createWithResource(
+                R.drawable.ic_home));
+        CarIcon workIcon = CarIcon.createTintedIcon(IconCompat.createWithResource(
                 getCarContext(),
-                R.drawable.ic_work)).build();
+                R.drawable.ic_work));
 
         List<Suggestion> suggestionList = new ArrayList<>();
         suggestionList.add(getSuggestion(R.string.suggestion_card_home_title,
@@ -384,8 +384,8 @@ public final class NavigationScreen extends Screen {
                 .setAction(
                         CarPendingIntent.getCarApp(getCarContext(), 0,
                                 new Intent().setComponent(
-                                        new ComponentName(getCarContext(),
-                                                NavigationCarAppService.class))
+                                                new ComponentName(getCarContext(),
+                                                        NavigationCarAppService.class))
                                         .setAction(NavigationSession.EXECUTE_SCRIPT),
                                 0))
                 .build();

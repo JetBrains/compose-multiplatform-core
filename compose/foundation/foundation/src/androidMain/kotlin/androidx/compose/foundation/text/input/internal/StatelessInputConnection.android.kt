@@ -70,6 +70,7 @@ import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION
 import androidx.core.view.inputmethod.InputConnectionCompat.OnCommitContentListener
 import androidx.core.view.inputmethod.InputContentInfoCompat
+import androidx.core.view.inputmethod.TextAttributeCompat
 import java.util.concurrent.Executor
 import java.util.function.IntConsumer
 
@@ -245,17 +246,10 @@ internal class StatelessInputConnection(
     ): Boolean {
         logDebug("commitText(\"$text\", $newCursorPosition, $textAttribute)")
 
-        val isTextSuggestionSelected =
-            if (Build.VERSION.SDK_INT >= 37 && textAttribute != null) {
-                Api37TextAttributeImpl.isTextSuggestionSelected(textAttribute)
-            } else {
-                false
-            }
-
         session.commitText(
             text = text.toString(),
             newCursorPosition = newCursorPosition,
-            isTextSuggestionSelected = isTextSuggestionSelected,
+            isTextSuggestionSelected = textAttribute.isTextSuggestionSelected,
         )
         return true
     }
@@ -284,17 +278,10 @@ internal class StatelessInputConnection(
     ): Boolean {
         logDebug("setComposingText(\"$text\", $newCursorPosition, $textAttribute)")
 
-        val isTextSuggestionSelected =
-            if (Build.VERSION.SDK_INT >= 37 && textAttribute != null) {
-                Api37TextAttributeImpl.isTextSuggestionSelected(textAttribute)
-            } else {
-                false
-            }
-
         session.setComposingText(
             text = text.toString(),
             newCursorPosition = newCursorPosition,
-            isTextSuggestionSelected = isTextSuggestionSelected,
+            isTextSuggestionSelected = textAttribute.isTextSuggestionSelected,
         )
         return true
     }
@@ -314,7 +301,7 @@ internal class StatelessInputConnection(
     override fun setSelection(start: Int, end: Int): Boolean {
         logDebug("setSelection($start, $end)")
         session.setSelection(start, end)
-        session.updateTouchMode(false)
+        session.updateDirectTouchInteraction(false)
         return true
     }
 
@@ -402,12 +389,14 @@ internal class StatelessInputConnection(
 
     override fun getExtractedText(request: ExtractedTextRequest?, flags: Int): ExtractedText {
         logDebug("getExtractedText($request, $flags)")
-        //        extractedTextMonitorMode = (flags and InputConnection.GET_EXTRACTED_TEXT_MONITOR)
-        // != 0
-        //        if (extractedTextMonitorMode) {
-        //            currentExtractedTextRequestToken = request?.token ?: 0
-        //        }
-        // TODO(halilibo): Implement extracted text monitor
+        val monitorMode = (flags and InputConnection.GET_EXTRACTED_TEXT_MONITOR) != 0
+        if (monitorMode) {
+            // This may look weird that we are ignoring subsequent requests that may want to turn
+            // off the extracted text monitor updates but this is how EditableInputConnection was
+            // implemented. Many IMEs also rely on this behavior. Therefore once the extracted text
+            // monitor is enabled, it remains enabled until the InputConnection gets restarted.
+            session.requestExtractedTextUpdates(request?.token ?: 0)
+        }
         // TODO(b/135556699) should return styled text
         return text.toExtractedText()
     }
@@ -585,14 +574,10 @@ private object Api34PerformHandwritingGestureImpl {
     }
 }
 
-@RequiresApi(37)
-private object Api37TextAttributeImpl {
-    fun isTextSuggestionSelected(textAttribute: TextAttribute): Boolean {
-        return textAttribute.isTextSuggestionSelected
-    }
-}
+private inline val TextAttribute?.isTextSuggestionSelected: Boolean
+    get() = TextAttributeCompat.wrap(this)?.isTextSuggestionSelected == true
 
-private fun TextFieldCharSequence.toExtractedText(): ExtractedText {
+internal fun TextFieldCharSequence.toExtractedText(): ExtractedText {
     val res = ExtractedText()
     res.text = this
     res.startOffset = 0

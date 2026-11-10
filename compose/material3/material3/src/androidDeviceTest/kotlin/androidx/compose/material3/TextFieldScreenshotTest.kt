@@ -52,7 +52,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,7 +70,7 @@ class TextFieldScreenshotTest {
 
     private val platformTextStyle = defaultPlatformTextStyle()
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -939,7 +938,9 @@ class TextFieldScreenshotTest {
                 modifier = Modifier.testTag(TextFieldTag),
                 label = { Text("Label") },
                 labelPosition =
-                    TextFieldLabelPosition.Inside(minimizedAlignment = Alignment.CenterHorizontally),
+                    TextFieldLabelPosition.Inside(
+                        minimizedAlignment = Alignment.CenterHorizontally
+                    ),
             )
         }
 
@@ -954,7 +955,9 @@ class TextFieldScreenshotTest {
                 modifier = Modifier.testTag(TextFieldTag),
                 label = { Text("Label") },
                 labelPosition =
-                    TextFieldLabelPosition.Cutout(minimizedAlignment = Alignment.CenterHorizontally),
+                    TextFieldLabelPosition.Cutout(
+                        minimizedAlignment = Alignment.CenterHorizontally
+                    ),
             )
         }
 

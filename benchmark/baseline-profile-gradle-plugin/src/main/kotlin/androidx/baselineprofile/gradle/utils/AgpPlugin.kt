@@ -55,7 +55,7 @@ internal abstract class AgpPlugin(
             ->
             val parts = str.split(".").map { it.toInt() }
             return@lazy AndroidPluginVersion(parts[0], parts[1], parts[2])
-        } ?: return@lazy null
+        }
     }
 
     val suppressWarnings: Boolean by lazy {
@@ -371,10 +371,9 @@ private val gradleSyncProps by lazy {
     )
 }
 
-internal fun Project.isGradleSyncRunning() =
-    gradleSyncProps.any { property ->
-        providers.gradleProperty(property).map { it.toBoolean() }.orElse(false).get()
-    }
+internal fun Project.isGradleSyncRunning() = gradleSyncProps.any { property ->
+    providers.gradleProperty(property).map { it.toBoolean() }.orElse(false).get()
+}
 
 /** Enumerates the supported android plugins. */
 internal enum class AgpPluginId(val value: String) {

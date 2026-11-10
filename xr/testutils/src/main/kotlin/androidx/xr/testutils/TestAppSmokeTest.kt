@@ -17,52 +17,21 @@
 package androidx.xr.testutils
 
 import android.app.Activity
-import android.content.ComponentName
-import androidx.test.platform.app.InstrumentationRegistry
-import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
  * Abstract parameterized base test class for smoke testing XR Activities. Other libraries can
  * subclass this to automatically inherit these smoke tests.
  */
-public abstract class TestAppSmokeTest(public val activityClass: Class<out Activity>) {
+abstract class TestAppSmokeTest(activityClass: Class<out Activity>) : TestAppTest(activityClass) {
 
     @Test
     @XrDeviceTest
-    public fun activity_loadsAndShowsUi() {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val uiAutomation = instrumentation.uiAutomation
-        val screenshotBefore = uiAutomation.takeScreenshot()
-        val packageName = instrumentation.targetContext.packageName
-        val componentName = ComponentName(packageName, activityClass.name)
-        val monitor = instrumentation.addMonitor(activityClass.name, null, false)
-        val command = "am start -f 0x10008000 -n ${componentName.flattenToString()}"
-        uiAutomation.executeShellCommand(command)
+    fun activity_loadsAndShowsUi() {
+        val screenshotBefore = takeScreenshotWithTimeout()
+        val activity = startActivity()
 
-        val activity = monitor.waitForActivityWithTimeout(20000)
-        assertThat(activity).isNotNull()
-
-        // Wait for the main thread to be idle
-        instrumentation.waitForIdleSync()
-
-        var screenshotAfter = uiAutomation.takeScreenshot()
-
-        // Verify that the screenshot changed (allow up to 5 seconds for slow emulation
-        // environments)
-        if (screenshotBefore != null) {
-            var attempts = 0
-            while (
-                attempts < 10 &&
-                    (screenshotAfter == null || screenshotBefore.sameAs(screenshotAfter))
-            ) {
-                instrumentation.waitForIdleSync()
-                screenshotAfter = uiAutomation.takeScreenshot()
-                attempts++
-            }
-            assertThat(screenshotAfter).isNotNull()
-            assertThat(screenshotBefore.sameAs(screenshotAfter)).isFalse()
-        }
+        assertScreenshotChanged(screenshotBefore)
 
         // Finish the Activity to close it
         instrumentation.runOnMainSync { activity.finish() }

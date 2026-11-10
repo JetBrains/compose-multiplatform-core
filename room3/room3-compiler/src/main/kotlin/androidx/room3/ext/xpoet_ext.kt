@@ -206,6 +206,7 @@ object KotlinTypeNames {
     val U_SHORT = XClassName.get("kotlin", "UShort")
     val U_INT = XClassName.get("kotlin", "UInt")
     val U_LONG = XClassName.get("kotlin", "ULong")
+    val UUID = XClassName.get("kotlin.uuid", "Uuid")
     val PAIR = XClassName.get("kotlin", "Pair")
     val TRIPLE = XClassName.get("kotlin", "Triple")
 }
@@ -229,6 +230,8 @@ object RoomMemberNames {
     val DB_UTIL_PERFORM_CLEAR = RoomTypeNames.DB_UTIL.packageMember("performClear")
     val STATEMENT_UTIL_WRAP_MAPPED_COLUMNS =
         RoomTypeNames.STATEMENT_UTIL.packageMember("wrapMappedColumns")
+    val STATEMENT_UTIL_BUFFER_STATEMENT =
+        RoomTypeNames.STATEMENT_UTIL.packageMember("bufferStatement")
     val ROOM_SQL_QUERY_ACQUIRE =
         RoomTypeNames.ROOM_SQL_QUERY.companionMember("acquire", isJvmStatic = true)
     val TABLE_INFO_READ = RoomTypeNames.TABLE_INFO.companionMember("read", isJvmStatic = true)
@@ -425,15 +428,14 @@ fun InvokeWithLambdaParameter(
                 }
                 add(");\n")
             } else {
-                val adjustedArgsFormatString =
-                    buildList {
-                            addAll(argFormat)
-                            add("%L") // the anonymous function
-                            if (continuationParamName != null) {
-                                add("%L")
-                            }
-                        }
-                        .joinToString(separator = ", ")
+                val adjustedArgsFormatString = buildList {
+                    addAll(argFormat)
+                    add("%L") // the anonymous function
+                    if (continuationParamName != null) {
+                        add("%L")
+                    }
+                }
+                    .joinToString(separator = ", ")
                 val adjustedArgs = buildList {
                     addAll(args)
                     val functionTypeSpec =

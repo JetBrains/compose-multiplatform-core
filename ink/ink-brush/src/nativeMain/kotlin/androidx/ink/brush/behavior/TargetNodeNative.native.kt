@@ -16,14 +16,16 @@
 
 package androidx.ink.brush.behavior
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.cinterop.TargetNodeNative_create
 import androidx.ink.nativeloader.cinterop.TargetNodeNative_getModifierRangeEnd
 import androidx.ink.nativeloader.cinterop.TargetNodeNative_getModifierRangeStart
 import androidx.ink.nativeloader.cinterop.TargetNodeNative_getTargetInt
+import androidx.ink.nativeloader.cinterop.TargetNodeNative_getTargetMinimumRequiredVersion
 import androidx.ink.nativeloader.throwForNonOkStatusCallback
 import kotlinx.cinterop.ExperimentalForeignApi
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InkInternalOnlyApi::class)
 actual internal object TargetNodeNative {
     actual fun create(
         target: Int,
@@ -45,4 +47,7 @@ actual internal object TargetNodeNative {
 
     actual fun getModifierRangeEnd(nativePointer: Long): Float =
         TargetNodeNative_getModifierRangeEnd(nativePointer)
+
+    actual fun getTargetMinimumRequiredVersion(targetInt: Int): Int =
+        TargetNodeNative_getTargetMinimumRequiredVersion(targetInt)
 }

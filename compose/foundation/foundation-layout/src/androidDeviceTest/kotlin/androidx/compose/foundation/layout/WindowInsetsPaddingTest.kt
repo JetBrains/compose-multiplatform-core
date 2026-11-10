@@ -29,12 +29,12 @@ import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -76,7 +77,6 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -86,7 +86,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class WindowInsetsPaddingTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private lateinit var insetsView: InsetsView
 
@@ -794,6 +794,198 @@ class WindowInsetsPaddingTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
+    @Test
+    fun animateImeInsets_negativeDuration() {
+        with(Api30Methods(rule)) {
+            val coordinates = setInsetContent { Modifier.imePadding() }
+            val view = insetsView.findComposeView()
+
+            val animation =
+                sendImeStart(
+                    view = view,
+                    otherInsets = AndroidXInsets.NONE,
+                    type = WindowInsetsCompat.Type.ime(),
+                    imeBottom = 20,
+                    durationMillis = -1L,
+                )
+
+            animation.sendImeProgress(view, 1.0f)
+            animation.sendImeEnd(view)
+
+            val width = view.width
+            val height = view.height
+
+            rule.runOnIdle {
+                assertThat(coordinates.boundsInRoot())
+                    .isEqualTo(Rect(0f, 0f, width.toFloat(), height - 20f))
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
+    @Test
+    fun animateImeInsets_zeroDuration() {
+        with(Api30Methods(rule)) {
+            val coordinates = setInsetContent { Modifier.imePadding() }
+            val view = insetsView.findComposeView()
+
+            val animation =
+                sendImeStart(
+                    view = view,
+                    otherInsets = AndroidXInsets.NONE,
+                    type = WindowInsetsCompat.Type.ime(),
+                    imeBottom = 20,
+                    durationMillis = 0L,
+                )
+
+            animation.sendImeEnd(view)
+
+            val width = view.width
+            val height = view.height
+
+            rule.runOnIdle {
+                assertThat(coordinates.boundsInRoot())
+                    .isEqualTo(Rect(0f, 0f, width.toFloat(), height - 20f))
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
+    @Test
+    fun animateImeInsets_interruptedByShowAnimation() {
+        with(Api30Methods(rule)) {
+            val coordinates = setInsetContent { Modifier.imePadding() }
+            val view = insetsView.findComposeView()
+
+            // 1. Initial state: IME shown (200px)
+            val showAnim =
+                sendImeStart(
+                    view,
+                    AndroidXInsets.NONE,
+                    WindowInsetsCompat.Type.ime(),
+                    imeBottom = 200,
+                )
+            showAnim.sendImeProgress(view, 1.0f, maxBottom = 200)
+            showAnim.sendImeEnd(view)
+
+            val height = view.height
+            rule.runOnIdle {
+                assertThat(coordinates.boundsInRoot().bottom).isEqualTo((height - 200).toFloat())
+            }
+
+            // 2. Focus change starts: hide animation begins
+            val hideAnim =
+                sendImeStart(
+                    view,
+                    AndroidXInsets.NONE,
+                    WindowInsetsCompat.Type.ime(),
+                    imeBottom = 0,
+                )
+            hideAnim.sendImeProgress(view, 0.5f, maxBottom = 0)
+
+            // 3. New field immediately requested: show animation begins before hide finishes
+            val secondShowAnim =
+                sendImeStart(
+                    view,
+                    AndroidXInsets.NONE,
+                    WindowInsetsCompat.Type.ime(),
+                    imeBottom = 200,
+                )
+
+            // 4. Hide animation ends
+            hideAnim.sendImeEnd(view)
+
+            // 5. Show animation completes
+            secondShowAnim.sendImeProgress(view, 1.0f, maxBottom = 200)
+            secondShowAnim.sendImeEnd(view)
+
+            // IME is open (200px)
+            rule.runOnIdle {
+                assertThat(coordinates.boundsInRoot().bottom).isEqualTo((height - 200).toFloat())
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
+    @Test
+    fun animateImeInsets_overlappingAnimations_withProgress() {
+        with(Api30Methods(rule)) {
+            val coordinates = setInsetContent { Modifier.imePadding() }
+            val view = insetsView.findComposeView()
+
+            val anim1 =
+                sendImeStart(
+                    view,
+                    AndroidXInsets.NONE,
+                    WindowInsetsCompat.Type.ime(),
+                    imeBottom = 20,
+                )
+            val anim2 =
+                sendImeStart(
+                    view,
+                    AndroidXInsets.NONE,
+                    WindowInsetsCompat.Type.ime(),
+                    imeBottom = 20,
+                )
+
+            // anim1 ends
+            anim1.sendImeEnd(view)
+
+            // anim2 continues progressing
+            anim2.sendImeProgress(view, 0.5f, maxBottom = 20)
+
+            // anim2 completes
+            anim2.sendImeProgress(view, 1.0f, maxBottom = 20)
+            anim2.sendImeEnd(view)
+
+            val height = view.height
+            rule.runOnIdle {
+                // Expected to be at 20px bottom padding (height - 20)
+                assertThat(coordinates.boundsInRoot().bottom).isEqualTo(height - 20f)
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
+    @Test
+    fun animateImeInsets_focusSwitch_hideAfterShowTarget() {
+        with(Api30Methods(rule)) {
+            val coordinates = setInsetContent { Modifier.imePadding() }
+            val view = insetsView.findComposeView()
+
+            // Field 2 gains focus: show animation prepared and target 200 dispatched
+            val showAnim =
+                sendImeStart(
+                    view,
+                    AndroidXInsets.NONE,
+                    WindowInsetsCompat.Type.ime(),
+                    imeBottom = 200,
+                )
+
+            // Field 1 blur callback arrives slightly delayed: hide animation prepared and target 0
+            // dispatched
+            val hideAnim =
+                sendImeStart(
+                    view,
+                    AndroidXInsets.NONE,
+                    WindowInsetsCompat.Type.ime(),
+                    imeBottom = 0,
+                )
+
+            hideAnim.sendImeEnd(view)
+
+            // Show animation completes
+            showAnim.sendImeProgress(view, 1.0f, maxBottom = 200)
+            showAnim.sendImeEnd(view)
+
+            val height = view.height
+            rule.runOnIdle {
+                assertThat(coordinates.boundsInRoot().bottom).isEqualTo((height - 200).toFloat())
+            }
+        }
+    }
+
     @Test
     fun paddingValues() {
         lateinit var coordinates: LayoutCoordinates
@@ -1070,7 +1262,7 @@ class WindowInsetsPaddingTest {
         lateinit var coordinates: LayoutCoordinates
         lateinit var insideCoordinates: LayoutCoordinates
         rule.runOnUiThread {
-            activity.enableEdgeToEdge()
+            WindowCompat.enableEdgeToEdge(activity.window)
             activity.setContent {
                 val modifier =
                     if (useModifier) Modifier.statusBarsPadding() else Modifier.fillMaxSize()
@@ -1168,6 +1360,47 @@ class WindowInsetsPaddingTest {
         rule.runOnIdle { assertThat(insets2.getTop(rule.density)).isGreaterThan(0) }
     }
 
+    @Test
+    fun consumeWindowInsets_movableContent_updateWhileUnattached() {
+        var insetsState by mutableStateOf(WindowInsets(0, 0, 0, 0))
+        var moveContent by mutableStateOf(false)
+        var consumed: WindowInsets? = null
+
+        val content = movableContentOf {
+            SubcomposeLayout { constraints ->
+                val placeables =
+                    subcompose("content") {
+                        Box(Modifier.consumeWindowInsets(insetsState)) {
+                            Box(Modifier.onConsumedWindowInsetsChanged { consumed = it })
+                        }
+                    }
+                val p = placeables.map { it.measure(constraints) }
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    p.forEach { it.place(0, 0) }
+                }
+            }
+        }
+
+        setContent {
+            Column {
+                if (moveContent) {
+                    Box { content() }
+                } else {
+                    Box { content() }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(consumed?.getLeft(rule.density, LayoutDirection.Ltr)).isEqualTo(0)
+            moveContent = true
+            insetsState = WindowInsets(10, 0, 0, 0)
+        }
+        rule.runOnIdle {
+            assertThat(consumed?.getLeft(rule.density, LayoutDirection.Ltr)).isEqualTo(10)
+        }
+    }
+
     private fun sendInsets(
         type: Int,
         sentInsets: AndroidXInsets = AndroidXInsets.of(10, 11, 12, 13),
@@ -1239,28 +1472,40 @@ class WindowInsetsPaddingTest {
 private class Api30Methods(
     val rule: AndroidComposeTestRule<ActivityScenarioRule<ComponentActivity>, ComponentActivity>
 ) {
-    fun sendImeStart(view: View, otherInsets: AndroidXInsets, type: Int): WindowInsetsAnimation {
+    fun sendImeStart(
+        view: View,
+        otherInsets: AndroidXInsets,
+        type: Int,
+        imeBottom: Int = 20,
+        durationMillis: Long = 100L,
+    ): WindowInsetsAnimation {
         return rule.runOnIdle {
             val animation =
-                WindowInsetsAnimation(AndroidWindowInsets.Type.ime(), LinearInterpolator(), 100L)
+                WindowInsetsAnimation(
+                    AndroidWindowInsets.Type.ime(),
+                    LinearInterpolator(),
+                    durationMillis,
+                )
             view.dispatchWindowInsetsAnimationPrepare(animation)
 
-            val imeInsets = FrameworkInsets.of(0, 0, 0, 20)
+            val imeInsets = FrameworkInsets.of(0, 0, 0, imeBottom)
             val bounds = WindowInsetsAnimation.Bounds(FrameworkInsets.NONE, imeInsets)
-            view.dispatchWindowInsetsAnimationStart(animation, bounds)
-            val targetInsets =
+            val builder =
                 android.view.WindowInsets.Builder()
                     .setInsets(android.view.WindowInsets.Type.ime(), imeInsets)
-                    .setInsets(type, otherInsets.toPlatformInsets())
-                    .build()
+            if (type != WindowInsetsCompat.Type.ime()) {
+                builder.setInsets(type, otherInsets.toPlatformInsets())
+            }
+            val targetInsets = builder.build()
             view.dispatchApplyWindowInsets(targetInsets)
+            view.dispatchWindowInsetsAnimationStart(animation, bounds)
             animation
         }
     }
 
-    fun WindowInsetsAnimation.sendImeProgress(view: View, progress: Float) {
+    fun WindowInsetsAnimation.sendImeProgress(view: View, progress: Float, maxBottom: Int = 20) {
         return rule.runOnIdle {
-            val bottom = (20 * progress).roundToInt()
+            val bottom = (maxBottom * progress).roundToInt()
             val imeInsets = FrameworkInsets.of(0, 0, 0, bottom)
             val systemBarsInsets = FrameworkInsets.of(10, 11, 12, 13)
             val animatedInsets =

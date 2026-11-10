@@ -108,6 +108,8 @@ internal constructor(
                 "Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9.",
                 "K2 kapt is in Alpha. Use with caution.",
                 "Kapt currently doesn't support language version 2.0+. Falling back to 1.9.",
+                "Exception on loading scripting plugin:",
+                "Using JDK home inferred from java.home:",
             )
     }
 }
@@ -427,14 +429,13 @@ internal constructor(failureMetadata: FailureMetadata, val compilationResult: Co
         fun String.trimLines() = lines().joinToString(System.lineSeparator()) { it.trim() }
         val expectedTrimmed = expected.trimLines()
         val diagnostics = compilationResult.diagnosticsOfKind(kind)
-        val matches =
-            diagnostics.filter {
-                if (acceptPartialMatch) {
-                    it.msg.trimLines().contains(expectedTrimmed)
-                } else {
-                    it.msg.trimLines() == expectedTrimmed
-                }
+        val matches = diagnostics.filter {
+            if (acceptPartialMatch) {
+                it.msg.trimLines().contains(expectedTrimmed)
+            } else {
+                it.msg.trimLines() == expectedTrimmed
             }
+        }
         if (matches.isEmpty()) {
             failWithActual(simpleFact(buildErrorMessage()))
         }
@@ -449,15 +450,14 @@ internal constructor(failureMetadata: FailureMetadata, val compilationResult: Co
     ): DiagnosticMessagesSubject {
         val diagnostics = compilationResult.diagnosticsOfKind(kind)
         val pattern = Pattern.compile(expectedPattern)
-        val matches =
-            diagnostics.filter {
-                val matcher = pattern.matcher(it.msg)
-                if (acceptPartialMatch) {
-                    matcher.find()
-                } else {
-                    matcher.matches()
-                }
+        val matches = diagnostics.filter {
+            val matcher = pattern.matcher(it.msg)
+            if (acceptPartialMatch) {
+                matcher.find()
+            } else {
+                matcher.matches()
             }
+        }
         if (matches.isEmpty()) {
             failWithActual(simpleFact(buildErrorMessage()))
         }

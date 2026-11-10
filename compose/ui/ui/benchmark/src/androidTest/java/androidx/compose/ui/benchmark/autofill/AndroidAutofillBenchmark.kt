@@ -28,7 +28,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -38,7 +37,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidAutofillBenchmark {
 
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val benchmarkRule = BenchmarkRule()
 
@@ -58,24 +57,23 @@ class AndroidAutofillBenchmark {
     @Test
     @SdkSuppress(minSdkVersion = 26)
     fun provideAutofillVirtualStructure_performAutofill() {
-        val autofillValues =
-            composeTestRule.runOnUiThread {
-                // Arrange.
-                val autofillNode =
-                    @Suppress("Deprecation")
-                    androidx.compose.ui.autofill.AutofillNode(
-                        onFill = {},
-                        autofillTypes =
-                            listOf(androidx.compose.ui.autofill.AutofillType.PersonFullName),
-                        boundingBox = Rect(0f, 0f, 0f, 0f),
-                    )
+        val autofillValues = composeTestRule.runOnUiThread {
+            // Arrange.
+            val autofillNode =
+                @Suppress("Deprecation")
+                androidx.compose.ui.autofill.AutofillNode(
+                    onFill = {},
+                    autofillTypes =
+                        listOf(androidx.compose.ui.autofill.AutofillType.PersonFullName),
+                    boundingBox = Rect(0f, 0f, 0f, 0f),
+                )
 
-                autofillTree += autofillNode
+            autofillTree += autofillNode
 
-                SparseArray<AutofillValue>().apply {
-                    append(autofillNode.id, AutofillValue.forText("Name"))
-                }
+            SparseArray<AutofillValue>().apply {
+                append(autofillNode.id, AutofillValue.forText("Name"))
             }
+        }
 
         // Assess.
         benchmarkRule.measureRepeatedOnMainThread { composeView.autofill(autofillValues) }

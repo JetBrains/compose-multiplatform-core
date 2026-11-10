@@ -22,8 +22,8 @@ import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.asClassName
 import androidx.room3.compiler.processing.javac.JavacTypeElement
 import androidx.room3.compiler.processing.ksp.KspExecutableElement
-import androidx.room3.compiler.processing.ksp.KspFieldElement
 import androidx.room3.compiler.processing.ksp.KspFileMemberContainer
+import androidx.room3.compiler.processing.ksp.KspPropertyElement
 import androidx.room3.compiler.processing.ksp.synthetic.KspSyntheticFileMemberContainer
 import androidx.room3.compiler.processing.testcode.OtherAnnotation
 import androidx.room3.compiler.processing.util.Source
@@ -34,6 +34,7 @@ import androidx.room3.compiler.processing.util.getDeclaredField
 import androidx.room3.compiler.processing.util.getField
 import androidx.room3.compiler.processing.util.getMethodByJvmName
 import androidx.room3.compiler.processing.util.getParameter
+import androidx.room3.compiler.processing.util.getProperty
 import androidx.room3.compiler.processing.util.kspProcessingEnv
 import androidx.room3.compiler.processing.util.kspResolver
 import androidx.room3.compiler.processing.util.runProcessorTest
@@ -325,6 +326,10 @@ class XElementTest {
                 assertThat(method.hasAnnotation(Test::class)).isTrue()
                 assertThat(method.hasAnnotation(Override::class)).isFalse()
                 assertThat(method.hasAnnotationWithPackage("org.junit")).isTrue()
+            }
+            element.getProperty("testField").let { field ->
+                assertThat(field.hasAnnotation(OtherAnnotation::class)).isFalse()
+                assertThat(field.hasAnnotation(Test::class)).isFalse()
             }
             element.getField("testField").let { field ->
                 assertThat(field.hasAnnotation(OtherAnnotation::class)).isTrue()
@@ -916,7 +921,7 @@ class XElementTest {
                 methods.forEach { assertThat(it.enclosingElement).isEqualTo(enclosingElement) }
             }
 
-            companionObj.getDeclaredFields().let { fields ->
+            companionObj.getDeclaredFields().let { _ ->
                 assertThat(companionObj.getDeclaredFields()).isEmpty()
             }
 
@@ -1115,11 +1120,11 @@ class XElementTest {
                 it.getDeclaredField("p").let {
                     assertThat(it.closestMemberContainer.isFromJava()).isFalse()
                     assertThat(it.closestMemberContainer.isFromKotlin()).isTrue()
-                    it.setter!!.let {
+                    it.owner.setter!!.let {
                         assertThat(it.closestMemberContainer.isFromJava()).isFalse()
                         assertThat(it.closestMemberContainer.isFromKotlin()).isTrue()
                     }
-                    it.getter!!.let {
+                    it.owner.getter!!.let {
                         assertThat(it.closestMemberContainer.isFromJava()).isFalse()
                         assertThat(it.closestMemberContainer.isFromKotlin()).isTrue()
                     }
@@ -1345,7 +1350,7 @@ class XElementTest {
                     is KSFunctionDeclaration ->
                         KspExecutableElement.create(inv.kspProcessingEnv, declaration)
                     is KSPropertyDeclaration ->
-                        KspFieldElement.create(inv.kspProcessingEnv, declaration)
+                        KspPropertyElement.create(inv.kspProcessingEnv, declaration)
                     else -> null
                 }
             }

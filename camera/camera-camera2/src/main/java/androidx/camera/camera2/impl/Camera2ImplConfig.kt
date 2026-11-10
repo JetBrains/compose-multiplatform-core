@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.camera.camera2.impl
 
@@ -129,6 +130,30 @@ public class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
         return config.retrieveOption(SESSION_CAPTURE_CALLBACK_OPTION, valueIfMissing)
     }
 
+    public fun getSessionRepeatingCaptureCallback(
+        valueIfMissing: CaptureCallback? = null
+    ): CaptureCallback? {
+        return config.retrieveOption(SESSION_REPEATING_CAPTURE_CALLBACK_OPTION, valueIfMissing)
+    }
+
+    public fun getStillCaptureTemplateType(valueIfMissing: Int): Int {
+        return config.retrieveOption(TEMPLATE_TYPE_OPTION, valueIfMissing)!!
+    }
+
+    public fun <ValueT> getStillCaptureOption(
+        key: CaptureRequest.Key<ValueT>,
+        valueIfMissing: ValueT? = null,
+    ): ValueT? {
+        @Suppress("UNCHECKED_CAST")
+        val opt = key.createStillCaptureRequestOption() as Config.Option<ValueT>
+        return config.retrieveOption(opt, valueIfMissing)
+    }
+
+    /** Returns the color space of the session. */
+    public fun getColorSpace(valueIfMissing: Int? = null): Int? {
+        return config.retrieveOption(SESSION_COLOR_SPACE_OPTION, valueIfMissing)
+    }
+
     /**
      * Returns the capture request tag.
      *
@@ -153,6 +178,30 @@ public class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
         return config.retrieveOption(SESSION_PHYSICAL_CAMERA_ID_OPTION, valueIfMissing)
     }
 
+    public fun getTimestampBase(valueIfMissing: Int? = null): Int? {
+        return config.retrieveOption(TIMESTAMP_BASE_OPTION, valueIfMissing)
+    }
+
+    public fun getDynamicRangeProfile(valueIfMissing: Long? = null): Long? {
+        return config.retrieveOption(DYNAMIC_RANGE_PROFILE_OPTION, valueIfMissing)
+    }
+
+    public fun getSurfaceGroupId(valueIfMissing: Int): Int {
+        return config.retrieveOption(SURFACE_GROUP_ID_OPTION, valueIfMissing)!!
+    }
+
+    public fun getMirrorMode(valueIfMissing: Int? = null): Int? {
+        return config.retrieveOption(SESSION_MIRROR_MODE_OPTION, valueIfMissing)
+    }
+
+    public fun getSessionType(valueIfMissing: Int? = null): Int? {
+        return config.retrieveOption(SESSION_TYPE_OPTION, valueIfMissing)
+    }
+
+    public fun getSensorPixelModesUsed(valueIfMissing: Set<Int>? = null): Set<Int>? {
+        return config.retrieveOption(SENSOR_PIXEL_MODES_USED_OPTION, valueIfMissing)
+    }
+
     /**
      * Builder for creating [Camera2ImplConfig] instance.
      *
@@ -175,6 +224,28 @@ public class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
         ): Builder {
             val opt = key.createCaptureRequestOption()
             mutableOptionsBundle.insertOption(opt, value)
+            return this
+        }
+
+        /**
+         * Adds a sensor pixel mode that this output configuration will be used in.
+         *
+         * @see android.hardware.camera2.params.OutputConfiguration.addSensorPixelModeUsed
+         */
+        public fun addSensorPixelModeUsed(sensorPixelMode: Int): Builder {
+            val current =
+                mutableOptionsBundle.retrieveOption(SENSOR_PIXEL_MODES_USED_OPTION, emptySet())!!
+            mutableOptionsBundle.insertOption(
+                SENSOR_PIXEL_MODES_USED_OPTION,
+                current + sensorPixelMode,
+            )
+            return this
+        }
+
+        /** Clears a [CaptureRequest.Key] previously set on this builder. */
+        public fun <ValueT> clearCaptureRequestOption(key: CaptureRequest.Key<ValueT>): Builder {
+            val opt = key.createCaptureRequestOption()
+            mutableOptionsBundle.removeOption(opt)
             return this
         }
 
@@ -245,6 +316,8 @@ public class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public companion object {
         public const val CAPTURE_REQUEST_ID_STEM: String = "camera2.captureRequest.option."
+        public const val STILL_CAPTURE_REQUEST_ID_STEM: String = "camera2.stillCapture.option."
+        public const val SESSION_PARAMETER_ID_STEM: String = "camera2.sessionParameter.option."
 
         @JvmField
         public val TEMPLATE_TYPE_OPTION: Config.Option<Int> =
@@ -276,6 +349,13 @@ public class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
             )
 
         @JvmField
+        public val SESSION_REPEATING_CAPTURE_CALLBACK_OPTION: Config.Option<CaptureCallback> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.repeatingCaptureCallback",
+                CaptureCallback::class.java,
+            )
+
+        @JvmField
         public val STREAM_USE_CASE_OPTION: Config.Option<Long> =
             Config.Option.create(
                 "camera2.cameraCaptureSession.streamUseCase",
@@ -299,6 +379,62 @@ public class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
                 "camera2.cameraCaptureSession.physicalCameraId",
                 String::class.java,
             )
+
+        @JvmField
+        public val TIMESTAMP_BASE_OPTION: Config.Option<Int> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.timestampBase",
+                Int::class.javaPrimitiveType!!,
+            )
+
+        @JvmField
+        public val DYNAMIC_RANGE_PROFILE_OPTION: Config.Option<Long> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.dynamicRangeProfile",
+                Long::class.javaPrimitiveType!!,
+            )
+
+        @JvmField
+        public val SURFACE_GROUP_ID_OPTION: Config.Option<Int> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.surfaceGroupId",
+                Int::class.javaPrimitiveType!!,
+            )
+
+        @JvmField
+        public val STILL_CAPTURE_CALLBACK_OPTION: Config.Option<CaptureCallback> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.stillCaptureCallback",
+                CaptureCallback::class.java,
+            )
+
+        @JvmField
+        public val SESSION_COLOR_SPACE_OPTION: Config.Option<Int> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.colorSpace",
+                Int::class.javaPrimitiveType!!,
+            )
+
+        @JvmField
+        public val SESSION_MIRROR_MODE_OPTION: Config.Option<Int> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.mirrorMode",
+                Int::class.javaPrimitiveType!!,
+            )
+
+        @JvmField
+        public val SESSION_TYPE_OPTION: Config.Option<Int> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.sessionType",
+                Int::class.javaPrimitiveType!!,
+            )
+
+        @JvmField
+        public val SENSOR_PIXEL_MODES_USED_OPTION: Config.Option<Set<Int>> =
+            Config.Option.create(
+                "camera2.cameraCaptureSession.sensorPixelModesUsed",
+                Set::class.java,
+            )
     }
 }
 
@@ -311,6 +447,22 @@ internal fun CaptureRequest.Key<*>.createCaptureRequestOption(): Config.Option<A
     return Config.Option.create(CAPTURE_REQUEST_ID_STEM + name, Any::class.java, this)
 }
 
+internal fun CaptureRequest.Key<*>.createStillCaptureRequestOption(): Config.Option<Any> {
+    return Config.Option.create(
+        Camera2ImplConfig.STILL_CAPTURE_REQUEST_ID_STEM + name,
+        Any::class.java,
+        this,
+    )
+}
+
+internal fun CaptureRequest.Key<*>.createSessionParameterOption(): Config.Option<Any> {
+    return Config.Option.create(
+        Camera2ImplConfig.SESSION_PARAMETER_ID_STEM + name,
+        Any::class.java,
+        this,
+    )
+}
+
 /** Convert the Config to the CaptureRequest key-value map. */
 public fun Config.toParameters(): Map<CaptureRequest.Key<*>, Any> {
     val parameters = mutableMapOf<CaptureRequest.Key<*>, Any>()
@@ -318,6 +470,20 @@ public fun Config.toParameters(): Map<CaptureRequest.Key<*>, Any> {
         val requestKey = configOption.token as? CaptureRequest.Key<*> ?: continue
         val value = retrieveOption(configOption) ?: continue
         parameters[requestKey] = value
+    }
+
+    return parameters
+}
+
+/** Convert the Config to the session parameters key-value map. */
+public fun Config.extractSessionParameters(): Map<CaptureRequest.Key<*>, Any> {
+    val parameters = mutableMapOf<CaptureRequest.Key<*>, Any>()
+    for (configOption in listOptions()) {
+        if (configOption.id.startsWith(Camera2ImplConfig.SESSION_PARAMETER_ID_STEM)) {
+            val requestKey = configOption.token as? CaptureRequest.Key<*> ?: continue
+            val value = retrieveOption(configOption) ?: continue
+            parameters[requestKey] = value
+        }
     }
 
     return parameters

@@ -22,17 +22,21 @@ import androidx.build.buildInfo.CreateAggregateLibraryBuildInfoFileTask
 import androidx.build.buildInfo.CreateAggregateLibraryBuildInfoFileTask.Companion.CREATE_AGGREGATE_BUILD_INFO_FILES_TASK
 import androidx.build.dependencyTracker.AffectedModuleDetector
 import androidx.build.gradle.isRoot
-import androidx.build.intellij.IntelliJTask.Companion.registerIntelliJTask
+import androidx.build.intellij.registerIntelliJTask
 import androidx.build.license.ValidateLicensesExistTask
 import androidx.build.logging.TERMINAL_RED
 import androidx.build.logging.TERMINAL_RESET
+import androidx.build.pinneddependencies.PINNED_DEPENDENCY_REPORTS_CATEGORY
+import androidx.build.pinneddependencies.TIP_OF_TREE_EXEMPTIONS_FILE_NAME
+import androidx.build.pinneddependencies.UpdateTipOfTreeExemptionsTask
 import androidx.build.playground.ValidateIntegrationPatches
 import androidx.build.playground.VerifyPlaygroundGradleConfigurationTask
-import androidx.build.studio.StudioTask.Companion.registerStudioTask
+import androidx.build.studio.registerStudioTask
 import androidx.build.testConfiguration.registerOwnersServiceTasks
 import androidx.build.uptodatedness.TaskUpToDateValidator
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
-import com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
+import androidx.build.uptodatedness.setupConfigurationCacheValidator
+import androidx.build.vscode.registerVSCodeTask
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -49,6 +53,7 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RelativePath
+import org.gradle.api.flow.FlowScope
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskProvider
@@ -63,6 +68,7 @@ import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinToolingSetupTask
 abstract class AndroidXRootImplPlugin : Plugin<Project> {
     @get:Inject abstract val registry: BuildEventsListenerRegistry
     @get:Inject abstract val buildFeatures: BuildFeatures
+    @get:Inject abstract val flowScope: FlowScope
 
     override fun apply(project: Project) {
         if (!project.isRoot) {
@@ -80,15 +86,15 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         registerListAffectedProjectsTask()
 
         // If we're running inside Studio, validate the Android Gradle Plugin version.
-        val expectedAgpVersion = System.getenv("EXPECTED_AGP_VERSION")
+        val expectedAgpVersion = System.getenv(BuildEnvironment.EXPECTED_AGP_VERSION)
         if (providers.gradleProperty("android.injected.invoked.from.ide").isPresent) {
-            if (expectedAgpVersion != ANDROID_GRADLE_PLUGIN_VERSION) {
+            if (expectedAgpVersion != BuildEnvironment.expectedAgpVersion) {
                 throw GradleException(
                     """
                     Please close and restart Android Studio.
 
                     Expected AGP version \"$expectedAgpVersion\" does not match actual AGP version
-                    \"$ANDROID_GRADLE_PLUGIN_VERSION\". This happens when AGP is updated while
+                    \"${BuildEnvironment.expectedAgpVersion}\". This happens when AGP is updated while
                     Studio is running and can be fixed by restarting Studio.
                     """
                         .trimIndent()
@@ -128,6 +134,16 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
                 task.zipMap.set(computeArtifactMap(artifactCollection.releaseIncoming, distDir))
                 task.sbomMap.set(computeArtifactMap(artifactCollection.sbomIncoming, distDir))
             }
+
+        tasks.register(
+            UpdateTipOfTreeExemptionsTask.TASK_NAME,
+            UpdateTipOfTreeExemptionsTask::class.java,
+        ) { task ->
+            task.reportFiles.from(
+                artifactCollection.pinnedDependencyReportsIncoming.map { it.files }
+            )
+            task.exemptionsFile.set(layout.projectDirectory.file(TIP_OF_TREE_EXEMPTIONS_FILE_NAME))
+        }
 
         tasks.register(BUILD_ON_SERVER_TASK, BuildOnServerTask::class.java) { task ->
             task.cacheEvenIfNoOutputs()
@@ -173,6 +189,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         }
         registerStudioTask()
         registerIntelliJTask()
+        registerVSCodeTask()
 
         project.tasks.register("listTaskOutputs", ListTaskOutputsTask::class.java) { task ->
             task.outputFile.set(project.getDistributionDirectory().file("task_outputs.txt"))
@@ -180,6 +197,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         }
 
         TaskUpToDateValidator.setup(project, registry)
+        project.setupConfigurationCacheValidator(registry, buildFeatures, flowScope)
 
         /**
          * Add dependency analysis plugin and add buildHealth task to buildOnServer when
@@ -333,22 +351,33 @@ private fun Project.configureArtifactConfigurations(): RootArtifactCollection {
     val releaseProvider =
         registerArtifactConfiguration("releaseArtifacts", "androidx-release-artifacts")
     val sbomProvider = registerArtifactConfiguration("sbomArtifacts", "androidx-sbom-artifacts")
+    val pinnedDependencyReportsProvider =
+        registerArtifactConfiguration(
+            "pinnedDependencyReports",
+            PINNED_DEPENDENCY_REPORTS_CATEGORY,
+        )
 
     subprojects { sub ->
         dependencies.add(releaseProvider.name, dependencies.create(sub))
         dependencies.add(sbomProvider.name, dependencies.create(sub))
+        dependencies.add(pinnedDependencyReportsProvider.name, dependencies.create(sub))
     }
 
-    val releaseView =
-        releaseProvider.map { conf -> conf.incoming.artifactView { it.lenient(true) } }
+    val releaseView = releaseProvider.map { conf ->
+        conf.incoming.artifactView { it.lenient(true) }
+    }
 
     val sbomView = sbomProvider.map { conf -> conf.incoming.artifactView { it.lenient(true) } }
+    val pinnedDependencyReportsView = pinnedDependencyReportsProvider.map { conf ->
+        conf.incoming.artifactView { it.lenient(true) }
+    }
     val releaseFiles = objects.fileCollection().from(releaseView.map { it.files })
 
     return RootArtifactCollection(
         releaseArtifacts = releaseFiles,
         releaseIncoming = releaseView,
         sbomIncoming = sbomView,
+        pinnedDependencyReportsIncoming = pinnedDependencyReportsView,
     )
 }
 
@@ -373,6 +402,7 @@ private class RootArtifactCollection(
     val releaseArtifacts: FileCollection,
     val releaseIncoming: Provider<ArtifactView>,
     val sbomIncoming: Provider<ArtifactView>,
+    val pinnedDependencyReportsIncoming: Provider<ArtifactView>,
 )
 
 /* Computes a map of projectPath to the artifact's path relative to the distDir. */

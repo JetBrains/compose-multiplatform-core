@@ -19,7 +19,6 @@ package androidx.savedstate {
   }
 
   @kotlin.jvm.JvmInline public final value class SavedStateReader {
-    ctor @KotlinOnly @kotlin.PublishedApi internal SavedStateReader(android.os.Bundle source);
     method @BytecodeOnly public static androidx.savedstate.SavedStateReader! box-impl(android.os.Bundle!);
     method @BytecodeOnly @kotlin.PublishedApi internal static android.os.Bundle constructor-impl(android.os.Bundle);
     method @KotlinOnly public operator boolean contains(String key);
@@ -172,25 +171,31 @@ package androidx.savedstate {
   }
 
   public final class SavedStateReaderKt {
-    method @kotlin.PublishedApi internal static Void keyOrValueNotFoundError(String key);
+    method @BytecodeOnly @kotlin.PublishedApi internal static Void keyOrValueNotFoundError(String);
   }
 
   public final class SavedStateRegistry {
+    ctor public SavedStateRegistry();
+    ctor public SavedStateRegistry(android.os.Bundle? initialState);
     method @MainThread public android.os.Bundle? consumeRestoredStateForKey(String key);
     method public androidx.savedstate.SavedStateRegistry.SavedStateProvider? getSavedStateProvider(String key);
     method @InaccessibleFromKotlin @MainThread public boolean isRestored();
     method @MainThread public void registerSavedStateProvider(String key, androidx.savedstate.SavedStateRegistry.SavedStateProvider provider);
-    method @MainThread public void runOnNextRecreation(Class<? extends androidx.savedstate.SavedStateRegistry.AutoRecreated> clazz);
+    method @Deprecated @MainThread public void runOnNextRecreation(Class<? extends androidx.savedstate.SavedStateRegistry.AutoRecreated> clazz);
     method @MainThread public void unregisterSavedStateProvider(String key);
     property @MainThread public boolean isRestored;
   }
 
-  public static interface SavedStateRegistry.AutoRecreated {
-    method public void onRecreated(androidx.savedstate.SavedStateRegistryOwner owner);
+  @Deprecated public static interface SavedStateRegistry.AutoRecreated {
+    method @Deprecated public void onRecreated(androidx.savedstate.SavedStateRegistryOwner owner);
   }
 
   public static fun interface SavedStateRegistry.SavedStateProvider {
     method public android.os.Bundle saveState();
+  }
+
+  public static fun interface SavedStateRegistry.SavedStateRestorer {
+    method public void restoreState(android.os.Bundle? savedState);
   }
 
   public final class SavedStateRegistryController {
@@ -218,7 +223,6 @@ package androidx.savedstate {
   }
 
   @kotlin.jvm.JvmInline public final value class SavedStateWriter {
-    ctor @KotlinOnly @kotlin.PublishedApi internal SavedStateWriter(android.os.Bundle source);
     method @BytecodeOnly public static androidx.savedstate.SavedStateWriter! box-impl(android.os.Bundle!);
     method @KotlinOnly public void clear();
     method @BytecodeOnly public static void clear-impl(android.os.Bundle!);
@@ -293,7 +297,7 @@ package androidx.savedstate {
   }
 
   public final class SavedStateWriterKt {
-    method @kotlin.PublishedApi internal static <T> java.util.ArrayList<T> toArrayListUnsafe(java.util.Collection<? extends java.lang.Object?>);
+    method @BytecodeOnly @kotlin.PublishedApi internal static <T> java.util.ArrayList<T> toArrayListUnsafe(java.util.Collection<? extends java.lang.Object!>);
   }
 
   public final class ViewKt {

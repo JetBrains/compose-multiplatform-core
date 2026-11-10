@@ -23,7 +23,6 @@ import android.content.ContextWrapper
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.view.Surface
-import androidx.annotation.RestrictTo
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraState
@@ -144,6 +143,7 @@ private const val SCREEN_FLASH_ANIMATION_DURATION_MILLIS = 1000
  *   used to fit the camera feed in the bounds of the [CameraXViewfinder]. Defaults to
  *   [ContentScale.Crop].
  */
+@Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
 public fun CameraXViewfinder(
     surfaceRequest: SurfaceRequest,
@@ -163,9 +163,9 @@ public fun CameraXViewfinder(
         contentScale = contentScale,
         onStreamStateChanged = {},
         isTapToFocusEnabled = false,
-        isPinchToZoomEnabled = false,
-        autoCancelDurationMillis = 5000L,
         onTapToFocus = { _, _ -> },
+        autoCancelDurationMillis = 5000L,
+        isPinchToZoomEnabled = false,
         onZoomRatioChanged = {},
         onScreenFlashReady = {},
     )
@@ -210,19 +210,21 @@ public fun CameraXViewfinder(
  * @param onStreamStateChanged Callback invoked when the preview stream state changes. Provides the
  *   current [Preview.StreamState].
  * @param isTapToFocusEnabled Whether the tap-to-focus gesture is enabled.
- * @param isPinchToZoomEnabled Whether the pinch-to-zoom gesture is enabled.
- * @param autoCancelDurationMillis The auto-cancel duration of focus/metering in milliseconds.
- *   Defaults to 5000L.
  * @param onTapToFocus A callback invoked when a tap-to-focus action is triggered. It provides the
  *   tap [Offset] and an integer representing the current focus state. See [FocusState] for possible
  *   values.
+ * @param autoCancelDurationMillis The auto-cancel duration of focus/metering in milliseconds.
+ *   Defaults to 5000L.
+ * @param isPinchToZoomEnabled Whether the pinch-to-zoom gesture is enabled.
  * @param onZoomRatioChanged A callback invoked when the [CameraXViewfinder]'s pinch-to-zoom gesture
  *   scales the zoom ratio, providing the updated zoom ratio. This callback is only invoked during
  *   the active zooming state.
  * @param onScreenFlashReady A callback invoked when the screen flash feature is ready to apply,
  *   providing the [ImageCapture.ScreenFlash] implementation to be used with ImageCapture.
+ * @param onRelease A callback invoked when the [CameraXViewfinder] is permanently removed from the
+ *   composition, indicating that any references to resources (like [ImageCapture.ScreenFlash])
+ *   should be cleared.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
 public fun CameraXViewfinder(
     surfaceRequest: SurfaceRequest,
@@ -234,12 +236,38 @@ public fun CameraXViewfinder(
     contentScale: ContentScale = ContentScale.Crop,
     onStreamStateChanged: (@Preview.StreamState Int) -> Unit = {},
     isTapToFocusEnabled: Boolean = false,
-    isPinchToZoomEnabled: Boolean = false,
+    onTapToFocus: (Offset, @FocusStateValue Int) -> Unit = { _, _ -> },
     autoCancelDurationMillis: Long = 5000L,
-    onTapToFocus: (Offset, Int) -> Unit = { _, _ -> },
+    isPinchToZoomEnabled: Boolean = false,
     onZoomRatioChanged: (Float) -> Unit = {},
-    onScreenFlashReady: (ImageCapture.ScreenFlash?) -> Unit = {},
+    onScreenFlashReady: (ImageCapture.ScreenFlash) -> Unit = {},
+    onRelease: () -> Unit = {},
 ) {
+    val pendingScreenFlashListener = remember { mutableStateOf<ScreenFlashState?>(null) }
+    val screenFlash = remember {
+        object : ImageCapture.ScreenFlash {
+            override fun apply(
+                expirationTimeMillis: Long,
+                listener: ImageCapture.ScreenFlashListener,
+            ) {
+                // TODO(b/355168952): Clarify expirationTimeMillis implementation mismatch with doc
+                // description.
+                pendingScreenFlashListener.value = ScreenFlashState(listener)
+            }
+
+            override fun clear() {
+                pendingScreenFlashListener.value = null
+            }
+        }
+    }
+
+    val currentOnScreenFlashReady by rememberUpdatedState(onScreenFlashReady)
+    val currentOnRelease = rememberUpdatedState(onRelease)
+    DisposableEffect(screenFlash) {
+        currentOnScreenFlashReady(screenFlash)
+        onDispose { currentOnRelease.value() }
+    }
+
     val currentImplementationMode by rememberUpdatedState(implementationMode)
     val currentOnStreamStateChanged = rememberUpdatedState(onStreamStateChanged)
     var sensorToBufferTransform by remember { mutableStateOf<Matrix?>(null) }
@@ -458,7 +486,7 @@ public fun CameraXViewfinder(
                         }
                     }
                 }
-                ScreenFlashOverlay(onScreenFlashReady = onScreenFlashReady)
+                ScreenFlashOverlay(pendingScreenFlashListener = pendingScreenFlashListener)
             }
         }
     }
@@ -642,7 +670,7 @@ private fun Modifier.tapToFocusGesture(
     sensorToBufferTransform: Matrix?,
     coordinateTransformer: MutableCoordinateTransformer,
     meteringPointFactory: MeteringPointFactory,
-    onTapToFocus: (Offset, Int) -> Unit,
+    onTapToFocus: (Offset, @FocusStateValue Int) -> Unit,
 ): Modifier {
     if (!isTapToFocusEnabled) return this
     val coroutineScope = rememberCoroutineScope()
@@ -770,32 +798,8 @@ private fun speedUpZoomBy2X(scaleFactor: Float): Float {
 }
 
 @Composable
-private fun ScreenFlashOverlay(onScreenFlashReady: (ImageCapture.ScreenFlash?) -> Unit) {
+private fun ScreenFlashOverlay(pendingScreenFlashListener: State<ScreenFlashState?>) {
     val context = LocalContext.current
-
-    val pendingScreenFlashListener = remember { mutableStateOf<ScreenFlashState?>(null) }
-
-    val screenFlash = remember {
-        object : ImageCapture.ScreenFlash {
-            override fun apply(
-                expirationTimeMillis: Long,
-                listener: ImageCapture.ScreenFlashListener,
-            ) {
-                // TODO(b/355168952): Clarify expirationTimeMillis implementation
-                // mismatch with doc description.
-                pendingScreenFlashListener.value = ScreenFlashState(listener)
-            }
-
-            override fun clear() {
-                pendingScreenFlashListener.value = null
-            }
-        }
-    }
-
-    DisposableEffect(screenFlash, onScreenFlashReady) {
-        onScreenFlashReady(screenFlash)
-        onDispose { onScreenFlashReady(null) }
-    }
 
     val flashListenerState = pendingScreenFlashListener.value
     val isScreenFlashActive = flashListenerState != null

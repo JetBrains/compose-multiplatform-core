@@ -23,6 +23,7 @@ import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.prepackage.PrePackagedCopyConfig
 import androidx.sqlite.SQLiteDriver
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration
 
 /** Configuration class for a [RoomDatabase]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -89,6 +90,12 @@ constructor(
 
     /* The connection pool configuration. */
     public actual val connectionPoolConfiguration: ConnectionPoolConfiguration,
+
+    /* The connection pool timeout. */
+    public actual val connectionPoolTimeout: Duration,
+
+    /* Whether Room is allowed to delete and recreate the database file during corruption recovery. */
+    public actual val allowDataLossOnRecovery: Boolean,
 ) {
     /* Whether the invalidation tracker will use temp or real tables for invalidation tracking. */
     internal var useTempTrackingTable = true
@@ -127,6 +134,8 @@ constructor(
         sqliteDriver: SQLiteDriver = this.sqliteDriver,
         queryCoroutineContext: CoroutineContext = this.queryCoroutineContext,
         connectionPoolConfiguration: ConnectionPoolConfiguration = this.connectionPoolConfiguration,
+        connectionPoolTimeout: Duration = this.connectionPoolTimeout,
+        allowDataLossOnRecovery: Boolean = this.allowDataLossOnRecovery,
     ): DatabaseConfiguration =
         DatabaseConfiguration(
                 context,
@@ -147,6 +156,8 @@ constructor(
                 sqliteDriver,
                 queryCoroutineContext,
                 connectionPoolConfiguration,
+                connectionPoolTimeout,
+                allowDataLossOnRecovery,
             )
             .also {
                 it.useTempTrackingTable = this.useTempTrackingTable

@@ -86,7 +86,10 @@ public class AndroidRemoteContext extends RemoteContext {
      *
      * @return The current TypefaceResolver.
      */
-    public @Nullable TypefaceResolver getTypefaceResolver() {
+    public @NonNull TypefaceResolver getTypefaceResolver() {
+        if (mTypefaceResolver == null) {
+            mTypefaceResolver = new DefaultTypefaceResolver(this);
+        }
         return mTypefaceResolver;
     }
 
@@ -208,6 +211,11 @@ public class AndroidRemoteContext extends RemoteContext {
     }
 
     HashMap<String, ArrayList<VarName>> mVarNameHashMap = new HashMap<>();
+
+    @Override
+    public void clearVariables() {
+        mVarNameHashMap.clear();
+    }
 
     /**
      * Returns the id of a variable
@@ -632,6 +640,16 @@ public class AndroidRemoteContext extends RemoteContext {
     @Override
     public void hapticEffect(int type) {
         mDocument.haptic(type);
+    }
+
+    @Override
+    public void loadSound(int soundId, byte @NonNull [] data) {
+        mDocument.loadSound(soundId, data);
+    }
+
+    @Override
+    public void playSound(int soundId) {
+        mDocument.playSound(soundId);
     }
 
     /**

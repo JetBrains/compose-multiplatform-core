@@ -15,6 +15,7 @@
  */
 
 @file:OptIn(ExperimentalMaterial3Api::class)
+@file:Suppress("DEPRECATION") // b/552879150
 
 package androidx.compose.material3.samples
 
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
@@ -34,7 +36,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.insert
-import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.maxLengthTrim
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.then
 import androidx.compose.material.icons.Icons
@@ -68,6 +70,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -123,7 +126,7 @@ fun TextFieldWithTransformations() {
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         // Input transformation to limit user input to 10 digits
         inputTransformation =
-            InputTransformation.maxLength(10).then {
+            InputTransformation.maxLengthTrim(10).then {
                 if (!this.asCharSequence().isDigitsOnly()) {
                     revertAllChanges()
                 }
@@ -242,8 +245,7 @@ fun TextFieldWithErrorState() {
         label = { Text(if (isError) "Username*" else "Username") },
         supportingText = {
             Row {
-                Text(if (isError) errorMessage else "", Modifier.clearAndSetSemantics {})
-                Spacer(Modifier.weight(1f))
+                Text(if (isError) errorMessage else "", Modifier.weight(1f).clearAndSetSemantics {})
                 Text("Limit: ${state.text.length}/$charLimit")
             }
         },
@@ -287,8 +289,7 @@ fun PasswordTextField() {
                     if (passwordHidden) KeyboardType.Password else KeyboardType.PasswordVisible,
             ),
         textObfuscationMode =
-            if (passwordHidden) TextObfuscationMode.RevealLastTyped
-            else TextObfuscationMode.Visible,
+            if (passwordHidden) TextObfuscationMode.System else TextObfuscationMode.Visible,
         trailingIcon = {
             // Provide localized description for accessibility services
             val description = if (passwordHidden) "Show password" else "Hide password"
@@ -838,8 +839,7 @@ fun ExpressiveTextFieldWithErrorState() {
         label = { Text(if (isError) "Username*" else "Username") },
         supportingText = {
             Row {
-                Text(if (isError) errorMessage else "", Modifier.clearAndSetSemantics {})
-                Spacer(Modifier.weight(1f))
+                Text(if (isError) errorMessage else "", Modifier.weight(1f).clearAndSetSemantics {})
                 Text("Limit: ${state.text.length}/$charLimit")
             }
         },
@@ -875,8 +875,7 @@ fun ExpressiveOutlinedTextFieldWithErrorState() {
         label = { Text(if (isError) "Username*" else "Username") },
         supportingText = {
             Row {
-                Text(if (isError) errorMessage else "", Modifier.clearAndSetSemantics {})
-                Spacer(Modifier.weight(1f))
+                Text(if (isError) errorMessage else "", Modifier.weight(1f).clearAndSetSemantics {})
                 Text("Limit: ${state.text.length}/$charLimit")
             }
         },
@@ -901,8 +900,7 @@ fun ExpressivePasswordTextField() {
         state = rememberTextFieldState(),
         label = { Text("Enter password") },
         textObfuscationMode =
-            if (passwordHidden) TextObfuscationMode.RevealLastTyped
-            else TextObfuscationMode.Visible,
+            if (passwordHidden) TextObfuscationMode.System else TextObfuscationMode.Visible,
         trailingIcon = {
             val description = if (passwordHidden) "Show password" else "Hide password"
             IconButton(onClick = { passwordHidden = !passwordHidden }) {
@@ -924,8 +922,7 @@ fun ExpressiveOutlinedPasswordTextField() {
         state = rememberTextFieldState(),
         label = { Text("Enter password") },
         textObfuscationMode =
-            if (passwordHidden) TextObfuscationMode.RevealLastTyped
-            else TextObfuscationMode.Visible,
+            if (passwordHidden) TextObfuscationMode.System else TextObfuscationMode.Visible,
         trailingIcon = {
             val description = if (passwordHidden) "Show password" else "Hide password"
             IconButton(onClick = { passwordHidden = !passwordHidden }) {
@@ -938,4 +935,78 @@ fun ExpressiveOutlinedPasswordTextField() {
         colors = OutlinedTextFieldDefaults.tonalColors(),
         labelPosition = TextFieldLabelPosition.Inside(),
     )
+}
+
+@Preview
+@Composable
+fun ExpressiveConnectedTextFieldsSample() {
+    // NOTE: Hardcoded strings are used here for simplicity. In a real app, use string resources.
+    val errorMessage = "Text is invalid"
+    val firstNameState = rememberTextFieldState()
+    var isFirstNameError by rememberSaveable { mutableStateOf(false) }
+    val lastNameState = rememberTextFieldState()
+    var isLastNameError by rememberSaveable { mutableStateOf(false) }
+
+    Column {
+        TextField(
+            state = firstNameState,
+            lineLimits = TextFieldLineLimits.SingleLine,
+            label = { Text(if (isFirstNameError) "First name*" else "First name") },
+            supportingText =
+                if (isFirstNameError) {
+                    { Text(errorMessage, Modifier.clearAndSetSemantics {}) }
+                } else {
+                    null
+                },
+            isError = isFirstNameError,
+            modifier = Modifier.semantics { if (isFirstNameError) error(errorMessage) },
+            shape =
+                if (isFirstNameError) {
+                    RoundedCornerShape(12.dp)
+                } else {
+                    RoundedCornerShape(
+                        topStart = 12.dp,
+                        topEnd = 12.dp,
+                        bottomEnd = 4.dp,
+                        bottomStart = 4.dp,
+                    )
+                },
+            colors = TextFieldDefaults.tonalColors(),
+        )
+        Spacer(Modifier.height(2.dp))
+        TextField(
+            state = lastNameState,
+            lineLimits = TextFieldLineLimits.SingleLine,
+            label = { Text(if (isLastNameError) "Last name*" else "Last name") },
+            supportingText =
+                if (isLastNameError) {
+                    { Text(errorMessage, Modifier.clearAndSetSemantics {}) }
+                } else {
+                    null
+                },
+            isError = isLastNameError,
+            modifier = Modifier.semantics { if (isLastNameError) error(errorMessage) },
+            shape =
+                if (isFirstNameError) {
+                    RoundedCornerShape(12.dp)
+                } else {
+                    RoundedCornerShape(
+                        topStart = 4.dp,
+                        topEnd = 4.dp,
+                        bottomEnd = 12.dp,
+                        bottomStart = 12.dp,
+                    )
+                },
+            colors = TextFieldDefaults.tonalColors(),
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = isFirstNameError, onCheckedChange = { isFirstNameError = it })
+            Text("Show first name error")
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = isLastNameError, onCheckedChange = { isLastNameError = it })
+            Text("Show last name error")
+        }
+    }
 }

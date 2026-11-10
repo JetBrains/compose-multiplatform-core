@@ -84,7 +84,7 @@ data class RelationCollector(
             scope.getTmpVar(
                 "_collection${relation.property.getPath().stripNonJava().capitalize(Locale.US)}"
             )
-        scope.builder.applyTo { language ->
+        scope.builder.applyTo { _ ->
             if (
                 mapTypeName.rawTypeName == ARRAY_MAP || mapTypeName.rawTypeName == LONG_SPARSE_ARRAY
             ) {
@@ -307,21 +307,19 @@ data class RelationCollector(
         onKeyUnavailable: (XCodeBlock.Builder.() -> Unit)?,
     ) {
         scope.builder.apply {
-            val tmpVars =
-                keyReaders.mapIndexed { index, reader ->
-                    val tmpVar = scope.getTmpVar("_tmpPartialKey_$index")
-                    addLocalVariable(tmpVar, reader.typeMirror().asTypeName())
-                    reader.readFromStatement(tmpVar, stmtVarName, indexVars[index], scope)
-                    tmpVar
+            val tmpVars = keyReaders.mapIndexed { index, reader ->
+                val tmpVar = scope.getTmpVar("_tmpPartialKey_$index")
+                addLocalVariable(tmpVar, reader.typeMirror().asTypeName())
+                reader.readFromStatement(tmpVar, stmtVarName, indexVars[index], scope)
+                tmpVar
+            }
+            val nonNullConditions = tmpVars.mapIndexedNotNull { index, tmpVar ->
+                if (keyReaders[index].typeMirror().nullability != XNullability.NONNULL) {
+                    "$tmpVar != null"
+                } else {
+                    null
                 }
-            val nonNullConditions =
-                tmpVars.mapIndexedNotNull { index, tmpVar ->
-                    if (keyReaders[index].typeMirror().nullability != XNullability.NONNULL) {
-                        "$tmpVar != null"
-                    } else {
-                        null
-                    }
-                }
+            }
 
             fun createCompositeKey(builder: XCodeBlock.Builder): String {
                 val keyVar = scope.getTmpVar("_compositeKey")
@@ -698,13 +696,12 @@ data class RelationCollector(
                 val keySet = context.processingEnv.getDeclaredType(set, keyTypeMirror)
                 val queryParamAdapter =
                     if (affinityTypes.size > 1) {
-                        val valueBinders =
-                            affinityTypes.mapIndexedNotNull { index, type ->
-                                context.typeAdapterStore.findStatementValueBinder(
-                                    type,
-                                    affinities[index],
-                                )
-                            }
+                        val valueBinders = affinityTypes.mapIndexedNotNull { index, type ->
+                            context.typeAdapterStore.findStatementValueBinder(
+                                type,
+                                affinities[index],
+                            )
+                        }
                         CompositeKeyQueryParameterAdapter(valueBinders)
                     } else {
                         context.typeAdapterStore.findQueryParameterAdapter(

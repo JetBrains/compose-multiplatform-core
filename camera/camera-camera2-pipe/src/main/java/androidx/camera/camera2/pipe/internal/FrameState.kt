@@ -21,7 +21,6 @@ import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameId
 import androidx.camera.camera2.pipe.FrameInfo
-import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.RequestMetadata
@@ -37,6 +36,7 @@ import androidx.camera.camera2.pipe.internal.OutputResult.Companion.outputStatus
 import androidx.camera.camera2.pipe.media.OutputImage
 import androidx.camera.camera2.pipe.media.SharedOutputImage
 import androidx.camera.camera2.pipe.media.TrackedOutputImage
+import androidx.camera.common.CameraFrameNumber
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.atomicfu.AtomicInt
 import kotlinx.atomicfu.atomic
@@ -50,14 +50,23 @@ import kotlinx.coroutines.Deferred
  */
 internal class FrameState(
     val requestMetadata: RequestMetadata,
-    val frameNumber: FrameNumber,
+    val frameNumber: CameraFrameNumber,
     val frameTimestamp: CameraTimestamp,
     imageStreams: Set<CameraStream>,
     val concurrentImageStreams: Set<StreamId>?,
 ) {
     val frameId = nextFrameId()
     val frameInfoOutput: FrameInfoOutput = FrameInfoOutput()
-    val imageOutputs: List<ImageOutput> = buildList {
+    val exposureImageOutputs: List<ImageOutput>
+    val readoutImageOutputs: List<ImageOutput>
+    val imageOutputs: List<ImageOutput>
+    val expectsReadoutTimestamp: Boolean
+        get() = readoutImageOutputs.isNotEmpty()
+
+    init {
+        val exposureList = mutableListOf<ImageOutput>()
+        val readoutList = mutableListOf<ImageOutput>()
+        val allList = mutableListOf<ImageOutput>()
         for (streamId in requestMetadata.streams.keys) {
             // Only create StreamResult's for streams that this OutputFrameDistributor supports.
             val imageStream = imageStreams.find { it.id == streamId }
@@ -65,11 +74,26 @@ internal class FrameState(
                 val outputs = imageStream.outputs
                 val remainingOutputResults = atomic(outputs.size)
                 for (i in outputs.indices) {
-                    val imageOutput = ImageOutput(streamId, outputs[i].id, remainingOutputResults)
-                    add(imageOutput)
+                    val useReadoutTimestamp = outputs[i].useReadoutTimestamp
+                    val imageOutput =
+                        ImageOutput(
+                            streamId,
+                            outputs[i].id,
+                            useReadoutTimestamp,
+                            remainingOutputResults,
+                        )
+                    if (useReadoutTimestamp) {
+                        readoutList.add(imageOutput)
+                    } else {
+                        exposureList.add(imageOutput)
+                    }
+                    allList.add(imageOutput)
                 }
             }
         }
+        exposureImageOutputs = exposureList
+        readoutImageOutputs = readoutList
+        imageOutputs = allList
     }
 
     /**
@@ -86,7 +110,10 @@ internal class FrameState(
         COMPLETE,
     }
 
-    private val state = atomic(STARTED)
+    // The state is initialized as STARTED, and we are expected to receive all stream results and
+    // the frame info to mark the frame as completed. However, if we are not expecting any stream
+    // outputs then arrival of frame info is sufficient for frame completion.
+    private val state = atomic(if (imageOutputs.isEmpty()) STREAM_RESULTS_COMPLETE else STARTED)
     private val remainingStreamCount = atomic(imageOutputs.map { it.streamId }.distinct().size)
 
     // A list of ListenerState, one for each listener.
@@ -111,17 +138,16 @@ internal class FrameState(
     }
 
     fun onFrameInfoComplete() {
-        val state =
-            state.updateAndGet { current ->
-                when (current) {
-                    STARTED -> FRAME_INFO_COMPLETE
-                    STREAM_RESULTS_COMPLETE -> COMPLETE
-                    else ->
-                        throw IllegalStateException(
-                            "Unexpected frame state for $this! State is $current "
-                        )
-                }
+        val state = state.updateAndGet { current ->
+            when (current) {
+                STARTED -> FRAME_INFO_COMPLETE
+                STREAM_RESULTS_COMPLETE -> COMPLETE
+                else ->
+                    throw IllegalStateException(
+                        "Unexpected frame state for $this! State is $current "
+                    )
             }
+        }
 
         for (listenerState in listenerStates) {
             listenerState.invokeOnFrameInfoAvailable(frameNumber, frameTimestamp)
@@ -136,17 +162,16 @@ internal class FrameState(
         val hasStreamsRemaining = remainingStreamCount.decrementAndGet() != 0
         if (hasStreamsRemaining) return
 
-        val state =
-            state.updateAndGet { current ->
-                when (current) {
-                    STARTED -> STREAM_RESULTS_COMPLETE
-                    FRAME_INFO_COMPLETE -> COMPLETE
-                    else ->
-                        throw IllegalStateException(
-                            "Unexpected frame state for $this! State is $current "
-                        )
-                }
+        val state = state.updateAndGet { current ->
+            when (current) {
+                STARTED -> STREAM_RESULTS_COMPLETE
+                FRAME_INFO_COMPLETE -> COMPLETE
+                else ->
+                    throw IllegalStateException(
+                        "Unexpected frame state for $this! State is $current "
+                    )
             }
+        }
 
         for (listenerState in listenerStates) {
             listenerState.invokeOnImagesAvailable(frameNumber, frameTimestamp)
@@ -181,14 +206,13 @@ internal class FrameState(
             get() = internalResult
 
         fun increment(): Boolean {
-            val current =
-                count.updateAndGet { current ->
-                    if (current <= 0) {
-                        0
-                    } else {
-                        current + 1
-                    }
+            val current = count.updateAndGet { current ->
+                if (current <= 0) {
+                    0
+                } else {
+                    current + 1
                 }
+            }
             return current != 0
         }
 
@@ -222,7 +246,7 @@ internal class FrameState(
         FrameOutput<FrameInfo>(), OutputDistributor.OutputListener<FrameInfo> {
 
         override fun onOutputComplete(
-            cameraFrameNumber: FrameNumber,
+            cameraFrameNumber: CameraFrameNumber,
             cameraTimestamp: CameraTimestamp,
             cameraOutputSequence: Long,
             outputNumber: Long,
@@ -244,6 +268,7 @@ internal class FrameState(
     inner class ImageOutput(
         val streamId: StreamId,
         val outputId: OutputId,
+        val useReadoutTimestamp: Boolean,
         private val remainingOutputResults: AtomicInt, // Number of remaining outputs in this stream
     ) : FrameOutput<SharedOutputImage>(), OutputDistributor.OutputListener<OutputImage> {
         // This tracks the external use calls registered before the arrival of the image.
@@ -283,7 +308,7 @@ internal class FrameState(
         }
 
         override fun onOutputComplete(
-            cameraFrameNumber: FrameNumber,
+            cameraFrameNumber: CameraFrameNumber,
             cameraTimestamp: CameraTimestamp,
             cameraOutputSequence: Long,
             outputNumber: Long,

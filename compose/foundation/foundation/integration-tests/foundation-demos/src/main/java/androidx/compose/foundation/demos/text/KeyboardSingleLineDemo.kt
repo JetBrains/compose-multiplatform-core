@@ -104,7 +104,7 @@ private val ImeOptionsList =
 fun ImeSingleLineDemo() {
     LazyColumn {
         items(ImeOptionsList) {
-            TagLine(tag = "${it.name}")
+            TagLine(tag = it.name)
             MyTextField(it)
         }
     }
@@ -115,6 +115,7 @@ private fun MyTextField(data: ImeOptionsData) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val state =
         rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
+    @Suppress("DEPRECATION") // b/552879150
     BasicTextField(
         modifier = demoTextFieldModifiers.defaultMinSize(100.dp),
         value = state.value,

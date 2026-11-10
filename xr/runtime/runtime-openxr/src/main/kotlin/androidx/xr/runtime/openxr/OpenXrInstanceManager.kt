@@ -18,6 +18,7 @@ package androidx.xr.runtime.openxr
 import android.content.Context
 import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.interfaces.XrNativeInstanceProvider
+import androidx.xr.runtime.interfaces.XrNativeInstanceProvider.Companion.INVALID_HANDLE
 
 /** Implementation of native data provision for the OpenXR runtime. */
 internal class OpenXrInstanceManager : XrNativeInstanceProvider {
@@ -25,15 +26,21 @@ internal class OpenXrInstanceManager : XrNativeInstanceProvider {
 
     override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.OPEN_XR)
 
-    internal var nativeManager: Long = 0L
+    internal var nativeManager: Long = INVALID_HANDLE
 
-    override var xrInstanceProcAddr: Long = 0L
+    override var xrInstanceProcAddr: Long = INVALID_HANDLE
         private set
 
-    override var xrInstanceHandle: Long = 0L
+    override var xrInstanceHandle: Long = INVALID_HANDLE
+        private set
+
+    override var xrSessionHandle: Long = INVALID_HANDLE
         private set
 
     override fun initialize(context: Context, extraExtensions: List<String>) {
+        // OpenXR native handles live for the process lifetime. Using applicationContext ensures
+        // that the OpenXR native runtime does not hold a reference to an Activity context.
+        val appContext = context.applicationContext ?: context
         // Attempt to load the test library instead if it was added based on the Gradle AndroidTest
         // variant. Else this is a non-test environment.
         try {
@@ -43,8 +50,14 @@ internal class OpenXrInstanceManager : XrNativeInstanceProvider {
         }
         nativeManager = nativeCreateOpenXrInstanceManager(extraExtensions.toTypedArray())
 
-        xrInstanceHandle = nativeGetOpenXrInstanceHandle(context, nativeManager)
+        xrInstanceHandle = nativeGetOpenXrInstanceHandle(appContext, nativeManager)
         xrInstanceProcAddr = nativeGetGetInstanceProcAddr(nativeManager)
+        xrSessionHandle =
+            try {
+                nativeGetOpenXrSessionHandle(appContext, nativeManager)
+            } catch (e: UnsatisfiedLinkError) {
+                INVALID_HANDLE
+            }
     }
 
     private external fun nativeCreateOpenXrInstanceManager(extensions: Array<String>): Long
@@ -52,4 +65,6 @@ internal class OpenXrInstanceManager : XrNativeInstanceProvider {
     private external fun nativeGetOpenXrInstanceHandle(context: Context, nativeManager: Long): Long
 
     private external fun nativeGetGetInstanceProcAddr(nativeManager: Long): Long
+
+    private external fun nativeGetOpenXrSessionHandle(context: Context, nativeManager: Long): Long
 }

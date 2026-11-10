@@ -79,7 +79,6 @@ import androidx.test.filters.SdkSuppress
 import kotlin.math.roundToInt
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -92,7 +91,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ConstraintLayoutTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private var displaySize: IntSize = IntSize.Zero
 
@@ -293,10 +292,11 @@ class ConstraintLayoutTest {
                 // Divider has percent height so it should spread to fill 0.8 of the height of the
                 // CL,
                 // which in turns is given by the size of the aspect ratio box.
-                assertEquals(
-                    (aspectRatioBoxSize.value!!.height * 0.8f).roundToInt(),
-                    dividerSize.value!!.height,
-                )
+                val boxHeight = aspectRatioBoxSize.value!!.height
+                val margin = (boxHeight - boxHeight * 0.8f) / 2f
+                val expectedDividerHeight =
+                    (margin + boxHeight * 0.8f).roundToInt() - margin.roundToInt()
+                assertEquals(expectedDividerHeight, dividerSize.value!!.height)
             }
         }
 
@@ -1264,10 +1264,12 @@ class ConstraintLayoutTest {
         var first by mutableStateOf(true)
         var box1Position = Offset(-1f, -1f)
         var box2Position = Offset(-1f, -1f)
-        val box1PositionUpdater =
-            Modifier.onGloballyPositioned { box1Position = it.positionInRoot() }
-        val box2PositionUpdater =
-            Modifier.onGloballyPositioned { box2Position = it.positionInRoot() }
+        val box1PositionUpdater = Modifier.onGloballyPositioned {
+            box1Position = it.positionInRoot()
+        }
+        val box2PositionUpdater = Modifier.onGloballyPositioned {
+            box2Position = it.positionInRoot()
+        }
         rule.setContent {
             ConstraintLayout {
                 val (box1, box2) = createRefs()
@@ -1298,10 +1300,12 @@ class ConstraintLayoutTest {
         var first by mutableStateOf(true)
         var box1Position = Offset(-1f, -1f)
         var box2Position = Offset(-1f, -1f)
-        val box1PositionUpdater =
-            Modifier.onGloballyPositioned { box1Position = it.positionInRoot() }
-        val box2PositionUpdater =
-            Modifier.onGloballyPositioned { box2Position = it.positionInRoot() }
+        val box1PositionUpdater = Modifier.onGloballyPositioned {
+            box1Position = it.positionInRoot()
+        }
+        val box2PositionUpdater = Modifier.onGloballyPositioned {
+            box2Position = it.positionInRoot()
+        }
         rule.setContent {
             ConstraintLayout {
                 val (box1, box2) = createRefs()

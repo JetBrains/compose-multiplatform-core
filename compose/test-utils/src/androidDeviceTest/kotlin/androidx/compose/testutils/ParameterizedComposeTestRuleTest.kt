@@ -20,28 +20,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class ParameterizedComposeTestRuleTest {
-    @get:Rule
-    val composeTestRule = createParameterizedComposeTestRule<Param>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createParameterizedComposeTestRule<Param>()
 
     @Test
     fun assertionErrorInParameterIsPropagated() {
         val paramList = listOf(Param("first"), Param("second"))
         composeTestRule.setContent { Box(modifier = Modifier.size(10.dp)) }
 
-        val error =
-            kotlin.runCatching {
-                composeTestRule.forEachParameter(paramList) {
-                    if (it.singleParam == "first") {
-                        throw AssertionError()
-                    }
+        val error = kotlin.runCatching {
+            composeTestRule.forEachParameter(paramList) {
+                if (it.singleParam == "first") {
+                    throw AssertionError()
                 }
             }
+        }
 
         assertTrue(error.exceptionOrNull()?.localizedMessage?.contains("Error on Config") == true)
     }

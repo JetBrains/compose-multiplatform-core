@@ -16,9 +16,11 @@
 
 @file:JvmMultifileClass
 @file:JvmName("StrokeInputBatchExtensions")
+@file:OptIn(InkInternalOnlyApi::class)
 
 package androidx.ink.storage
 
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.strokes.ImmutableStrokeInputBatch
 import androidx.ink.strokes.StrokeInputBatch
 import kotlin.jvm.JvmMultifileClass
@@ -61,10 +63,9 @@ internal fun StrokeInputBatch.encodeUncompressed(): ByteArray =
 @Throws(IOException::class)
 internal fun StrokeInputBatch.Companion.decodeUncompressed(
     input: DecompressedBytes
-): ImmutableStrokeInputBatch =
-    ImmutableStrokeInputBatch.wrapNative {
-        StrokeInputBatchSerializationNative.createFromProto(input.buffer, input.size)
-    }
+): ImmutableStrokeInputBatch = ImmutableStrokeInputBatch.wrapNative {
+    StrokeInputBatchSerializationNative.createFromProto(input.buffer, input.size)
+}
 
 expect internal object StrokeInputBatchSerializationNative {
     // Returns a native pointer to a `StrokeInputBatch`.

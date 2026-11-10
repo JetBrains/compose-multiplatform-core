@@ -17,10 +17,12 @@
 package androidx.ink.brush
 
 import androidx.ink.geometry.AngleDegreesFloat
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 @UsedByNative
+@OptIn(InkInternalOnlyApi::class)
 actual internal object BrushTipNative {
     init {
         NativeLoader.load()
@@ -62,4 +64,6 @@ actual internal object BrushTipNative {
     @UsedByNative actual external fun getBehaviorCount(nativePointer: Long): Int
 
     @UsedByNative actual external fun newCopyOfBrushBehavior(nativePointer: Long, index: Int): Long
+
+    @UsedByNative actual external fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

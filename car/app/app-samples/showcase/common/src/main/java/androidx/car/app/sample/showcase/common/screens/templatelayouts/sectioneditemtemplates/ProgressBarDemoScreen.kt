@@ -26,18 +26,20 @@ import androidx.car.app.model.Action
 import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.CarProgressBar
+import androidx.car.app.model.CarProgressBarStyle
 import androidx.car.app.model.GridItem
 import androidx.car.app.model.GridSection
 import androidx.car.app.model.Header
 import androidx.car.app.model.Row
 import androidx.car.app.model.RowSection
 import androidx.car.app.model.SectionedItemTemplate
+import androidx.car.app.model.StrokeCap
 import androidx.car.app.model.Template
 import androidx.car.app.sample.showcase.common.R
 import androidx.core.graphics.drawable.IconCompat
 
 /** A screen demonstrating sectioned item lists with progress bars and different configurations. */
-@RequiresCarApi(8)
+@RequiresCarApi(9)
 @OptIn(ExperimentalCarApi::class)
 class ProgressBarDemoScreen(carContext: CarContext) : Screen(carContext) {
 
@@ -49,18 +51,21 @@ class ProgressBarDemoScreen(carContext: CarContext) : Screen(carContext) {
             .build()
 
     private val testImage: CarIcon =
-        CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.test_image_square))
-            .build()
+        CarIcon.createOriginalIcon(
+            IconCompat.createWithResource(carContext, R.drawable.test_image_square)
+        )
 
     private val largeTestImage: CarIcon =
-        CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.test_android_media))
-            .build()
+        CarIcon.createOriginalIcon(
+            IconCompat.createWithResource(carContext, R.drawable.test_android_media)
+        )
 
     override fun onGetTemplate(): Template {
         return SectionedItemTemplate.Builder()
             .addSection(createRegularRowsSection())
             .addSection(createRowConfigurationsSection())
             .addSection(createColoredRowsSection())
+            .addSection(createStrokeCapRowsSection())
             .addSection(createGridSection(GridSection.ITEM_SIZE_SMALL))
             .addSection(createGridSection(GridSection.ITEM_SIZE_MEDIUM))
             .addSection(createGridSection(GridSection.ITEM_SIZE_LARGE))
@@ -99,16 +104,89 @@ class ProgressBarDemoScreen(carContext: CarContext) : Screen(carContext) {
         val colors = listOf(CarColor.RED, CarColor.GREEN, CarColor.BLUE, CarColor.YELLOW)
         val colorNames = listOf("Red", "Green", "Blue", "Yellow")
 
-        val rows =
+        val coloredRows =
             colors.zip(colorNames).map { (color, name) ->
                 Row.Builder()
                     .setTitle("$name Progress Bar Row")
                     .addText("Colored progress bar example")
                     .setImage(testImage, Row.IMAGE_TYPE_LARGE)
-                    .setProgressBar(CarProgressBar.Builder(0.5f).setColor(color).build())
+                    .setProgressBar(
+                        CarProgressBar.Builder(0.5f)
+                            .setStyle(
+                                CarProgressBarStyle.Builder()
+                                    .setColor(color)
+                                    .setTrackColor(color)
+                                    .build()
+                            )
+                            .build()
+                    )
                     .build()
             }
-        return RowSection.Builder().setTitle("Colored Progress Bars").setItems(rows).build()
+
+        // Track color examples
+        val trackColoredRows =
+            listOf(
+                Row.Builder()
+                    .setTitle("Green Progress Bar Row with Blue Track")
+                    .addText("Colored progress bar example")
+                    .setImage(testImage, Row.IMAGE_TYPE_LARGE)
+                    .setProgressBar(
+                        CarProgressBar.Builder(0.5f)
+                            .setStyle(
+                                CarProgressBarStyle.Builder()
+                                    .setColor(CarColor.GREEN)
+                                    .setTrackColor(CarColor.BLUE)
+                                    .build()
+                            )
+                            .build()
+                    )
+                    .build(),
+                Row.Builder()
+                    .setTitle("Red Progress Bar Row with Yellow Track")
+                    .addText("Colored progress bar example")
+                    .setImage(testImage, Row.IMAGE_TYPE_LARGE)
+                    .setProgressBar(
+                        CarProgressBar.Builder(0.5f)
+                            .setStyle(
+                                CarProgressBarStyle.Builder()
+                                    .setColor(CarColor.RED)
+                                    .setTrackColor(CarColor.YELLOW)
+                                    .build()
+                            )
+                            .build()
+                    )
+                    .build(),
+            )
+
+        return RowSection.Builder()
+            .setTitle("Colored Progress Bars")
+            .setItems(coloredRows + trackColoredRows)
+            .build()
+    }
+
+    private fun createStrokeCapRowsSection(): RowSection {
+        val strokeCaps =
+            listOf(
+                StrokeCap.DEFAULT,
+                StrokeCap.ROUND,
+                StrokeCap.SQUARE,
+            )
+        val strokeCapNames = listOf("System default", "Round", "Square")
+
+        val rows =
+            strokeCaps.zip(strokeCapNames).map { (strokeCap, name) ->
+                Row.Builder()
+                    .setTitle("$name Stroke Cap Progress Bar Row")
+                    .addText("Custom shaped progress bar example")
+                    .setImage(testImage, Row.IMAGE_TYPE_LARGE)
+                    .setProgressBar(
+                        CarProgressBar.Builder(0.5f)
+                            .setStyle(CarProgressBarStyle.Builder().setStrokeCap(strokeCap).build())
+                            .build()
+                    )
+                    .build()
+            }
+        return RowSection.Builder().setTitle("Shaped Progress Bars").setItems(rows).build()
     }
 
     private fun createGridSection(
@@ -130,7 +208,7 @@ class ProgressBarDemoScreen(carContext: CarContext) : Screen(carContext) {
         builder.addItem(
             GridItem.Builder()
                 .setTitle("Progress 0.3")
-                .setImage(largeTestImage, GridItem.IMAGE_TYPE_LARGE)
+                .setImage(largeTestImage)
                 .setProgressBar(CarProgressBar.Builder(0.3f).build())
                 .build()
         )
@@ -139,7 +217,7 @@ class ProgressBarDemoScreen(carContext: CarContext) : Screen(carContext) {
         builder.addItem(
             GridItem.Builder()
                 .setTitle("Progress 0.6")
-                .setImage(largeTestImage, GridItem.IMAGE_TYPE_LARGE)
+                .setImage(largeTestImage)
                 .setProgressBar(CarProgressBar.Builder(0.6f).build())
                 .build()
         )
@@ -148,7 +226,7 @@ class ProgressBarDemoScreen(carContext: CarContext) : Screen(carContext) {
         builder.addItem(
             GridItem.Builder()
                 .setTitle("Progress 0.9")
-                .setImage(largeTestImage, GridItem.IMAGE_TYPE_LARGE)
+                .setImage(largeTestImage)
                 .setProgressBar(CarProgressBar.Builder(0.9f).build())
                 .build()
         )
@@ -158,7 +236,7 @@ class ProgressBarDemoScreen(carContext: CarContext) : Screen(carContext) {
             GridItem.Builder()
                 .setTitle("Primary")
                 .setText("Subtitle")
-                .setImage(largeTestImage, GridItem.IMAGE_TYPE_LARGE)
+                .setImage(largeTestImage)
                 .build()
         )
 
@@ -166,16 +244,24 @@ class ProgressBarDemoScreen(carContext: CarContext) : Screen(carContext) {
         builder.addItem(
             GridItem.Builder()
                 .setTitle("Colored 0.5")
-                .setImage(largeTestImage, GridItem.IMAGE_TYPE_LARGE)
-                .setProgressBar(CarProgressBar.Builder(0.5f).setColor(CarColor.GREEN).build())
+                .setImage(largeTestImage)
+                .setProgressBar(
+                    CarProgressBar.Builder(0.5f)
+                        .setStyle(CarProgressBarStyle.Builder().setColor(CarColor.GREEN).build())
+                        .build()
+                )
                 .build()
         )
 
         // 6. Just Progress Bar, Small Icon
         builder.addItem(
             GridItem.Builder()
-                .setImage(largeTestImage, GridItem.IMAGE_TYPE_LARGE)
-                .setProgressBar(CarProgressBar.Builder(0.5f).setColor(CarColor.YELLOW).build())
+                .setImage(largeTestImage)
+                .setProgressBar(
+                    CarProgressBar.Builder(0.5f)
+                        .setStyle(CarProgressBarStyle.Builder().setColor(CarColor.YELLOW).build())
+                        .build()
+                )
                 .build()
         )
 

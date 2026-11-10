@@ -24,7 +24,7 @@ import androidx.health.platform.client.proto.RequestProto
 
 /** Internal parcelable for IPC calls. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-class UpsertDataRequest(val dataPoints: List<DataProto.DataPoint>) :
+public class UpsertDataRequest(public val dataPoints: List<DataProto.DataPoint>) :
     ProtoParcelable<RequestProto.UpsertDataRequest>() {
     override val proto: RequestProto.UpsertDataRequest
         get() {
@@ -34,13 +34,12 @@ class UpsertDataRequest(val dataPoints: List<DataProto.DataPoint>) :
                 .build()
         }
 
-    companion object {
+    public companion object {
         @JvmField
-        val CREATOR: Parcelable.Creator<UpsertDataRequest> =
-            ProtoParcelable.newCreator {
-                val proto = RequestProto.UpsertDataRequest.parseFrom(it)
-                fromProto(proto)
-            }
+        public val CREATOR: Parcelable.Creator<UpsertDataRequest> = ProtoParcelable.newCreator {
+            val proto = RequestProto.UpsertDataRequest.parseFrom(it)
+            fromProto(proto)
+        }
 
         internal fun fromProto(proto: RequestProto.UpsertDataRequest): UpsertDataRequest {
             return UpsertDataRequest(proto.dataPointList)

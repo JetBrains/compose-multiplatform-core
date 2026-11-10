@@ -18,6 +18,7 @@ package androidx.compose.material3
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
@@ -32,10 +33,10 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +46,7 @@ import org.junit.runners.Parameterized
 @LargeTest
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class SplitButtonScreenshotTest(private val scheme: ColorSchemeWrapper) {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -84,6 +85,44 @@ class SplitButtonScreenshotTest(private val scheme: ColorSchemeWrapper) {
         }
 
         assertAgainstGolden("splitButton_${scheme.name}")
+    }
+
+    @Test
+    fun filledSplitButton_leadingFillMaxWidth() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(
+                wrap.testTag(wrapperTestTag).size(width = 200.dp, height = 50.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.LeadingButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { /* Do Nothing */ },
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize),
+                                contentDescription = "Localized description",
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("Label")
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.TrailingButton(checked = false, onCheckedChange = {}) {
+                            Icon(
+                                Icons.Outlined.KeyboardArrowDown,
+                                contentDescription = "Localized description",
+                                Modifier.size(SplitButtonDefaults.TrailingIconSize),
+                            )
+                        }
+                    },
+                )
+            }
+        }
+
+        assertAgainstGolden("splitButton_leading_weight_${scheme.name}")
     }
 
     @Test
