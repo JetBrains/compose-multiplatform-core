@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -310,7 +311,7 @@ class CfWA11YTest : OnCanvasTests {
         var order by mutableStateOf(listOf(1, 2, 3))
 
         createComposeWindow {
-            Column(modifier = Modifier.testTag("parent")) {
+            Column(modifier = Modifier.semantics { isTraversalGroup = true }.testTag("parent")) {
                 order.forEach { item ->
                     key(item) {
                         Button(modifier = Modifier.testTag("button$item"), onClick = {}) {
@@ -371,7 +372,7 @@ class CfWA11YTest : OnCanvasTests {
 
         createComposeWindow {
             Column {
-                Column(modifier = Modifier.size(100.dp).testTag("parent1").recordCoordinates("parent1")) {
+                Column(modifier = Modifier.size(100.dp).semantics { isTraversalGroup = true }.testTag("parent1").recordCoordinates("parent1")) {
                     Button(modifier = Modifier.height(30.dp).testTag("button1"), onClick = {}) {
                         Text("Button1")
                     }
@@ -380,7 +381,7 @@ class CfWA11YTest : OnCanvasTests {
                         Text("Button2")
                     }
                 }
-                Box(modifier = Modifier.size(100.dp).testTag("parent2").recordCoordinates("parent2")) {
+                Box(modifier = Modifier.size(100.dp).semantics { isTraversalGroup = true }.testTag("parent2").recordCoordinates("parent2")) {
                     if (moveToSecondParent) buttonInMovableContent()
                 }
             }
@@ -812,7 +813,7 @@ class CfWA11YTest : OnCanvasTests {
             RangeSlider(
                 value = 0.25f..0.75f,
                 onValueChange = {},
-                modifier = Modifier.testTag("rangeSlider"),
+                modifier = Modifier.semantics { isTraversalGroup = true }.testTag("rangeSlider"),
             )
         }
 
@@ -952,7 +953,7 @@ class CfWA11YTest : OnCanvasTests {
 
         createComposeWindow {
             Column(
-                modifier = if (addSemantics) Modifier.testTag("myColumn") else Modifier
+                modifier = if (addSemantics) Modifier.semantics { isTraversalGroup = true }.testTag("myColumn") else Modifier
             ) {
                 Text("ChildText")
             }

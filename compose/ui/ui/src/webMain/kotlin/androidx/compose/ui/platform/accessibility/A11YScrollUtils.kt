@@ -234,12 +234,14 @@ internal class A11YScrollController(
     }
 
     fun onNodeRemoved(id: Int, htmlNode: HTMLElement?) {
-        htmlNode?.removeEventListener("scroll", onScroll)
-
-        appliedScrollOffsets.remove(id)
-        pendingScrollOffsets.remove(id)
-        domScrollSizers.remove(id)
-        scrollListenersAttached.remove(id)
+        if (scrollListenersAttached.remove(id) && htmlNode != null) {
+            removeScrollProperties(htmlNode, id)
+        } else {
+            htmlNode?.removeEventListener("scroll", onScroll)
+            appliedScrollOffsets.remove(id)
+            pendingScrollOffsets.remove(id)
+            domScrollSizers.remove(id)?.remove()
+        }
     }
 }
 

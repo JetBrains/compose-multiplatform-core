@@ -175,6 +175,9 @@ internal class ComposeWebSemanticsListener(
     private val dfsA11YParents = ArrayDeque<HTMLElement>()
     private val dfsA11YReachabilities = ArrayDeque<A11YReachability>()
 
+    // Pre-computed reachabilities for nodes collected into an ancestor's geometry group:
+    private val flattenedNodeReachabilities = MutableIntObjectMap<A11YReachability>()
+
     // Lookup maps between semantics nodes and corresponding A11Y DOM elements:
     private val idToA11YNode = MutableIntObjectMap<HTMLElement>()
     private val a11yNodeToSemanticsNode = MutableScatterMap<HTMLElement, SemanticsNode>()
@@ -288,6 +291,7 @@ internal class ComposeWebSemanticsListener(
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
         dfsA11YReachabilities.clear()
+        flattenedNodeReachabilities.clear()
         dfsSemanticsNodes.addLast(root)
         dfsA11YParents.addLast(webSemanticsRoot)
         dfsA11YReachabilities.addLast(A11YReachability.DirectlyReachable)
@@ -304,7 +308,8 @@ internal class ComposeWebSemanticsListener(
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
             val children = node.placedA11YChildren()
-            val nodeReachability = node.a11yReachability(parentReachability)
+            val nodeReachability = flattenedNodeReachabilities.remove(node.id)
+                ?: node.a11yReachability(parentReachability)
             val isA11YReachable = nodeReachability.isReachable()
 
             val htmlNode = syncNode(
@@ -342,12 +347,21 @@ internal class ComposeWebSemanticsListener(
     ) {
         if (children.isEmpty()) return
 
+        val flattenedChildren = ArrayList<SemanticsNode>(children.size)
+        collectFlattenedChildren(
+            children = children,
+            parentReachability = parentA11YExposure,
+            outNodes = flattenedChildren,
+        )
+        if (flattenedChildren.isEmpty()) return
+
         // Prepare the children bounds to avoid recomputing them during grouping and comparison.
-        val bounds = MutableIntObjectMap<Rect>(children.size)
-        children.fastForEach { child ->
+        val bounds = MutableIntObjectMap<Rect>(flattenedChildren.size)
+        flattenedChildren.fastForEach { child ->
             // Scroll-reachable children remain accessible offscreen, where clipped bounds may be empty,
             // so use unclipped bounds.
-            bounds[child.id] = if (parentA11YExposure == A11YReachability.ReachableByScroll) {
+            val reachability = flattenedNodeReachabilities[child.id] ?: parentA11YExposure
+            bounds[child.id] = if (reachability == A11YReachability.ReachableByScroll) {
                 child.unclippedBoundsInWindowForWeb()
             } else {
                 child.boundsInWindow
@@ -355,7 +369,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         val reversedChildren = parent.sortByGeometryGroupingsForWeb(
-            parentListToSort = children,
+            parentListToSort = flattenedChildren,
             boundsOf = { checkNotNull(bounds[it.id]) }
         ).asReversed()
 
@@ -363,6 +377,38 @@ internal class ComposeWebSemanticsListener(
         repeat(reversedChildren.size) {
             dfsA11YParents.addLast(htmlParent)
             dfsA11YReachabilities.addLast(parentA11YExposure)
+        }
+    }
+
+    /**
+     * Collects the direct DOM children of a container by flattening intermediate `SemanticsNode`s
+     * that do not form an accessibility traversal group or container boundary (`isTraversalGroup != true`,
+     * not scrollable, not text-with-links).
+     *
+     * Pure layout wrappers (nodes that are not traversal groups, have no A11Y semantics of their
+     * own, and only wrap descendant nodes) are omitted so their descendants sort together by
+     * geometry in the enclosing container.
+     */
+    private fun collectFlattenedChildren(
+        children: List<SemanticsNode>,
+        parentReachability: A11YReachability,
+        outNodes: MutableList<SemanticsNode>,
+    ) {
+        children.fastForEach { child ->
+            val config = child.config
+            val childReachability = child.a11yReachability(parentReachability, config)
+            val grandChildren = child.placedA11YChildren()
+
+            if (grandChildren.isEmpty() || child.isA11YContainerBoundary(config)) {
+                flattenedNodeReachabilities[child.id] = childReachability
+                outNodes.add(child)
+            } else {
+                collectFlattenedChildren(
+                    children = grandChildren,
+                    parentReachability = childReachability,
+                    outNodes = outNodes,
+                )
+            }
         }
     }
 
@@ -744,6 +790,7 @@ internal class ComposeWebSemanticsListener(
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
         dfsA11YReachabilities.clear()
+        flattenedNodeReachabilities.clear()
         idToA11YNode.clear()
         a11yNodeToSemanticsNode.clear()
         targetParentToChildren.clear()

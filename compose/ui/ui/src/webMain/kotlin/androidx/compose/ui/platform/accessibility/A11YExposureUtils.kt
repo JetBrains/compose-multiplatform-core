@@ -16,7 +16,10 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
 
 internal enum class A11YReachability {
     /* The node is not clipped and must be reachable by AT */
@@ -40,7 +43,8 @@ internal enum class A11YReachability {
  * - whether one of its ancestors is a reachable scrollable container (then the node is reachable even if fully offscreen/clipped)
  */
 internal fun SemanticsNode.a11yReachability(
-    parentReachability: A11YReachability
+    parentReachability: A11YReachability,
+    config: SemanticsConfiguration = this.config,
 ): A11YReachability = when (parentReachability) {
     A11YReachability.Unreachable,
     A11YReachability.ReachableByScroll -> parentReachability // just inherit from the parent
@@ -53,4 +57,39 @@ internal fun SemanticsNode.a11yReachability(
             else -> parentReachability
         }
     }
+}
+
+/**
+ * Returns true if this [SemanticsNode] acts as a container in the A11Y DOM tree, keeping its
+ * descendants nested under its own HTML element instead of flattening them into the parent group.
+ *
+ * A node with its own A11Y semantics (e.g., `contentDescription`, role, scrollability, or text)
+ * remains a DOM container while flattening any non-traversal layout wrappers inside it.
+ */
+internal fun SemanticsNode.isA11YContainerBoundary(
+    config: SemanticsConfiguration = this.config,
+): Boolean =
+    unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false } ||
+        unmergedConfig.isMergingSemanticsOfDescendants ||
+        config.hasOwnA11YSemantics()
+
+/**
+ * Returns true if this [SemanticsConfiguration] carries semantics that are exposed on an A11Y DOM
+ * element (excluding layout/ordering-only properties like [SemanticsProperties.IsTraversalGroup],
+ * [SemanticsProperties.TraversalIndex], and [SemanticsProperties.TestTag]).
+ */
+internal fun SemanticsConfiguration.hasOwnA11YSemantics(): Boolean {
+    val roleId = getRoleId()
+    return roleId != AriaRoleId.Unknown ||
+        getAriaLabel() != null ||
+        getAriaLive(roleId) != null ||
+        contains(SemanticsProperties.Text) ||
+        contains(SemanticsProperties.EditableText) ||
+        contains(SemanticsProperties.Disabled) ||
+        contains(SemanticsProperties.Selected) ||
+        contains(SemanticsProperties.ToggleableState) ||
+        contains(SemanticsProperties.ProgressBarRangeInfo) ||
+        contains(SemanticsProperties.IsDialog) ||
+        contains(SemanticsActions.OnClick) ||
+        isScrollContainer()
 }
