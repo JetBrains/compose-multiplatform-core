@@ -16,11 +16,15 @@
 
 package org.jetbrains.compose.benchmarks
 
-@OptIn(ExperimentalWasmJsInterop::class)
 internal actual object Platform {
     actual fun getGraphicsContext(): GraphicsContext = EmptyGraphicsContext
 
     actual fun runGC() {
-        js("(typeof gc === 'function')? gc() : console.log('Manual GC is not available. Ensure that the browser was started with the appropriate flags.')")
+        webGC()
     }
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun webGC() {
+    js("(typeof gc === 'function')? gc() : console.log('Manual GC is not available. Ensure that the browser was started with the appropriate flags.')")
 }
