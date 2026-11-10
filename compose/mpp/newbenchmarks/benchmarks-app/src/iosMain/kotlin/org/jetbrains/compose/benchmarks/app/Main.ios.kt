@@ -34,6 +34,7 @@ fun MainViewController(
     benchmarkCollectorUrl: String,
     testName: String,
     benchmarkType: String,
+    id: String,
 ): UIViewController {
     val type = parseBenchmarkType(benchmarkType)
     require(!type.isRenderBenchmark()) { "Render benchmarks must be launched without UI" }
@@ -41,7 +42,7 @@ fun MainViewController(
         "Call initializeStartupTiming() at application entry before creating the view controller"
     }
     return ComposeUIViewController {
-        App(benchmarkCollectorUrl, testName, type, startupTiming)
+        App(benchmarkCollectorUrl, testName, type, startupTiming, id)
     }
 }
 
@@ -52,10 +53,11 @@ fun runRenderBenchmark(
     benchmarkCollectorUrl: String,
     testName: String,
     benchmarkType: String,
+    id: String,
 ) {
     val type = parseBenchmarkType(benchmarkType)
     require(type.isRenderBenchmark()) { "Expected averageFrame or fps" }
     MainScope().launch {
-        runRenderBenchmark(benchmarkCollectorUrl, testName, type)
+        runRenderBenchmark(benchmarkCollectorUrl, testName, type, id)
     }
 }

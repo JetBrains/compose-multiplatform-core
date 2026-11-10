@@ -35,16 +35,20 @@ Pass the listening port and output directory:
   --args="8090 $(pwd)/out/benchmark-reports" --console=plain
 ```
 
-The endpoint is `POST http://127.0.0.1:8090/reports`. It accepts a benchmark report as JSON and saves it
-as `[type]-[UTC ISO time].json` in the output directory. Keep this process running.
+The endpoint is `POST http://127.0.0.1:8090/reports`. It accepts a benchmark report as JSON with
+`id`, `name`, `type`, and the mode-specific results. The app uses the supplied launch `id` as the
+report ID and the case name as `name`. Use a unique ID, such as a UUID, for each run. The collector saves it as `[id]-[type]-[UTC ISO time].json` in the output directory.
+The `id` must contain 1–128 ASCII letters, digits, underscores, or hyphens.
+It writes a temporary `.tmp` file first, then publishes the complete report with an atomic rename.
+Watch only `*.json` files when waiting for reports. Keep this process running.
 
 ## Desktop (JVM)
 
-Pass `benchmarkCollectorUrl`, the test name, and the benchmark type as three positional arguments:
+Pass `benchmarkCollectorUrl`, the test name, the benchmark type, and `id` as four positional arguments:
 
 ```bash
 ./gradlew :compose:mpp:newbenchmarks:benchmarks-app:run \
-  --args="http://127.0.0.1:8090/reports LazyGrid averageFrame" --console=plain
+  --args="http://127.0.0.1:8090/reports LazyGrid averageFrame run-001" --console=plain
 ```
 
 ## macOS (native ARM64)
@@ -55,11 +59,11 @@ On an Apple Silicon Mac, build the executable:
 ./gradlew :compose:mpp:newbenchmarks:benchmarks-app:linkDebugExecutableMacosArm64 --console=plain
 ```
 
-Then run it with the same three arguments:
+Then run it with the same four arguments:
 
 ```bash
 ./out/compose-multiplatform-core/compose/mpp/newbenchmarks/benchmarks-app/build/bin/macosArm64/debugExecutable/benchmarks-app.kexe \
-  http://127.0.0.1:8090/reports LazyGrid averageFrame
+  http://127.0.0.1:8090/reports LazyGrid averageFrame run-001
 ```
 
 This path assumes the default repository `out` directory. Adjust it if using a custom `OUT_DIR`.
@@ -80,11 +84,11 @@ WasmJS:
 ./gradlew :compose:mpp:newbenchmarks:benchmarks-app:wasmJsBrowserDevelopmentRun --console=plain
 ```
 
-Open the address printed by the development server and add the `benchmarkCollectorUrl`, `test`, and `type` query parameters.
+Open the address printed by the development server and add the `benchmarkCollectorUrl`, `test`, `type`, and `id` query parameters.
 For example, if it uses port 8080:
 
 ```text
-http://localhost:8080/?benchmarkCollectorUrl=http%3A%2F%2F127.0.0.1%3A8090%2Freports&test=LazyGrid&type=averageFrame
+http://localhost:8080/?benchmarkCollectorUrl=http%3A%2F%2F127.0.0.1%3A8090%2Freports&test=LazyGrid&type=averageFrame&id=run-001
 ```
 
 URL-encode parameter values. If the server opens a page without parameters, add them to the
@@ -101,10 +105,11 @@ open compose/mpp/newbenchmarks/benchmarks-ios-app/BenchmarksIosApp.xcodeproj
 1. Select the **BenchmarksIosApp** scheme.
 2. Select an ARM64 iOS simulator or a connected iOS device.
 3. Open **Product → Scheme → Edit Scheme → Run → Arguments**.
-4. Add three enabled launch arguments, in this order:
+4. Add four enabled launch arguments, in this order:
    - `http://127.0.0.1:8090/reports` (`benchmarkCollectorUrl`)
    - `LazyGrid`
    - `averageFrame`
+   - `run-001` (`id`)
 5. Run the app. Xcode builds the `BenchmarksApp` Kotlin framework automatically.
 
 The shared scheme already contains these example arguments. For a physical device, select your

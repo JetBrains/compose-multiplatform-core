@@ -34,17 +34,18 @@ fun main() {
     val parameters = URLSearchParams(window.location.search.toJsString())
     val benchmarkCollectorUrl = requireNotNull(parameters.get("benchmarkCollectorUrl")) { "Missing query parameter: benchmarkCollectorUrl" }
     val testName = requireNotNull(parameters.get("test")) { "Missing query parameter: test" }
+    val id = requireNotNull(parameters.get("id")) { "Missing query parameter: id" }
     val benchmarkType = parseBenchmarkType(
         requireNotNull(parameters.get("type")) { "Missing query parameter: type" }
     )
     if (benchmarkType.isRenderBenchmark()) {
         MainScope().launch {
             suspendAwaitSkiko()
-            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType)
+            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType, id)
         }
     } else {
         ComposeViewport("root") {
-            App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming)
+            App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming, id)
         }
     }
 }

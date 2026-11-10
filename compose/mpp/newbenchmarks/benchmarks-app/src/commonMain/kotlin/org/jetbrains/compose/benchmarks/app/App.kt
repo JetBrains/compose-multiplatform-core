@@ -27,17 +27,20 @@ internal fun App(
     testName: String,
     benchmarkType: BenchmarkReportType,
     startupTiming: StartupTiming,
+    id: String,
 ) {
     when (benchmarkType) {
         BenchmarkReportType.REAL_FRAMES -> MeasureApplicationRealFrames(
-            id = testName,
+            id = id,
+            name = testName,
             reportApiUrl = benchmarkCollectorUrl,
             warmupCount = 100,
             frameCount = 1000,
             content = benchmarkContent(testName),
         )
         BenchmarkReportType.STARTUP -> MeasureApplicationStartup(
-            id = testName,
+            id = id,
+            name = testName,
             mainMark = startupTiming.mainMark,
             timeToMain = startupTiming.timeToMain,
             reportApiUrl = benchmarkCollectorUrl,

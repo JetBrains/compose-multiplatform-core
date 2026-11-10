@@ -25,10 +25,10 @@ import platform.darwin.NSObject
 
 fun main(args: Array<String>) {
     val startupTiming = captureStartupTiming()
-    val (benchmarkCollectorUrl, testName, benchmarkType) = parseArguments(args)
+    val (benchmarkCollectorUrl, testName, benchmarkType, id) = parseArguments(args)
     if (benchmarkType.isRenderBenchmark()) {
         runBlocking {
-            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType)
+            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType, id)
         }
         return
     }
@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
         }
     }
     Window("Benchmarks") {
-        App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming)
+        App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming, id)
     }
     application.run()
 }

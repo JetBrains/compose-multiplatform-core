@@ -23,16 +23,16 @@ import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
     val startupTiming = captureStartupTiming()
-    val (benchmarkCollectorUrl, testName, benchmarkType) = parseArguments(args)
+    val (benchmarkCollectorUrl, testName, benchmarkType, id) = parseArguments(args)
     if (benchmarkType.isRenderBenchmark()) {
         runBlocking(Dispatchers.Main) {
-            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType)
+            runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType, id)
         }
         return
     }
     application {
         Window(onCloseRequest = ::exitApplication, title = "Benchmarks") {
-            App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming)
+            App(benchmarkCollectorUrl, testName, benchmarkType, startupTiming, id)
         }
     }
 }

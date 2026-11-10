@@ -37,12 +37,14 @@ enum class BenchmarkReportType {
 
 interface BenchmarkReport {
     val id: String
+    val name: String
     val type: BenchmarkReportType
 }
 
 @Serializable
 data class StartupReport(
     override val id: String,
+    override val name: String,
     override val type: BenchmarkReportType = BenchmarkReportType.STARTUP,
     val frameCount: Int,
     val timeToMain: Duration? = null,
@@ -53,6 +55,7 @@ data class StartupReport(
 @Serializable
 data class RealFramesReport(
     override val id: String,
+    override val name: String,
     override val type: BenchmarkReportType = BenchmarkReportType.REAL_FRAMES,
     val warmupCount: Int,
     val frameCount: Int,
@@ -70,6 +73,7 @@ data class FrameInfo(
 @Serializable
 data class AverageFrameReport(
     override val id: String,
+    override val name: String,
     override val type: BenchmarkReportType = BenchmarkReportType.AVERAGE_FRAME,
     val width: Int,
     val height: Int,
@@ -82,6 +86,7 @@ data class AverageFrameReport(
 @Serializable
 data class FpsReport(
     override val id: String,
+    override val name: String,
     override val type: BenchmarkReportType = BenchmarkReportType.FPS,
     val width: Int,
     val height: Int,
