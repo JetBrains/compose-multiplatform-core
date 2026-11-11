@@ -230,8 +230,9 @@
         const titles = distinct(runs.flatMap(run => (run.distributions ?? []).map(metric => metric.title)));
         if (!titles.length) return;
         element('h2', 'Per-frame percentiles', section);
-        element('p', 'X: percentile (0–100). Y: metric value. Repeated runs are pooled. '
-            + 'Percentiles use linear interpolation between sorted frame values; P0 is the minimum and P100 is the maximum.', section);
+        element('p', 'X: percentile (0–100). Y: metric value (logarithmic scale). Repeated runs are pooled. '
+            + 'Percentiles use linear interpolation between sorted frame values; P0 is the minimum and P100 is the maximum. '
+            + 'Non-positive percentile values cannot be shown on a logarithmic scale and are omitted.', section);
         for (const kotlin of kotlinVersions) {
             const kotlinRuns = runs.filter(run => run.kotlin === kotlin);
             if (!kotlinRuns.some(run => run.distributions?.some(metric => metric.values.length))) continue;
@@ -252,7 +253,8 @@
                         const index = (sorted.length - 1) * percentile / 100;
                         const low = sorted[Math.floor(index)];
                         const high = sorted[Math.ceil(index)];
-                        return { x: percentile, y: low + (high - low) * (index - Math.floor(index)) };
+                        const value = low + (high - low) * (index - Math.floor(index));
+                        return { x: percentile, y: value > 0 ? value : null };
                     });
                     return {
                         seriesKey: kotlin,
@@ -285,7 +287,7 @@
                         interaction: { mode: 'index', intersect: false },
                         scales: {
                             x: { type: 'linear', min: 0, max: 100, title: { display: true, text: 'Percentile' }, ticks: { stepSize: 10 } },
-                            y: { beginAtZero: true, title: { display: true, text: `${title} (${unit})` } }
+                            y: { type: 'logarithmic', title: { display: true, text: `${title} (${unit})` } }
                         },
                         plugins: {
                             tooltip: {
