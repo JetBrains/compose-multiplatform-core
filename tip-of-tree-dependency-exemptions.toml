@@ -120,20 +120,20 @@ reason = "b/TODO - <reason>"
 [[tipOfTreeExemptions]]
 library = ":compose:material:material"
 dependsOn = ":compose:runtime:runtime"
-validThroughLibraryVersion = "1.13.0-rc01"
-reason = "b/TODO - <reason>"
+validThroughLibraryVersion = "1.13.0"
+reason = "b/TODO - Maintaining ToT coupling to support the stabilization and release of Compose 1.13.0."
 
 [[tipOfTreeExemptions]]
 library = ":compose:material:material-navigation"
 dependsOn = ":compose:material:material"
-validThroughLibraryVersion = "1.13.0-rc01"
-reason = "b/TODO - <reason>"
+validThroughLibraryVersion = "1.13.0"
+reason = "b/TODO - Maintaining ToT coupling to support the stabilization and release of Compose 1.13.0."
 
 [[tipOfTreeExemptions]]
 library = ":compose:material:material-ripple"
 dependsOn = ":compose:runtime:runtime"
-validThroughLibraryVersion = "1.13.0-rc01"
-reason = "b/TODO - <reason>"
+validThroughLibraryVersion = "1.13.0"
+reason = "b/TODO - Maintaining ToT coupling to support the stabilization and release of Compose 1.13.0."
 
 [[tipOfTreeExemptions]]
 library = ":compose:remote:foundation:foundation"
