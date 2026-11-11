@@ -54,7 +54,8 @@ internal class ContentMeasurement(
         FrameInfo(
             cpu = cpuTime / frameCount,
             gpu = gpuTime / frameCount,
-            fps = frameCount.toDouble() / totalTime.toDouble(DurationUnit.SECONDS)
+            fps = if (totalTime == Duration.ZERO) 0.0
+                else frameCount.toDouble() / totalTime.toDouble(DurationUnit.SECONDS)
         )
     }
 
@@ -70,7 +71,9 @@ internal class ContentMeasurement(
             val gpuTime = scene.renderOnSurface(surface, frameIndex * nextVSync.inWholeNanoseconds)
             val frameTime = frameStart.elapsedNow()
             val cpuTime = frameTime - gpuTime
-            frameInfos[frameIndex] = FrameInfo(cpuTime, gpuTime, 1 / frameTime.toDouble(DurationUnit.SECONDS))
+            val fps = if (frameTime == Duration.ZERO) 0.0
+                else 1 / frameTime.toDouble(DurationUnit.SECONDS)
+            frameInfos[frameIndex] = FrameInfo(cpuTime, gpuTime, fps)
 
             missedFrames += (frameTime.inWholeNanoseconds / nanosPerFrame).toInt()
             nextVSync = ((frameIndex + 1 + missedFrames) * nanosPerFrame).nanoseconds
