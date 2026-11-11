@@ -18,16 +18,13 @@ package org.jetbrains.compose.benchmarks.launcher
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
-import com.github.ajalt.clikt.parameters.options.convert
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.multiple
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.required
-import com.github.ajalt.clikt.parameters.options.varargValues
+import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -36,20 +33,12 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.io.path.exists
-import kotlin.io.path.getLastModifiedTime
-import kotlin.io.path.isDirectory
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.io.path.*
 import kotlin.math.round
 import kotlin.system.exitProcess
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
 
 private val cases = listOf(
     "AnimatedVisibility", "LazyGrid", "LazyGrid-ItemLaunchedEffect", "LazyGrid-SmoothScroll",
@@ -64,6 +53,14 @@ fun main(args: Array<String>) = Launcher().main(args)
 private class Launcher : CliktCommand(name = "benchmarks-launcher") {
     private val target by option(help = "Target to build and run")
         .choice("jvm", "macos", "js", "wasmJs", "ios").required()
+    private val composeVersions by option(
+        "--compose-version",
+        help = "Compose versions or local, space/comma separated; default: version catalog"
+    ).varargValues().default(emptyList())
+    private val kotlinVersions by option(
+        "--kotlin-version",
+        help = "Kotlin versions, space/comma separated; default: version catalog"
+    ).varargValues().default(emptyList())
     private val port by option(help = "Collector port").int().default(8090)
     private val tests by option(help = "Case names, space/comma separated, or all").varargValues()
         .default(listOf("all"))
@@ -74,27 +71,19 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
         .default(30.0)
     private val outputDir by option(
         "--output-dir",
-        help = "New directory for this series"
+        help = "Base directory for timestamped results; default: out/benchmark-reports"
     ).convert { absolutePath(it) }
     private val projectDir by option(
         "--project-dir",
         help = "Standalone benchmarks project, detected by default"
     )
         .convert { absolutePath(it) }
-    private val skipBuild by option(
-        "--skip-build",
-        help = "Reuse existing release artifacts"
-    ).flag()
     private val corePath by option(
         "--compose-core-path",
-        help = "Include a core checkout instead of Maven libraries"
+        help = "Core checkout for local Compose; default: current core checkout"
     )
         .convert { absolutePath(it) }
     private val browser by option(help = "Chromium/Firefox/Safari executable, command name, or macOS .app")
-    private val browserArgs by option(
-        "--browser-arg",
-        help = "Extra browser flag; use --browser-arg=--flag"
-    ).multiple()
     private val webPort by option(
         "--web-port",
         help = "Static file port, 0 selects a free port"
@@ -127,33 +116,93 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
         val out = path(System.getenv("OUT_DIR") ?: root.resolve("out").toString()).let {
             (if (it.isAbsolute) it else root.resolve(it)).toAbsolutePath().normalize()
         }
-        val stamp = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC)
+        val selectedKotlin = selectVersions(kotlinVersions, catalogVersion(root, "kotlin"))
+        require("local" !in selectedKotlin) { "Kotlin must use published versions" }
+        val catalogCompose = validateVersion(catalogVersion(root, "compose-multiplatform"))
+        require(catalogCompose != "local") { "the catalog must contain a published Compose version" }
+        val configuredCore = corePath ?: configuredCorePath(root)
+        val selectedCompose = selectVersions(composeVersions, if (configuredCore != null) "local" else catalogCompose)
+        require(corePath == null || "local" in selectedCompose) {
+            "--compose-core-path requires local in --compose-version"
+        }
+        val selectedTests = select(tests, cases)
+        val measurementModes = select(selectedModes, modes)
+        val stamp = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS").withZone(ZoneOffset.UTC)
             .format(Instant.now())
-        val directory = outputDir ?: out.resolve(
-            "benchmark-reports/$stamp-$target-${
-                UUID.randomUUID().toString().take(8)
-            }"
-        )
-        val summary = Summary(
-            target, select(tests, cases), select(selectedModes, modes), repeat, timeout,
-            composeCorePath = corePath?.toString()
-        )
-        Files.createDirectories(directory.parent)
-        Files.createDirectory(directory)
-        val logs = Files.createDirectory(directory.resolve("logs"))
-        val reports = Files.createDirectory(directory.resolve("reports"))
-        val environment = System.getenv().toMutableMap()
-        corePath?.let { environment["ORG_GRADLE_PROJECT_composeCorePath"] = it.toString() }
-        val processes = Processes(root, environment, logs.resolve("commands.log"))
+        val base = outputDir ?: out.resolve("benchmark-reports")
+        Files.createDirectories(base)
+        val session = Files.createDirectory(base.resolve(stamp))
+        val summaries = mutableListOf<Summary>()
+        val activeProcesses = AtomicReference<Processes?>()
         val shuttingDown = AtomicBoolean()
         val mainThread = Thread.currentThread()
         val hook = Thread({
             shuttingDown.set(true)
             mainThread.interrupt()
             mainThread.join(20_000)
-            processes.close()
+            activeProcesses.get()?.close()
         }, "benchmark-shutdown")
         Runtime.getRuntime().addShutdownHook(hook)
+        var interrupted = false
+        val total = selectedKotlin.size * selectedCompose.size
+        println("Matrix: $total version combinations. Results: $session")
+        try {
+            for (kotlin in selectedKotlin) for (compose in selectedCompose) {
+                if (Thread.interrupted() || shuttingDown.get()) throw InterruptedException()
+                val local = compose == "local"
+                val core = if (local) configuredCore ?: root.resolve("../../..").normalize() else null
+                val summary = Summary(
+                    target, selectedTests, measurementModes, repeat, timeout,
+                    kotlinVersion = kotlin, composeVersion = if (local) catalogCompose else compose,
+                    localCompose = local, composeCorePath = core?.toString()
+                )
+                val directory = session.resolve("kotlin($kotlin)-cmp($compose)-reports/$target")
+                Files.createDirectories(directory.parent)
+                Files.createDirectory(directory)
+                val logs = Files.createDirectory(directory.resolve("logs"))
+                val environment = System.getenv().toMutableMap()
+                environment["ORG_GRADLE_PROJECT_benchmarkKotlinVersion"] = kotlin
+                environment["ORG_GRADLE_PROJECT_benchmarkComposeVersion"] = summary.composeVersion
+                // An empty value disables a core checkout configured in gradle.properties.
+                environment["ORG_GRADLE_PROJECT_composeCorePath"] = core?.toString().orEmpty()
+                val processes = Processes(root, environment, logs.resolve("commands.log"))
+                activeProcesses.set(processes)
+                summaries.add(summary)
+                println("[configuration ${summaries.size}/$total]")
+                try {
+                    runConfiguration(root, out, directory, logs, summary, processes, shuttingDown)
+                } finally {
+                    activeProcesses.compareAndSet(processes, null)
+                }
+                if (summary.error == "interrupted") throw InterruptedException()
+            }
+        } catch (_: InterruptedException) {
+            interrupted = true
+        } catch (error: Exception) {
+            if (shuttingDown.get()) interrupted = true else throw error
+        } finally {
+            Thread.interrupted()
+            try {
+                activeProcesses.getAndSet(null)?.close()
+            } finally {
+                runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
+            }
+        }
+        val passed = summaries.count { it.error == null && it.runs.all { run -> run.status == "passed" } }
+        println("Finished matrix: $passed/$total configurations passed. Results: $session")
+        if (!shuttingDown.get()) {
+            val code = if (interrupted) 130 else if (passed != total) 1 else 0
+            if (code != 0) exitProcess(code)
+        }
+    }
+
+    private fun runConfiguration(
+        root: Path, out: Path, directory: Path, logs: Path, summary: Summary,
+        processes: Processes, shuttingDown: AtomicBoolean,
+    ) {
+        val reports = Files.createDirectory(directory.resolve("reports"))
+        println("Versions: Kotlin ${summary.kotlinVersion}, Compose ${summary.composeVersion}${if (summary.localCompose) " (local)" else ""}")
+        summary.composeCorePath?.let { println("Core: $it (uses its own Kotlin version)") }
         println("Results: $directory")
         try {
             summary.save(directory)
@@ -168,12 +217,15 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
                 println("Browser: $kind ($browserPath)")
                 if (kind == "safari") {
                     require(isMac) { "Safari requires macOS" }
-                    require(browserArgs.isEmpty()) { "--browser-arg is not supported for Safari" }
                     requireSafariClosed(browserPath, processes)
                 }
             }
             ensureFreePort(port)
-            if (!skipBuild) build(root, out, logs, device, processes)
+            build(
+                root, out, logs, device, processes, summary.kotlinVersion,
+                summary.composeVersion,
+                summary.composeCorePath?.let { Path.of(it) }
+            )
             val app = artifact(root.resolve("benchmarks-app/build"), out)
             if (device != null) {
                 if (device.state != "Booted") processes.run(
@@ -232,7 +284,6 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
                                 device,
                                 listOf("http://127.0.0.1:$port/reports", name, mode, id),
                                 server?.url,
-                                browserArgs,
                                 log
                             ) { process ->
                                 val report = waitForReport(
@@ -276,22 +327,16 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
             } finally {
                 Thread.interrupted()
                 if (shuttingDown.get()) summary.error = "interrupted"
-                try {
-                    summary.save(directory)
-                } finally {
-                    runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
-                }
+                summary.save(directory)
             }
         }
         println("Finished: ${summary.runs.count { it.status == "passed" }}/${summary.runs.size} passed. Results: $directory")
-        if (!shuttingDown.get()) {
-            val code = if (summary.error == "interrupted") 130
-            else if (summary.error != null || summary.runs.any { it.status != "passed" }) 1 else 0
-            if (code != 0) exitProcess(code)
-        }
     }
 
-    private fun build(root: Path, out: Path, logs: Path, device: Simulator?, processes: Processes) {
+    private fun build(
+        root: Path, out: Path, logs: Path, device: Simulator?, processes: Processes,
+        kotlinVersion: String, composeVersion: String, core: Path?,
+    ) {
         val appTask = when (target) {
             "jvm" -> "packageReleaseUberJarForCurrentOS"
             "macos" -> "linkReleaseExecutableMacosArm64"
@@ -304,7 +349,12 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
             root.resolve("gradlew").toString(), "--project-cache-dir",
             root.resolve(".gradle/launcher").toString(), ":benchmarks-collector:installDist"
         ) +
-            listOfNotNull(appTask?.let { ":benchmarks-app:$it" }) + "--console=plain"
+                listOfNotNull(appTask?.let { ":benchmarks-app:$it" }) +
+                listOf(
+                    "-PbenchmarkKotlinVersion=$kotlinVersion",
+                    "-PbenchmarkComposeVersion=$composeVersion",
+                    "-PcomposeCorePath=${core?.toString().orEmpty()}"
+                ) + "--console=plain"
         processes.run(command, logs.resolve("gradle-build.log"))
         if (target == "ios") {
             processes.run(
@@ -341,7 +391,7 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
             "js", "wasmJs" -> appBuild.resolve("dist/$target/productionExecutable")
             else -> out.resolve("benchmarks-ios-derived/Build/Products/Release-iphonesimulator/BenchmarksIosApp.app")
         }
-        check(app != null && app.exists()) { "release artifact not found; run without --skip-build" }
+        check(app != null && app.exists()) { "release artifact not found after build" }
         return app
     }
 }
@@ -350,7 +400,7 @@ private fun absolutePath(value: String): Path = path(value).toAbsolutePath().nor
 
 private fun findRoot(explicit: Path?): Path {
     fun valid(candidate: Path) = candidate.resolve("settings.gradle.kts").exists() &&
-        candidate.resolve("gradlew").exists() && candidate.resolve("benchmarks-app").isDirectory()
+            candidate.resolve("gradlew").exists() && candidate.resolve("benchmarks-app").isDirectory()
     if (explicit != null) {
         require(valid(explicit)) { "not a benchmarks project: $explicit" }
         return explicit
@@ -414,6 +464,9 @@ private data class Summary(
     val modes: List<String>,
     val repeat: Int,
     val timeoutSeconds: Double,
+    val kotlinVersion: String,
+    val composeVersion: String,
+    val localCompose: Boolean,
     val composeCorePath: String? = null,
     val runs: MutableList<RunResult> = mutableListOf(),
     var browser: Browser? = null,

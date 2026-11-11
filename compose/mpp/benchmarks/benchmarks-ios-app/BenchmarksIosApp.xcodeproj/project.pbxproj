@@ -154,7 +154,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew --project-cache-dir \"$SRCROOT/../.gradle/launcher\" :benchmarks-app:embedAndSignAppleFrameworkForXcode --console=plain\n";
+			shellScript = "cd \"$SRCROOT/..\"\nset -- --project-cache-dir \"$SRCROOT/../.gradle/launcher\" :benchmarks-app:embedAndSignAppleFrameworkForXcode --console=plain\nif [ -n \"${ORG_GRADLE_PROJECT_benchmarkKotlinVersion:-}\" ]; then\n    set -- \"$@\" \"-PbenchmarkKotlinVersion=$ORG_GRADLE_PROJECT_benchmarkKotlinVersion\"\nfi\nif [ -n \"${ORG_GRADLE_PROJECT_benchmarkComposeVersion:-}\" ]; then\n    set -- \"$@\" \"-PbenchmarkComposeVersion=$ORG_GRADLE_PROJECT_benchmarkComposeVersion\"\nfi\nif [ \"${ORG_GRADLE_PROJECT_composeCorePath+x}\" = x ]; then\n    set -- \"$@\" \"-PcomposeCorePath=$ORG_GRADLE_PROJECT_composeCorePath\"\nfi\n./gradlew \"$@\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

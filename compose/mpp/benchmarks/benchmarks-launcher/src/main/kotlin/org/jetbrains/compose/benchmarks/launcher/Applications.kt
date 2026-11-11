@@ -16,18 +16,13 @@
 
 package org.jetbrains.compose.benchmarks.launcher
 
+import kotlinx.serialization.json.*
 import java.net.URLEncoder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.name
 import kotlin.io.path.writeText
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 internal const val bundleId = "org.jetbrains.compose.benchmarks.app.BenchmarksIosApp"
 internal val isMac = System.getProperty("os.name").startsWith("Mac")
@@ -166,7 +161,6 @@ internal fun runApplication(
     simulator: Simulator?,
     parameters: List<String>,
     webUrl: String?,
-    browserArgs: List<String>,
     log: Path,
     waitForReport: (Process) -> Unit,
 ) {
@@ -225,11 +219,11 @@ internal fun runApplication(
         } else {
             profile.resolve("user.js").writeText(
                 "user_pref(\"browser.shell.checkDefaultBrowser\", false);\n" +
-                    "user_pref(\"browser.startup.homepage_override.mstone\", \"ignore\");\n"
+                        "user_pref(\"browser.startup.homepage_override.mstone\", \"ignore\");\n"
             )
             listOf("--no-remote", "--profile", profile.toString(), "--new-window")
         }
-        processes.start(listOf(browser.toString()) + arguments + browserArgs + url, log)
+        processes.start(listOf(browser.toString()) + arguments + url, log)
             .use { waitForReport(it.process) }
     } finally {
         deleteTree(profile)
