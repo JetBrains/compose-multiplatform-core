@@ -4,6 +4,7 @@
     const report = JSON.parse(document.getElementById('report-data').textContent);
     const target = document.getElementById('target');
     const mode = document.getElementById('mode');
+    const test = document.getElementById('test');
     const charts = document.getElementById('charts');
     const message = document.getElementById('message');
     const modes = ['startup', 'realFrames', 'averageFrame', 'fps'];
@@ -11,6 +12,7 @@
     const kotlinVersions = distinct(report.runs.map(run => run.kotlin));
     const hidden = new Set();
     let instances = [];
+    let distributionCards = [];
 
     function element(tag, text, parent, className) {
         const node = document.createElement(tag);
@@ -92,15 +94,23 @@
     function updateModes() {
         options(mode, modes.filter(type => report.runs.some(run =>
             run.target === target.dataset.value && run.type === type && run.measurements.length > 0
-        )), render);
+        )), updateTests);
+        updateTests();
+    }
+
+    function updateTests() {
+        options(test, distinct(report.runs.filter(run =>
+            run.target === target.dataset.value && run.type === mode.dataset.value
+        ).map(run => run.name)), render);
         render();
     }
 
     function render() {
         instances.forEach(chart => chart.destroy());
         instances = [];
+        distributionCards = [];
         charts.replaceChildren();
-        if (!target.dataset.value || !mode.dataset.value) {
+        if (!target.dataset.value || !mode.dataset.value || !test.dataset.value) {
             message.textContent = 'No measurements were collected in this session. See summary.json and logs for errors.';
             return;
         }
@@ -108,7 +118,9 @@
             message.textContent = 'The embedded Chart.js library could not be loaded. Regenerate this report and reload the file.';
             return;
         }
-        const runs = report.runs.filter(run => run.target === target.dataset.value && run.type === mode.dataset.value);
+        const runs = report.runs.filter(run =>
+            run.target === target.dataset.value && run.type === mode.dataset.value && run.name === test.dataset.value
+        );
         message.textContent = '';
         for (const name of distinct(runs.map(run => run.name))) {
             const testRuns = runs.filter(run => run.name === name);
@@ -193,9 +205,85 @@
                     }
                 }));
             }
+            if (mode.dataset.value === 'fps') renderDistributions(testRuns, section);
         }
         // Earlier charts may have been sized before their grid neighbors were added.
         instances.forEach(chart => chart.resize());
+    }
+
+    function renderDistributions(runs, section) {
+        const titles = distinct(runs.flatMap(run => (run.distributions ?? []).map(metric => metric.title)));
+        if (!titles.length) return;
+        element('h2', 'Per-frame percentiles', section);
+        element('p', 'X: percentile (0–100). Y: metric value. Repeated runs are pooled. '
+            + 'Percentiles use linear interpolation between sorted frame values; P0 is the minimum and P100 is the maximum.', section);
+        for (const kotlin of kotlinVersions) {
+            const kotlinRuns = runs.filter(run => run.kotlin === kotlin);
+            if (!kotlinRuns.some(run => run.distributions?.some(metric => metric.values.length))) continue;
+            const grid = element('div', null, section, 'chart-grid');
+            for (const title of titles) {
+                const series = report.composeVersions.map((compose, index) => ({
+                    compose,
+                    hue: index * 137.508 % 360,
+                    values: kotlinRuns.filter(run => run.compose === compose)
+                        .flatMap(run => run.distributions?.find(metric => metric.title === title)?.values ?? [])
+                        .filter(Number.isFinite)
+                })).filter(series => series.values.length);
+                if (!series.length) continue;
+                const unit = kotlinRuns.flatMap(run => run.distributions ?? []).find(metric => metric.title === title).unit;
+                const datasets = series.map(({ compose, hue, values }) => {
+                    const sorted = values.slice().sort((a, b) => a - b);
+                    const data = Array.from({ length: 101 }, (_, percentile) => {
+                        const index = (sorted.length - 1) * percentile / 100;
+                        const low = sorted[Math.floor(index)];
+                        const high = sorted[Math.ceil(index)];
+                        return { x: percentile, y: low + (high - low) * (index - Math.floor(index)) };
+                    });
+                    return {
+                        seriesKey: kotlin,
+                        label: `Compose ${compose} (n=${values.length})`,
+                        data,
+                        borderColor: `hsl(${hue}, 68%, 42%)`,
+                        backgroundColor: `hsl(${hue}, 68%, 42%)`,
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        tension: 0,
+                        hidden: hidden.has(kotlin)
+                    };
+                });
+                const card = element('article', null, grid, 'chart-card');
+                card.hidden = hidden.has(kotlin);
+                distributionCards.push({ kotlin, card });
+                element('h3', `${title} (${unit}) — Kotlin ${kotlin}`, card);
+                const container = element('div', null, card, 'canvas-container');
+                const canvas = element('canvas', null, container);
+                canvas.setAttribute('role', 'img');
+                canvas.setAttribute('aria-label', `${test.dataset.value}: ${title} percentiles, Kotlin ${kotlin}, by Compose version`);
+                instances.push(new Chart(canvas, {
+                    type: 'line',
+                    data: { datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { type: 'linear', min: 0, max: 100, title: { display: true, text: 'Percentile' }, ticks: { stepSize: 10 } },
+                            y: { beginAtZero: true, title: { display: true, text: `${title} (${unit})` } }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: items => items.length ? `P${items[0].parsed.x}` : '',
+                                    label: context => `${context.dataset.label}: ${context.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${unit}`
+                                }
+                            }
+                        }
+                    }
+                }));
+            }
+        }
     }
 
     const kotlinFilter = document.getElementById('kotlin-versions');
@@ -211,10 +299,12 @@
         element('span', kotlin, label);
         input.addEventListener('change', () => {
             if (input.checked) hidden.delete(kotlin); else hidden.add(kotlin);
+            distributionCards.forEach(({ kotlin, card }) => { card.hidden = hidden.has(kotlin); });
             instances.forEach(chart => {
                 chart.data.datasets.forEach((dataset, index) => {
                     chart.setDatasetVisibility(index, !hidden.has(dataset.seriesKey));
                 });
+                chart.resize();
                 chart.update();
             });
         });
