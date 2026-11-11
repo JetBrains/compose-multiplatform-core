@@ -55,7 +55,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.seconds
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -388,7 +387,7 @@ class SelectionContainerInteractionTest {
         }
         touch.hold()
         delay(LongPressDragSettleDelayMillis)
-        touch.dragTo(x = endPoint.x, y = endPoint.y, duration = 0.3.seconds)
+        touch.dragTo(x = endPoint.x, y = endPoint.y)
         touch.up()
     }
 

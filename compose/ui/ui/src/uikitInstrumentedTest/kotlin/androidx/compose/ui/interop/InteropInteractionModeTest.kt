@@ -83,7 +83,7 @@ internal class InteropInteractionModeTest {
                 factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
-                    interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 1000),
+                    interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 200),
                     placedAsOverlay = overlay
                 )
             )
@@ -95,7 +95,7 @@ internal class InteropInteractionModeTest {
         assertEquals(0, beganCount)
         assertEquals(0, endedCount)
 
-        delay(500)
+        delay(100)
 
         touch.up()
 
@@ -113,7 +113,7 @@ internal class InteropInteractionModeTest {
                 factory = { TouchReactingView(onTouchBegin = { beganCount++ }, onTouchEnd = { endedCount++ }) },
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
-                    interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 800),
+                    interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 150),
                     placedAsOverlay = overlay
                 )
             )
@@ -125,12 +125,12 @@ internal class InteropInteractionModeTest {
         assertEquals(0, beganCount)
         assertEquals(0, endedCount)
 
-        delay(500)
+        delay(100)
 
         assertEquals(0, beganCount)
         assertEquals(0, endedCount)
 
-        delay(350)
+        delay(100)
 
         assertEquals(1, beganCount)
         assertEquals(0, endedCount)
@@ -220,7 +220,7 @@ internal class InteropInteractionModeTest {
         assertEquals(1, beganCount)
         assertEquals(0, endedCount)
 
-        delay(500)
+        delay(200)
 
         touch.up()
 
