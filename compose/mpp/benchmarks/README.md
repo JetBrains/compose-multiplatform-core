@@ -161,6 +161,7 @@ results by versions and target:
 
 ```text
 <date>-<time>/
+    index.html             # Interactive charts for this session
     kotlin(2.4.21)-cmp(1.13.0-beta02)-reports/
         jvm/
             reports/       # JSON reports from all runs
@@ -172,6 +173,14 @@ All version pairs share the same timestamp directory, each with its own version/
 For local Compose, the version directory is named `kotlin(<version>)-cmp(local)-reports`.
 Its summary records the actual Compose version from the catalog, `localCompose: true`, and the core
 checkout path. Published configurations have `localCompose: false`. Existing results are not overwritten.
+
+## HTML reports
+
+The launcher's final step generates `index.html` in the current timestamp directory and prints its
+path. Open it manually in a browser. All measurement data is embedded in the file; no local server
+is required. The minified Chart.js 4.4.8 library is bundled in the launcher
+resources and embedded in the HTML, so reports work offline as a single file.
+HTML is generated with kotlinx.html.
 
 `OUT_DIR` overrides the base directory for results and iOS DerivedData.
 A relative `OUT_DIR` is resolved from the project root. Gradle artifacts remain in `<module>/build`.

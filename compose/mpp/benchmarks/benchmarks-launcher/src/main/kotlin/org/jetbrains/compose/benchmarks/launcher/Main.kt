@@ -144,6 +144,7 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
         }, "benchmark-shutdown")
         Runtime.getRuntime().addShutdownHook(hook)
         var interrupted = false
+        var reportFailed = false
         val total = selectedKotlin.size * selectedCompose.size
         println("Matrix: $total version combinations. Results: $session")
         try {
@@ -185,13 +186,23 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
             try {
                 activeProcesses.getAndSet(null)?.close()
             } finally {
-                runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
+                Thread.interrupted()
+                try {
+                    println("Generating HTML report...")
+                    val html = generateHtmlReport(session, selectedCompose)
+                    println("HTML report: $html")
+                } catch (error: Exception) {
+                    reportFailed = true
+                    System.err.println("Cannot generate HTML report: ${error.message}")
+                } finally {
+                    runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
+                }
             }
         }
         val passed = summaries.count { it.error == null && it.runs.all { run -> run.status == "passed" } }
         println("Finished matrix: $passed/$total configurations passed. Results: $session")
         if (!shuttingDown.get()) {
-            val code = if (interrupted) 130 else if (passed != total) 1 else 0
+            val code = if (interrupted) 130 else if (passed != total || reportFailed) 1 else 0
             if (code != 0) exitProcess(code)
         }
     }

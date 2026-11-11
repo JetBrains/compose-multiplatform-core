@@ -21,6 +21,7 @@ java {
 dependencies {
     implementation(libs.clikt)
     implementation(libs.kotlinSerializationJson)
+    implementation(libs.kotlinx.html)
 }
 
 application {
