@@ -1,0 +1,98 @@
+body {
+    margin: 0;
+    background: #f4f6fa;
+    color: #182235;
+    font: 15px/1.5 system-ui, sans-serif;
+}
+header {
+    padding: 20px 32px;
+    background: #fff;
+    border-bottom: 1px solid #dce1ea;
+}
+main { padding: 24px 32px; }
+h1 { margin: 0; font-size: 26px; }
+h2 { margin: 28px 0 12px; }
+h3 { margin: 0 0 12px; font-size: 16px; }
+p { margin: 10px 0; }
+.control-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    font-weight: 600;
+}
+.segmented-control {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid #dce1ea;
+    border-radius: 10px;
+    background: #e9edf4;
+}
+.segmented-control:empty { display: none; }
+.segmented-control label { position: relative; cursor: pointer; }
+.segmented-control input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+.segmented-control span {
+    display: block;
+    padding: 7px 16px;
+    border-radius: 7px;
+    color: #4c5970;
+}
+.segmented-control label:hover span { background: #dce3ef; }
+.segmented-control input:checked + span {
+    background: #fff;
+    color: #1849ab;
+    box-shadow: 0 1px 4px #18223526;
+}
+.segmented-control input:focus-visible + span {
+    outline: 2px solid #1849ab;
+    outline-offset: 2px;
+}
+.kotlin-filter {
+    margin: 20px 0;
+    padding: 0;
+    border: 0;
+}
+.kotlin-filter legend { margin-bottom: 8px; font-weight: 600; }
+#kotlin-versions { display: flex; flex-direction: column; gap: 8px; }
+.kotlin-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    cursor: pointer;
+}
+.kotlin-option input { margin: 0; width: 16px; height: 16px; accent-color: #1849ab; }
+.color-swatch { width: 14px; height: 14px; border-radius: 2px; }
+#message:empty { display: none; }
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+    gap: 20px;
+}
+.chart-card {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid #dce1ea;
+    border-radius: 10px;
+    background: #fff;
+}
+.canvas-container { position: relative; height: 360px; }
+.warning {
+    margin: 12px 0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: #fff0d2;
+    overflow-wrap: anywhere;
+}
+summary { cursor: pointer; }
+@media (max-width: 640px) {
+    header, main { padding: 16px; }
+    .chart-card { padding: 12px; }
+}

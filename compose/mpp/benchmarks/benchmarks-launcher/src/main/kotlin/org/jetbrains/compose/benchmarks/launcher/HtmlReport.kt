@@ -1,0 +1,211 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.jetbrains.compose.benchmarks.launcher
+
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
+
+private val reportJson = Json { encodeDefaults = true }
+
+@Serializable
+internal data class ChartMeasurement(val title: String, val unit: String, val value: Double)
+
+@Serializable
+internal data class ChartRun(
+    val target: String,
+    val kotlin: String,
+    val compose: String,
+    val name: String,
+    val type: String,
+    val iteration: Int,
+    val status: String,
+    val error: String?,
+    val measurements: List<ChartMeasurement>,
+)
+
+@Serializable
+private data class ChartReport(val composeVersions: List<String>, val runs: List<ChartRun>, val warnings: List<String>)
+
+/** Reads only this session. No server is needed to open the resulting file. */
+internal fun generateHtmlReport(session: Path, composeVersions: List<String>): Path {
+    val warnings = mutableListOf<String>()
+    val runs = mutableListOf<ChartRun>()
+    Files.walk(session, 3).use { paths ->
+        paths.filter { it.fileName.toString() == "summary.json" && Files.isRegularFile(it) }
+            .sorted().forEach { summaryPath ->
+                try {
+                    val summary = reportJson.parseToJsonElement(summaryPath.readText()).jsonObject
+                    val target = summary.requiredText("target")
+                    val kotlin = summary.requiredText("kotlinVersion")
+                    val compose = if (summary["localCompose"]?.jsonPrimitive?.booleanOrNull == true) {
+                        "local"
+                    } else summary.requiredText("composeVersion")
+                    summary["error"]?.jsonPrimitive?.contentOrNull?.let {
+                        warnings.add("$target / Kotlin $kotlin / Compose $compose: $it")
+                    }
+                    for (element in summary.getValue("runs").jsonArray) {
+                        val run = element.jsonObject
+                        val measurements = try {
+                            run["report"]?.jsonPrimitive?.contentOrNull?.let { relative ->
+                                val file = summaryPath.parent.resolve(relative).normalize()
+                                require(file.startsWith(summaryPath.parent)) { "report path outside configuration" }
+                                val report = reportJson.parseToJsonElement(file.readText()).jsonObject
+                                require(listOf("id", "name", "type").all { report[it] == run[it] }) {
+                                    "report does not match run"
+                                }
+                                reportMeasurements(report)
+                            }.orEmpty()
+                        } catch (error: Exception) {
+                            warnings.add("${run.requiredText("name")} / $target / Kotlin $kotlin / Compose $compose: ${error.message}")
+                            emptyList()
+                        }
+                        runs.add(ChartRun(
+                            target, kotlin, compose, run.requiredText("name"), run.requiredText("type"),
+                            run.getValue("iteration").jsonPrimitive.int, run.requiredText("status"),
+                            run["error"]?.jsonPrimitive?.contentOrNull, measurements,
+                        ))
+                    }
+                } catch (error: Exception) {
+                    warnings.add("Cannot read ${session.relativize(summaryPath)}: ${error.message}")
+                }
+            }
+    }
+    val payload = reportJson.encodeToString(ChartReport(composeVersions, runs, warnings))
+        // JSON lives in a script raw-text element, not in an HTML text node.
+        .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    val html = createHTML().html {
+        lang = "en"
+        head {
+            meta { charset = "utf-8" }
+            meta { name = "viewport"; content = "width=device-width, initial-scale=1" }
+            title("Compose benchmark reports")
+            style { unsafe { +reportResource("report.css") } }
+            script {
+                unsafe {
+                    +reportResource("chart.umd.min.js")
+                }
+            }
+        }
+        body {
+            header {
+                h1 { +"Compose benchmark reports" }
+                p { +"Session: ${session.fileName}" }
+                div(classes = "control-row") {
+                    span { id = "target-label"; +"Target" }
+                    div(classes = "segmented-control") {
+                        id = "target"
+                        attributes["role"] = "radiogroup"
+                        attributes["aria-labelledby"] = "target-label"
+                    }
+                }
+            }
+            main {
+                div(classes = "control-row") {
+                    span { id = "mode-label"; +"Measurement mode" }
+                    div(classes = "segmented-control") {
+                        id = "mode"
+                        attributes["role"] = "radiogroup"
+                        attributes["aria-labelledby"] = "mode-label"
+                    }
+                }
+                fieldSet(classes = "kotlin-filter") {
+                    legend { +"Kotlin versions" }
+                    div { id = "kotlin-versions" }
+                }
+                p {
+                    id = "message"
+                    attributes["role"] = "status"
+                    +"Loading charts. JavaScript must be enabled to view this report."
+                }
+                div { id = "warnings" }
+                div { id = "charts" }
+            }
+            script(type = "application/json") { id = "report-data"; unsafe { +payload } }
+            script { unsafe { +reportResource("report.js") } }
+        }
+    }
+    return session.resolve("index.html").also { it.writeText("<!DOCTYPE html>\n$html\n") }
+}
+
+private fun reportResource(name: String): String =
+    requireNotNull(ChartRun::class.java.getResource("/org/jetbrains/compose/benchmarks/launcher/$name")) {
+        "missing report resource: $name"
+    }.readText()
+
+private fun JsonObject.requiredText(key: String): String = getValue(key).jsonPrimitive.content
+
+/** Converts the collector's JSON representation without changing the shared report models. */
+internal fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = buildList {
+    fun addValue(title: String, unit: String, value: Double) {
+        if (value.isFinite()) add(ChartMeasurement(title, unit, value))
+    }
+    fun duration(title: String, key: String) {
+        report[key]?.takeUnless { it == JsonNull }?.let {
+            addValue(title, "ms", durationMillis(it))
+        }
+    }
+    fun samples(title: String, unit: String, values: List<Double>) {
+        val sorted = values.filter { it.isFinite() }.sorted()
+        if (sorted.isEmpty()) return
+        addValue("$title — mean", unit, sorted.sumOf { it / sorted.size })
+        for (percentile in listOf(50, 95, 99)) {
+            val index = (sorted.size - 1) * percentile / 100.0
+            val low = sorted[floor(index).toInt()]
+            val high = sorted[ceil(index).toInt()]
+            addValue("$title — p$percentile", unit, low + (high - low) * (index - floor(index)))
+        }
+    }
+    when (report.requiredText("type")) {
+        "startup" -> {
+            duration("Process to main", "timeToMain")
+            duration("Main to first frame", "timeToFirstFrame")
+            duration("Main to Nth frame (${report.requiredText("frameCount")} after first)", "timeToNthFrame")
+        }
+        "realFrames" -> {
+            samples("Frame time", "ms", report.getValue("frameTimes").jsonArray.map(::durationMillis))
+            duration("Total duration", "totalDuration")
+            val seconds = durationMillis(report.getValue("totalDuration")) / 1000
+            if (seconds > 0) addValue("Throughput", "FPS", report.getValue("frameCount").jsonPrimitive.int / seconds)
+        }
+        "averageFrame" -> {
+            val frame = report.getValue("averageFrameInfo").jsonObject
+            addValue("Average CPU time", "ms", durationMillis(frame.getValue("cpu")))
+            addValue("Average GPU time", "ms", durationMillis(frame.getValue("gpu")))
+            addValue("Average frame FPS", "FPS", frame.getValue("fps").jsonPrimitive.double)
+        }
+        "fps" -> {
+            val frames = report.getValue("frames").jsonArray.map { it.jsonObject }
+            samples("CPU time", "ms", frames.map { durationMillis(it.getValue("cpu")) })
+            samples("GPU time", "ms", frames.map { durationMillis(it.getValue("gpu")) })
+            samples("Frame FPS", "FPS", frames.map { it.getValue("fps").jsonPrimitive.double })
+        }
+        else -> error("unknown report type: ${report.requiredText("type")}")
+    }
+}
+
+private fun durationMillis(value: JsonElement): Double =
+    Duration.parse(value.jsonPrimitive.content).toDouble(DurationUnit.MILLISECONDS)
