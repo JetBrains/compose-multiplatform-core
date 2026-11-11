@@ -1,6 +1,0 @@
-TEAM_ID=
-BUNDLE_ID=org.jetbrains.benchmarks
-APP_NAME=ComposeBenchmarks
-
-// Override CMP_OUT_DIR when the Gradle build uses a custom OUT_DIR.
-CMP_OUT_DIR=$(SRCROOT)/../../../../out
