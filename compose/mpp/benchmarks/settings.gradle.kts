@@ -34,6 +34,7 @@ dependencyResolutionManagement {
 include(":benchmarks-runtime")
 include(":benchmarks-report")
 include(":benchmarks-collector")
+include(":benchmarks-launcher")
 include(":benchmarks-app")
 
 // Omit this property to benchmark published Compose libraries.
