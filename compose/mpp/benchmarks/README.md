@@ -104,7 +104,7 @@ Main options:
   - `averageFrame` — average offscreen rendering measurements;
   - `fps` — per-frame offscreen rendering measurements.
 - `--repeat` — repetitions of each test/mode pair; default: `1`.
-- `--timeout` — timeout per test in seconds, excluding build time; default: `30`.
+- `--timeout` — timeout per test in seconds, excluding build time; default: `300`.
 - `--port` — a free port for the collector; default: `8090`.
 - `--output-dir` — the base directory for results; it can already exist. Each invocation creates a new
   timestamped subdirectory for the whole version matrix.
