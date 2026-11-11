@@ -21,6 +21,7 @@ p { margin: 10px 0; }
     gap: 10px 16px;
     font-weight: 600;
 }
+.control-row + .control-row { margin-top: 12px; }
 .segmented-control {
     display: inline-flex;
     flex-wrap: wrap;

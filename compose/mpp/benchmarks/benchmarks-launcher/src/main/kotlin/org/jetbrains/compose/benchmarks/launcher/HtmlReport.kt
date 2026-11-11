@@ -35,6 +35,9 @@ private val reportJson = Json { encodeDefaults = true }
 internal data class ChartMeasurement(val title: String, val unit: String, val value: Double)
 
 @Serializable
+internal data class ChartDistribution(val title: String, val unit: String, val values: List<Double>)
+
+@Serializable
 internal data class ChartRun(
     val target: String,
     val kotlin: String,
@@ -45,6 +48,7 @@ internal data class ChartRun(
     val status: String,
     val error: String?,
     val measurements: List<ChartMeasurement>,
+    val distributions: List<ChartDistribution>,
 )
 
 @Serializable
@@ -69,7 +73,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                     }
                     for (element in summary.getValue("runs").jsonArray) {
                         val run = element.jsonObject
-                        val measurements = try {
+                        val (measurements, distributions) = try {
                             run["report"]?.jsonPrimitive?.contentOrNull?.let { relative ->
                                 val file = summaryPath.parent.resolve(relative).normalize()
                                 require(file.startsWith(summaryPath.parent)) { "report path outside configuration" }
@@ -77,16 +81,16 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                                 require(listOf("id", "name", "type").all { report[it] == run[it] }) {
                                     "report does not match run"
                                 }
-                                reportMeasurements(report)
-                            }.orEmpty()
+                                reportMeasurements(report) to reportDistributions(report)
+                            } ?: (emptyList<ChartMeasurement>() to emptyList<ChartDistribution>())
                         } catch (error: Exception) {
                             warnings.add("${run.requiredText("name")} / $target / Kotlin $kotlin / Compose $compose: ${error.message}")
-                            emptyList()
+                            emptyList<ChartMeasurement>() to emptyList<ChartDistribution>()
                         }
                         runs.add(ChartRun(
                             target, kotlin, compose, run.requiredText("name"), run.requiredText("type"),
                             run.getValue("iteration").jsonPrimitive.int, run.requiredText("status"),
-                            run["error"]?.jsonPrimitive?.contentOrNull, measurements,
+                            run["error"]?.jsonPrimitive?.contentOrNull, measurements, distributions,
                         ))
                     }
                 } catch (error: Exception) {
@@ -130,6 +134,14 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                         id = "mode"
                         attributes["role"] = "radiogroup"
                         attributes["aria-labelledby"] = "mode-label"
+                    }
+                }
+                div(classes = "control-row") {
+                    span { id = "test-label"; +"Test" }
+                    div(classes = "segmented-control") {
+                        id = "test"
+                        attributes["role"] = "radiogroup"
+                        attributes["aria-labelledby"] = "test-label"
                     }
                 }
                 fieldSet(classes = "kotlin-filter") {
@@ -205,6 +217,16 @@ internal fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = bu
         }
         else -> error("unknown report type: ${report.requiredText("type")}")
     }
+}
+
+internal fun reportDistributions(report: JsonObject): List<ChartDistribution> {
+    if (report.requiredText("type") != "fps") return emptyList()
+    val frames = report.getValue("frames").jsonArray.map { it.jsonObject }
+    return listOf(
+        ChartDistribution("CPU time", "ms", frames.map { durationMillis(it.getValue("cpu")) }.filter { it.isFinite() }),
+        ChartDistribution("GPU time", "ms", frames.map { durationMillis(it.getValue("gpu")) }.filter { it.isFinite() }),
+        ChartDistribution("Frame FPS", "FPS", frames.map { it.getValue("fps").jsonPrimitive.double }.filter { it.isFinite() }),
+    )
 }
 
 private fun durationMillis(value: JsonElement): Double =
