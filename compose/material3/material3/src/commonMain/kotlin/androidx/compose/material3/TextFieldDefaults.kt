@@ -179,38 +179,35 @@ public object TextFieldDefaults {
                 unfocusedIndicatorLineThickness = UnfocusedIndicatorThickness,
             )
         },
-    ): TextFieldDecorator = object: TextFieldDecorator {
-        @Composable
-        override fun Decoration(innerTextField: @Composable () -> Unit) {
-            val visualText =
-                if (outputTransformation == null) {
-                    state.text
-                } else {
-                    val buffer = state.toTextFieldBuffer()
-                    with(outputTransformation) { buffer.transformOutput() }
-                    buffer.asCharSequence()
-                }
+    ): TextFieldDecorator = TextFieldDecorator { innerTextField ->
+        val visualText =
+            if (outputTransformation == null) {
+                state.text
+            } else {
+                val buffer = state.toTextFieldBuffer()
+                with(outputTransformation) { buffer.transformOutput() }
+                buffer.asCharSequence()
+            }
 
-            CommonDecorationBox(
-                visualText = visualText,
-                innerTextField = innerTextField,
-                placeholder = placeholder,
-                labelPosition = labelPosition.normalize(),
-                label = label,
-                leadingIcon = leadingIcon,
-                trailingIcon = trailingIcon,
-                prefix = prefix,
-                suffix = suffix,
-                supportingText = supportingText,
-                singleLine = lineLimits == SingleLine,
-                enabled = enabled,
-                isError = isError,
-                interactionSource = interactionSource,
-                colors = colors,
-                contentPadding = contentPadding,
-                container = container,
-            )
-        }
+        CommonDecorationBox(
+            visualText = visualText,
+            innerTextField = innerTextField,
+            placeholder = placeholder,
+            labelPosition = labelPosition.normalize(),
+            label = label,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            prefix = prefix,
+            suffix = suffix,
+            supportingText = supportingText,
+            singleLine = lineLimits == SingleLine,
+            enabled = enabled,
+            isError = isError,
+            interactionSource = interactionSource,
+            colors = colors,
+            contentPadding = contentPadding,
+            container = container,
+        )
     }
 
     /**
@@ -1101,37 +1098,34 @@ public object OutlinedTextFieldDefaults {
                 unfocusedBorderThickness = UnfocusedBorderThickness,
             )
         },
-    ): TextFieldDecorator = object: TextFieldDecorator {
-        @Composable
-        override fun Decoration(innerTextField: @Composable () -> Unit) {
-            val visualText =
-                if (outputTransformation == null) state.text
-                else {
-                    val buffer = state.toTextFieldBuffer()
-                    with(outputTransformation) { buffer.transformOutput() }
-                    buffer.asCharSequence()
-                }
+    ): TextFieldDecorator = TextFieldDecorator { innerTextField ->
+        val visualText =
+            if (outputTransformation == null) state.text
+            else {
+                val buffer = state.toTextFieldBuffer()
+                with(outputTransformation) { buffer.transformOutput() }
+                buffer.asCharSequence()
+            }
 
-            CommonDecorationBox(
-                visualText = visualText,
-                innerTextField = innerTextField,
-                placeholder = placeholder,
-                labelPosition = labelPosition.normalize(),
-                label = label,
-                leadingIcon = leadingIcon,
-                trailingIcon = trailingIcon,
-                prefix = prefix,
-                suffix = suffix,
-                supportingText = supportingText,
-                singleLine = lineLimits == SingleLine,
-                enabled = enabled,
-                isError = isError,
-                interactionSource = interactionSource,
-                colors = colors,
-                contentPadding = contentPadding,
-                container = container,
-            )
-        }
+        CommonDecorationBox(
+            visualText = visualText,
+            innerTextField = innerTextField,
+            placeholder = placeholder,
+            labelPosition = labelPosition.normalize(),
+            label = label,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            prefix = prefix,
+            suffix = suffix,
+            supportingText = supportingText,
+            singleLine = lineLimits == SingleLine,
+            enabled = enabled,
+            isError = isError,
+            interactionSource = interactionSource,
+            colors = colors,
+            contentPadding = contentPadding,
+            container = container,
+        )
     }
 
     /**
