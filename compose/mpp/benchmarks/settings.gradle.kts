@@ -16,6 +16,17 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    // Gradle imports gradle/libs.versions.toml into this catalog automatically.
+    versionCatalogs {
+        create("libs") {
+            providers.gradleProperty("benchmarkKotlinVersion").orNull?.let {
+                version("kotlin", it)
+            }
+            providers.gradleProperty("benchmarkComposeVersion").orNull?.let {
+                version("compose-multiplatform", it)
+            }
+        }
+    }
     repositories {
         google {
             content {
@@ -37,8 +48,7 @@ include(":benchmarks-collector")
 include(":benchmarks-launcher")
 include(":benchmarks-app")
 
-// Omit this property to benchmark published Compose libraries.
-val composeCorePath = providers.gradleProperty("composeCorePath").orNull
+val composeCorePath = providers.gradleProperty("composeCorePath").orNull?.takeIf { it.isNotBlank() }
 if (composeCorePath != null) {
     includeBuild(composeCorePath) {
         dependencySubstitution {
