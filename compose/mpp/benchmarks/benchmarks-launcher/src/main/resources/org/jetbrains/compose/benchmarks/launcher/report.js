@@ -3,6 +3,8 @@
 
     const report = JSON.parse(document.getElementById('report-data').textContent);
     const target = document.getElementById('target');
+    const browser = document.getElementById('browser');
+    const browserControl = document.getElementById('browser-control');
     const mode = document.getElementById('mode');
     const test = document.getElementById('test');
     const charts = document.getElementById('charts');
@@ -22,7 +24,7 @@
         return node;
     }
 
-    function options(control, values, onChange) {
+    function options(control, values, onChange, labelFor = value => value) {
         const previous = control.dataset.value;
         control.dataset.value = values.includes(previous) ? previous : (values[0] ?? '');
         control.replaceChildren();
@@ -38,7 +40,7 @@
                 control.dataset.value = value;
                 onChange();
             });
-            element('span', value, label);
+            element('span', labelFor(value), label);
         });
     }
 
@@ -91,16 +93,29 @@
         }
     };
 
+    function selectedPlatform(run) {
+        return run.target === target.dataset.value
+            && (browserControl.hidden || run.browser === browser.dataset.value);
+    }
+
+    function updateBrowsers() {
+        const runs = report.runs.filter(run => run.target === target.dataset.value);
+        browserControl.hidden = !['js', 'wasmJs'].includes(target.dataset.value);
+        options(browser, distinct(runs.map(run => run.browser).filter(Boolean)), updateModes,
+            value => runs.find(run => run.browser === value).browserName || value);
+        updateModes();
+    }
+
     function updateModes() {
         options(mode, modes.filter(type => report.runs.some(run =>
-            run.target === target.dataset.value && run.type === type && run.measurements.length > 0
+            selectedPlatform(run) && run.type === type && run.measurements.length > 0
         )), updateTests);
         updateTests();
     }
 
     function updateTests() {
         options(test, distinct(report.runs.filter(run =>
-            run.target === target.dataset.value && run.type === mode.dataset.value
+            selectedPlatform(run) && run.type === mode.dataset.value
         ).map(run => run.name)), render);
         render();
     }
@@ -119,7 +134,7 @@
             return;
         }
         const runs = report.runs.filter(run =>
-            run.target === target.dataset.value && run.type === mode.dataset.value && run.name === test.dataset.value
+            selectedPlatform(run) && run.type === mode.dataset.value && run.name === test.dataset.value
         );
         message.textContent = '';
         for (const name of distinct(runs.map(run => run.name))) {
@@ -316,6 +331,6 @@
         const list = element('ul', null, details);
         report.warnings.forEach(warning => element('li', warning, list));
     }
-    options(target, distinct(report.runs.filter(run => run.measurements.length > 0).map(run => run.target)), updateModes);
-    updateModes();
+    options(target, distinct(report.runs.filter(run => run.measurements.length > 0).map(run => run.target)), updateBrowsers);
+    updateBrowsers();
 })();
