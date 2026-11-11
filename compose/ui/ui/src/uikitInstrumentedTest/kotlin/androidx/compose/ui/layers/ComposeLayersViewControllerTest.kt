@@ -80,12 +80,9 @@ class ComposeLayersViewControllerTest {
         waitForIdle()
         waitUntil { !(modalVC as ComposeHostingViewController).hasInvalidations() }
 
+        val message = "Expected to draw ${Color.Red} background"
         captureScreenshot()!!.forEachPixel(step = 4) { _, _, actualColor ->
-            assertEquals(
-                Color.Red,
-                actualColor,
-                "Expected to draw ${Color.Red} background"
-            )
+            assertEquals(Color.Red, actualColor, message)
         }
 
         tap(screenSize.center)

@@ -25,8 +25,6 @@ import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.window.Dialog
-import kotlin.native.runtime.GC
-import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -317,10 +315,9 @@ internal class KeepScreenOnModifierTest {
     }
 }
 
-@OptIn(NativeRuntimeApi::class)
+/** Waits until the scenes of the previous tests release the idle timer. */
 private fun UIKitInstrumentedTest.cleanupMemory() {
-    repeat(6) {
-        delay(100)
-        GC.collect()
+    waitUntil("Idle timer should be enabled before the test") {
+        !UIApplication.sharedApplication.idleTimerDisabled
     }
 }
