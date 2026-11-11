@@ -68,7 +68,7 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
         .varargValues().default(listOf("all"))
     private val repeat by option(help = "Repetitions of each case/mode").int().default(1)
     private val timeout by option(help = "Seconds per test, excluding build time").double()
-        .default(30.0)
+        .default(300.0)
     private val outputDir by option(
         "--output-dir",
         help = "Base directory for timestamped results; default: out/benchmark-reports"
