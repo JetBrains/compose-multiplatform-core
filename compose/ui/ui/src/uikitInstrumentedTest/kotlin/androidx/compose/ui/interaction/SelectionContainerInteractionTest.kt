@@ -263,10 +263,8 @@ class SelectionContainerInteractionTest {
             setSelectionContainerContent(state = selectionState, text = text)
 
             awaitNodeLaidOut(Tag)
-            findNodeWithTag(Tag).openToolbarForLeadingWord(
-                DoubleTapPreparationDelayMillis,
-                ManualDoubleTapIntervalDelayMillis
-            )
+            findNodeWithTag(Tag).openToolbarForLeadingWord(ManualDoubleTapIntervalDelayMillis)
+            waitForContextMenu()
             waitUntil("SelectionContainer should create the expected word selection before Copy") {
                 selectionState.selectedText() == firstWord
             }
@@ -293,7 +291,6 @@ class SelectionContainerInteractionTest {
         awaitNodeLaidOut(Tag)
         findNodeWithTag(Tag).longPress()
         waitForIdle()
-        delay(EmptyTextLongPressSettleDelayMillis)
 
         assertTrue(
             selectionState.selectedTexts.isEmpty(),
@@ -310,7 +307,7 @@ class SelectionContainerInteractionTest {
             setSelectionContainerContent(state = selectionState, text = "copyable second")
 
             awaitNodeLaidOut(Tag)
-            findNodeWithTag(Tag).focusThenDoubleTap()
+            findNodeWithTag(Tag).doubleTap()
             waitForContextMenu()
             waitUntil("SelectionContainer should create a selection before menu open") {
                 selectionState.selectedTexts.isNotEmpty()
@@ -352,8 +349,6 @@ class SelectionContainerInteractionTest {
 
     private fun UIKitInstrumentedTest.selectWordAt(state: SelectionState, offset: Int, word: String) {
         awaitNodeLaidOut(FirstTextTag)
-        findNodeWithTag(FirstTextTag).tapCharacter(offset)
-        delay(DoubleTapPreparationDelayMillis)
         findNodeWithTag(FirstTextTag).multiTapCharacter(offset, count = 2)
         waitUntil("Double tap at $offset should select '$word'") { state.selectedText() == word }
     }
@@ -418,10 +413,6 @@ class SelectionContainerInteractionTest {
         private const val Tag = "SelectionContainer"
         private const val FirstTextTag = "SelectionContainerFirstText"
         private const val SecondTextTag = "SelectionContainerSecondText"
-        // Gives the first tap time to settle so the next doubleTap() is treated as a new gesture.
-        private const val DoubleTapPreparationDelayMillis = 500L
-        // Lets us observe that long-pressing empty text does not create a late menu or selection.
-        private const val EmptyTextLongPressSettleDelayMillis = 500L
         // Keeps the two manual taps close enough for UIKit to recognize them as a double tap.
         private const val ManualDoubleTapIntervalDelayMillis = 50L
         // Gives long-press state a brief moment to settle before starting a drag extension.
