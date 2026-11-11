@@ -49,6 +49,8 @@ internal data class ChartRun(
     val error: String?,
     val measurements: List<ChartMeasurement>,
     val distributions: List<ChartDistribution>,
+    val browser: String? = null,
+    val browserName: String? = null,
 )
 
 @Serializable
@@ -58,18 +60,26 @@ private data class ChartReport(val composeVersions: List<String>, val runs: List
 internal fun generateHtmlReport(session: Path, composeVersions: List<String>): Path {
     val warnings = mutableListOf<String>()
     val runs = mutableListOf<ChartRun>()
-    Files.walk(session, 3).use { paths ->
+    Files.walk(session, 4).use { paths ->
         paths.filter { it.fileName.toString() == "summary.json" && Files.isRegularFile(it) }
             .sorted().forEach { summaryPath ->
                 try {
                     val summary = reportJson.parseToJsonElement(summaryPath.readText()).jsonObject
+                    val browser = summary["browser"]?.takeUnless { it == JsonNull }
+                        ?.jsonObject?.requiredText("executable")
+                    val browserName = browser?.let { executable ->
+                        val path = Path.of(executable)
+                        path.firstOrNull { it.toString().endsWith(".app") }?.toString()?.removeSuffix(".app")
+                            ?: path.fileName.toString()
+                    }
                     val target = summary.requiredText("target")
+                    val configuration = target + (browserName?.let { " / $it" } ?: "")
                     val kotlin = summary.requiredText("kotlinVersion")
                     val compose = if (summary["localCompose"]?.jsonPrimitive?.booleanOrNull == true) {
                         "local"
                     } else summary.requiredText("composeVersion")
                     summary["error"]?.jsonPrimitive?.contentOrNull?.let {
-                        warnings.add("$target / Kotlin $kotlin / Compose $compose: $it")
+                        warnings.add("$configuration / Kotlin $kotlin / Compose $compose: $it")
                     }
                     for (element in summary.getValue("runs").jsonArray) {
                         val run = element.jsonObject
@@ -84,13 +94,14 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                                 reportMeasurements(report) to reportDistributions(report)
                             } ?: (emptyList<ChartMeasurement>() to emptyList<ChartDistribution>())
                         } catch (error: Exception) {
-                            warnings.add("${run.requiredText("name")} / $target / Kotlin $kotlin / Compose $compose: ${error.message}")
+                            warnings.add("${run.requiredText("name")} / $configuration / Kotlin $kotlin / Compose $compose: ${error.message}")
                             emptyList<ChartMeasurement>() to emptyList<ChartDistribution>()
                         }
                         runs.add(ChartRun(
                             target, kotlin, compose, run.requiredText("name"), run.requiredText("type"),
                             run.getValue("iteration").jsonPrimitive.int, run.requiredText("status"),
                             run["error"]?.jsonPrimitive?.contentOrNull, measurements, distributions,
+                            browser, browserName,
                         ))
                     }
                 } catch (error: Exception) {
@@ -128,6 +139,16 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                 }
             }
             main {
+                div(classes = "control-row") {
+                    id = "browser-control"
+                    attributes["hidden"] = ""
+                    span { id = "browser-label"; +"Browser" }
+                    div(classes = "segmented-control") {
+                        id = "browser"
+                        attributes["role"] = "radiogroup"
+                        attributes["aria-labelledby"] = "browser-label"
+                    }
+                }
                 div(classes = "control-row") {
                     span { id = "mode-label"; +"Measurement mode" }
                     div(classes = "segmented-control") {

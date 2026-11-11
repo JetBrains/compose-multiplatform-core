@@ -82,8 +82,9 @@ cp -R benchmarks-launcher/build/install/benchmarks-launcher/. ./launcher/
 
 ## Running benchmarks
 
-For each version pair, the launcher builds the collector and the release application for the selected
-target, starts the collector, and runs tests sequentially. Each test run gets a separate process and UUID.
+For each version pair, the launcher visits every selected target and, for JS/WasmJS, every selected
+browser. For each configuration it builds the collector and the release application, starts the
+collector, and runs tests sequentially. Each test run gets a separate process and UUID.
 After receiving a report, it closes the application and starts the next test. It then moves to the next
 version pair. Builds always run; Gradle can reuse unchanged task outputs.
 
@@ -93,7 +94,8 @@ it started and keeps collected results.
 
 Main options:
 
-- `--target` — required target: `jvm`, `macos` (ARM64), `js`, `wasmJs`, or `ios` (ARM64 Simulator).
+- `--target` — required list of targets, separated by spaces or commas: `jvm`, `macos` (ARM64),
+  `js`, `wasmJs`, or `ios` (ARM64 Simulator). Duplicate entries are ignored.
 - `--compose-version` — a list of published Compose versions and/or `local`; defaults to one catalog
   version unless a core checkout is configured.
 - `--kotlin-version` — a list of Kotlin and matching Compose Compiler versions; defaults to one catalog version.
@@ -109,7 +111,9 @@ Main options:
 - `--output-dir` — the base directory for results; it can already exist. Each invocation creates a new
   timestamped subdirectory for the whole version matrix.
 
-Browser targets require `--browser` with an executable path, a command on `PATH`, or a macOS `.app`.
+Browser targets require `--browser` with a list of executable paths, commands on `PATH`, or macOS
+`.app` bundles, separated by spaces or commas. Quote paths containing spaces. Duplicate entries are
+ignored. Each selected browser runs on each selected web target; non-web targets ignore this list.
 Chromium, Firefox, and Safari are detected from the executable name. Chromium and Firefox use temporary
 profiles. Safari must be closed before the series and uses its normal profile without clearing the cache.
 For iOS, select a simulator with `--simulator UUID`. Without this option, exactly one available
@@ -169,7 +173,11 @@ results by versions and target:
             summary.json   # Versions, parameters, statuses, errors, and report paths
 ```
 
-All version pairs share the same timestamp directory, each with its own version/target subtree.
+All configurations share the same timestamp directory, each with its own version/target subtree.
+Web targets have an additional `browser-<index>-<name>` subdirectory containing their `reports`,
+`logs`, and `summary.json`, so results from different browsers never overwrite each other.
+All targets and browsers are included in one HTML report. Selecting a web target shows an additional
+browser switch with browser names; non-web targets hide it.
 For local Compose, the version directory is named `kotlin(<version>)-cmp(local)-reports`.
 Its summary records the actual Compose version from the catalog, `localCompose: true`, and the core
 checkout path. Published configurations have `localCompose: false`. Existing results are not overwritten.

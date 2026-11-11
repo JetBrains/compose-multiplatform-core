@@ -19,7 +19,6 @@ package org.jetbrains.compose.benchmarks.launcher
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.*
-import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.serialization.Serializable
@@ -48,11 +47,33 @@ private val cases = listOf(
 private val modes = listOf("averageFrame", "fps", "realFrames", "startup")
 private val json = Json { prettyPrint = true; encodeDefaults = true; explicitNulls = false }
 
-fun main(args: Array<String>) = Launcher().main(args)
+fun main(args: Array<String>) = Launcher().main(browserArguments(args))
+
+// Clikt's varargValues stops at punctuation, including '/' in absolute browser paths.
+// Feed each browser as an attached option value instead, preserving spaces inside paths.
+private fun browserArguments(args: Array<String>): List<String> = buildList {
+    var browsers = false
+    for (arg in args) {
+        when {
+            arg == "--browser" -> {
+                browsers = true
+                add(arg)
+            }
+            browsers && !arg.startsWith("-") -> {
+                if (last() == "--browser") removeAt(lastIndex)
+                add("--browser=$arg")
+            }
+            else -> {
+                browsers = arg.startsWith("--browser=")
+                add(arg)
+            }
+        }
+    }
+}
 
 private class Launcher : CliktCommand(name = "benchmarks-launcher") {
-    private val target by option(help = "Target to build and run")
-        .choice("jvm", "macos", "js", "wasmJs", "ios").required()
+    private val targets by option("--target", help = "Targets: jvm, macos, js, wasmJs, ios; space/comma separated")
+        .varargValues().required()
     private val composeVersions by option(
         "--compose-version",
         help = "Compose versions or local, space/comma separated; default: version catalog"
@@ -83,7 +104,8 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
         help = "Core checkout for local Compose; default: current core checkout"
     )
         .convert { absolutePath(it) }
-    private val browser by option(help = "Chromium/Firefox/Safari executable, command name, or macOS .app")
+    private val browsers by option("--browser", help = "Browser executables, commands, or macOS .apps; space/comma separated")
+        .multiple()
     private val webPort by option(
         "--web-port",
         help = "Static file port, 0 selects a free port"
@@ -95,23 +117,23 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
             require(
                 !System.getProperty("os.name").startsWith("Windows")
             ) { "this launcher requires macOS or Linux" }
-            require(target !in listOf("ios", "macos") || isMac) { "Apple targets require macOS" }
+            val selectedTargets = select(targets, listOf("jvm", "macos", "js", "wasmJs", "ios"))
+            val selectedBrowsers = browsers.flatMap { it.split(",") }.distinct()
+            require(selectedBrowsers.none { it.isBlank() }) { "browser must not be empty" }
+            require(selectedTargets.none { it in listOf("ios", "macos") } || isMac) { "Apple targets require macOS" }
             require(port in 1..65535 && webPort in 0..65535) { "invalid port" }
             require(repeat > 0 && timeout.isFinite() && timeout > 0) { "repeat and timeout must be positive" }
-            require(
-                target !in listOf(
-                    "js",
-                    "wasmJs"
-                ) || browser != null
-            ) { "web targets require --browser" }
-            launchSeries()
+            require(selectedTargets.none { it in listOf("js", "wasmJs") } || selectedBrowsers.isNotEmpty()) {
+                "web targets require --browser"
+            }
+            launchSeries(selectedTargets, selectedBrowsers)
         } catch (error: Exception) {
             echo("Error: ${error.message}", err = true)
             exitProcess(1)
         }
     }
 
-    private fun launchSeries() {
+    private fun launchSeries(selectedTargets: List<String>, selectedBrowsers: List<String>) {
         val root = findRoot(projectDir)
         val out = path(System.getenv("OUT_DIR") ?: root.resolve("out").toString()).let {
             (if (it.isAbsolute) it else root.resolve(it)).toAbsolutePath().normalize()
@@ -145,10 +167,16 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
         Runtime.getRuntime().addShutdownHook(hook)
         var interrupted = false
         var reportFailed = false
-        val total = selectedKotlin.size * selectedCompose.size
-        println("Matrix: $total version combinations. Results: $session")
+        val configurations = selectedTargets.flatMap { target ->
+            if (target in listOf("js", "wasmJs")) selectedBrowsers.mapIndexed { index, browser ->
+                val name = path(browser).name.removeSuffix(".app").replace(Regex("[^A-Za-z0-9._-]"), "_")
+                Triple(target, browser, "$target/browser-${index + 1}-$name")
+            } else listOf(Triple(target, null, target))
+        }
+        val total = selectedKotlin.size * selectedCompose.size * configurations.size
+        println("Matrix: $total configurations. Results: $session")
         try {
-            for (kotlin in selectedKotlin) for (compose in selectedCompose) {
+            for (kotlin in selectedKotlin) for (compose in selectedCompose) for ((target, browser, relativeDirectory) in configurations) {
                 if (Thread.interrupted() || shuttingDown.get()) throw InterruptedException()
                 val local = compose == "local"
                 val core = if (local) configuredCore ?: root.resolve("../../..").normalize() else null
@@ -157,7 +185,7 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
                     kotlinVersion = kotlin, composeVersion = if (local) catalogCompose else compose,
                     localCompose = local, composeCorePath = core?.toString()
                 )
-                val directory = session.resolve("kotlin($kotlin)-cmp($compose)-reports/$target")
+                val directory = session.resolve("kotlin($kotlin)-cmp($compose)-reports/$relativeDirectory")
                 Files.createDirectories(directory.parent)
                 Files.createDirectory(directory)
                 val logs = Files.createDirectory(directory.resolve("logs"))
@@ -171,7 +199,7 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
                 summaries.add(summary)
                 println("[configuration ${summaries.size}/$total]")
                 try {
-                    runConfiguration(root, out, directory, logs, summary, processes, shuttingDown)
+                    runConfiguration(root, out, directory, logs, summary, processes, shuttingDown, browser)
                 } finally {
                     activeProcesses.compareAndSet(processes, null)
                 }
@@ -209,8 +237,9 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
 
     private fun runConfiguration(
         root: Path, out: Path, directory: Path, logs: Path, summary: Summary,
-        processes: Processes, shuttingDown: AtomicBoolean,
+        processes: Processes, shuttingDown: AtomicBoolean, browser: String?,
     ) {
+        val target = summary.target
         val reports = Files.createDirectory(directory.resolve("reports"))
         println("Versions: Kotlin ${summary.kotlinVersion}, Compose ${summary.composeVersion}${if (summary.localCompose) " (local)" else ""}")
         summary.composeCorePath?.let { println("Core: $it (uses its own Kotlin version)") }
@@ -235,9 +264,9 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
             build(
                 root, out, logs, device, processes, summary.kotlinVersion,
                 summary.composeVersion,
-                summary.composeCorePath?.let { Path.of(it) }
+                summary.composeCorePath?.let { Path.of(it) }, target
             )
-            val app = artifact(root.resolve("benchmarks-app/build"), out)
+            val app = artifact(root.resolve("benchmarks-app/build"), out, target)
             if (device != null) {
                 if (device.state != "Booted") processes.run(
                     listOf(
@@ -346,7 +375,7 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
 
     private fun build(
         root: Path, out: Path, logs: Path, device: Simulator?, processes: Processes,
-        kotlinVersion: String, composeVersion: String, core: Path?,
+        kotlinVersion: String, composeVersion: String, core: Path?, target: String,
     ) {
         val appTask = when (target) {
             "jvm" -> "packageReleaseUberJarForCurrentOS"
@@ -391,7 +420,7 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
         }
     }
 
-    private fun artifact(appBuild: Path, out: Path): Path {
+    private fun artifact(appBuild: Path, out: Path, target: String): Path {
         val app = when (target) {
             "jvm" -> appBuild.resolve("compose/jars").let { directory ->
                 if (directory.exists()) directory.listDirectoryEntries("*-release.jar")
