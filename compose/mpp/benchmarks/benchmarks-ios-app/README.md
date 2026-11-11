@@ -28,8 +28,10 @@ See the [main README](../README.md) for collector setup and network limits.
 - Supported architectures: ARM64 device and ARM64 simulator, matching `benchmarks-app`.
 - For a physical device, select your development team under **Signing & Capabilities**.
 - User Script Sandboxing is disabled so Gradle can build the framework.
-- Framework search paths use the repository's default `out` layout. If using a custom Gradle `OUT_DIR`,
-  override the Xcode `CMP_OUT_DIR` build setting to the same directory.
+- Framework search paths use `../benchmarks-app/build/xcode-frameworks`, relative to this Xcode project.
+- The Run Script invokes the standalone `benchmarks/gradlew`, not the core wrapper.
+- To use core sources, set `composeCorePath` in `benchmarks/gradle.properties`, or export
+  `ORG_GRADLE_PROJECT_composeCorePath` before starting Xcode. Otherwise, libraries come from Maven.
 
 There is no separate Gradle module for this Xcode application; its Kotlin framework is built by
-`:compose:mpp:newbenchmarks:benchmarks-app`.
+`:benchmarks-app` in the standalone `benchmarks` Gradle build.

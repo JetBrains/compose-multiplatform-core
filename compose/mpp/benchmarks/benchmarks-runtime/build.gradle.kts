@@ -19,9 +19,9 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    id("org.jetbrains.kotlin.multiplatform")
-    id("org.jetbrains.kotlin.plugin.compose") version libs.versions.kotlin.get()
-    id("org.jetbrains.kotlin.plugin.serialization") version libs.versions.kotlin.get()
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -38,20 +38,20 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            compileOnly(project(":compose:ui:ui"))
-            implementation(project(":compose:mpp:newbenchmarks:benchmarks-report"))
-            implementation("io.ktor:ktor-client-core:3.6.1")
-            implementation("io.ktor:ktor-client-content-negotiation:3.6.1")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:3.6.1")
+            compileOnly(libs.compose.ui)
+            implementation(project(":benchmarks-report"))
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
         jvmMain.dependencies {
-            implementation("io.ktor:ktor-client-cio:3.6.1")
+            implementation(libs.ktor.client.cio)
         }
         appleMain.dependencies {
-            implementation("io.ktor:ktor-client-darwin:3.6.1")
+            implementation(libs.ktor.client.darwin)
         }
         webMain.dependencies {
-            implementation("io.ktor:ktor-client-js:3.6.1")
+            implementation(libs.ktor.client.js)
         }
     }
 }
