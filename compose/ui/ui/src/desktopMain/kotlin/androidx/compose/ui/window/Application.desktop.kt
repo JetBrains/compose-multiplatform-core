@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalGraphicsResourceCache
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -196,6 +197,9 @@ suspend fun awaitApplication(
     if (System.getProperty("compose.application.configure.swing.globals") == "true") {
         configureSwingGlobalsForCompose()
     }
+    // The application content can create graphics objects before any window exists,
+    // for example a vector painter passed as a window icon.
+    registerSkikoComposeImplementation()
     withContext(MainUIDispatcher) {
         withContext(YieldFrameClock) {
             val globalSnapshotRegistration = GlobalSnapshotManager.register(MainUIDispatcher)

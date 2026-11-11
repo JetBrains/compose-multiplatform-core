@@ -671,11 +671,21 @@ internal class NativeTextInputView(
         selectAll: (() -> Unit)?,
         customActions: List<CMPEditMenuCustomAction>
     ) {
+        val availableActionsChanged = (onCopy != null) != (copy != null) ||
+            (onPaste != null) != (paste != null) ||
+            (onCut != null) != (cut != null) ||
+            (onSelectAll != null) != (selectAll != null) ||
+            this.customActions.map { it.title } != customActions.map { it.title }
+
         onCopy = copy
         onPaste = paste
         onCut = cut
         onSelectAll = selectAll
         this.customActions = customActions
+
+        if (availableActionsChanged) {
+            reloadVisibleEditMenu()
+        }
     }
 
     override fun editMenuForTextRange(textRange: UITextRange, suggestedActions: List<*>): UIMenu? {

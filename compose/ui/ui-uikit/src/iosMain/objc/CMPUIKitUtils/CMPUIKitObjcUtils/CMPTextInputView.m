@@ -249,6 +249,16 @@
         }
     }
 }
+            
+- (void)reloadVisibleEditMenu {
+    if (@available(iOS 16, *)) {
+        for (id<UIInteraction> interaction in self.interactions) {
+            if ([interaction isKindOfClass:[UIEditMenuInteraction class]]) {
+                [((UIEditMenuInteraction *)interaction) reloadVisibleMenu];
+            }
+        }
+    }
+}
 
 - (UIView *)inputView {
     CMP_ABSTRACT_FUNCTION_CALLED;

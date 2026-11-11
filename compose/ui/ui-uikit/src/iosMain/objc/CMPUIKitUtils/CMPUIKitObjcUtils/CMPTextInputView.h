@@ -32,6 +32,8 @@ NS_ASSUME_NONNULL_END
 
 - (void)activateSelectionDisplayIfNeeded;
 
+- (void)reloadVisibleEditMenu;
+
 - (nullable UIView *)inputView;
 
 - (nullable UIView *)inputAccessoryView;

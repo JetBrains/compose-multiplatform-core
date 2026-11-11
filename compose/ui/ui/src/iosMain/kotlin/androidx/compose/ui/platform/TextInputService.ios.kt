@@ -87,9 +87,9 @@ internal class TextInputService(
             ?: selectionContainerConnection
 
     val hasInvalidations: Boolean
-        get() = currentInputConnection?.hasInvalidations
-            ?: selectionContainerConnection?.hasInvalidations
-            ?: false
+        get() = currentInputConnection?.hasInvalidations == true ||
+            selectionContainerConnection?.hasInvalidations == true ||
+            holders.any { it.connection.hasInvalidations }
 
     private val holders = mutableSetOf<TextInputHolder>()
 

@@ -21,6 +21,7 @@ import org.jetbrains.skia.Canvas as SkCanvas
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
+import org.jetbrains.skia.impl.use
 
 /*
    We use this implementation for non-web targets only. It's faster than `Bitmap.fromImage`.
@@ -33,8 +34,9 @@ import org.jetbrains.skia.ImageInfo
 internal actual fun Image.toBitmap(): Bitmap {
     val bitmap = Bitmap()
     bitmap.allocPixels(ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL))
-    val canvas = SkCanvas(bitmap)
-    canvas.drawImage(this, 0f, 0f)
+    SkCanvas(bitmap).use {
+        it.drawImage(this, 0f, 0f)
+    }
     bitmap.setImmutable()
     return bitmap
 }

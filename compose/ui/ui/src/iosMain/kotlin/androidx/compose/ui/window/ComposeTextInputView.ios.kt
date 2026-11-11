@@ -510,6 +510,8 @@ internal class ComposeTextInputView(
 
     fun isTextMenuShown() = isEditMenuShown
 
+    fun isTextMenuTransitioning() = isEditMenuTransitioning
+
     private val _tokenizer = TextInputStringTokenizer(textInput = this) {
         input.textInRange(TextRange(0, input.endOfDocument()))
     }

@@ -33,6 +33,7 @@ internal actual class BackEventCompat(
     }
 }
 
+// TODO https://youtrack.jetbrains.com/issue/CMP-11129 Migrate Material3 from deprecated Compose UI back handlers
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal actual fun BackHandler(enabled: Boolean, onBack: () -> Unit) {
