@@ -15,15 +15,15 @@
  */
 
 plugins {
-    id("org.jetbrains.kotlin.jvm")
+    alias(libs.plugins.kotlin.jvm)
     application
 }
 
 dependencies {
-    implementation(project(":compose:mpp:newbenchmarks:benchmarks-report"))
-    implementation("io.ktor:ktor-server-core:3.6.1")
-    implementation("io.ktor:ktor-server-cio:3.6.1")
-    implementation("io.ktor:ktor-server-cors:3.6.1")
+    implementation(project(":benchmarks-report"))
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.cio)
+    implementation(libs.ktor.server.cors)
     implementation(libs.kotlinSerializationJson)
 }
 

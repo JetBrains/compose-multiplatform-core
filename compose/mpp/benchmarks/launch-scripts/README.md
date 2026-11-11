@@ -3,7 +3,9 @@
 `run_benchmarks.py` uses Python 3 and its standard library. No Playwright or Python packages are needed.
 It runs on macOS and Linux. Apple targets require macOS and Xcode.
 
-Run these examples from the repository root. The script also works from another working directory.
+Run these examples from the core repository root. The script also works from another working directory.
+It invokes the standalone wrapper in `compose/mpp/benchmarks`, not the core build.
+From the standalone project root, use `python3 launch-scripts/run_benchmarks.py` instead.
 
 ## Defaults
 
@@ -13,6 +15,8 @@ Run these examples from the repository root. The script also works from another 
 - `--repeat 1`, `--timeout 30` seconds per test, collector `--port 8090`.
 - Build the collector and selected app once before the series. Apps use release/production artifacts.
   Build time is not part of the test timeout. Use `--skip-build` to reuse existing artifacts.
+- Compose libraries come from Maven by default. Use `--compose-core-path /path/to/core` for an included
+  build of core sources. Rebuild when changing versions or switching dependency modes.
 - Continue after failed tests and timeouts. Exit with code 1 if any test fails; Ctrl+C exits with code 130.
 - Reports go directly into one shared `reports` folder. The script waits for a matching report ID,
   name, and type, then closes the test process before starting the next one.
@@ -27,13 +31,13 @@ Do not run two launchers against the same simulator application at the same time
 Run everything:
 
 ```bash
-python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py --target jvm
+python3 compose/mpp/benchmarks/launch-scripts/run_benchmarks.py --target jvm
 ```
 
 Select cases and modes, with three repetitions of each combination:
 
 ```bash
-python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
+python3 compose/mpp/benchmarks/launch-scripts/run_benchmarks.py \
   --target jvm --tests LazyGrid TextLayout --modes averageFrame startup --repeat 3
 ```
 
@@ -43,7 +47,7 @@ The JVM app is launched directly from its release uber-JAR, not through a Gradle
 ## Native macOS (ARM64)
 
 ```bash
-python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
+python3 compose/mpp/benchmarks/launch-scripts/run_benchmarks.py \
   --target macos --tests LazyGrid --modes averageFrame fps
 ```
 
@@ -58,7 +62,7 @@ closed after a report, crash, or timeout. Browser launches are visible by defaul
 Chromium:
 
 ```bash
-python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
+python3 compose/mpp/benchmarks/launch-scripts/run_benchmarks.py \
   --target wasmJs --browser "/Applications/Google Chrome.app" \
   --tests LazyGrid --modes startup averageFrame
 ```
@@ -66,7 +70,7 @@ python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
 Firefox:
 
 ```bash
-python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
+python3 compose/mpp/benchmarks/launch-scripts/run_benchmarks.py \
   --target js --browser "/Applications/Firefox.app" \
   --tests LazyGrid --modes averageFrame
 ```
@@ -74,7 +78,7 @@ python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
 Safari (macOS only):
 
 ```bash
-python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
+python3 compose/mpp/benchmarks/launch-scripts/run_benchmarks.py \
   --target js --browser "/Applications/Safari.app" \
   --tests LazyGrid --modes startup --repeat 3
 ```
@@ -99,14 +103,14 @@ The browser receives all application parameters in the page URL.
 Without `--simulator`, exactly one available simulator must already be booted:
 
 ```bash
-python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
+python3 compose/mpp/benchmarks/launch-scripts/run_benchmarks.py \
   --target ios --tests LazyGrid --modes startup
 ```
 
 Or select a simulator by UUID (recommended) or a unique name. The launcher boots it if necessary:
 
 ```bash
-python3 compose/mpp/newbenchmarks/launch-scripts/run_benchmarks.py \
+python3 compose/mpp/benchmarks/launch-scripts/run_benchmarks.py \
   --target ios --simulator YOUR_SIMULATOR_UUID --tests LazyGrid --modes startup --repeat 3
 ```
 
@@ -120,15 +124,17 @@ Physical iOS devices are not supported by this launcher.
 By default, each series creates a new directory:
 
 ```text
-out/benchmark-reports/<UTC timestamp>-<target>-<unique suffix>/
+compose/mpp/benchmarks/out/benchmark-reports/<UTC timestamp>-<target>-<unique suffix>/
     reports/       # All collected benchmark JSON files, prefixed with the run UUID
     logs/          # Build logs, collector log, and a separate log for each run UUID
     summary.json   # Parameters, statuses, timings, report paths, and errors
 ```
 
 Set `--output-dir /path/to/new-directory` to choose the series directory. It must not already exist.
-Use `--port 18090` if port 8090 is occupied. `OUT_DIR` is respected for Gradle artifacts and default output.
-The default iOS DerivedData path is `$OUT_DIR/benchmarks-ios-derived` (or `out/benchmarks-ios-derived`).
+Use `--port 18090` if port 8090 is occupied. `OUT_DIR` selects the default reports and iOS DerivedData
+root; its default is the standalone project's `out` directory. Relative `OUT_DIR` values are resolved
+from that project. Gradle artifacts use the normal `<module>/build` layout, independent of `OUT_DIR`.
+The default iOS DerivedData path is `$OUT_DIR/benchmarks-ios-derived` (or the project's `out/benchmarks-ios-derived`).
 
 A test timeout limits launch/report waiting; process cleanup may take a few extra seconds.
 Reports already collected are kept after failures or interruption. Inspect `summary.json` and the

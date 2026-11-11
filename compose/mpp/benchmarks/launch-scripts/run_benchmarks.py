@@ -37,10 +37,9 @@ from urllib.parse import urlencode
 import uuid
 
 
-REPO = Path(__file__).resolve().parents[4]
-MODULES = REPO / "compose/mpp/newbenchmarks"
-APP_TASK = ":compose:mpp:newbenchmarks:benchmarks-app:"
-COLLECTOR_TASK = ":compose:mpp:newbenchmarks:benchmarks-collector:"
+ROOT = Path(__file__).resolve().parents[1]
+APP_TASK = ":benchmarks-app:"
+COLLECTOR_TASK = ":benchmarks-collector:"
 BUNDLE_ID = "org.jetbrains.compose.benchmarks.app.BenchmarksIosApp"
 TESTS = (
     "AnimatedVisibility", "LazyGrid", "LazyGrid-ItemLaunchedEffect", "LazyGrid-SmoothScroll",
@@ -60,6 +59,7 @@ def parse_args():
     parser.add_argument("--timeout", type=float, default=30, help="seconds per test (default: 30)")
     parser.add_argument("--output-dir", type=Path, help="new directory for this series")
     parser.add_argument("--skip-build", action="store_true", help="reuse existing release artifacts")
+    parser.add_argument("--compose-core-path", type=Path, help="include a core checkout instead of published Compose libraries")
     parser.add_argument("--browser", help="Chromium/Firefox/Safari executable, command name, or macOS .app")
     parser.add_argument("--browser-arg", action="append", default=[], help="extra browser flag; use --browser-arg=--flag")
     parser.add_argument("--web-port", type=int, default=0, help="static file server port (default: automatic)")
@@ -116,7 +116,7 @@ def managed_process(command, log_path):
     with log_path.open("ab", buffering=0) as log:
         log.write(("$ " + repr([str(arg) for arg in command]) + "\n").encode())
         process = subprocess.Popen(
-            [str(arg) for arg in command], cwd=REPO, stdout=log,
+            [str(arg) for arg in command], cwd=ROOT, stdout=log,
             stderr=subprocess.STDOUT, start_new_session=True,
         )
         try:
@@ -244,13 +244,13 @@ def build(args, out, logs, simulator):
         "wasmJs": [APP_TASK + "wasmJsBrowserDistribution"],
         "ios": [],
     }[args.target]
-    run_command([REPO / "gradlew", *tasks, "--console=plain"], logs / "gradle-build.log")
+    run_command([ROOT / "gradlew", *tasks, "--console=plain"], logs / "gradle-build.log")
     if args.target == "ios":
         run_command([
-            "xcodebuild", "-project", MODULES / "benchmarks-ios-app/BenchmarksIosApp.xcodeproj",
+            "xcodebuild", "-project", ROOT / "benchmarks-ios-app/BenchmarksIosApp.xcodeproj",
             "-scheme", "BenchmarksIosApp", "-configuration", "Release", "-sdk", "iphonesimulator",
             "-destination", f"id={simulator['udid']}", "-derivedDataPath", out / "benchmarks-ios-derived",
-            "ARCHS=arm64", "CODE_SIGNING_ALLOWED=NO", f"CMP_OUT_DIR={out}", "build",
+            "ARCHS=arm64", "CODE_SIGNING_ALLOWED=NO", "build",
         ], logs / "xcode-build.log")
 
 
@@ -379,8 +379,8 @@ def run_series(args, out, directory, summary):
     logs, reports = directory / "logs", directory / "reports"
     logs.mkdir()
     reports.mkdir()
-    app_build = out / "compose-multiplatform-core/compose/mpp/newbenchmarks/benchmarks-app/build"
-    collector_build = out / "compose-multiplatform-core/compose/mpp/newbenchmarks/benchmarks-collector/build"
+    app_build = ROOT / "benchmarks-app/build"
+    collector_build = ROOT / "benchmarks-collector/build"
     simulator = select_simulator(args.simulator) if args.target == "ios" else None
     browser = executable(args.browser) if args.target in ("js", "wasmJs") else None
     if browser:
@@ -454,15 +454,21 @@ def handle_termination(signum, frame):
 def main():
     args = parse_args()
     signal.signal(signal.SIGTERM, handle_termination)
-    out = Path(os.environ.get("OUT_DIR", REPO / "out")).expanduser()
+    if args.compose_core_path:
+        args.compose_core_path = args.compose_core_path.expanduser().resolve()
+        # Also reaches the Gradle invocation in the Xcode framework build phase.
+        os.environ["ORG_GRADLE_PROJECT_composeCorePath"] = str(args.compose_core_path)
+    out = Path(os.environ.get("OUT_DIR", ROOT / "out")).expanduser()
     if not out.is_absolute():
-        out = REPO / out
+        out = ROOT / out
     out = out.resolve()
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     directory = (args.output_dir or out / "benchmark-reports" / f"{stamp}-{args.target}-{uuid.uuid4().hex[:8]}").expanduser().resolve()
     directory.mkdir(parents=True, exist_ok=False)
     summary = {"target": args.target, "tests": args.tests, "modes": args.modes,
                "repeat": args.repeat, "timeoutSeconds": args.timeout, "runs": []}
+    if args.compose_core_path:
+        summary["composeCorePath"] = str(args.compose_core_path)
     print(f"Results: {directory}", flush=True)
     exit_code = 0
     try:

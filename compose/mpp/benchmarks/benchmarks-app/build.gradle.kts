@@ -19,9 +19,9 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    id("org.jetbrains.kotlin.multiplatform")
-    id("org.jetbrains.kotlin.plugin.compose") version libs.versions.kotlin.get()
-    id("org.jetbrains.compose") version "1.13.0-beta02"
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.compose.multiplatform)
 }
 
 kotlin {
@@ -59,19 +59,16 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":compose:mpp:newbenchmarks:benchmarks-runtime"))
-            implementation(project(":compose:mpp:newbenchmarks:benchmarks-report"))
-            implementation(project(":compose:runtime:runtime"))
-            implementation(project(":compose:ui:ui"))
-            implementation(project(":compose:foundation:foundation"))
-            implementation(project(":compose:material:material"))
-            implementation("org.jetbrains.compose.components:components-resources:1.13.0-beta02") {
-                exclude(group = "org.jetbrains.compose.runtime")
-                exclude(group = "org.jetbrains.compose.ui")
-            }
+            implementation(project(":benchmarks-runtime"))
+            implementation(project(":benchmarks-report"))
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material)
+            implementation(libs.compose.resources)
         }
         jvmMain.dependencies {
-            implementation(libs.skikoAwtRuntime)
+            implementation(compose.desktop.currentOs)
             implementation(libs.kotlinCoroutinesSwing)
         }
         webMain.dependencies {
