@@ -200,6 +200,59 @@
         render();
     }
 
+    function renderTestInfo(name, runs, section) {
+        const heading = element('div', null, section, 'test-heading');
+        element('h2', name, heading);
+        const button = element('button', 'info', heading, 'test-info-button');
+        button.type = 'button';
+        button.setAttribute('aria-label', 'Parameters for ' + name);
+        button.setAttribute('aria-expanded', 'false');
+        const panel = element('div', null, section, 'test-parameters');
+        panel.id = 'test-parameters-' + charts.children.length;
+        panel.hidden = true;
+        button.setAttribute('aria-controls', panel.id);
+        button.addEventListener('click', () => {
+            panel.hidden = !panel.hidden;
+            button.setAttribute('aria-expanded', String(!panel.hidden));
+        });
+
+        const groups = new Map();
+        runs.forEach(run => {
+            const parameters = { type: run.type, ...run.parameters };
+            const key = JSON.stringify([run.kotlin, run.compose, Object.entries(parameters).sort(([a], [b]) => a.localeCompare(b))]);
+            if (!groups.has(key)) groups.set(key, { ...run, parameters, iterations: [] });
+            groups.get(key).iterations.push(run.iteration);
+        });
+        const columns = [...groups.values()];
+        const scroll = element('div', null, panel, 'environment-scroll');
+        scroll.tabIndex = 0;
+        scroll.setAttribute('role', 'region');
+        scroll.setAttribute('aria-label', name + ' parameters');
+        const table = element('table', null, scroll, 'environment-table test-parameters-table');
+        const head = element('tr', null, element('thead', null, table));
+        element('th', 'Parameter', head).scope = 'col';
+        columns.forEach(run => {
+            const th = element('th', null, head);
+            th.scope = 'col';
+            element('span', 'Kotlin ' + run.kotlin, th);
+            element('small', 'Compose ' + run.compose, th);
+            element('small', 'Runs: ' + distinct(run.iterations).join(', '), th);
+        });
+        const body = element('tbody', null, table);
+        const preferred = ['type', 'width', 'height', 'targetFps', 'warmupCount', 'frameCount', 'repeat', 'timeoutSeconds'];
+        const keys = distinct(columns.flatMap(run => Object.keys(run.parameters)));
+        const ordered = [...preferred.filter(key => keys.includes(key)), ...keys.filter(key => !preferred.includes(key))];
+        const format = value => value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+        ordered.forEach(key => {
+            const row = element('tr', null, body);
+            element('th', key, row).scope = 'row';
+            const values = columns.map(run => format(run.parameters[key]));
+            if (values.every(value => value === values[0])) {
+                element('td', values[0], row).colSpan = columns.length;
+            } else values.forEach(value => element('td', value, row));
+        });
+    }
+
     function render() {
         instances.forEach(chart => chart.destroy());
         instances = [];
@@ -220,7 +273,7 @@
         for (const name of distinct(runs.map(run => run.name))) {
             const testRuns = runs.filter(run => run.name === name);
             const section = element('section', null, charts);
-            element('h2', name, section);
+            renderTestInfo(name, testRuns, section);
             const failures = testRuns.filter(run => run.status !== 'passed' || run.measurements.length === 0);
             if (failures.length) {
                 const details = element('details', null, section, 'warning');
