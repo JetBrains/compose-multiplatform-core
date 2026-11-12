@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -80,8 +81,16 @@ import kotlin.test.assertTrue
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.CoreGraphics.CGRect
+import platform.CoreGraphics.CGRectMake
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSValue
 import platform.UIKit.UIInterfaceOrientationLandscapeRight
 import platform.UIKit.UIInterfaceOrientationPortrait
+import platform.UIKit.UIKeyboardAnimationDurationUserInfoKey
+import platform.UIKit.UIKeyboardFrameEndUserInfoKey
+import platform.UIKit.UIKeyboardWillChangeFrameNotification
+import platform.UIKit.UIKeyboardWillHideNotification
+import platform.UIKit.valueWithCGRect
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
@@ -179,6 +188,162 @@ internal abstract class KeyboardInsetsTest(
     private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
 ) {
     @Test
+    fun testImePaddingReturnsBottomContentToScreenAfterKeyboardHides() = runUIKitInstrumentedTest {
+        var focusManager: FocusManager? = null
+        var bottomContentRect: DpRect? = null
+
+        setContent {
+            focusManager = LocalFocusManager.current
+            Column(Modifier.fillMaxSize().imePadding()) {
+                @Suppress("DEPRECATION")
+                TextField(
+                    value = "",
+                    onValueChange = {},
+                    modifier = Modifier.testTag("TextField"),
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "bottom content",
+                    modifier = Modifier.onGloballyPositioned {
+                        bottomContentRect = it.boundsInWindow().toDpRect(density)
+                    },
+                )
+            }
+        }
+
+        findNodeWithTag("TextField").tap()
+        waitUntil("Keyboard must be shown and the bottom content must move above it") {
+            keyboardHeight > 0.dp &&
+                bottomContentRect?.bottom == screenSize.height - keyboardHeight
+        }
+
+        focusManager?.clearFocus()
+        waitUntil("Bottom content must return to the screen edge after the keyboard hides") {
+            keyboardHeight == 0.dp && bottomContentRect?.bottom == screenSize.height
+        }
+    }
+
+    @Test
+    fun testImePaddingReturnsBottomContentToScreenForFloatingKeyboard() = runUIKitInstrumentedTest {
+        var bottomContentRect: DpRect? = null
+
+        setContent {
+            Column(Modifier.fillMaxSize().imePadding()) {
+                @Suppress("DEPRECATION")
+                TextField(
+                    value = "",
+                    onValueChange = {},
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "bottom content",
+                    modifier = Modifier.onGloballyPositioned {
+                        bottomContentRect = it.boundsInWindow().toDpRect(density)
+                    },
+                )
+            }
+        }
+
+        val screenWidth = screenSize.width.value.toDouble()
+        val screenHeight = screenSize.height.value.toDouble()
+        val keyboardHeight = 400.0
+        val floatingKeyboardWidth = 334.0
+        val floatingKeyboardHeight = 289.5
+        val floatingKeyboardTopOffsetFromScreenBottom = 500.0
+
+        try {
+            postKeyboardFrame(
+                CGRectMake(
+                    0.0,
+                    screenHeight - keyboardHeight,
+                    screenWidth,
+                    keyboardHeight,
+                )
+            )
+            waitUntil("Docked keyboard must move the bottom content above it") {
+                bottomContentRect?.bottom == screenSize.height - keyboardHeight.dp
+            }
+
+            postKeyboardFrame(
+                CGRectMake(
+                    screenWidth - floatingKeyboardWidth,
+                    screenHeight - floatingKeyboardTopOffsetFromScreenBottom,
+                    floatingKeyboardWidth,
+                    floatingKeyboardHeight,
+                )
+            )
+            waitUntil("Floating keyboard must not leave a bottom inset") {
+                bottomContentRect?.bottom == screenSize.height
+            }
+        } finally {
+            NSNotificationCenter.defaultCenter.postNotificationName(
+                aName = UIKeyboardWillHideNotification,
+                `object` = null,
+            )
+            waitForIdle()
+        }
+    }
+
+    @Test
+    fun testImePaddingKeepsAnimatingWhenKeyboardHidesAfterFrameChange() = runUIKitInstrumentedTest {
+        var bottomContentRect: DpRect? = null
+
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+
+        setContent {
+            Column(Modifier.fillMaxSize().imePadding()) {
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "bottom content",
+                    modifier = Modifier.onGloballyPositioned {
+                        bottomContentRect = it.boundsInWindow().toDpRect(density)
+                    },
+                )
+            }
+        }
+
+        val screenWidth = screenSize.width.value.toDouble()
+        val screenHeight = screenSize.height.value.toDouble()
+        val keyboardHeight = 400.0
+        val shortcutBarHeight = 70.0
+        val animationDuration = 2.0
+        val keyboardBottom = screenSize.height - keyboardHeight.dp
+        val shortcutBarBottom = screenSize.height - shortcutBarHeight.dp
+
+        try {
+            postKeyboardFrame(
+                frame = CGRectMake(0.0, screenHeight - keyboardHeight, screenWidth, keyboardHeight),
+            )
+            waitUntil("Keyboard must move the bottom content above it") {
+                bottomContentRect?.bottom == keyboardBottom
+            }
+
+            postKeyboardFrame(
+                frame = CGRectMake(0.0, screenHeight - shortcutBarHeight, screenWidth, shortcutBarHeight),
+                duration = animationDuration,
+            )
+            waitUntil("Content must start following the keyboard to the shortcut bar") {
+                bottomContentRect?.bottom?.let {
+                    it > keyboardBottom + 20.dp && it < shortcutBarBottom - 20.dp
+                } == true
+            }
+            val bottomBeforeHide = checkNotNull(bottomContentRect).bottom
+
+            postKeyboardWillHide(duration = animationDuration)
+            waitUntil("Content must continue moving after the keyboard starts hiding") {
+                bottomContentRect?.bottom != bottomBeforeHide
+            }
+            assertTrue(
+                actual = checkNotNull(bottomContentRect).bottom < shortcutBarBottom - 20.dp,
+                message = "Content must not jump to the shortcut bar position when the hide animation starts",
+            )
+        } finally {
+            postKeyboardWillHide()
+            waitForIdle()
+        }
+    }
+
+    @Test
     fun testImePaddingInsetsAnimationFrames_FocusAboveKeyboard() = runUIKitInstrumentedTest {
         val contentFrames = mutableListOf<DpRect>()
         var lastContentFrame = DpRect(DpOffset.Unspecified, DpSize.Unspecified)
@@ -269,6 +434,25 @@ internal abstract class KeyboardInsetsTest(
                 "Content size must increase on every frame"
             )
         }
+    }
+
+    private fun postKeyboardFrame(frame: CValue<CGRect>, duration: Double = 0.0) {
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            aName = UIKeyboardWillChangeFrameNotification,
+            `object` = null,
+            userInfo = mapOf(
+                UIKeyboardFrameEndUserInfoKey to NSValue.valueWithCGRect(frame),
+                UIKeyboardAnimationDurationUserInfoKey to duration,
+            ),
+        )
+    }
+
+    private fun postKeyboardWillHide(duration: Double = 0.0) {
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            aName = UIKeyboardWillHideNotification,
+            `object` = null,
+            userInfo = mapOf(UIKeyboardAnimationDurationUserInfoKey to duration),
+        )
     }
 
     @Test
@@ -515,6 +699,7 @@ internal abstract class KeyboardInsetsTest(
             }
 
             override fun keyboardWillHide(
+                currentFrame: CValue<CGRect>,
                 targetFrame: CValue<CGRect>,
                 duration: Double,
                 animationOptions: UIViewAnimationOptions
@@ -522,6 +707,7 @@ internal abstract class KeyboardInsetsTest(
             }
 
             override fun keyboardWillChangeFrame(
+                currentFrame: CValue<CGRect>,
                 targetFrame: CValue<CGRect>,
                 duration: Double,
                 animationOptions: UIViewAnimationOptions
@@ -587,6 +773,7 @@ internal abstract class KeyboardInsetsTest(
             }
 
             override fun keyboardWillHide(
+                currentFrame: CValue<CGRect>,
                 targetFrame: CValue<CGRect>,
                 duration: Double,
                 animationOptions: UIViewAnimationOptions
@@ -594,6 +781,7 @@ internal abstract class KeyboardInsetsTest(
             }
 
             override fun keyboardWillChangeFrame(
+                currentFrame: CValue<CGRect>,
                 targetFrame: CValue<CGRect>,
                 duration: Double,
                 animationOptions: UIViewAnimationOptions
