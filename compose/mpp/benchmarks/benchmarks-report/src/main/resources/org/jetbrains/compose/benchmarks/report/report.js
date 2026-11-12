@@ -172,7 +172,7 @@
         const labels = {
             configuration: 'Configuration', launcher: 'Build and launch', runtime: 'Target process',
             target: 'Target', kotlinVersion: 'Kotlin', composeVersion: 'Compose', localCompose: 'Local Compose',
-            composeCorePath: 'Core checkout', browser: 'Browser', kind: 'Family', executable: 'Executable',
+            browser: 'Browser', kind: 'Family', executable: 'Executable',
             capturedAt: 'Launcher snapshot (UTC)', buildProfile: 'Build profile', optimization: 'Optimization',
             coreCommit: 'Core commit', coreDirty: 'Core has uncommitted changes', browserVersion: 'Browser version',
             simulator: 'Simulator', host: 'Host', xcodeVersion: 'Xcode', sdkVersion: 'SDK version',

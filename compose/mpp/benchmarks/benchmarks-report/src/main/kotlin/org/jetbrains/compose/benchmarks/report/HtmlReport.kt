@@ -132,7 +132,7 @@ fun generateHtmlReport(session: Path): Path {
                     }
                     val metadata = buildJsonObject {
                         put("configuration", JsonObject(summary.filterKeys {
-                            it in listOf("target", "kotlinVersion", "composeVersion", "localCompose", "composeCorePath", "browser")
+                            it in listOf("target", "kotlinVersion", "composeVersion", "localCompose", "browser")
                         }))
                         (summary["launcherEnvironment"] as? JsonObject)?.let {
                             put("launcher", JsonObject(it.filterKeys { key -> key != "launchCommand" }))
