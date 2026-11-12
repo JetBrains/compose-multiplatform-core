@@ -62,12 +62,11 @@ class A11yTraversalGroupTest : OnCanvasTests {
     @Test
     fun nestedTraversalGroupIndexOverridesGeometryAndChildrenSortWithinGroup() = runApplicationTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
+            Box(Modifier.fillMaxSize().testTagWithTraversalGroup("parent")) {
                 Box(
                     Modifier.absoluteOffset(0.dp, 0.dp)
                         .size(140.dp, 120.dp)
-                        .semantics { isTraversalGroup = true }
-                        .testTag("outerGroup")
+                        .testTagWithTraversalGroup("outerGroup")
                 ) {
                     Box(
                         Modifier.absoluteOffset(0.dp, 0.dp)
@@ -117,15 +116,14 @@ class A11yTraversalGroupTest : OnCanvasTests {
         createComposeWindow {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Box(
-                    Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent"),
+                    Modifier.fillMaxSize().testTagWithTraversalGroup("parent"),
                     contentAlignment = AbsoluteAlignment.TopLeft,
                 ) {
                     listOf("leftGroup" to 0.dp, "rightGroup" to 160.dp).forEach { (tag, x) ->
                         Box(
                             Modifier.absoluteOffset(x, 0.dp)
                                 .size(100.dp, 60.dp)
-                                .semantics { isTraversalGroup = true }
-                                .testTag(tag),
+                                .testTagWithTraversalGroup(tag),
                             contentAlignment = AbsoluteAlignment.TopLeft,
                         ) {
                             Box(Modifier.absoluteOffset(0.dp, 0.dp).size(20.dp).testTag("${tag}Left"))
@@ -187,8 +185,7 @@ class A11yTraversalGroupTest : OnCanvasTests {
                 Box(Modifier.size(100.dp, 40.dp).testTag("scrollItem0"))
                 Column(
                     Modifier.width(100.dp)
-                        .semantics { isTraversalGroup = true }
-                        .testTag("nestedGroup")
+                        .testTagWithTraversalGroup("nestedGroup")
                 ) {
                     repeat(2) { index ->
                         Box(Modifier.size(100.dp, 40.dp).testTag("nestedItem$index"))
@@ -342,7 +339,7 @@ class A11yTraversalGroupTest : OnCanvasTests {
             .semantics { if (groupColumns != null) isTraversalGroup = groupColumns }
             .then(if (tagColumns) Modifier.testTag(tag) else Modifier)
         createComposeWindow {
-            Row(Modifier.semantics { isTraversalGroup = true }.testTag("parent")) {
+            Row(Modifier.testTagWithTraversalGroup("parent")) {
                 Column(columnModifier("leftColumn")) {
                     Text("This sentence is in ", Modifier.size(160.dp, 40.dp).testTag("textLeftTop"), fontSize = 12.sp)
                     Text("the left column.", Modifier.size(160.dp, 40.dp).testTag("textLeftBottom"), fontSize = 12.sp)

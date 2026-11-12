@@ -41,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.LinkAnnotation
@@ -516,7 +515,7 @@ class A11yScrollTest : OnCanvasTests {
                 state = state,
             ) {
                 items(100) { index ->
-                    Box(Modifier.semantics { isTraversalGroup = true }.testTag("item$index").size(100.dp)) {
+                    Box(Modifier.testTagWithTraversalGroup("item$index").size(100.dp)) {
                         Text(
                             "$index",
                             Modifier.testTag("label$index").align(Alignment.Center),
@@ -587,7 +586,7 @@ class A11yScrollTest : OnCanvasTests {
                 state = state,
             ) {
                 items(100) { index ->
-                    Box(Modifier.semantics { isTraversalGroup = true }.testTag("item$index").size(100.dp)) {
+                    Box(Modifier.testTagWithTraversalGroup("item$index").size(100.dp)) {
                         Text(
                             "$index",
                             Modifier.testTag("label$index").align(Alignment.Center),
@@ -736,8 +735,7 @@ class A11yScrollTest : OnCanvasTests {
             Column(
                 modifier = Modifier
                     // Keeps the node exposed after verticalScroll (which is a traversal group) is removed.
-                    .semantics { isTraversalGroup = true }
-                    .testTag("scrollable")
+                    .testTagWithTraversalGroup("scrollable")
                     .size(100.dp)
                     .then(if (scrollable) Modifier.verticalScroll(scrollState) else Modifier)
             ) {

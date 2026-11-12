@@ -23,8 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.isTraversalGroup
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -44,8 +42,8 @@ class A11yNodePositioningTest : OnCanvasTests {
     fun nestedNodeIsRenderedAtTheSameRectAsAnEquivalentFlatNode() = runApplicationTest {
         createComposeWindow {
             Box(Modifier.fillMaxSize()) {
-                Box(Modifier.offset(40.dp, 40.dp).semantics { isTraversalGroup = true }.testTag("outer")) {
-                    Box(Modifier.offset(30.dp, 30.dp).semantics { isTraversalGroup = true }.testTag("middle")) {
+                Box(Modifier.offset(40.dp, 40.dp).testTagWithTraversalGroup("outer")) {
+                    Box(Modifier.offset(30.dp, 30.dp).testTagWithTraversalGroup("middle")) {
                         Box(Modifier.offset(20.dp, 20.dp).size(50.dp).testTag("nested"))
                     }
                 }
@@ -61,7 +59,7 @@ class A11yNodePositioningTest : OnCanvasTests {
     fun childOfAnOffsetNodeIsNotShiftedByItsParentOffsetTwice() = runApplicationTest {
         createComposeWindow {
             Box(Modifier.fillMaxSize()) {
-                Box(Modifier.offset(40.dp, 40.dp).size(50.dp).semantics { isTraversalGroup = true }.testTag("parent")) {
+                Box(Modifier.offset(40.dp, 40.dp).size(50.dp).testTagWithTraversalGroup("parent")) {
                     Box(Modifier.size(50.dp).testTag("child"))
                 }
             }

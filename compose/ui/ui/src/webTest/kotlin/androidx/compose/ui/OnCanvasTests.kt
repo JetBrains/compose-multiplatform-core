@@ -20,6 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.window.ComposeViewport
 import androidx.compose.ui.window.ComposeViewportConfiguration
@@ -250,6 +253,10 @@ internal interface OnCanvasTests {
             }
         }
     }
+
+    /** Tags a test node and keeps its children grouped in the accessibility DOM. */
+    fun Modifier.testTagWithTraversalGroup(tag: String): Modifier =
+        semantics { isTraversalGroup = true }.testTag(tag)
 }
 
 internal fun <T> Channel<T>.sendFromScope(value: T, scope: CoroutineScope = MainScope()) {
