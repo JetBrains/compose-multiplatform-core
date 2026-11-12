@@ -227,6 +227,21 @@ fun generateHtmlReport(session: Path): Path {
                 section {
                     id = "environment"
                     attributes["aria-label"] = "Build and target environment"
+                    div(classes = "environment-heading") {
+                        h2 { +"Build and target environment" }
+                        button(classes = "test-info-button") {
+                            id = "environment-info-button"
+                            attributes["type"] = "button"
+                            attributes["aria-label"] = "Build and target environment information"
+                            attributes["aria-expanded"] = "false"
+                            attributes["aria-controls"] = "environment-info"
+                            +"info"
+                        }
+                    }
+                    div {
+                        id = "environment-info"
+                        attributes["hidden"] = ""
+                    }
                 }
             }
             main {

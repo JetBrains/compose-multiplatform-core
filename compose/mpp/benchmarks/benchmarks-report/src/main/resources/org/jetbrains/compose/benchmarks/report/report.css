@@ -68,7 +68,7 @@ p { margin: 10px 0; }
     outline-offset: 2px;
 }
 #environment { margin-top: 18px; }
-#environment h2 { margin: 0 0 10px; font-size: 17px; }
+#environment h2 { margin: 0; font-size: 17px; }
 .environment-scroll {
     overflow-x: auto;
     border: 1px solid #dce1ea;
@@ -109,6 +109,7 @@ p { margin: 10px 0; }
 .kotlin-option input { margin: 0; width: 16px; height: 16px; accent-color: #1849ab; }
 .color-swatch { width: 14px; height: 14px; border-radius: 2px; }
 #message:empty { display: none; }
+.environment-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
 .test-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 28px 0 12px; }
 .test-heading h2 { margin: 0; }
 .test-info-button, .chart-raw-button {
