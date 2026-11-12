@@ -76,7 +76,7 @@ class TextFieldMultiTapSelectionTest {
     fun multitap_does_not_show_magnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
         findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2) // double tap is enough
-        delay(200)
+        delay(100)
         assertEquals(
             null,
             findFirstDescendant { it.isLoupeView },
@@ -98,7 +98,8 @@ class TextFieldMultiTapSelectionTest {
 
         // After triple tap selects all, a subsequent double tap should re-select only a word.
         // This exercises the clearSelection fix that allows selection to be updated by repeated taps.
-        delay(400)
+        // Waits out the 300ms double tap timeout, so the taps start a new sequence.
+        delay(350)
         findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2)
         waitForIdle()
 

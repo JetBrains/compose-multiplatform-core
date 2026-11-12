@@ -78,11 +78,12 @@ private const val SelectionHandleInfoKeyName = "SelectionHandleInfo"
 
 /**
  * How long UIKit keeps a finished tap open for one more tap of the same sequence. Touches sent
- * within this window continue the sequence instead of starting a new gesture.
- * 500ms should be enough
+ * within this window continue the sequence instead of starting a new gesture, so a handle grabbed
+ * right after the selecting double tap does not move. Nothing in the view tree tells when the window
+ * closes: a handle is grabbed after 350ms and not after 300ms, so this keeps some margin over that.
  * TODO: CMP-10641
  */
-private const val NativeTapSequenceWindowMillis = 500L
+private const val NativeTapSequenceWindowMillis = 400L
 
 private val offsetRegex = Regex("""Offset\((-?[\d.]+),\s*(-?[\d.]+)\)""")
 
@@ -235,8 +236,8 @@ internal fun UIKitInstrumentedTest.dragSelectionHandleImpl(
 }
 
 /**
- * Walks [touch] from [from] in small steps until the dragged selection edge reaches [aim]. Returns
- * null once it does, or why it did not.
+ * Walks [touch] from [from] in steps until the dragged selection edge reaches [aim]. Returns null
+ * once it does, or why it did not.
  *
  * UIKit holds a dragged handle on its line until the finger has travelled far past the next one, by
  * an amount it never publishes, so the travel is discovered rather than computed: every step re-reads
@@ -251,31 +252,40 @@ private fun UIKitInstrumentedTest.stepHandleTo(
     var finger = from
     var previous: DpOffset? = null
     var motionless = 0
+    var engaged = false
 
     repeat(NativeHandleDrag.MaxSteps) {
         val edge = draggedSelectionEdge(underPosition = finger)
             ?: return "Lost the native handle at $finger."
+
+        // Standing still is normal while UIKit holds a line change back; standing still for longer
+        // than that hysteresis means the edge is against something and will not move at all.
+        val stillness = previous?.let { abs(edge.x.value - it.x.value) + abs(edge.y.value - it.y.value) }
+        val moved = stillness != null && stillness > NativeHandleDrag.Tolerance
+        engaged = engaged || moved
+        motionless = if (stillness != null && !moved) motionless + 1 else 0
+
         val dx = aim.x.value - edge.x.value
         val dy = aim.y.value - edge.y.value
         // Vertical first and alone: UIKit obeys horizontal movement at once while still holding the
         // line change back, so a diagonal step would slide the handle far along its current line.
         val move = when {
             abs(dy) > NativeHandleDrag.Tolerance -> DpOffset(0.dp, dy.clampedToStep().dp)
-            abs(dx) > NativeHandleDrag.Tolerance -> DpOffset(dx.clampedToStep().dp, 0.dp)
+            abs(dx) > NativeHandleDrag.Tolerance ->
+                DpOffset((if (engaged) dx else dx.clampedToStep()).dp, 0.dp)
             else -> return null
         }
 
-        // Standing still is normal while UIKit holds a line change back; standing still for longer
-        // than that hysteresis means the edge is against something and will not move at all.
-        val stillness = previous?.let { abs(edge.x.value - it.x.value) + abs(edge.y.value - it.y.value) }
-        motionless = if (stillness != null && stillness <= NativeHandleDrag.Tolerance) motionless + 1 else 0
         if (motionless > NativeHandleDrag.MotionlessSteps) {
             return "Native selection edge stuck at $edge, aiming for $aim."
         }
         previous = edge
 
-        touch.dragBy(offset = move, duration = NativeHandleDrag.StepDuration)
+        // A plain move then a wait, unlike `dragBy`, which returns right after its last move: UIKit
+        // takes a moment to apply it, and reading the edge before it does sends the same step twice.
         finger += move
+        touch.moveToLocationOnWindow(finger)
+        delay(NativeHandleDrag.StepDuration)
     }
     return "Native selection edge did not reach $aim in ${NativeHandleDrag.MaxSteps} steps."
 }
@@ -299,20 +309,23 @@ private fun UIKitInstrumentedTest.draggedSelectionEdge(underPosition: DpOffset):
 /** The shape of a native handle drag, measured against the simulator rather than derived. */
 @Suppress("ConstPropertyName")
 private object NativeHandleDrag {
-    /** Finger travel per step, short enough to catch the line snap within one step. */
-    const val Step = 4f
+    /**
+     * Finger travel per vertical step, and per horizontal one until the edge moves: under half a line,
+     * so that no step skips a line.
+     */
+    const val Step = 8f
 
     /** How close to the aim counts as arrived, kept under half a character. */
     const val Tolerance = 1.5f
 
-    /** Upper bound on the loop, not a working count: the drags in the tests settle in about 25. */
-    const val MaxSteps = 80
+    /** Upper bound on the loop, not a working count: the drags in the tests settle in about 10. */
+    const val MaxSteps = 40
 
-    /** Steps the edge may stand still for, above the ~14 that a downward line change costs. */
-    const val MotionlessSteps = 20
+    /** Steps the edge may stand still for, above the ~7 that a downward line change costs. */
+    const val MotionlessSteps = 10
 
     /** Long enough for UIKit to move the handle before the next step re-reads it. */
-    val StepDuration = 0.05.seconds
+    val StepDuration = 0.016.seconds
 }
 
 private fun Float.clampedToStep(): Float = coerceIn(-NativeHandleDrag.Step, NativeHandleDrag.Step)
