@@ -52,6 +52,7 @@ internal data class ChartRun(
     val browser: String? = null,
     val browserName: String? = null,
     val parameters: JsonObject = JsonObject(emptyMap()),
+    val reportPath: String? = null,
 )
 
 @Serializable
@@ -144,6 +145,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                             put("type", run.getValue("type"))
                             for (key in listOf("repeat", "timeoutSeconds")) summary[key]?.let { put(key, it) }
                         }
+                        var reportPath: String? = null
                         val (measurements, distributions) = try {
                             run["report"]?.jsonPrimitive?.contentOrNull?.let { relative ->
                                 val file = summaryPath.parent.resolve(relative).normalize()
@@ -152,6 +154,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                                 require(listOf("id", "name", "type").all { report[it] == run[it] }) {
                                     "report does not match run"
                                 }
+                                reportPath = session.relativize(file).toString()
                                 // Keep input parameters, not ids, measurements, or per-frame samples.
                                 parameters = JsonObject(parameters + report.filterKeys {
                                     it !in setOf(
@@ -169,7 +172,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                             target, kotlin, compose, run.requiredText("name"), run.requiredText("type"),
                             run.getValue("iteration").jsonPrimitive.int, run.requiredText("status"),
                             run["error"]?.jsonPrimitive?.contentOrNull, measurements, distributions,
-                            browser, browserName, parameters,
+                            browser, browserName, parameters, reportPath,
                         ))
                     }
                 } catch (error: Exception) {
