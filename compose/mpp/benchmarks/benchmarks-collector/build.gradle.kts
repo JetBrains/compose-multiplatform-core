@@ -20,7 +20,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":benchmarks-report"))
+    implementation(project(":benchmarks-data"))
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.cio)
     implementation(libs.ktor.server.cors)

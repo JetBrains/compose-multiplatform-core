@@ -27,11 +27,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.benchmarks.report.AverageFrameReport
-import org.jetbrains.compose.benchmarks.report.FpsReport
-import org.jetbrains.compose.benchmarks.report.FrameInfo
-import org.jetbrains.compose.benchmarks.report.RealFramesReport
-import org.jetbrains.compose.benchmarks.report.StartupReport
+import org.jetbrains.compose.benchmarks.data.AverageFrameReport
+import org.jetbrains.compose.benchmarks.data.FpsReport
+import org.jetbrains.compose.benchmarks.data.FrameInfo
+import org.jetbrains.compose.benchmarks.data.RealFramesReport
+import org.jetbrains.compose.benchmarks.data.StartupReport
 
 private val ReportingScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 

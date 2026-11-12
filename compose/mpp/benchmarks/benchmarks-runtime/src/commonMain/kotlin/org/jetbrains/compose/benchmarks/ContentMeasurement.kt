@@ -25,7 +25,7 @@ import kotlin.time.TimeSource.Monotonic.markNow
 import kotlin.time.measureTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.yield
-import org.jetbrains.compose.benchmarks.report.FrameInfo
+import org.jetbrains.compose.benchmarks.data.FrameInfo
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect

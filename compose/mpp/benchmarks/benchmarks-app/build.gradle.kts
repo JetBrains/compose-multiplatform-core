@@ -60,7 +60,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":benchmarks-runtime"))
-            implementation(project(":benchmarks-report"))
+            implementation(project(":benchmarks-data"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.ui)
             implementation(libs.compose.foundation)

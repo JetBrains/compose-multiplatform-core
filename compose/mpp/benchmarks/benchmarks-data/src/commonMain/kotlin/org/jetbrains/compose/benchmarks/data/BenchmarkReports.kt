@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.compose.benchmarks.report
+package org.jetbrains.compose.benchmarks.data
 
 import kotlin.time.Duration
 import kotlinx.serialization.SerialName

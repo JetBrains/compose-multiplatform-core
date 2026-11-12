@@ -10,7 +10,7 @@ and requires JDK 17 or newer. Apple targets require macOS with Xcode.
 
 - `benchmarks-app` — an application with Compose benchmark cases.
 - `benchmarks-runtime` — runs measurements and sends results.
-- `benchmarks-report` — shared report models.
+- `benchmarks-data` — shared report models.
 - `benchmarks-collector` — receives reports over HTTP and saves them as JSON files.
 - `benchmarks-launcher` — a console application that builds and runs benchmarks sequentially.
 - `benchmarks-ios-app` — an iOS host application for benchmarks; a separate Xcode project.

@@ -18,7 +18,7 @@ package org.jetbrains.compose.benchmarks.app
 
 import org.jetbrains.compose.benchmarks.MeasureRenderAverageFrame
 import org.jetbrains.compose.benchmarks.MeasureRenderFps
-import org.jetbrains.compose.benchmarks.report.BenchmarkReportType
+import org.jetbrains.compose.benchmarks.data.BenchmarkReportType
 
 internal fun BenchmarkReportType.isRenderBenchmark(): Boolean =
     this == BenchmarkReportType.AVERAGE_FRAME || this == BenchmarkReportType.FPS

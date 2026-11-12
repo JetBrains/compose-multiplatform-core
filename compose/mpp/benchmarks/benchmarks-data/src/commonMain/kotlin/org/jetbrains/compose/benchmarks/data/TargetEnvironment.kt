@@ -15,7 +15,7 @@
  */
 
 
-package org.jetbrains.compose.benchmarks.report
+package org.jetbrains.compose.benchmarks.data
 
 import kotlinx.serialization.Serializable
 

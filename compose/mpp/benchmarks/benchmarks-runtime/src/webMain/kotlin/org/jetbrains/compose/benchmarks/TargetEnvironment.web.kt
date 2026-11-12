@@ -20,7 +20,7 @@
 package org.jetbrains.compose.benchmarks
 
 import kotlinx.serialization.json.Json
-import org.jetbrains.compose.benchmarks.report.TargetEnvironment
+import org.jetbrains.compose.benchmarks.data.TargetEnvironment
 
 internal actual fun collectTargetEnvironment(id: String): TargetEnvironment =
     Json.decodeFromString<TargetEnvironment>(browserEnvironment()).copy(id = id)
