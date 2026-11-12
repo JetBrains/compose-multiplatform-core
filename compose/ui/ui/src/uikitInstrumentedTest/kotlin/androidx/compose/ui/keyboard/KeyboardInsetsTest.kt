@@ -185,7 +185,7 @@ internal abstract class KeyboardInsetsTest(
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
@@ -278,7 +278,7 @@ internal abstract class KeyboardInsetsTest(
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.DoNothing
@@ -720,7 +720,7 @@ internal abstract class KeyboardInsetsTest(
         val drawnTextFieldFrames = mutableListOf<Pair<Int, Int>>()
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
@@ -829,9 +829,9 @@ internal abstract class KeyboardInsetsTest(
                             lastTextFieldFrame = coordinates.boundsInWindow().toDpRect(density)
                         }
                 )
-            }
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                }
             }
         }
 

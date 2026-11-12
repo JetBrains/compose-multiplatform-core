@@ -55,6 +55,11 @@ import platform.UIKit.UIViewController
 internal abstract class UIKitNavigationSwipeBackTest(
     private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
 ) {
+    /**
+     * A fast flick-like drag starting at the screen center is sometimes not recognized on iOS 26+.
+     */
+    private val CenterSwipeDuration = 150.milliseconds
+
     @Test
     fun testSwipeRightOnPagerDoesNotPopController() = runUIKitInstrumentedTest {
         val initialPage = 0
@@ -131,6 +136,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
             toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
+            duration = CenterSwipeDuration,
         ).wait(50.milliseconds).up()
 
         waitForIdle()
@@ -189,6 +195,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
             toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
+            duration = CenterSwipeDuration,
         ).wait(50.milliseconds).up()
 
         waitForPopped(viewControllerHostingCompose)

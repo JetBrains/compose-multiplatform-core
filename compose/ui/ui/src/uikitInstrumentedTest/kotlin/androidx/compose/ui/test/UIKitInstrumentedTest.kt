@@ -238,6 +238,12 @@ internal class UIKitInstrumentedTest(
         internal const val TestsAnimationSpeed = 100f
 
         /**
+         * Increased animation speed for tests that checks animation, but no constraints to have it
+         * real one-to-one speed.
+         */
+        internal const val IncreasedAnimationSpeed = 3f
+
+        /**
          * Real animation speed for tests that require one-to-one animations.
          */
         internal const val RealAnimationSpeed = 1f
@@ -256,12 +262,12 @@ internal class UIKitInstrumentedTest(
         internal val MaxDragStep = 20.dp
 
         /**
-         * The time given to UIKit to complete a requested interface orientation change.
+         * The maximum time given to UIKit to apply a requested interface orientation change.
          *
          * The orientation change is driven by the system rather than by the window's layer, so this
          * duration doesn't scale with [animationSpeed].
          */
-        internal val InterfaceOrientationChangeDuration = 700.milliseconds
+        internal val InterfaceOrientationChangeDuration = 500.milliseconds
 
         fun delay(timeoutMillis: Long) = delay(timeoutMillis.milliseconds)
 
@@ -383,7 +389,18 @@ internal class UIKitInstrumentedTest(
      */
     fun rotateTo(interfaceOrientation: UIInterfaceOrientation) {
         if (appDelegate.requestInterfaceOrientationChangeIfNeeded(interfaceOrientation)) {
-            delay(InterfaceOrientationChangeDuration)
+            val window = checkNotNull(appDelegate.window)
+            fun isOrientationApplied() =
+                window.windowScene?.interfaceOrientation == interfaceOrientation &&
+                    window.bounds.useContents { size.width > size.height } ==
+                    interfaceOrientation.isLandscape
+
+            // The device may not support the requested orientation (e.g. portrait upside down on
+            // iPhones with Face ID), so stop waiting after [InterfaceOrientationChangeDuration].
+            val endTime = TimeSource.Monotonic.markNow() + InterfaceOrientationChangeDuration
+            while (!isOrientationApplied() && TimeSource.Monotonic.markNow() < endTime) {
+                delay(5)
+            }
             waitForIdle()
         }
     }
@@ -1111,6 +1128,9 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         return supportedInterfaceOrientations
     }
 }
+
+private val UIInterfaceOrientation.isLandscape: Boolean
+    get() = this == UIInterfaceOrientationLandscapeLeft || this == UIInterfaceOrientationLandscapeRight
 
 private fun UIInterfaceOrientation.toMask(): UIInterfaceOrientationMask = when (this) {
     UIInterfaceOrientationPortrait -> UIInterfaceOrientationMaskPortrait
