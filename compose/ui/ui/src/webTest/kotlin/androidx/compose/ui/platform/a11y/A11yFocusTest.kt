@@ -429,6 +429,75 @@ class A11yFocusTest : OnCanvasTests {
         }
     }
 
+    @Test
+    fun focusRecoveryFallsBackToFartherAncestorWhenNearestContainerHasNoTarget() = runApplicationTest {
+        var showButton by mutableStateOf(true)
+        createComposeWindow {
+            Column {
+                Column(Modifier.testTag("navigation").semantics { isTraversalGroup = true }) {
+                    if (showButton) {
+                        Button(onClick = { showButton = false }, modifier = Modifier.testTag("next")) {
+                            Text("Next")
+                        }
+                    } else {
+                        Box(Modifier.size(40.dp).testTag("empty"))
+                    }
+                }
+                Button(onClick = {}, modifier = Modifier.testTag("fallback")) {
+                    Text("Outside the navigation container")
+                }
+            }
+        }
+        awaitA11YChanges()
+        val nextButton = element("next")
+        focusForTest(nextButton)
+        nextButton.click()
+
+        awaitCondition("The focused button is replaced with an accessibility-empty node") {
+            getShadowRoot().getElementById("next") == null &&
+                getShadowRoot().getElementById("empty") != null
+        }
+        assertTrue(element("navigation").contains(element("empty")))
+        val fallbackButton = element("fallback")
+        assertFalse(element("navigation").contains(fallbackButton))
+        awaitCondition("Recovery leaves the empty navigation container and focuses the next target") {
+            getShadowRoot().activeElement === fallbackButton
+        }
+    }
+
+    @Test
+    fun focusRecoverySkipsSurvivingContainerInsideHiddenContainer() = runApplicationTest {
+        var page by mutableStateOf(1)
+        createComposeWindow {
+            Column {
+                Column(Modifier.testTag("hidden").semantics { hideFromAccessibility() }) {
+                    // The nearest surviving container isn't hidden itself, but its ancestor is.
+                    Column(Modifier.testTag("navigation").semantics { isTraversalGroup = true }) {
+                        NavigationPages(page, onNavigate = { page = it })
+                    }
+                }
+                Button(onClick = {}, modifier = Modifier.testTag("fallback")) {
+                    Text("Outside the navigation container")
+                }
+            }
+        }
+        awaitA11YChanges()
+        val nextButton = element("next")
+        focusForTest(nextButton)
+        nextButton.click()
+
+        awaitCondition("Page 2 is exposed") {
+            getShadowRoot().getElementById("next") == null &&
+                getShadowRoot().getElementById("back") != null
+        }
+        assertTrue(element("navigation").contains(element("back")))
+        assertTrue(element("hidden").contains(element("navigation")))
+        val fallbackButton = element("fallback")
+        awaitCondition("Recovery skips Back inside the hidden container and focuses the next target") {
+            getShadowRoot().activeElement === fallbackButton
+        }
+    }
+
     private fun ownerRoot(index: Int): HTMLElement =
         assertNotNull(getA11YContainer()!!.children.item(index) as? HTMLElement)
 

@@ -233,7 +233,7 @@ internal class ComposeWebSemanticsListener(
         targetChildToParent.clear()
 
         // Property updates and structural changes can cause the browser to drop DOM focus. Ensure focus recovery:
-        val focusBeforeSync = a11YFocusRecovery.captureFocus()
+        a11YFocusRecovery.onSyncStarted()
 
         semanticsOwners.forEach {
             syncSemanticsWithWebA11Y(it)
@@ -266,10 +266,8 @@ internal class ComposeWebSemanticsListener(
         a11YScrollController.applyScrollOffsets()
         updateInertRoots()
 
-        if (focusBeforeSync != null) {
-            // Once the sync completes, restore the focus if necessary:
-            a11YFocusRecovery.restoreFocus(focusBeforeSync)
-        }
+        // Once the sync completes, restore the focus if necessary:
+        a11YFocusRecovery.onSyncFinished()
     }
 
     // The last (top) root is never inert.
