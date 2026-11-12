@@ -43,12 +43,21 @@ internal data class BenchmarkArguments(
     val id: String,
 )
 
-internal fun parseArguments(args: Array<String>): BenchmarkArguments {
-    require(args.size == 4) {
-        "Usage: benchmarks-app <benchmarkCollectorUrl> <test-name> <benchmark-type> <id>"
-    }
-    return BenchmarkArguments(args[0], args[1], parseBenchmarkType(args[2]), args[3])
-}
+internal data class EnvironmentArguments(val collectorUrl: String, val id: String)
+
+internal fun isEnvironmentCollection(args: Array<String>): Boolean =
+    args.firstOrNull() == "environment"
+
+internal fun parseEnvironmentArguments(args: Array<String>): EnvironmentArguments =
+    EnvironmentArguments(collectorUrl = args[2], id = args[1])
+
+internal fun parseBenchmarkArguments(args: Array<String>): BenchmarkArguments =
+    BenchmarkArguments(
+        benchmarkCollectorUrl = args[2],
+        testName = args[3],
+        benchmarkType = parseBenchmarkType(args[0]),
+        id = args[1],
+    )
 
 internal fun benchmarkContent(testName: String): @Composable () -> Unit = when (testName) {
     "AnimatedVisibility" -> { { AnimatedVisibility() } }

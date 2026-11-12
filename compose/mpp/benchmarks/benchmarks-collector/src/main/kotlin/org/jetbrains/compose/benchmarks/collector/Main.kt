@@ -49,6 +49,7 @@ import org.jetbrains.compose.benchmarks.report.BenchmarkReportType
 import org.jetbrains.compose.benchmarks.report.FpsReport
 import org.jetbrains.compose.benchmarks.report.RealFramesReport
 import org.jetbrains.compose.benchmarks.report.StartupReport
+import org.jetbrains.compose.benchmarks.report.TargetEnvironment
 
 fun main(args: Array<String>) {
     require(args.size == 2) { "Usage: benchmarks-collector <port> <output-directory>" }
@@ -70,6 +71,24 @@ internal fun Application.collectReports(outputDirectory: Path) {
         allowHeader(HttpHeaders.ContentType)
     }
     routing {
+        post("/environment") {
+            val body = call.receiveText()
+            val environment = try {
+                Json.decodeFromString<TargetEnvironment>(body)
+            } catch (_: IllegalArgumentException) {
+                call.respondText("Invalid target environment", status = HttpStatusCode.BadRequest)
+                return@post
+            }
+            if (!environment.id.matches(Regex("[A-Za-z0-9_-]{1,128}"))) {
+                call.respondText("Invalid environment id", status = HttpStatusCode.BadRequest)
+                return@post
+            }
+            val fileName = withContext(Dispatchers.IO) {
+                saveDocument(outputDirectory, environment.id, "environment", body)
+            }
+            println("Target environment saved: ${outputDirectory.resolve(fileName)}")
+            call.respondText(fileName, status = HttpStatusCode.Created)
+        }
         post("/reports") {
             val body = call.receiveText()
             val report = try {
@@ -151,18 +170,22 @@ private object BenchmarkReportSerializer :
     }
 }
 
-@Synchronized
 private fun saveReport(outputDirectory: Path, id: String, type: BenchmarkReportType, body: String): String {
     val typeName = Json.encodeToJsonElement(
         BenchmarkReportType.serializer(),
         type
     ).jsonPrimitive.content
+    return saveDocument(outputDirectory, id, typeName, body)
+}
+
+@Synchronized
+private fun saveDocument(outputDirectory: Path, id: String, kind: String, body: String): String {
     var fileName: String
     do {
-        fileName = "$id-$typeName-${Instant.now()}.json"
+        fileName = "$id-$kind-${Instant.now()}.json"
     } while (Files.exists(outputDirectory.resolve(fileName)))
 
-    val temporaryFile = Files.createTempFile(outputDirectory, ".$typeName-", ".tmp")
+    val temporaryFile = Files.createTempFile(outputDirectory, ".$kind-", ".tmp")
     try {
         Files.writeString(temporaryFile, body)
         Files.move(temporaryFile, outputDirectory.resolve(fileName), ATOMIC_MOVE)

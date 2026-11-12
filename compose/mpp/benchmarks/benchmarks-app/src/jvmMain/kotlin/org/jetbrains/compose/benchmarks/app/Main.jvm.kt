@@ -20,10 +20,16 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.benchmarks.reportTargetEnvironment
 
 fun main(args: Array<String>) {
     val startupTiming = captureStartupTiming()
-    val (benchmarkCollectorUrl, testName, benchmarkType, id) = parseArguments(args)
+    if (isEnvironmentCollection(args)) {
+        val (collectorUrl, environmentId) = parseEnvironmentArguments(args)
+        runBlocking { reportTargetEnvironment(collectorUrl, environmentId) }
+        return
+    }
+    val (benchmarkCollectorUrl, testName, benchmarkType, id) = parseBenchmarkArguments(args)
     if (benchmarkType.isRenderBenchmark()) {
         runBlocking(Dispatchers.Main) {
             runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType, id)

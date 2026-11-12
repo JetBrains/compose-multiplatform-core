@@ -322,7 +322,7 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
                                 browserPath,
                                 kind,
                                 device,
-                                listOf("http://127.0.0.1:$port/reports", name, mode, id),
+                                listOf(mode, id, "http://127.0.0.1:$port/reports", name),
                                 server?.url,
                                 log
                             ) { process ->

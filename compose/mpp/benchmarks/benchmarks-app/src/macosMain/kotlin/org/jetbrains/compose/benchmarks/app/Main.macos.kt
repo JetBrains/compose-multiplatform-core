@@ -18,6 +18,7 @@ package org.jetbrains.compose.benchmarks.app
 
 import androidx.compose.ui.window.Window
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.benchmarks.reportTargetEnvironment
 import platform.AppKit.NSApplication
 import platform.AppKit.NSApplicationActivationPolicy
 import platform.AppKit.NSApplicationDelegateProtocol
@@ -25,7 +26,12 @@ import platform.darwin.NSObject
 
 fun main(args: Array<String>) {
     val startupTiming = captureStartupTiming()
-    val (benchmarkCollectorUrl, testName, benchmarkType, id) = parseArguments(args)
+    if (isEnvironmentCollection(args)) {
+        val (collectorUrl, environmentId) = parseEnvironmentArguments(args)
+        runBlocking { reportTargetEnvironment(collectorUrl, environmentId) }
+        return
+    }
+    val (benchmarkCollectorUrl, testName, benchmarkType, id) = parseBenchmarkArguments(args)
     if (benchmarkType.isRenderBenchmark()) {
         runBlocking {
             runRenderBenchmark(benchmarkCollectorUrl, testName, benchmarkType, id)

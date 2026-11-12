@@ -12,10 +12,10 @@
             <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="A93A953629CC810C00F8E227" BuildableName="BenchmarksIosApp.app" BlueprintName="BenchmarksIosApp" ReferencedContainer="container:BenchmarksIosApp.xcodeproj"/>
         </BuildableProductRunnable>
         <CommandLineArguments>
-            <CommandLineArgument argument="http://127.0.0.1:8090/reports" isEnabled="YES"/>
-            <CommandLineArgument argument="LazyGrid" isEnabled="YES"/>
             <CommandLineArgument argument="averageFrame" isEnabled="YES"/>
             <CommandLineArgument argument="run-001" isEnabled="YES"/>
+            <CommandLineArgument argument="http://127.0.0.1:8090/reports" isEnabled="YES"/>
+            <CommandLineArgument argument="LazyGrid" isEnabled="YES"/>
         </CommandLineArguments>
     </LaunchAction>
     <ProfileAction buildConfiguration="Release" shouldUseLaunchSchemeArgsEnv="YES" savedToolIdentifier="" useCustomWorkingDirectory="NO" debugDocumentVersioning="YES">

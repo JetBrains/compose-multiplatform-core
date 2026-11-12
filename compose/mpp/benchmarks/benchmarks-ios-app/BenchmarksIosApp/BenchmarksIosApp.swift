@@ -15,13 +15,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         arguments = Array(ProcessInfo.processInfo.arguments.dropFirst())
-        precondition(arguments.count == 4, "Expected collector URL, test name, benchmark type and id")
-        if Main_iosKt.isRenderBenchmark(benchmarkType: arguments[2]) {
+        if arguments.first == "environment" {
+            Main_iosKt.collectEnvironment(collectorUrl: arguments[2], id: arguments[1])
+            return true
+        }
+        if Main_iosKt.isRenderBenchmark(benchmarkType: arguments[0]) {
             Main_iosKt.runRenderBenchmark(
-                benchmarkCollectorUrl: arguments[0],
-                testName: arguments[1],
-                benchmarkType: arguments[2],
-                id: arguments[3]
+                benchmarkCollectorUrl: arguments[2],
+                testName: arguments[3],
+                benchmarkType: arguments[0],
+                id: arguments[1]
             )
         }
         return true
@@ -41,16 +44,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         let arguments = appDelegate.arguments
-        if Main_iosKt.isRenderBenchmark(benchmarkType: arguments[2]) {
+        if arguments.first == "environment" || Main_iosKt.isRenderBenchmark(benchmarkType: arguments[0]) {
             return
         }
 
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = Main_iosKt.MainViewController(
-            benchmarkCollectorUrl: arguments[0],
-            testName: arguments[1],
-            benchmarkType: arguments[2],
-            id: arguments[3]
+            benchmarkCollectorUrl: arguments[2],
+            testName: arguments[3],
+            benchmarkType: arguments[0],
+            id: arguments[1]
         )
         window.makeKeyAndVisible()
         self.window = window

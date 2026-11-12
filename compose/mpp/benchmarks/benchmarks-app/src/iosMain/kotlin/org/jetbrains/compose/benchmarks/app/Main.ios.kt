@@ -19,6 +19,7 @@ package org.jetbrains.compose.benchmarks.app
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.benchmarks.reportTargetEnvironment
 import platform.UIKit.UIViewController
 
 private var applicationStartupTiming: StartupTiming? = null
@@ -44,6 +45,10 @@ fun MainViewController(
     return ComposeUIViewController {
         App(benchmarkCollectorUrl, testName, type, startupTiming, id)
     }
+}
+
+fun collectEnvironment(collectorUrl: String, id: String) {
+    MainScope().launch { reportTargetEnvironment(collectorUrl, id) }
 }
 
 fun isRenderBenchmark(benchmarkType: String): Boolean =
