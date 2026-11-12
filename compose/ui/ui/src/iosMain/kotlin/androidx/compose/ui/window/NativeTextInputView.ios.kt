@@ -157,8 +157,7 @@ internal class NativeTextInputView(
         if (window != null && !selectionInteractionAttached) {
             // Ensure UIKit text interaction is attached early so that cursor and selection
             // handles can be created and shown when needed.
-            this.addInteraction(selectionInteraction)
-            selectionInteractionAttached = true
+            attachSelectionInteractionIfNeeded()
         }
     }
 
@@ -171,11 +170,17 @@ internal class NativeTextInputView(
         val result = super.becomeFirstResponder()
 
         if (!isFirstResponder && this.isFirstResponder()) {
-            this.addInteraction(selectionInteraction)
+            this.attachSelectionInteractionIfNeeded()
             this.activateTextInputInteractionIfNeeded()
         }
 
         return result
+    }
+
+    private fun attachSelectionInteractionIfNeeded() {
+        if (selectionInteractionAttached) return
+        this.addInteraction(selectionInteraction)
+        selectionInteractionAttached = true
     }
 
     override fun resignFirstResponder(): Boolean {
