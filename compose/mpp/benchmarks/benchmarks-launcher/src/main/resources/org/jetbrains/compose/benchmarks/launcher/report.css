@@ -14,6 +14,17 @@ h1 { margin: 0; font-size: 26px; }
 h2 { margin: 28px 0 12px; }
 h3 { margin: 0 0 12px; font-size: 16px; }
 p { margin: 10px 0; }
+.launcher-command-label { margin: 12px 0 6px; font-size: 12px; color: #617089; }
+.launcher-command {
+    margin: 0 0 18px;
+    padding: 10px 14px;
+    border: 1px solid #dce1ea;
+    border-radius: 8px;
+    background: #f5f7fb;
+    font-size: 13px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
 .control-row {
     display: flex;
     align-items: center;
@@ -56,6 +67,31 @@ p { margin: 10px 0; }
     outline: 2px solid #1849ab;
     outline-offset: 2px;
 }
+#environment { margin-top: 18px; }
+#environment h2 { margin: 0 0 10px; font-size: 17px; }
+.environment-scroll {
+    overflow-x: auto;
+    border: 1px solid #dce1ea;
+    border-radius: 10px;
+}
+.environment-scroll:focus-visible { outline: 2px solid #1849ab; outline-offset: 2px; }
+.environment-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.environment-table th, .environment-table td {
+    padding: 8px 14px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid #e9edf4;
+}
+.environment-table thead { background: #edf2fa; }
+.environment-table thead th { min-width: 210px; }
+.environment-table thead th:first-child { min-width: 190px; }
+.environment-table thead small { display: block; color: #617089; font-weight: 400; }
+.environment-table tbody th[scope="row"] { width: 240px; color: #4c5970; font-weight: 500; }
+.environment-table td { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 520px; }
+.environment-table .environment-group { background: #f5f7fb; color: #1849ab; }
+.environment-table .environment-warning { background: #fff6e4; }
+.environment-table tr:last-child th, .environment-table tr:last-child td { border-bottom: 0; }
+.environment-note, .environment-empty { font-size: 12px; color: #617089; margin: 8px 0 0; }
 .kotlin-filter {
     margin: 20px 0;
     padding: 0;

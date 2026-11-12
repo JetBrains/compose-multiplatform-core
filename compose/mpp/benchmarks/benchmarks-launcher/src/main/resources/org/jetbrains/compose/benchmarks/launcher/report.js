@@ -11,7 +11,8 @@
     const message = document.getElementById('message');
     const modes = ['startup', 'realFrames', 'averageFrame', 'fps'];
     const distinct = values => [...new Set(values)];
-    const kotlinVersions = distinct(report.runs.map(run => run.kotlin));
+    const configurations = report.configurations ?? [];
+    const kotlinVersions = distinct([...report.runs, ...configurations].map(run => run.kotlin));
     const hidden = new Set();
     let instances = [];
     let distributionCards = [];
@@ -99,7 +100,7 @@
     }
 
     function updateBrowsers() {
-        const runs = report.runs.filter(run => run.target === target.dataset.value);
+        const runs = [...configurations, ...report.runs].filter(run => run.target === target.dataset.value);
         browserControl.hidden = !['js', 'wasmJs'].includes(target.dataset.value);
         options(browser, distinct(runs.map(run => run.browser).filter(Boolean)), updateModes,
             value => runs.find(run => run.browser === value).browserName || value);
@@ -107,10 +108,89 @@
     }
 
     function updateModes() {
+        renderEnvironment();
         options(mode, modes.filter(type => report.runs.some(run =>
             selectedPlatform(run) && run.type === type && run.measurements.length > 0
         )), updateTests);
         updateTests();
+    }
+
+    function renderEnvironment() {
+        const container = document.getElementById('environment');
+        container.replaceChildren();
+        const selected = configurations.filter(selectedPlatform);
+        element('h2', 'Build and target environment', container);
+        if (!selected.length) {
+            element('p', 'Environment metadata is unavailable in this report.', container, 'environment-empty');
+            return;
+        }
+        const labels = {
+            configuration: 'Configuration', launcher: 'Build and launch', runtime: 'Target process',
+            target: 'Target', kotlinVersion: 'Kotlin', composeVersion: 'Compose', localCompose: 'Local Compose',
+            composeCorePath: 'Core checkout', browser: 'Browser', kind: 'Family', executable: 'Executable',
+            capturedAt: 'Launcher snapshot (UTC)', buildProfile: 'Build profile', optimization: 'Optimization',
+            coreCommit: 'Core commit', coreDirty: 'Core has uncommitted changes', browserVersion: 'Browser version',
+            simulator: 'Simulator', host: 'Host', xcodeVersion: 'Xcode', sdkVersion: 'SDK version',
+            osName: 'OS', osVersion: 'OS version',
+            architecture: 'Process architecture', cpuModel: 'CPU', availableProcessors: 'Available logical processors',
+            physicalMemoryBytes: 'Physical memory (process-reported)', id: 'ID', name: 'Name', state: 'Initial state',
+            deviceTypeIdentifier: 'Device type', runtimeIdentifier: 'Runtime identifier', runtimeVersion: 'Runtime version',
+            runtimeBuild: 'Runtime build', schemaVersion: 'Schema version', deviceModel: 'Hardware model',
+            simulatorModel: 'Simulated device model', gpuName: 'GPU / renderer', jvmName: 'JVM', jvmVersion: 'JVM version',
+            jvmVendor: 'JVM vendor', javaVersion: 'Java version', jvmArguments: 'JVM arguments', maxHeapBytes: 'Maximum JVM heap',
+            userAgent: 'User agent', browserPlatform: 'Browser platform', deviceMemoryGiB: 'Approximate browser memory (GiB)',
+            screenWidth: 'Screen width (CSS px)', screenHeight: 'Screen height (CSS px)', devicePixelRatio: 'Device pixel ratio',
+            warnings: 'Warnings',
+        };
+        const flatten = (value, path = [], rows = new Map()) => {
+            if (value == null || (Array.isArray(value) && !value.length)) return rows;
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                Object.entries(value).forEach(([key, child]) => flatten(child, [...path, key], rows));
+            } else {
+                let text;
+                if (Array.isArray(value)) text = value.join('\n');
+                else if (typeof value === 'boolean') text = value ? 'Yes' : 'No';
+                else if (path.at(-1).endsWith('Bytes') && typeof value === 'number') {
+                    text = (value / 1024 ** 3).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                        + ' GiB (' + value.toLocaleString() + ' bytes)';
+                } else text = String(value);
+                rows.set(path.join('.'), text);
+            }
+            return rows;
+        };
+        const values = selected.map(config => flatten(config.metadata));
+        const keys = distinct(values.flatMap(rows => [...rows.keys()]));
+        const scroll = element('div', null, container, 'environment-scroll');
+        scroll.tabIndex = 0;
+        scroll.setAttribute('role', 'region');
+        scroll.setAttribute('aria-label', 'Environment comparison table');
+        const table = element('table', null, scroll, 'environment-table');
+        const head = element('tr', null, element('thead', null, table));
+        element('th', 'Parameter', head).scope = 'col';
+        selected.forEach(config => {
+            const th = element('th', null, head);
+            th.scope = 'col';
+            element('span', 'Kotlin ' + config.kotlin, th);
+            element('small', 'Compose ' + config.compose, th);
+        });
+        const body = element('tbody', null, table);
+        for (const group of distinct(keys.map(key => key.split('.')[0]))) {
+            const groupRow = element('tr', null, body, 'environment-group');
+            const groupHeader = element('th', labels[group] || group, groupRow);
+            groupHeader.colSpan = selected.length + 1;
+            for (const key of keys.filter(key => key.split('.')[0] === group)) {
+                const row = element('tr', null, body, /\.(warnings|error)$/.test(key) ? 'environment-warning' : '');
+                const path = key.split('.').slice(1);
+                const name = path.map(part => labels[part] || part).join(' / ') || labels[group];
+                element('th', name, row).scope = 'row';
+                const cells = values.map(rows => rows.get(key) ?? '—');
+                if (cells.every(value => value === cells[0])) {
+                    element('td', cells[0], row).colSpan = selected.length;
+                } else cells.forEach(value => element('td', value, row));
+            }
+        }
+        element('p', 'Memory and CPU values describe what the process can see. Browser memory is approximate; '
+            + 'simulator hardware may describe its host. JVM heap is not physical RAM.', container, 'environment-note');
     }
 
     function updateTests() {
@@ -333,6 +413,6 @@
         const list = element('ul', null, details);
         report.warnings.forEach(warning => element('li', warning, list));
     }
-    options(target, distinct(report.runs.filter(run => run.measurements.length > 0).map(run => run.target)), updateBrowsers);
+    options(target, distinct([...configurations, ...report.runs].map(run => run.target)), updateBrowsers);
     updateBrowsers();
 })();

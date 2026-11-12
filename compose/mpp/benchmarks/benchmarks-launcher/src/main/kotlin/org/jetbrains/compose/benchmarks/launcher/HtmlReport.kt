@@ -54,12 +54,38 @@ internal data class ChartRun(
 )
 
 @Serializable
-private data class ChartReport(val composeVersions: List<String>, val runs: List<ChartRun>, val warnings: List<String>)
+private data class ChartConfiguration(
+    val target: String,
+    val kotlin: String,
+    val compose: String,
+    val browser: String?,
+    val browserName: String?,
+    val metadata: JsonObject,
+)
+
+@Serializable
+private data class ChartReport(
+    val composeVersions: List<String>,
+    val runs: List<ChartRun>,
+    val warnings: List<String>,
+    val configurations: List<ChartConfiguration>,
+)
 
 /** Reads only this session. No server is needed to open the resulting file. */
 internal fun generateHtmlReport(session: Path, composeVersions: List<String>): Path {
     val warnings = mutableListOf<String>()
+    val launcherCommand = try {
+        val file = session.resolve("session.json")
+        if (Files.exists(file)) {
+            reportJson.parseToJsonElement(file.readText()).jsonObject.getValue("launcherCommand").jsonArray
+                .joinToString(" ") { shellArgument(it.jsonPrimitive.content) }
+        } else null
+    } catch (error: Exception) {
+        warnings.add("Cannot read launcher command: "+error.message)
+        null
+    }
     val runs = mutableListOf<ChartRun>()
+    val configurations = mutableListOf<ChartConfiguration>()
     Files.walk(session, 4).use { paths ->
         paths.filter { it.fileName.toString() == "summary.json" && Files.isRegularFile(it) }
             .sorted().forEach { summaryPath ->
@@ -81,6 +107,34 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                     summary["error"]?.jsonPrimitive?.contentOrNull?.let {
                         warnings.add("$configuration / Kotlin $kotlin / Compose $compose: $it")
                     }
+                    val collection = summary["environment"] as? JsonObject
+                    val environment = try {
+                        collection?.get("report")?.jsonPrimitive?.contentOrNull?.let { relative ->
+                            val file = summaryPath.parent.resolve(relative).normalize()
+                            require(file.startsWith(summaryPath.parent)) { "environment path outside configuration" }
+                            val document = reportJson.parseToJsonElement(file.readText()).jsonObject
+                            require(document["id"] == collection["id"] && "runtime" in document && "type" !in document) {
+                                "environment does not match collection"
+                            }
+                            document
+                        }
+                    } catch (error: Exception) {
+                        warnings.add("$configuration environment: ${error.message}")
+                        null
+                    }
+                    collection?.get("error")?.jsonPrimitive?.contentOrNull?.let {
+                        warnings.add("$configuration environment: $it")
+                    }
+                    val metadata = buildJsonObject {
+                        put("configuration", JsonObject(summary.filterKeys {
+                            it in listOf("target", "kotlinVersion", "composeVersion", "localCompose", "composeCorePath", "browser")
+                        }))
+                        (summary["launcherEnvironment"] as? JsonObject)?.let {
+                            put("launcher", JsonObject(it.filterKeys { key -> key != "launchCommand" }))
+                        }
+                        put("runtime", environment ?: JsonPrimitive("Not collected"))
+                    }
+                    configurations.add(ChartConfiguration(target, kotlin, compose, browser, browserName, metadata))
                     for (element in summary.getValue("runs").jsonArray) {
                         val run = element.jsonObject
                         val (measurements, distributions) = try {
@@ -109,7 +163,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                 }
             }
     }
-    val payload = reportJson.encodeToString(ChartReport(composeVersions, runs, warnings))
+    val payload = reportJson.encodeToString(ChartReport(composeVersions, runs, warnings, configurations))
         // JSON lives in a script raw-text element, not in an HTML text node.
         .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     val html = createHTML().html {
@@ -129,6 +183,10 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
             header {
                 h1 { +"Compose benchmark reports" }
                 p { +"Session: ${session.fileName}" }
+                launcherCommand?.let { command ->
+                    p(classes = "launcher-command-label") { +"Launcher command" }
+                    pre(classes = "launcher-command") { code { +command } }
+                }
                 div(classes = "control-row") {
                     span { id = "target-label"; +"Target" }
                     div(classes = "segmented-control") {
@@ -137,8 +195,6 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                         attributes["aria-labelledby"] = "target-label"
                     }
                 }
-            }
-            main {
                 div(classes = "control-row") {
                     id = "browser-control"
                     attributes["hidden"] = ""
@@ -149,6 +205,12 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                         attributes["aria-labelledby"] = "browser-label"
                     }
                 }
+                section {
+                    id = "environment"
+                    attributes["aria-label"] = "Build and target environment"
+                }
+            }
+            main {
                 div(classes = "control-row") {
                     span { id = "mode-label"; +"Measurement mode" }
                     div(classes = "segmented-control") {
@@ -183,6 +245,10 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
     }
     return session.resolve("index.html").also { it.writeText("<!DOCTYPE html>\n$html\n") }
 }
+
+private fun shellArgument(value: String): String =
+    if (value.matches(Regex("[A-Za-z0-9_./:=,@%+-]+"))) value
+    else "'" + value.replace("'", "'\"'\"'") + "'"
 
 private fun reportResource(name: String): String =
     requireNotNull(ChartRun::class.java.getResource("/org/jetbrains/compose/benchmarks/launcher/$name")) {
