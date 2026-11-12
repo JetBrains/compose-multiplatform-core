@@ -67,7 +67,7 @@ internal fun runTextFieldTest(
         for ((newContextMenuEnabled, usingNativeTextInput, type) in variations) {
             ComposeFoundationFlags.isNewContextMenuEnabled = newContextMenuEnabled
             println("Debug: newContextMenuEnabled=$newContextMenuEnabled, usingNativeTextInput=$usingNativeTextInput, textFieldType=$type")
-            runUIKitInstrumentedTest {
+            runUIKitInstrumentedTest(useHostingView = true) {
                 testBlock(newContextMenuEnabled, usingNativeTextInput, type)
             }
         }
