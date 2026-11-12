@@ -51,6 +51,7 @@ internal data class ChartRun(
     val distributions: List<ChartDistribution>,
     val browser: String? = null,
     val browserName: String? = null,
+    val parameters: JsonObject = JsonObject(emptyMap()),
 )
 
 @Serializable
@@ -139,6 +140,10 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                     configurations.add(ChartConfiguration(target, kotlin, compose, browser, browserName, metadata))
                     for (element in summary.getValue("runs").jsonArray) {
                         val run = element.jsonObject
+                        var parameters = buildJsonObject {
+                            put("type", run.getValue("type"))
+                            for (key in listOf("repeat", "timeoutSeconds")) summary[key]?.let { put(key, it) }
+                        }
                         val (measurements, distributions) = try {
                             run["report"]?.jsonPrimitive?.contentOrNull?.let { relative ->
                                 val file = summaryPath.parent.resolve(relative).normalize()
@@ -147,6 +152,13 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                                 require(listOf("id", "name", "type").all { report[it] == run[it] }) {
                                     "report does not match run"
                                 }
+                                // Keep input parameters, not ids, measurements, or per-frame samples.
+                                parameters = JsonObject(parameters + report.filterKeys {
+                                    it !in setOf(
+                                        "id", "name", "timeToMain", "timeToFirstFrame", "timeToNthFrame",
+                                        "frameTimes", "totalDuration", "averageFrameInfo", "frames",
+                                    )
+                                })
                                 reportMeasurements(report) to reportDistributions(report)
                             } ?: (emptyList<ChartMeasurement>() to emptyList<ChartDistribution>())
                         } catch (error: Exception) {
@@ -157,7 +169,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                             target, kotlin, compose, run.requiredText("name"), run.requiredText("type"),
                             run.getValue("iteration").jsonPrimitive.int, run.requiredText("status"),
                             run["error"]?.jsonPrimitive?.contentOrNull, measurements, distributions,
-                            browser, browserName,
+                            browser, browserName, parameters,
                         ))
                     }
                 } catch (error: Exception) {

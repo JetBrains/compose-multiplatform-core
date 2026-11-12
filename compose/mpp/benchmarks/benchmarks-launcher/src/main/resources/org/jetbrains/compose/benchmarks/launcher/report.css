@@ -109,6 +109,22 @@ p { margin: 10px 0; }
 .kotlin-option input { margin: 0; width: 16px; height: 16px; accent-color: #1849ab; }
 .color-swatch { width: 14px; height: 14px; border-radius: 2px; }
 #message:empty { display: none; }
+.test-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 28px 0 12px; }
+.test-heading h2 { margin: 0; }
+.test-info-button {
+    padding: 3px 10px;
+    border: 1px solid #c7d5ec;
+    border-radius: 6px;
+    background: #edf2fa;
+    color: #1849ab;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.test-info-button:hover, .test-info-button[aria-expanded="true"] { background: #dce7f8; }
+.test-info-button:focus-visible { outline: 2px solid #1849ab; outline-offset: 2px; }
+.test-parameters { margin-bottom: 16px; }
+.test-parameters-table { background: #fff; }
 .chart-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
