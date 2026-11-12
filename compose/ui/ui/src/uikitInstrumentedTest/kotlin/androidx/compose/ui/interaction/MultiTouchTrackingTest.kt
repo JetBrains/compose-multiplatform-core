@@ -168,8 +168,8 @@ class MultiTouchTrackingTest {
         assertEquals(1, touchesDown)
         assertEquals(0, touchesUp)
 
-        tap1.dragBy(dx = 20.dp, duration = 0.1.seconds)
-        tap2.dragBy(dx = 20.dp, duration = 0.1.seconds)
+        tap1.dragBy(dx = 20.dp)
+        tap2.dragBy(dx = 20.dp)
 
         tap1.up()
         tap2.up()
