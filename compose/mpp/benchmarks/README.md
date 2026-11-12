@@ -166,11 +166,12 @@ results by versions and target:
 ```text
 <date>-<time>/
     index.html             # Interactive charts for this session
+    session.json           # Original launcher arguments
     kotlin(2.4.21)-cmp(1.13.0-beta02)-reports/
         jvm/
             reports/       # JSON reports from all runs
             logs/          # Build, collector, and per-test logs
-            summary.json   # Versions, parameters, statuses, errors, and report paths
+            summary.json   # Versions, build metadata, environment reference, and benchmark runs
 ```
 
 All configurations share the same timestamp directory, each with its own version/target subtree.
@@ -186,7 +187,11 @@ checkout path. Published configurations have `localCompose: false`. Existing res
 
 The app has a separate service mode that collects target-process metadata without creating
 benchmark content, opening a benchmark window, or running measurements. It is not a benchmark type
-and requires no test name. The launcher does not invoke this mode or include its output in HTML yet.
+and requires no test name. The launcher invokes it once per version/target/browser configuration,
+before running benchmarks. The service operation has a separate id and log and is not counted as
+a test or included in benchmark charts. Its JSON path and receive time are recorded in
+`summary.json` under `environment`. Collection failures are recorded there without discarding
+benchmark results.
 
 Start the collector, then invoke the app with its environment endpoint:
 

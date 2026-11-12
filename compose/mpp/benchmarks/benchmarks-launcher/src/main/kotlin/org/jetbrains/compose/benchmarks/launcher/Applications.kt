@@ -16,6 +16,7 @@
 
 package org.jetbrains.compose.benchmarks.launcher
 
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import java.net.URLEncoder
 import java.nio.file.Files
@@ -71,7 +72,16 @@ internal fun browserKind(browser: Path): String {
     }
 }
 
-internal data class Simulator(val id: String, val state: String)
+@Serializable
+internal data class Simulator(
+    val id: String,
+    val state: String,
+    val name: String,
+    val deviceTypeIdentifier: String?,
+    val runtimeIdentifier: String,
+    val runtimeVersion: String? = null,
+    val runtimeBuild: String? = null,
+)
 
 internal fun selectSimulator(selection: String?, processes: Processes): Simulator {
     val data = Json.parseToJsonElement(
@@ -81,14 +91,20 @@ internal fun selectSimulator(selection: String?, processes: Processes): Simulato
             )
         )
     ).jsonObject.getValue("devices").jsonObject
-    val devices = data.values.flatMap { it.jsonArray }.map { it.jsonObject }
+    val devices = data.flatMap { (runtime, devices) ->
+        devices.jsonArray.map { JsonObject(it.jsonObject + ("runtimeIdentifier" to JsonPrimitive(runtime))) }
+    }
         .filter { it["isAvailable"]?.jsonPrimitive?.booleanOrNull == true }
     val matches = devices.filter {
         if (selection == null) it.text("state") == "Booted"
         else selection in listOf(it.text("udid"), it.text("name"))
     }
     check(matches.size == 1) { "specify --simulator UUID, or boot exactly one simulator before running" }
-    return Simulator(matches.single().text("udid"), matches.single().text("state"))
+    val device = matches.single()
+    return Simulator(
+        device.text("udid"), device.text("state"), device.text("name"),
+        device["deviceTypeIdentifier"]?.jsonPrimitive?.contentOrNull, device.text("runtimeIdentifier"),
+    )
 }
 
 internal fun JsonObject.text(key: String): String = getValue(key).jsonPrimitive.content
@@ -167,12 +183,10 @@ internal fun runApplication(
     if (target == "ios") {
         val device = requireNotNull(simulator).id
         try {
-            processes.start(
-                listOf(
-                    "xcrun", "simctl", "launch", "--console", "--terminate-running-process",
-                    device, bundleId
-                ) + parameters, log
-            ).use { waitForReport(it.process) }
+            val command = listOf(
+                "xcrun", "simctl", "launch", "--console", "--terminate-running-process", device, bundleId
+            ) + parameters
+            processes.start(command, log).use { waitForReport(it.process) }
         } finally {
             processes.run(
                 listOf("xcrun", "simctl", "terminate", device, bundleId),
@@ -197,7 +211,8 @@ internal fun runApplication(
     val url = "$webUrl/?$query"
     if (kind == "safari") {
         requireSafariClosed(browser, processes)
-        processes.start(listOf("open", "-W", "-a", safariBundle(browser).toString(), url), log)
+        val command = listOf("open", "-W", "-a", safariBundle(browser).toString(), url)
+        processes.start(command, log)
             .use {
                 try {
                     waitForReport(it.process)
@@ -223,8 +238,12 @@ internal fun runApplication(
             )
             listOf("--no-remote", "--profile", profile.toString(), "--new-window")
         }
-        processes.start(listOf(browser.toString()) + arguments + url, log)
-            .use { waitForReport(it.process) }
+        val command = buildList {
+            addAll(listOf(browser.toString()))
+            addAll(arguments)
+            add(url)
+        }
+        processes.start(command, log).use { waitForReport(it.process) }
     } finally {
         deleteTree(profile)
     }

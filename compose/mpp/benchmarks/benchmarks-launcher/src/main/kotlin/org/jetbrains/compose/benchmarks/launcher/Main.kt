@@ -47,7 +47,7 @@ private val cases = listOf(
 private val modes = listOf("averageFrame", "fps", "realFrames", "startup")
 private val json = Json { prettyPrint = true; encodeDefaults = true; explicitNulls = false }
 
-fun main(args: Array<String>) = Launcher().main(browserArguments(args))
+fun main(args: Array<String>) = Launcher(args.toList()).main(browserArguments(args))
 
 // Clikt's varargValues stops at punctuation, including '/' in absolute browser paths.
 // Feed each browser as an attached option value instead, preserving spaces inside paths.
@@ -71,7 +71,7 @@ private fun browserArguments(args: Array<String>): List<String> = buildList {
     }
 }
 
-private class Launcher : CliktCommand(name = "benchmarks-launcher") {
+private class Launcher(private val invocationArguments: List<String>) : CliktCommand(name = "benchmarks-launcher") {
     private val targets by option("--target", help = "Targets: jvm, macos, js, wasmJs, ios; space/comma separated")
         .varargValues().required()
     private val composeVersions by option(
@@ -154,6 +154,9 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
         val base = outputDir ?: out.resolve("benchmark-reports")
         Files.createDirectories(base)
         val session = Files.createDirectory(base.resolve(stamp))
+        session.resolve("session.json").writeText(
+            json.encodeToString(Session(listOf("benchmarks-launcher") + invocationArguments)) + "\n"
+        )
         val summaries = mutableListOf<Summary>()
         val activeProcesses = AtomicReference<Processes?>()
         val shuttingDown = AtomicBoolean()
@@ -260,6 +263,10 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
                     requireSafariClosed(browserPath, processes)
                 }
             }
+            summary.launcherEnvironment = collectLauncherEnvironment(
+                target, summary.composeCorePath?.let { Path.of(it) }, browserPath, device, processes
+            )
+            summary.save(directory)
             ensureFreePort(port)
             build(
                 root, out, logs, device, processes, summary.kotlinVersion,
@@ -299,6 +306,29 @@ private class Launcher : CliktCommand(name = "benchmarks-launcher") {
                     logs.resolve("web-server.log")
                 ) else null
                 server.use {
+                    val environment = EnvironmentCollection(UUID.randomUUID().toString())
+                    summary.environment = environment
+                    summary.save(directory)
+                    println("Collecting target environment...")
+                    try {
+                        val started = System.nanoTime()
+                        runApplication(
+                            processes, target, app, browserPath, kind, device,
+                            listOf("environment", environment.id, "http://127.0.0.1:$port/environment"),
+                            server?.url, logs.resolve("environment.log"),
+                        ) { process ->
+                            val report = waitForEnvironment(reports, environment.id, started, timeout, process, collector.process)
+                            environment.report = directory.relativize(report).toString()
+                            environment.collectedAt = Instant.now().toString()
+                        }
+                    } catch (error: InterruptedException) {
+                        throw error
+                    } catch (error: Exception) {
+                        environment.error = error.message ?: error.toString()
+                        System.err.println("Cannot collect target environment: ${environment.error}")
+                    } finally {
+                        summary.save(directory)
+                    }
                     val total = summary.tests.size * summary.modes.size * repeat
                     for (name in summary.tests) for (mode in summary.modes) for (iteration in 1..repeat) {
                         if (Thread.interrupted()) throw InterruptedException()
@@ -497,6 +527,27 @@ private fun waitForReport(
     }
 }
 
+private fun waitForEnvironment(
+    reports: Path, id: String, started: Long, timeout: Double, application: Process, collector: Process,
+): Path {
+    fun find(): Path? = reports.listDirectoryEntries("$id-environment-*.json").firstOrNull()?.also {
+        val document = Json.parseToJsonElement(it.readText()).jsonObject
+        check(document.text("id") == id && "runtime" in document && "type" !in document) {
+            "unexpected environment document: $it"
+        }
+    }
+    while (true) {
+        find()?.let { return it }
+        check(collector.isAlive) { "collector exited; see logs/collector.log" }
+        check((System.nanoTime() - started) / 1e9 < timeout) { "no environment before collection timeout" }
+        if (!application.isAlive) return find() ?: error("application exited without environment data")
+        Thread.sleep(100)
+    }
+}
+
+@Serializable
+private data class Session(val launcherCommand: List<String>)
+
 @Serializable
 private data class Summary(
     val target: String,
@@ -510,6 +561,8 @@ private data class Summary(
     val composeCorePath: String? = null,
     val runs: MutableList<RunResult> = mutableListOf(),
     var browser: Browser? = null,
+    var launcherEnvironment: LauncherEnvironment? = null,
+    var environment: EnvironmentCollection? = null,
     var error: String? = null,
 ) {
     fun save(directory: Path) =
