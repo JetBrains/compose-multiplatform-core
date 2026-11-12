@@ -141,8 +141,7 @@ internal class ComposeWebSemanticsListener(
             }
         }
 
-        // Event delegation: all nodes delegate to global accessibility action listeners.
-        webSemanticsRoot.addEventListener("click", onClick)
+        // Slider key events are delegated to the accessibility root.
         webSemanticsRoot.addEventListener("keydown", onKeyDown)
     }
 
@@ -186,15 +185,20 @@ internal class ComposeWebSemanticsListener(
     // Responsible for scroll synchronization between Compose and Dom tree
     private val a11YScrollController = A11YScrollController(idToA11YNode, a11yNodeToSemanticsNode)
 
+    private val a11YFocusRecovery = A11YFocusRecovery(webSemanticsRoot, a11yNodeToSemanticsNode)
+
     /**
-     * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
+     * Shared click handler attached directly to nodes with SemanticsActions.OnClick so browsers
+     * expose each clickable node as an accessibility action target.
      * It's expected to be triggered by A11Y tools and tests (element.click()), not by pointer input.
      */
     private val onClick: (Event) -> Unit = onClick@ { event ->
-        val semanticsNode = (event.target as? HTMLElement)
+        val semanticsNode = (event.currentTarget as? HTMLElement)
             ?.let { a11yNodeToSemanticsNode[it] }
             ?: return@onClick
 
+        // A nested control handles its own activation without also activating its ancestors.
+        event.stopPropagation()
         val config = semanticsNode.config
 
         if (!config.contains(SemanticsProperties.Disabled) &&
@@ -228,6 +232,9 @@ internal class ComposeWebSemanticsListener(
         targetParentToChildren.clear()
         targetChildToParent.clear()
 
+        // Property updates and structural changes can cause the browser to drop DOM focus. Ensure focus recovery:
+        val focusBeforeSync = a11YFocusRecovery.captureFocus()
+
         semanticsOwners.forEach {
             syncSemanticsWithWebA11Y(it)
         }
@@ -250,6 +257,7 @@ internal class ComposeWebSemanticsListener(
         removedIds.forEach { id ->
             val htmlNode = idToA11YNode.remove(id)
             if (htmlNode != null) {
+                htmlNode.removeEventListener("click", onClick)
                 a11yNodeToSemanticsNode.remove(htmlNode)
             }
             a11YScrollController.onNodeRemoved(id, htmlNode)
@@ -257,6 +265,11 @@ internal class ComposeWebSemanticsListener(
 
         a11YScrollController.applyScrollOffsets()
         updateInertRoots()
+
+        if (focusBeforeSync != null) {
+            // Once the sync completes, restore the focus if necessary:
+            a11YFocusRecovery.restoreFocus(focusBeforeSync)
+        }
     }
 
     // The last (top) root is never inert.
@@ -464,6 +477,12 @@ internal class ComposeWebSemanticsListener(
 
         val disabled = SemanticsProperties.Disabled in config
 
+        if (config.contains(SemanticsActions.OnClick)) {
+            htmlNode.addEventListener("click", onClick)
+        } else {
+            htmlNode.removeEventListener("click", onClick)
+        }
+
         if (config.contains(SemanticsProperties.EditableText)) {
             val editableText = config[SemanticsProperties.EditableText].text
            
@@ -525,7 +544,8 @@ internal class ComposeWebSemanticsListener(
             config.contains(SemanticsActions.SetProgress)
         ) {
             htmlNode.setAttribute("tabindex", "0")
-        } else {
+        } else if (htmlNode.getAttribute("tabindex") != "-1") {
+            // Remove obsolete tab stops without clearing programmatic focusability (tabindex="-1").
             htmlNode.removeAttribute("tabindex")
         }
 
@@ -737,13 +757,13 @@ internal class ComposeWebSemanticsListener(
     internal fun stop() {
         if (!hasStarted || hasStopped) return
 
-        webSemanticsRoot.removeEventListener("click", onClick)
         webSemanticsRoot.removeEventListener("keydown", onKeyDown)
         a11YScrollController.clear()
 
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
         dfsA11YReachabilities.clear()
+        idToA11YNode.forEach { _, htmlNode -> htmlNode.removeEventListener("click", onClick) }
         idToA11YNode.clear()
         a11yNodeToSemanticsNode.clear()
         targetParentToChildren.clear()
