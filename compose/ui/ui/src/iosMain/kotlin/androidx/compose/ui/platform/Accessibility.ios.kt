@@ -18,6 +18,8 @@ package androidx.compose.ui.platform
 
 import androidx.collection.MutableIntSet
 import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.runtime.MonotonicFrameClock
+import androidx.compose.ui.animation.durationScale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.HitTestResult
@@ -60,7 +62,6 @@ import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
-import androidx.compose.ui.window.DisplayLinkListener
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 import kotlin.math.min
@@ -78,6 +79,7 @@ import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -1166,8 +1168,6 @@ internal class AccessibilityMediator(
         return rectInWindow.toDpRect().toRect(view.density)
     }
 
-    private var displayLinkListener: DisplayLinkListener? = null
-
     private var scrollJob: Job? = null
 
     private val focusObserver = AccessibilityFocusedElementObserver { focusedElement ->
@@ -1181,7 +1181,7 @@ internal class AccessibilityMediator(
     }
 
     private fun scrollToAccessibilityElement(element: NSObject) {
-        val listener = displayLinkListener ?: return
+        if (!isAccessibilityActive) return
 
         val scrollableContainer = findFirstAccessibilityElementInHierarchy(element) {
             it.node.semanticsNode.canScroll
@@ -1196,7 +1196,9 @@ internal class AccessibilityMediator(
                     element.accessibilityFrame.toDpRect()
                         .toRect(scrollableContainer.node.semanticsNode.layoutNode.density)
             }
-            scrollJob = CoroutineScope(coroutineContext + listener.frameClock).launch {
+            val frameClock = scrollableContainer.node.semanticsNode.layoutNode.owner
+                ?.coroutineContext?.get(MonotonicFrameClock) ?: return
+            scrollJob = CoroutineScope(coroutineContext + frameClock).launch {
                 scrollableContainer.node.semanticsNode.scrollToCenterRectIfNeeded(
                     targetRect = rect,
                     safeAreaRectInWindow = safeAreaRectInWindow
@@ -1265,7 +1267,8 @@ internal class AccessibilityMediator(
             // Will exit on CancellationException from within await on `invalidationChannel.receive()`
             // when [job] is cancelled
             while (true) {
-                hasPendingInvalidations = false
+                @OptIn(ExperimentalCoroutinesApi::class)
+                hasPendingInvalidations = !invalidationChannel.isEmpty
                 invalidationChannel.receive()
                 hasPendingInvalidations = true
 
@@ -1281,23 +1284,23 @@ internal class AccessibilityMediator(
                             sync()
                         }
                         accessibilityDebugLogger?.log("AccessibilityMediator.sync took $time")
+
+                        if (keyboardFocusedElementKey != null) {
+                            // Do nothing.
+                            // When full keyboard access is enabled, the selection rectangle can be updated
+                            // on every frame. To improve the user experience, we should update the
+                            // accessibility tree as quickly as possible.
+                        } else {
+                            // Estimated delay between the iOS Accessibility Engine sync intervals.
+                            // There is no reason to post change notifications more frequently because the
+                            // iOS Accessibility Engine will ignore them.
+                            delay((100.0 * coroutineContext.durationScale()).milliseconds)
+                        }
                     }
                 } else if (root.element != null) {
                     refocusKeyboardElementIfNeeded()
                     root.element = null
                     AccessibilityNotification(UIAccessibilityLayoutChangedNotification).postNotification()
-                }
-
-                if (keyboardFocusedElementKey != null) {
-                    // Do nothing.
-                    // When full keyboard access is enabled, the selection rectangle can be updated
-                    // on every frame. To improve the user experience, we should update the
-                    // accessibility tree as quickly as possible.
-                } else {
-                    // Estimated delay between the iOS Accessibility Engine sync intervals.
-                    // There is no reason to post change notifications more frequently because the
-                    // iOS Accessibility Engine will ignore them.
-                    delay(100.milliseconds)
                 }
             }
         }
@@ -1411,9 +1414,6 @@ internal class AccessibilityMediator(
     }
 
     private fun cleanUp() {
-        displayLinkListener?.invalidate()
-        displayLinkListener = null
-
         disableAccessibilityJob = null
         isAccessibilityActive = false
 
@@ -1695,11 +1695,6 @@ internal class AccessibilityMediator(
 
         val (element, focusedElementKey, liveRegionAnnouncement) = traverseSemanticsTree(rootSemanticsNode)
         root.element = element
-
-        if (displayLinkListener == null) {
-            displayLinkListener = DisplayLinkListener()
-            displayLinkListener?.start()
-        }
 
         accessibilityDebugLogger?.let {
             debugTraverse(it, view)

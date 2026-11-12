@@ -261,7 +261,7 @@ internal class TooltipAreaTest {
      */
     @Test
     fun tooltipHiddenOnExitFromTooltipEvenIfPointerInsideTooltipAreaWithoutEnterEvent() =
-        runComposeUiTestWithStandardTestDispatcher() {
+        runComposeUiTestWithStandardTestDispatcher {
             setContent {
                 SimpleTooltipArea(
                     tooltipPlacement = TooltipPlacement.ComponentRect(

@@ -135,8 +135,7 @@ class PlatformPrefetchSchedulerTest {
 
     @Test
     fun testRequestReceivesAvailableTimeBeforeNextFrameWhenNotIdle() {
-        var currentTime = 1.0
-        val scheduler = scheduler(currentTime = { currentTime })
+        val scheduler = scheduler(currentTime = { 1.0 })
         val availableTimes = mutableListOf<Long>()
 
         scheduler.scheduleLowPriorityPrefetch(

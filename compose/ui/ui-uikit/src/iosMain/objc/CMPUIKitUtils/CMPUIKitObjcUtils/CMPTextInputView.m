@@ -15,6 +15,14 @@
  */
 
 #import "CMPTextInputView.h"
+#import "CMPProtocolProxy.h"
+
+@protocol CMPTextInputReplacement <NSObject>
+
+- (nullable UITextRange *)range;
+- (nullable NSString *)replacementText;
+
+@end
 
 @interface CMPTextInputView ()
 
@@ -126,6 +134,19 @@
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
+- (void)replace:(NSObject *)replacement {
+    id<CMPTextInputReplacement> proxy =
+        (id<CMPTextInputReplacement>)[[CMPProtocolProxy alloc] initWithObject:replacement protocol:@protocol(CMPTextInputReplacement)];
+
+    NSString *text = proxy.replacementText;
+    UITextRange *range = proxy.range;
+
+    if (![text isKindOfClass:[NSString class]] || ![range isKindOfClass:[UITextRange class]]) {
+        return;
+    }
+    [self replaceRange:range withText:text];
+}
+
 - (void)deleteBackward {
     CMP_ABSTRACT_FUNCTION_CALLED
 }
@@ -136,6 +157,14 @@
 
 - (BOOL)isSecureTextEntry {
     CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (BOOL)isEditable {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (UIWritingToolsResultOptions)allowedWritingToolsResultOptions API_AVAILABLE(ios(18.0)) {
+    return UIWritingToolsResultPlainText;
 }
 
 - (UITextField *)cmp_proxyTextField {
@@ -204,6 +233,16 @@
         for (id<UIInteraction> interaction in self.interactions) {
             if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
                 [((UITextSelectionDisplayInteraction *)interaction) setActivated:NO];
+            }
+        }
+    }
+}
+
+- (void)reloadVisibleEditMenu {
+    if (@available(iOS 16, *)) {
+        for (id<UIInteraction> interaction in self.interactions) {
+            if ([interaction isKindOfClass:[UIEditMenuInteraction class]]) {
+                [((UIEditMenuInteraction *)interaction) reloadVisibleMenu];
             }
         }
     }

@@ -56,6 +56,11 @@ import androidx.compose.ui.util.fastMap
  *
  * 2. Synthetic Press/Release if we send one event with 2 pressed touches without sending 1 pressed
  * touch first. For example, iOS simulator can send 2 touches simultaneously.
+ *
+ * 3. Synthetic Enter, if a Mouse event that isn't a hover event arrives while the pointer isn't
+ * known to be inside, so that Enter/Exit stay paired.
+ * For example, a Press can be the first event in a scene that appeared under the cursor.
+ * Aligned with AndroidComposeView, which sends a simulated hover enter in this case.
  */
 internal class SyntheticEventSender(
     send: (PointerInputEvent) -> PointerEventResult
@@ -79,6 +84,7 @@ internal class SyntheticEventSender(
     fun reset() {
         needUpdatePointerPosition = false
         previousEvent = null
+        isMousePointerInside = false
         isScaleGestureInProgress = false
         isPanGestureInProgress = false
     }
@@ -87,10 +93,12 @@ internal class SyntheticEventSender(
      * Send [event] and synthetic events before it if needed. On each sent event we just call [send]
      */
     fun send(event: PointerInputEvent): PointerEventResult {
+        val wasMousePointerInside = isMousePointerInside
         trackMousePointerState(event)
 
         val syntheticMoveForHoverResult = sendMissingMoveForHover(event)
         val syntheticReleasesResult = sendMissingReleases(event)
+        val syntheticEnterResult = sendMissingEnter(event, wasMousePointerInside)
         val syntheticPressesResult = sendMissingPresses(event)
         val syntheticScaleEndResult = sendMissingScaleEnd(event)
         val syntheticScaleStartResult = sendMissingScaleStart(event)
@@ -99,6 +107,7 @@ internal class SyntheticEventSender(
         val eventResult = if (shouldSend(event)) sendInternal(event) else sendNativeEventOnly(event)
         return syntheticMoveForHoverResult.merging(
             syntheticReleasesResult,
+            syntheticEnterResult,
             syntheticPressesResult,
             syntheticScaleEndResult,
             syntheticScaleStartResult,
@@ -211,7 +220,7 @@ internal class SyntheticEventSender(
     private fun sendMissingMoveForHover(
         currentEvent: PointerInputEvent
     ): PointerEventResult {
-        // issuesEnterExit means that the pointer can issues hover events (enter/exit), and so we
+        // activeHover means that the pointer can issues hover events (enter/exit), and so we
         // should generate a synthetic Move (see why we need to do that in the class description)
         return if (currentEvent.pointers.fastAny { it.activeHover } &&
             isMoveEventMissing(previousEvent, currentEvent)) {
@@ -219,6 +228,38 @@ internal class SyntheticEventSender(
         } else {
             UnconsumedEventResult
         }
+    }
+
+    private fun sendMissingEnter(
+        currentEvent: PointerInputEvent,
+        wasMousePointerInside: Boolean,
+    ): PointerEventResult {
+        if (
+            // Current event is Enter
+            (currentEvent.eventType == PointerEventType.Enter) ||
+            // Pointer was already inside
+            wasMousePointerInside ||
+            // None of the pointers are `activeHover` (generate enter/exit events)
+            !currentEvent.pointers.fastAny { it.activeHover } ||
+            // If the mouse leaves the scene while pressed, we'll continue receiving events, but there
+            // aren't any missing Enters
+            (previousEvent?.pointers?.fastAny { it.down } == true) ||
+            // An extraneous Exit
+            (currentEvent.eventType == PointerEventType.Exit)
+        ) return UnconsumedEventResult
+
+        val isEnterMissing = when (currentEvent.eventType) {
+            // HitPathTracker already converts initial Move (with no pointers pressed) to Enter
+            PointerEventType.Move -> currentEvent.pointers.fastAny { it.down }
+            else -> true
+        }
+        if (!isEnterMissing) return UnconsumedEventResult
+        return sendInternal(
+            currentEvent.copySynthetic(
+                type = PointerEventType.Enter,
+                copyPointer = { it.copySynthetic(down = false) },
+            ).copy(buttons = PointerButtons())
+        )
     }
 
     private fun sendMissingReleases(currentEvent: PointerInputEvent): PointerEventResult {

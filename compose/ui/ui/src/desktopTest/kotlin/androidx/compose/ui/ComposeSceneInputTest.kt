@@ -21,7 +21,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.unit.IntRect
 import org.junit.Test
 
-@OptIn(ExperimentalComposeUiApi::class)
 class ComposeSceneInputTest {
     @Test
     fun move() = ImageComposeScene(100, 100).use { scene ->

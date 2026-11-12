@@ -126,7 +126,7 @@ internal class PasswordAutofillTest {
             )
         }
 
-    @OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testSecureInputViewTextSelectorReturnsWholeDocument() =
         runUIKitInstrumentedTest(params = configurations) { config ->
@@ -163,7 +163,7 @@ internal class PasswordAutofillTest {
             }
         }
 
-    @OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testDetachedCredentialViewsStillHoldTheirValues() =
         runUIKitInstrumentedTest(params = configurations) { config ->
@@ -181,7 +181,9 @@ internal class PasswordAutofillTest {
 
             visible.value = false
             waitForIdle()
-            delay(1000)
+            waitUntil {
+                usernameView.window == null && passwordView.window == null
+            }
 
             assertEquals(
                 USERNAME,
@@ -214,7 +216,6 @@ internal class PasswordAutofillTest {
         waitForIdle()
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     private fun CredentialFields(config: Config, focusRequester: FocusRequester?) {
         val usernameOptions = KeyboardOptions(
@@ -248,12 +249,14 @@ internal class PasswordAutofillTest {
                     textObfuscationMode = TextObfuscationMode.Hidden,
                 )
             } else {
+                @Suppress("DEPRECATION")
                 BasicTextField(
                     value = USERNAME,
                     onValueChange = {},
                     modifier = usernameModifier,
                     keyboardOptions = usernameOptions,
                 )
+                @Suppress("DEPRECATION")
                 BasicTextField(
                     value = PASSWORD,
                     onValueChange = {},

@@ -48,39 +48,37 @@ import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.DpRectZero
+import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.dpRectInWindow
 import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.test.utils.wait
+import androidx.compose.ui.test.waitForIdle
+import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
+import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.scene.ComposeHostingViewController
-import androidx.compose.ui.test.utils.center
-import androidx.compose.ui.test.utils.wait
-import androidx.compose.ui.test.waitForIdle
-import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
-import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlin.random.Random
-import kotlinx.coroutines.Dispatchers
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
 import org.jetbrains.skiko.OS
@@ -293,7 +291,7 @@ internal class ScrollTest {
         var previousDiff = 0f
         val dragDelta = screenSize.center.y / 10
         repeat(10) { i ->
-            touch.dragBy(dy = dragDelta, duration = 100.milliseconds)
+            touch.dragBy(dy = dragDelta)
             waitForIdle()
 
             val currentBoxTop = boxRect.top
@@ -349,7 +347,7 @@ internal class ScrollTest {
         val dragDelta = screenSize.center.y / 10
 
         repeat(10) { i ->
-            touch.dragBy(dy = -dragDelta, duration = 0.1.seconds)
+            touch.dragBy(dy = -dragDelta)
             waitForIdle()
 
             val currentBoxTop = boxRect.top
@@ -419,7 +417,7 @@ internal class ScrollTest {
 
         // fling up
         touch
-            .dragBy(dy = -(boxHeight + 50).dp, duration = 100.milliseconds)
+            .dragBy(dy = -(boxHeight + 50).dp)
             .up()
 
         waitForIdle()
@@ -555,7 +553,7 @@ internal class ScrollTest {
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dx = (150 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -579,7 +577,7 @@ internal class ScrollTest {
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dx = -(150 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -702,7 +700,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UILabel")
             .touchDown()
             .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -713,7 +711,7 @@ internal class ScrollTest {
         findNodeWithTag("Red Box")
             .touchDown()
             .dragBy(dy = (100 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -748,11 +746,11 @@ internal class ScrollTest {
             .also {
                 // There is an issue on iOS < 15 where the simulated drag is not applied immediately.
                 if (!available(OS.Ios to OSVersion(16))) {
-                    delay(100)
+                    delay(50.milliseconds)
                 }
             }
             .dragBy(dy = -(250 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -761,7 +759,6 @@ internal class ScrollTest {
         assertEquals(DpOffset(x = 0.dp, y = 250.dp), contentOffset())
     }
 
-    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testUIKitScrollViewInsideComposeScrollView_DragFromCompose() = runUIKitInstrumentedTestWithInterop { overlay ->
         val state = ScrollState(0)
@@ -784,7 +781,7 @@ internal class ScrollTest {
         findNodeWithTag("Top Box")
             .touchDown()
             .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -860,7 +857,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UIScrollView")
             .touchDown()
             .dragBy(dx = -(50 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -896,7 +893,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UIScrollView")
             .touchDown()
             .dragBy(dy = -(50 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -933,11 +930,11 @@ internal class ScrollTest {
         }
 
         touchDown(DpOffset(screenSize.center.x, 250.dp))
-            .dragBy(dx = -(50 + CUPERTINO_TOUCH_SLOP).dp, dy = -50.dp)
-            .dragBy(dx = 20.dp, dy = -50.dp)
-            .dragBy(dx = -70.dp, dy = 50.dp)
-            .dragBy(dy = -150.dp)
-            .also { delay(500) }
+            .dragBy(dx = -(50 + CUPERTINO_TOUCH_SLOP).dp, dy = (-50).dp)
+            .dragBy(dx = 20.dp, dy = (-50).dp)
+            .dragBy(dx = (-70).dp, dy = 50.dp)
+            .dragBy(dy = (-150).dp)
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -975,8 +972,8 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UIScrollView")
             .touchDown()
             .dragBy(dx = -(5 + CUPERTINO_TOUCH_SLOP).dp, dy = -(50 + CUPERTINO_TOUCH_SLOP).dp)
-            .dragBy(dx = -50.dp, dy = -50.dp)
-            .also { delay(500) }
+            .dragBy(dx = (-50).dp, dy = (-50).dp)
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -1013,9 +1010,11 @@ internal class ScrollTest {
 
         // Simulate simultaneous drag of two fingers
         repeat(2) {
-            tap1.dragBy(dx = (-25).dp, duration = (0.5).seconds)
-            tap2.dragBy(dx = (-50).dp, duration = (0.5).seconds)
+            tap1.dragBy(dx = (-25).dp)
+            tap2.dragBy(dx = (-50).dp)
         }
+
+        delay(50.milliseconds) // hold fingers to avoid fling
 
         tap1.up()
         tap2.up()
@@ -1067,10 +1066,10 @@ internal class ScrollTest {
 
         // Perform 3 separate scroll gestures — each touchDown consumes slop independently
         val scrollAmount = 150.dp
-        repeat(3) { attempt ->
+        repeat(3) {
             touchDown(screenSize.center)
-                .dragBy(dy = -scrollAmount, duration = 100.milliseconds)
-                .wait(100.milliseconds)
+                .dragBy(dy = -scrollAmount)
+                .wait(50.milliseconds)
                 .up()
             modalVC.waitForIdle()
         }
@@ -1130,7 +1129,7 @@ internal class ScrollTest {
 
         // Swipe left over the embedded button — should scroll UIScrollView, not click button
         touchDown(swipeCenter)
-            .dragBy(dx = -(100 + CUPERTINO_TOUCH_SLOP).dp, duration = 300.milliseconds)
+            .dragBy(dx = -(100 + CUPERTINO_TOUCH_SLOP).dp)
             .up()
         waitForIdle()
 
@@ -1142,6 +1141,7 @@ internal class ScrollTest {
     }
 }
 
+@OptIn(ExperimentalForeignApi::class)
 @Composable
 private fun VerticalUIKitScrollInsideVerticalScroll(
     placeUIKitViewAsOverlay: Boolean,
@@ -1170,8 +1170,8 @@ private fun VerticalUIKitScrollInsideVerticalScroll(
                     CGSizeMake(scrollViewSize.width.value.toDouble(), 1000.0)
                 )
                 scrollView.backgroundColor = UIColor.lightGrayColor
-                uiKitScrollViewRectInWindow({ scrollView.dpRectInWindow() })
-                uiKitContentOffset({ scrollView.contentOffset.toDpOffset() })
+                uiKitScrollViewRectInWindow { scrollView.dpRectInWindow() }
+                uiKitContentOffset { scrollView.contentOffset.toDpOffset() }
                 scrollView
             },
             update = { scrollView ->
@@ -1227,8 +1227,8 @@ private fun VerticalScrollWithHorizontalUIKitScroll(
                 val scrollView = UIScrollView()
                 scrollView.setContentSize(CGSizeMake(uiKitScrollViewContentWidth, uiKitScrollViewHeight.value.toDouble()))
                 scrollView.backgroundColor = UIColor.lightGrayColor
-                uiKitScrollViewRectInWindow({ scrollView.dpRectInWindow() })
-                uiKitContentOffset({ scrollView.contentOffset.toDpOffset() })
+                uiKitScrollViewRectInWindow { scrollView.dpRectInWindow() }
+                uiKitContentOffset { scrollView.contentOffset.toDpOffset() }
                 scrollView
             },
             modifier = Modifier
@@ -1271,7 +1271,7 @@ private fun HorizontalScrollContent(
                                 if (it == 0) Modifier.onGloballyPositioned(onFirstBoxGloballyPositioned) else Modifier
                             )
                     ) {
-                        Text("Text ${it}")
+                        Text("Text $it")
                     }
                 }
             }

@@ -97,11 +97,9 @@ class WindowInputEventTest {
                         float.value,
                         onValueChange = {
                             float.value = it
-                            print(sliderValueEvents)
                             sliderValueEvents.add(SliderValueEvent.Change)
                         },
                         onValueChangeFinished = {
-                            print(sliderValueEvents)
                             sliderValueEvents.add(SliderValueEvent.ChangeFinished)
                         },
                         valueRange = 0f..10f,

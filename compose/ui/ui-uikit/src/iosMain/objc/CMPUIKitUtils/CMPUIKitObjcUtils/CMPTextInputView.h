@@ -30,10 +30,14 @@ NS_ASSUME_NONNULL_END
 
 - (void)deactivateTextInputInteractionIfNeeded;
 
+- (void)reloadVisibleEditMenu;
+
 - (nullable UIView *)inputView;
 
 - (nullable UIView *)inputAccessoryView;
 
 - (BOOL)isSecureTextEntry CMP_ABSTRACT_FUNCTION;
+
+- (BOOL)isEditable CMP_ABSTRACT_FUNCTION;
 
 @end

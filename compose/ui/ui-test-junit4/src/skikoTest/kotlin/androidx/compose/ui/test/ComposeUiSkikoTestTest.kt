@@ -154,8 +154,9 @@ class ComposeUiSkikoTestTest {
         onNodeWithTag("test").performMouseInput {
             press()
         }
-        assertThat(events).hasSize(1)
-        events[0].apply {
+        assertThat(events).hasSize(2)
+        assertThat(events[0].type).isEqualTo(Enter)
+        events[1].apply {
             assertThat(type).isEqualTo(Press)
             assertThat(button).isEqualTo(PointerButton.Primary)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = true))
@@ -174,22 +175,18 @@ class ComposeUiSkikoTestTest {
             release()
         }
         assertThat(events).hasSize(3)
-        events[0].apply {
+        assertThat(events[0].type).isEqualTo(Enter)
+        events[1].apply {
             assertThat(type).isEqualTo(Press)
             assertThat(button).isEqualTo(PointerButton.Primary)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = true))
             assertThat(changes[0].position).isEqualTo(Offset.Zero)
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[1].apply {
+        events[2].apply {
             assertThat(type).isEqualTo(Release)
             assertThat(button).isEqualTo(PointerButton.Primary)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = false))
-            assertThat(changes[0].position).isEqualTo(Offset.Zero)
-            assertThat(changes[0].type).isEqualTo(Mouse)
-        }
-        events[2].apply {
-            assertThat(type).isEqualTo(Enter)
             assertThat(changes[0].position).isEqualTo(Offset.Zero)
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
@@ -204,22 +201,18 @@ class ComposeUiSkikoTestTest {
             click(Offset(10f, 20f))
         }
         assertThat(events).hasSize(3)
-        events[0].apply {
+        assertThat(events[0].type).isEqualTo(Enter)
+        events[1].apply {
             assertThat(type).isEqualTo(Press)
             assertThat(button).isEqualTo(PointerButton.Primary)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = true))
             assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[1].apply {
+        events[2].apply {
             assertThat(type).isEqualTo(Release)
             assertThat(button).isEqualTo(PointerButton.Primary)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = false))
-            assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
-            assertThat(changes[0].type).isEqualTo(Mouse)
-        }
-        events[2].apply {
-            assertThat(type).isEqualTo(Enter)
             assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
@@ -239,36 +232,32 @@ class ComposeUiSkikoTestTest {
             press(MouseButton(3))
         }
         assertThat(events).hasSize(6)
-        events[0].apply {
+        assertThat(events[0].type).isEqualTo(Enter)
+        events[1].apply {
             assertThat(type).isEqualTo(Press)
             assertThat(button).isEqualTo(PointerButton.Primary)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = true))
             assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[1].apply {
+        events[2].apply {
             assertThat(type).isEqualTo(Press)
             assertThat(button).isEqualTo(PointerButton.Tertiary)
             assertThat(buttons).isEqualTo(PointerButtons(isPrimaryPressed = true, isTertiaryPressed = true))
             assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[2].apply {
+        events[3].apply {
             assertThat(type).isEqualTo(Release)
             assertThat(button).isEqualTo(PointerButton.Primary)
             assertThat(buttons).isEqualTo(PointerButtons(isTertiaryPressed = true))
             assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[3].apply {
+        events[4].apply {
             assertThat(type).isEqualTo(Release)
             assertThat(button).isEqualTo(PointerButton.Tertiary)
             assertThat(buttons).isEqualTo(PointerButtons())
-            assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
-            assertThat(changes[0].type).isEqualTo(Mouse)
-        }
-        events[4].apply {
-            assertThat(type).isEqualTo(Enter)
             assertThat(changes[0].position).isEqualTo(Offset(10f, 20f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
@@ -291,8 +280,9 @@ class ComposeUiSkikoTestTest {
             scroll(20f)
             scroll(-20f, ScrollWheel.Horizontal)
         }
-        assertThat(events).hasSize(2)
-        events[0].apply {
+        assertThat(events).hasSize(3)
+        assertThat(events[0].type).isEqualTo(Enter)
+        events[1].apply {
             assertThat(type).isEqualTo(Scroll)
             assertThat(button).isEqualTo(null)
             assertThat(buttons).isEqualTo(PointerButtons())
@@ -300,7 +290,7 @@ class ComposeUiSkikoTestTest {
             assertThat(changes[0].position).isEqualTo(Offset(30f, 40f))
             assertThat(changes[0].type).isEqualTo(Mouse)
         }
-        events[1].apply {
+        events[2].apply {
             assertThat(type).isEqualTo(Scroll)
             assertThat(button).isEqualTo(null)
             assertThat(buttons).isEqualTo(PointerButtons())

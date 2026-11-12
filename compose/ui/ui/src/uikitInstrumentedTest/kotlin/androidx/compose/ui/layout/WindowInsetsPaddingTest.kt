@@ -72,6 +72,7 @@ class WindowInsetsPaddingTest {
             val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
                 Spacer(modifier = Modifier.weight(1f))
+                @Suppress("DEPRECATION")
                 TextField(
                     "",
                     {},
@@ -101,7 +102,7 @@ class WindowInsetsPaddingTest {
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.displayCutout)
                     .background(Color.Red)
-                    .onGloballyPositioned({ boxRect = it.boundsInWindow().toDpRect(density) })
+                    .onGloballyPositioned { boxRect = it.boundsInWindow().toDpRect(density) }
             ) {
                 Text("TEXT")
             }
@@ -133,7 +134,7 @@ class WindowInsetsPaddingTest {
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.displayCutout)
                     .background(Color.Red)
-                    .onGloballyPositioned({ boxRect = it.boundsInWindow().toDpRect(density) })
+                    .onGloballyPositioned { boxRect = it.boundsInWindow().toDpRect(density) }
             ) {
                 Text("TEXT")
             }
@@ -170,7 +171,7 @@ class WindowInsetsPaddingTest {
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.displayCutout)
                     .background(Color.Red)
-                    .onGloballyPositioned({ boxRect = it.boundsInWindow().toDpRect(density) })
+                    .onGloballyPositioned { boxRect = it.boundsInWindow().toDpRect(density) }
             ) {
                 Text("TEXT")
             }

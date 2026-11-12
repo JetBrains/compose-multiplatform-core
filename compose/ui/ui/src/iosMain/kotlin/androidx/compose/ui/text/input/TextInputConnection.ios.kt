@@ -23,12 +23,15 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.EmptyInputTraits
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
-import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.TextEditorOffsetMapping
 import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.platform.isValidIn
+import androidx.compose.ui.platform.mapFromTransformed
+import androidx.compose.ui.platform.mapToTransformed
 import androidx.compose.ui.platform.movePositionByGraphemes
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
@@ -45,7 +48,6 @@ import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import platform.UIKit.UIView
 import platform.UIKit.reloadInputViews
@@ -59,7 +61,12 @@ internal abstract class TextInputConnection(
 
     private var textInputServiceInvalidationsCount = 0
     val hasInvalidations: Boolean
-        get() = textInputServiceInvalidationsCount > 0
+        get() = textInputServiceInvalidationsCount > 0 || isTextMenuTransitioning
+
+    /**
+     * Whether the text menu is scheduled to appear, or its appearance or disappearance is animating.
+     */
+    protected open val isTextMenuTransitioning: Boolean get() = false
 
     /**
      * When `true`, [onTextFieldValueUpdated] callbacks coming back through the state snapshot flow
@@ -75,7 +82,11 @@ internal abstract class TextInputConnection(
     protected var currentTextFieldValue: TextFieldValue? = null
         private set
 
-    protected val textLayoutResult get() = currentRequest?.textLayoutResult()
+    protected val transformedTextLayoutResult get() = currentRequest?.textLayoutResult()
+
+    protected val offsetMapping: TextEditorOffsetMapping
+        get() = currentRequest?.offsetMapping ?: TextEditorOffsetMapping.Identity
+
     protected val unclippedTextOffsetInRoot get() = currentRequest?.unclippedTextOffsetInRoot()
     protected val textFieldRectInRoot get() = currentRequest?.textFieldRectInRoot()
 
@@ -317,15 +328,16 @@ internal abstract class TextInputConnection(
 
     override fun updateFloatingCursor(offset: DpOffset) {
         val translation = floatingCursorTranslation ?: return
-        val layout = textLayoutResult ?: return
+        val layout = transformedTextLayoutResult ?: return
 
         val fingerPx = offset.toOffset(rootView.density)
         val virtualCursorPx = fingerPx + translation
-        val cursorOffset = layout.getOffsetForPosition(virtualCursorPx)
+        val transformedCursorOffset = layout.getOffsetForPosition(virtualCursorPx)
+        val cursorOffset = offsetMapping.mapFromTransformed(transformedCursorOffset)
 
         // Re-anchor translation to the text edge, not the touch position — otherwise a fast
         // swipe past the text makes the user drag that whole distance back (and cursor looks frozen)
-        val line = layout.getLineForOffset(cursorOffset)
+        val line = layout.getLineForOffset(transformedCursorOffset)
         val lineLeft = layout.getLineLeft(line)
         val lineRight = layout.getLineRight(line)
         val textTop = layout.getLineTop(0)
@@ -350,7 +362,8 @@ internal abstract class TextInputConnection(
 
     override fun beginFloatingCursor(offset: DpOffset) {
         val start = currentTextFieldValue?.selection?.start ?: return
-        val cursorRect = textLayoutResult?.getCursorRect(start) ?: return
+        val cursorRect =
+            transformedTextLayoutResult?.getCursorRect(offsetMapping.mapToTransformed(start)) ?: return
         floatingCursorTranslation = cursorRect.center - offset.toOffset(rootView.density)
     }
 
@@ -442,11 +455,14 @@ internal abstract class TextInputConnection(
 
     override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? {
         val text = currentTextFieldValue?.text ?: return null
-        val layoutResult = textLayoutResult ?: return null
+        val layoutResult = transformedTextLayoutResult ?: return null
 
-        val line = layoutResult.getLineForOffset(position)
+        // Lines are measured in the transformed text.
+        val mapping = offsetMapping
+        val transformedPosition = mapping.mapToTransformed(position)
+        val line = layoutResult.getLineForOffset(transformedPosition)
         val lineStartOffset = layoutResult.getLineStart(line)
-        val offsetInLine = position - lineStartOffset
+        val offsetInLine = transformedPosition - lineStartOffset
         val targetLine = line + verticalOffset
         return when {
             targetLine < 0 -> 0
@@ -454,19 +470,10 @@ internal abstract class TextInputConnection(
             else -> {
                 val targetLineEnd = layoutResult.getLineEnd(targetLine)
                 val lineStart = layoutResult.getLineStart(targetLine)
-                positionFromPosition(
-                    lineStart, min(offsetInLine, targetLineEnd - lineStart)
-                )
+                layoutResult.layoutInput.text.text
+                    .movePositionByGraphemes(lineStart, min(offsetInLine, targetLineEnd - lineStart))
+                    ?.let { mapping.mapFromTransformed(it) }
             }
-        }
-    }
-
-    protected fun textMenuAppearanceChanged() {
-        textInputServiceInvalidationsCount++
-        coroutineScope.launch {
-            // Time to show, hide or update state of context menu
-            delay(500.milliseconds)
-            textInputServiceInvalidationsCount--
         }
     }
 

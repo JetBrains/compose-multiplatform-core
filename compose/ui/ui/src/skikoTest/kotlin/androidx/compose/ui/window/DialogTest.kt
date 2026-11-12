@@ -58,6 +58,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.fail
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalTestApi::class)
@@ -113,9 +114,9 @@ class DialogTest {
         scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), button = PointerButton.Primary)
         onNodeWithTag(dialog.tag).assertIsDisplayed()
 
+        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceived(PointerEventType.Press, Offset(10f, 10f))
         background.events.assertReceived(PointerEventType.Release, Offset(10f, 10f))
-        background.events.assertReceived(PointerEventType.Enter, Offset(10f, 10f))
         background.events.assertReceivedLast(PointerEventType.Exit, Offset(10f, 10f))
     }
 
@@ -261,7 +262,7 @@ class DialogTest {
                     }
                     lastValueInComposition = value
                     LaunchedEffect(Unit) {
-                        delay(1000)
+                        delay(1.seconds)
                         value = 2
                     }
                 }

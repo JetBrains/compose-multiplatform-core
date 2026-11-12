@@ -40,7 +40,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import platform.UIKit.endEditing
 
 class TextFieldMultiTapSelectionTest {
 
@@ -59,7 +58,6 @@ class TextFieldMultiTapSelectionTest {
             textFieldOption.selection,
             "[${textFieldOption.name}] Expected double tap inside '$WORD' to select it, but got: ${textFieldOption.selection}"
         )
-        if (textFieldOption.nativeInput) dropNativeSelection()
     }
 
     @Test
@@ -72,20 +70,18 @@ class TextFieldMultiTapSelectionTest {
             textFieldOption.selection,
             "[${textFieldOption.name}] Expected all text to be selected after triple tap, but got: ${textFieldOption.selection}"
         )
-        if (textFieldOption.nativeInput) dropNativeSelection()
     }
 
     @Test
     fun multitap_does_not_show_magnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
         findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2) // double tap is enough
-        delay(200)
+        delay(100)
         assertEquals(
-            findFirstDescendant { it.isLoupeView },
             null,
+            findFirstDescendant { it.isLoupeView },
             "[${textFieldOption.name}] Magnifier should not appear during multi-tap selection"
         )
-        if (textFieldOption.nativeInput) dropNativeSelection()
     }
 
     @Test
@@ -102,7 +98,8 @@ class TextFieldMultiTapSelectionTest {
 
         // After triple tap selects all, a subsequent double tap should re-select only a word.
         // This exercises the clearSelection fix that allows selection to be updated by repeated taps.
-        delay(400)
+        // Waits out the 300ms double tap timeout, so the taps start a new sequence.
+        delay(350)
         findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2)
         waitForIdle()
 
@@ -111,13 +108,6 @@ class TextFieldMultiTapSelectionTest {
             textFieldOption.selection,
             "BTF2: Expected only '$WORD' to be selected after double tap, but got: ${textFieldOption.selection}"
         )
-    }
-
-    /** Ends the native editing session, so its selection does not outlive the test. */
-    private fun UIKitInstrumentedTest.dropNativeSelection() {
-        viewController.view.endEditing(force = true)
-        // TODO: CMP-10641
-        delay(500)
     }
 
     companion object {
@@ -160,6 +150,7 @@ private class TextFieldFactory(val type: BasicTextFieldType, val nativeInput: Bo
                 val valueState = mutableStateOf(TextFieldValue(text))
                 test.setContent {
                     Box(Modifier.fillMaxSize()) {
+                        @Suppress("DEPRECATION")
                         BasicTextField(
                             value = valueState.value,
                             onValueChange = { valueState.value = it },

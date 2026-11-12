@@ -49,5 +49,6 @@ val MainScreen = Screen.Selection(
     Screen.Example("InteropOrder") { InteropOrder() },
     AndroidTextFieldSamples,
     Screen.Example("Android TextBrushDemo") { TextBrushDemo() },
-    AndroidAccessibilityDemos
+    AndroidAccessibilityDemos,
+    Screen.Example("UiMediaScope") { UiMediaScopeDemo() },
 )

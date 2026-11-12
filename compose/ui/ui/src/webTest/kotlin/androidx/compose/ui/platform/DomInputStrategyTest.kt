@@ -19,10 +19,12 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.events.beforeInputWithTargetRange
 import androidx.compose.ui.events.compositionEnd
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.SetSelectionCommand
+import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -30,6 +32,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.runTest
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.OPEN
 import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
@@ -235,6 +238,134 @@ class DomInputStrategyTest {
                 strategy.dispose()
                 host.remove()
             }
+        }
+    }
+
+    /**
+     * When a contenteditable element regains focus on iOS Safari, the browser resets the
+     * DOM selection to (0,0). The fix in [BackingDomInput.focus] pauses the selection
+     * change listener and restores the correct selection before the pause is lifted,
+     * so the stale (0,0) must not be forwarded to Compose as a [SetSelectionCommand].
+     *
+     * See https://youtrack.jetbrains.com/issue/CMP-10978
+     */
+    @Test
+    fun selectionResetOnRefocusIsNotSentToCompose() = runTest {
+        val communicator = RecordingCommunicator()
+        val host = document.createElement("div")
+        document.body!!.appendChild(host)
+        val shadowRoot = host.attachShadow(ShadowRootInit(ShadowRootMode.OPEN))
+
+        val container = document.createElement("div") as HTMLElement
+        shadowRoot.appendChild(container)
+
+        val backingDomInput = BackingDomInput(
+            inputContainer = container,
+            imeOptions = ImeOptions.Default,
+            composeCommunicator = communicator,
+        )
+
+        try {
+            backingDomInput.register()
+
+            // Initial focus + populate text with selection at end (position 10)
+            backingDomInput.focus()
+            awaitAnimationFrame()
+
+            val textFieldValue = TextFieldValue(
+                text = "hello wrld",
+                selection = TextRange(10, 10)
+            )
+            backingDomInput.updateState(textFieldValue)
+            awaitAnimationFrame()
+
+            // Clear any commands from the setup phase
+            communicator.editCommands.clear()
+
+            // Simulate hiding the keyboard — the element loses focus
+            backingDomInput.blur()
+            awaitAnimationFrame()
+
+            // Simulate re-tapping the TextField — focus() is called again.
+            // On real iOS Safari, backingElement.focus() resets DOM selection to (0,0).
+            backingDomInput.focus()
+
+            // Simulate what Safari does after re-focus: DOM selection is at (0,0)
+            setSelectionRange(backingDomInput.backingElement, 0, 0)
+            document.dispatchEvent(Event("selectionchange"))
+            awaitAnimationFrame()
+            awaitAnimationFrame()
+
+            // The stale (0,0) selection must NOT have been sent to Compose
+            val selectionCommands = communicator.editCommands.filterIsInstance<SetSelectionCommand>()
+            assertTrue(
+                selectionCommands.none { it.start == 0 && it.end == 0 },
+                "Safari's stale (0,0) selection reset on re-focus must not be sent to Compose, " +
+                    "but got: $selectionCommands"
+            )
+        } finally {
+            backingDomInput.dispose()
+            host.remove()
+        }
+    }
+
+    /**
+     * When the input is already active (focused), calling [BackingDomInput.focus] again
+     * must not produce spurious selection commands. This also serves as a regression guard
+     * for CMP-10971: the fix for CMP-10978 must not wrap backingElement.focus() in a guard
+     * that skips it when the input is already active, because on iOS Safari the focus() call
+     * is what brings up the software keyboard on repeated taps.
+     *
+     * See https://youtrack.jetbrains.com/issue/CMP-10971
+     * See https://youtrack.jetbrains.com/issue/CMP-10978
+     */
+    @Test
+    fun repeatedFocusWhileActiveProducesNoSelectionCommands() = runTest {
+        val communicator = RecordingCommunicator()
+        val host = document.createElement("div")
+        document.body!!.appendChild(host)
+        val shadowRoot = host.attachShadow(ShadowRootInit(ShadowRootMode.OPEN))
+
+        val container = document.createElement("div") as HTMLElement
+        shadowRoot.appendChild(container)
+
+        val backingDomInput = BackingDomInput(
+            inputContainer = container,
+            imeOptions = ImeOptions.Default,
+            composeCommunicator = communicator,
+        )
+
+        try {
+            backingDomInput.register()
+
+            // Initial focus + populate text with selection at end
+            backingDomInput.focus()
+            awaitAnimationFrame()
+
+            val textFieldValue = TextFieldValue(
+                text = "hello",
+                selection = TextRange(5, 5)
+            )
+            backingDomInput.updateState(textFieldValue)
+            awaitAnimationFrame()
+
+            // Clear any commands from the setup phase
+            communicator.editCommands.clear()
+
+            // Call focus() again while already active (simulates repeated tap on iOS Safari)
+            backingDomInput.focus()
+            awaitAnimationFrame()
+
+            // No spurious selection commands should be produced
+            val selectionCommands = communicator.editCommands.filterIsInstance<SetSelectionCommand>()
+            assertTrue(
+                selectionCommands.isEmpty(),
+                "Repeated focus on already-active input must not produce selection commands, " +
+                    "but got: $selectionCommands"
+            )
+        } finally {
+            backingDomInput.dispose()
+            host.remove()
         }
     }
 

@@ -40,21 +40,26 @@ import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.offsetBy
 import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.test.utils.wait
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlinx.cinterop.ExperimentalForeignApi
+import kotlin.time.Duration.Companion.milliseconds
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
-@OptIn(ExperimentalForeignApi::class)
 internal abstract class UIKitNavigationSwipeBackTest(
     private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
 ) {
+    /**
+     * A fast flick-like drag starting at the screen center is sometimes not recognized on iOS 26+.
+     */
+    private val CenterSwipeDuration = 150.milliseconds
+
     @Test
     fun testSwipeRightOnPagerDoesNotPopController() = runUIKitInstrumentedTest {
         val initialPage = 0
@@ -131,7 +136,8 @@ internal abstract class UIKitNavigationSwipeBackTest(
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
             toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
-        ).up()
+            duration = CenterSwipeDuration,
+        ).wait(50.milliseconds).up()
 
         waitForIdle()
 
@@ -189,7 +195,8 @@ internal abstract class UIKitNavigationSwipeBackTest(
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
             toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
-        ).up()
+            duration = CenterSwipeDuration,
+        ).wait(50.milliseconds).up()
 
         waitForPopped(viewControllerHostingCompose)
     }
@@ -273,10 +280,12 @@ private fun TestContent(
     }
 }
 
+@Suppress("unused")
 internal class UIKitNavigationSwipeBackInHostingViewTest : UIKitNavigationSwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
 )
 
+@Suppress("unused")
 internal class UIKitNavigationSwipeBackInHostingViewControllerTest : UIKitNavigationSwipeBackTest(
    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
 )

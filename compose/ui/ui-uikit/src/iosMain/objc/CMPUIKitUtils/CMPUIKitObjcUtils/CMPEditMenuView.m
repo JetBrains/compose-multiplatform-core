@@ -90,6 +90,7 @@ typedef enum : NSUInteger {
 
 @property (assign, nonatomic) CGRect targetRect;
 @property (assign, nonatomic) CMPEditMenuState editMenuState;
+@property (assign, nonatomic) BOOL isWritingToolsShown;
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
@@ -103,6 +104,9 @@ typedef enum : NSUInteger {
 @implementation CMPEditMenuView {
     UITextField *_textField;
     BOOL _isDeallocating;
+    /// Identifies the latest presentation or dismissal animation, which is running while it is not 0.
+    NSUInteger _editMenuAnimationId;
+    NSUInteger _lastEditMenuAnimationId;
 }
 
 id _editInteraction;
@@ -135,6 +139,11 @@ id _editInteraction;
     self.selectBlock = selectBlock;
     self.selectAllBlock = selectAllBlock;
     self.customActions = customActions;
+
+    if (self.isWritingToolsShown) {
+        [self dismissEditMenu];
+        return;
+    }
 
     if (@available(iOS 16, *)) {
         [[CMPEditMenuViewRegister shared] hideAllMenusSkipping:self];
@@ -206,6 +215,28 @@ id _editInteraction;
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
+- (BOOL)isEditable {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (void)willPresentWritingTools API_AVAILABLE(ios(18.0)) {
+    self.isWritingToolsShown = YES;
+    [self dismissEditMenu];
+}
+
+- (void)didDismissWritingTools API_AVAILABLE(ios(18.0)) {
+    self.isWritingToolsShown = NO;
+}
+
+- (BOOL)resignFirstResponder {
+    self.isWritingToolsShown = NO;
+    return [super resignFirstResponder];
+}
+
+- (UIWritingToolsResultOptions)allowedWritingToolsResultOptions API_AVAILABLE(ios(18.0)) {
+    return UIWritingToolsResultPlainText;
+}
+
 - (UITextField *)cmp_proxyTextField {
     if (![self isSecureTextEntry]) {
         return nil;
@@ -267,6 +298,14 @@ id _editInteraction;
     } else {
         return _editMenuState == CMPEditMenuStatePresenting ||
         (_editMenuState == CMPEditMenuStatePresented && [UIMenuController sharedMenuController].menuVisible);
+    }
+}
+
+- (BOOL)isEditMenuTransitioning {
+    if (@available(iOS 16, *)) {
+        return self.presentInteractionBlock != nil || _editMenuAnimationId != 0;
+    } else {
+        return self.showContextMenuBlock != nil;
     }
 }
 
@@ -474,6 +513,13 @@ id _editInteraction;
     if (@selector(customAction8:) == action) return self.customActions.count > 8;
     if (@selector(customAction9:) == action) return self.customActions.count > 9;
 
+    if (@available(iOS 18.2, *)) {
+        // UIKit implements Writing Tools for any responder conforming to UITextInput.
+        if (@selector(showWritingTools:) == action) {
+            return [super canPerformAction:action withSender:sender];
+        }
+    }
+
     return NO;
 }
 
@@ -574,6 +620,7 @@ const NSInteger customActionsMaxCount = 10;
 - (void)editMenuInteraction:(UIEditMenuInteraction *)interaction
 willDismissMenuForConfiguration:(UIEditMenuConfiguration *)configuration
                    animator:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    [self trackEditMenuAnimation:animator];
     if (self.editInteraction != interaction) {
         return;
     }
@@ -591,11 +638,27 @@ willDismissMenuForConfiguration:(UIEditMenuConfiguration *)configuration
 - (void)editMenuInteraction:(UIEditMenuInteraction *)interaction
 willPresentMenuForConfiguration:(UIEditMenuConfiguration *)configuration
                    animator:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    [self trackEditMenuAnimation:animator];
     __weak __auto_type weak_self = self;
     [animator addCompletion:^{
         __auto_type self = weak_self;
         if (self.editInteraction == interaction) {
             self.editMenuState = CMPEditMenuStatePresented;
+        }
+    }];
+}
+
+- (void)trackEditMenuAnimation:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    // UIKit drops the completion of an animation interrupted by the next one, so only the latest one
+    // is tracked.
+    _lastEditMenuAnimationId++;
+    NSUInteger animationId = _lastEditMenuAnimationId;
+    _editMenuAnimationId = animationId;
+    __weak __auto_type weak_self = self;
+    [animator addCompletion:^{
+        __auto_type self = weak_self;
+        if (self != nil && self->_editMenuAnimationId == animationId) {
+            self->_editMenuAnimationId = 0;
         }
     }];
 }
