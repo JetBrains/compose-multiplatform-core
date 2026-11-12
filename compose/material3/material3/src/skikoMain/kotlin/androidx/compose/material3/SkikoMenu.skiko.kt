@@ -295,6 +295,7 @@ actual fun DropdownMenuItem(
     )
 }
 
+// TODO https://youtrack.jetbrains.com/issue/CMP-11129 Migrate Material3 from deprecated Compose UI back handlers
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun handleDropdownOnKeyEvent(
     keyEvent: KeyEvent,

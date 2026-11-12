@@ -98,6 +98,8 @@ private const val AnimatedLayerDisappearanceDuration = 0.1
  * @property animateTransition Whether to animate the appearance and disappearance of the dialog.
  */
 @Immutable
+// TODO: https://youtrack.jetbrains.com/issue/CMP-11128 Stabilize or deprecate DialogProperties.animateTransition
+// Keep this API binary compatible: it is used by published Material3 versions
 actual class DialogProperties @ExperimentalComposeUiApi constructor(
     actual val dismissOnBackPress: Boolean = true,
     actual val dismissOnClickOutside: Boolean = true,

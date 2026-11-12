@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
@@ -46,6 +47,9 @@ import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -354,25 +358,29 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test // [A, C, B], and C moves to another parent, leaving [A, B].
     fun reparentedNodeRetainsItsElement() = runApplicationTest {
+        val parentCoordinates = mutableMapOf<String, LayoutCoordinates>()
+        fun Modifier.recordCoordinates(tag: String) = onGloballyPositioned {
+            parentCoordinates[tag] = it
+        }
         var moveToSecondParent by mutableStateOf(false)
         val buttonInMovableContent = movableContentOf {
-            Button(modifier = Modifier.testTag("movableButton"), onClick = {}) {
+            Button(modifier = Modifier.height(30.dp).testTag("movableButton"), onClick = {}) {
                 Text("Movable")
             }
         }
 
         createComposeWindow {
             Column {
-                Box(modifier = Modifier.testTag("parent1")) {
-                    Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                Column(modifier = Modifier.size(100.dp).testTag("parent1").recordCoordinates("parent1")) {
+                    Button(modifier = Modifier.height(30.dp).testTag("button1"), onClick = {}) {
                         Text("Button1")
                     }
                     if (!moveToSecondParent) buttonInMovableContent()
-                    Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                    Button(modifier = Modifier.height(30.dp).testTag("button2"), onClick = {}) {
                         Text("Button2")
                     }
                 }
-                Box(modifier = Modifier.testTag("parent2")) {
+                Box(modifier = Modifier.size(100.dp).testTag("parent2").recordCoordinates("parent2")) {
                     if (moveToSecondParent) buttonInMovableContent()
                 }
             }
@@ -385,6 +393,16 @@ class CfWA11YTest : OnCanvasTests {
         val movableButton = assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
         val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
         val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+
+        fun parentBounds() = listOf("parent1", "parent2").map { tag ->
+            val coordinates = parentCoordinates.getValue(tag)
+            coordinates.boundsInWindow().also { bounds ->
+                assertFalse(bounds.isEmpty, "$tag must have nonempty bounds")
+                assertEquals(coordinates.boundsInWindow(clipBounds = false), bounds, "$tag must not be clipped")
+            }
+        }
+        val initialBounds = parentBounds()
+        assertTrue(initialBounds[0].bottom <= initialBounds[1].top, "The second parent must be below the first")
 
         var unaffectedNodeWasRemoved = false
         val observer = createMutationObserver { removedNode ->
@@ -414,6 +432,7 @@ class CfWA11YTest : OnCanvasTests {
                 listOf("button1", "button2"),
                 (0 until parent1.children.length).map { parent1.children[it]?.id },
             )
+            assertEquals(initialBounds, parentBounds(), "Reparenting must not move or resize the parents")
             assertFalse(unaffectedNodeWasRemoved, "Unaffected nodes must not be removed")
         } finally {
             disconnectMutationObserver(observer)

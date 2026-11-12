@@ -75,6 +75,8 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.ceil
+import kotlin.math.hypot
 import kotlin.test.assertNotNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -122,6 +124,7 @@ import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIScreen
 import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UIKeyModifierFlags
+import platform.UIKit.UIPanGestureRecognizer
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIPressType
 import platform.UIKit.UITouch
@@ -235,6 +238,12 @@ internal class UIKitInstrumentedTest(
         internal const val TestsAnimationSpeed = 100f
 
         /**
+         * Increased animation speed for tests that checks animation, but no constraints to have it
+         * real one-to-one speed.
+         */
+        internal const val IncreasedAnimationSpeed = 3f
+
+        /**
          * Real animation speed for tests that require one-to-one animations.
          */
         internal const val RealAnimationSpeed = 1f
@@ -242,15 +251,23 @@ internal class UIKitInstrumentedTest(
         /**
          * The default duration of drag gestures in instrumented tests.
          */
-        internal val DefaultDragDuration = 0.1.seconds
+        internal val DefaultDragDuration = 0.05.seconds
 
         /**
-         * The time given to UIKit to complete a requested interface orientation change.
+         * The maximum distance a touch moves within a single touch event during drag gestures.
+         *
+         * UIKit gesture recognizers (e.g. edge pan and navigation swipe back) fail to recognize
+         * a gesture when a touch jumps too far between events
+         */
+        internal val MaxDragStep = 20.dp
+
+        /**
+         * The maximum time given to UIKit to apply a requested interface orientation change.
          *
          * The orientation change is driven by the system rather than by the window's layer, so this
          * duration doesn't scale with [animationSpeed].
          */
-        internal val InterfaceOrientationChangeDuration = 700.milliseconds
+        internal val InterfaceOrientationChangeDuration = 500.milliseconds
 
         fun delay(timeoutMillis: Long) = delay(timeoutMillis.milliseconds)
 
@@ -372,7 +389,18 @@ internal class UIKitInstrumentedTest(
      */
     fun rotateTo(interfaceOrientation: UIInterfaceOrientation) {
         if (appDelegate.requestInterfaceOrientationChangeIfNeeded(interfaceOrientation)) {
-            delay(InterfaceOrientationChangeDuration)
+            val window = checkNotNull(appDelegate.window)
+            fun isOrientationApplied() =
+                window.windowScene?.interfaceOrientation == interfaceOrientation &&
+                    window.bounds.useContents { size.width > size.height } ==
+                    interfaceOrientation.isLandscape
+
+            // The device may not support the requested orientation (e.g. portrait upside down on
+            // iPhones with Face ID), so stop waiting after [InterfaceOrientationChangeDuration].
+            val endTime = TimeSource.Monotonic.markNow() + InterfaceOrientationChangeDuration
+            while (!isOrientationApplied() && TimeSource.Monotonic.markNow() < endTime) {
+                delay(5)
+            }
             waitForIdle()
         }
     }
@@ -519,7 +547,7 @@ internal class UIKitInstrumentedTest(
         return getTargetWindow(position, window).touchDown(position, fromEdge)
     }
 
-    private val EdgeSwipeDuration = 500.milliseconds
+    private val EdgeSwipeDuration = 0.1.seconds
 
     fun swipeFromLeftEdge(
         duration: Duration = EdgeSwipeDuration,
@@ -683,12 +711,6 @@ internal class UIKitInstrumentedTest(
         return tap(frame.center())
     }
 
-    fun AccessibilityTestNode.focusThenDoubleTap(delayMillis: Long = 500L) {
-        tap()
-        delay(delayMillis)
-        doubleTap()
-    }
-
     /**
      * Simulates a touch-down event at the center of a given AccessibilityTestNode.
      */
@@ -707,11 +729,9 @@ internal class UIKitInstrumentedTest(
     }
 
     fun AccessibilityTestNode.openToolbarForLeadingWord(
-        doubleTapPreparationDelay: Long,
         manualDoubleTapIntervalDelay: Long
     ) {
         tap()
-        delay(doubleTapPreparationDelay)
         val tapPoint = pointInNode(xFraction = 0.1f, yFraction = 0.5f)
         tap(tapPoint)
         delay(manualDoubleTapIntervalDelay)
@@ -812,16 +832,25 @@ internal class UIKitInstrumentedTest(
 
         val startTime = TimeSource.Monotonic.markNow()
         var currentTime = startTime
+        var touchLocation = startLocation
         while (currentTime <= startTime + duration) {
             val progress = ((currentTime - startTime) / duration).coerceIn(0.0, 1.0)
-            val touchLocation = lerp(startLocation, location, progress.toFloat())
-
-            this.moveToLocationOnWindow(touchLocation)
+            touchLocation = moveToLocationInSteps(touchLocation, lerp(startLocation, location, progress.toFloat()))
             NSRunLoop.currentRunLoop().runUntilDate(NSDate.dateWithTimeIntervalSinceNow(1.0 / 60))
             currentTime = TimeSource.Monotonic.markNow()
         }
-        this.moveToLocationOnWindow(location)
+        moveToLocationInSteps(touchLocation, location)
         return this
+    }
+
+    private fun UITouch.moveToLocationInSteps(from: DpOffset, to: DpOffset): DpOffset {
+        val distance = hypot((to.x - from.x).value, (to.y - from.y).value)
+        val steps = ceil(distance / MaxDragStep.value).toInt().coerceAtLeast(1)
+        for (step in 1..steps) {
+            val touchLocation = lerp(from, to, step.toFloat() / steps)
+            this.moveToLocationOnWindow(touchLocation)
+        }
+        return to
     }
 
     /**
@@ -861,7 +890,8 @@ internal class UIKitInstrumentedTest(
         position: DpOffset,
         dx: Dp = 0.dp,
         dy: Dp = 0.dp,
-        duration: Duration = 0.5.seconds,
+        duration: Duration = 0.1.seconds,
+        performFling: Boolean = false
     ) {
         val stepInterval = 16.milliseconds
         val steps = maxOf(1, (duration / stepInterval).toInt())
@@ -874,7 +904,10 @@ internal class UIKitInstrumentedTest(
             scrollEvent.scrollBy(perStepDelta, targetWindow)
         }
 
-        delay(stepInterval.inWholeMilliseconds)
+        if (!performFling) {
+            // Rest the fingers before lifting them, so the pan ends without a fling.
+            delay(50.milliseconds)
+        }
         scrollEvent.endScroll(targetWindow)
     }
 
@@ -889,7 +922,8 @@ internal class UIKitInstrumentedTest(
     fun trackpadPinch(
         position: DpOffset,
         finalScale: Float,
-        duration: Duration = 0.5.seconds,
+        duration: Duration = 0.1.seconds,
+        performFling: Boolean = false
     ) {
         val stepInterval = 16.milliseconds
         val steps = maxOf(1, (duration / stepInterval).toInt())
@@ -903,7 +937,10 @@ internal class UIKitInstrumentedTest(
             pinchEvent.pinchBy(scale, targetWindow)
         }
 
-        delay(stepInterval.inWholeMilliseconds)
+        if (!performFling) {
+            // Rest pinch before ending it, so the pinch ends without a fling.
+            delay(50.milliseconds)
+        }
         pinchEvent.endPinch(targetWindow)
     }
 
@@ -921,7 +958,7 @@ internal class UIKitInstrumentedTest(
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
     }
 
-    private val SwipeDuration = 0.5.seconds
+    private val SwipeDuration = 0.1.seconds
 
     fun AccessibilityTestNode.swipe(
         fromPosition: DpRect.() -> DpOffset = { center() },
@@ -1092,6 +1129,9 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     }
 }
 
+private val UIInterfaceOrientation.isLandscape: Boolean
+    get() = this == UIInterfaceOrientationLandscapeLeft || this == UIInterfaceOrientationLandscapeRight
+
 private fun UIInterfaceOrientation.toMask(): UIInterfaceOrientationMask = when (this) {
     UIInterfaceOrientationPortrait -> UIInterfaceOrientationMaskPortrait
     UIInterfaceOrientationPortraitUpsideDown -> UIInterfaceOrientationMaskPortraitUpsideDown
@@ -1231,7 +1271,10 @@ internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
 internal fun UIKitInstrumentedTest.waitForContextMenu() {
     waitForIdle()
     waitUntil("Waiting for context menu to appear") { isContextMenuVisible }
-    delay(200) // wait for toolbar animation
+    if (!available(OS.Ios to OSVersion(16))) {
+        // The idleness does not track the UIMenuController animation
+        delay(200)
+    }
     waitForIdle()
 }
 

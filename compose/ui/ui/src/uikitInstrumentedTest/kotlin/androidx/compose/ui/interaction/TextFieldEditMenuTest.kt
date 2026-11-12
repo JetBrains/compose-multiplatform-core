@@ -72,7 +72,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.seconds
 import platform.UIKit.UIPasteboard
 
 class TextFieldEditMenuTest {
@@ -407,8 +406,8 @@ class TextFieldEditMenuTest {
         assertEquals(1, touchesDown)
         assertEquals(0, touchesUp)
 
-        tap1.dragBy(dx = 20.dp, duration = 0.1.seconds)
-        tap2.dragBy(dx = 20.dp, duration = 0.1.seconds)
+        tap1.dragBy(dx = 20.dp)
+        tap2.dragBy(dx = 20.dp)
 
         tap1.up()
         tap2.up()
@@ -646,7 +645,7 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
-        findNodeWithTag(textFieldTag).focusThenDoubleTap()
+        findNodeWithTag(textFieldTag).doubleTap()
         waitForContextMenu()
     }
 

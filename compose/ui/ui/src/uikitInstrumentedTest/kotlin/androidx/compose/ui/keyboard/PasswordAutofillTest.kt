@@ -38,7 +38,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSSelectorFromString
@@ -182,7 +181,9 @@ internal class PasswordAutofillTest {
 
             visible.value = false
             waitForIdle()
-            delay(1.seconds)
+            waitUntil {
+                usernameView.window == null && passwordView.window == null
+            }
 
             assertEquals(
                 USERNAME,
@@ -215,7 +216,6 @@ internal class PasswordAutofillTest {
         waitForIdle()
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     private fun CredentialFields(config: Config, focusRequester: FocusRequester?) {
         val usernameOptions = KeyboardOptions(
