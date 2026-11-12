@@ -19,9 +19,9 @@ java {
 }
 
 dependencies {
+    implementation(project(":benchmarks-report"))
     implementation(libs.clikt)
     implementation(libs.kotlinSerializationJson)
-    implementation(libs.kotlinx.html)
 }
 
 application {

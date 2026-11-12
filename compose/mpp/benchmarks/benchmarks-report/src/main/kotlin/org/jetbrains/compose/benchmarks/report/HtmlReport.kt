@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.compose.benchmarks.launcher
+package org.jetbrains.compose.benchmarks.report
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -32,13 +32,13 @@ import kotlinx.serialization.json.*
 private val reportJson = Json { encodeDefaults = true }
 
 @Serializable
-internal data class ChartMeasurement(val title: String, val unit: String, val value: Double)
+private data class ChartMeasurement(val title: String, val unit: String, val value: Double)
 
 @Serializable
-internal data class ChartDistribution(val title: String, val unit: String, val values: List<Double>)
+private data class ChartDistribution(val title: String, val unit: String, val values: List<Double>)
 
 @Serializable
-internal data class ChartRun(
+private data class ChartRun(
     val target: String,
     val kotlin: String,
     val compose: String,
@@ -73,8 +73,7 @@ private data class ChartReport(
     val configurations: List<ChartConfiguration>,
 )
 
-/** Reads only this session. No server is needed to open the resulting file. */
-internal fun generateHtmlReport(session: Path, composeVersions: List<String>): Path {
+fun generateHtmlReport(session: Path): Path {
     val warnings = mutableListOf<String>()
     val sessionInfo = try {
         val file = session.resolve("session.json")
@@ -90,6 +89,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
     }
     val runs = mutableListOf<ChartRun>()
     val configurations = mutableListOf<ChartConfiguration>()
+    val composeVersions = linkedSetOf<String>()
     Files.walk(session, 4).use { paths ->
         paths.filter { it.fileName.toString() == "summary.json" && Files.isRegularFile(it) }
             .sorted().forEach { summaryPath ->
@@ -108,6 +108,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                     val compose = if (summary["localCompose"]?.jsonPrimitive?.booleanOrNull == true) {
                         "local"
                     } else summary.requiredText("composeVersion")
+                    composeVersions.add(compose)
                     summary["error"]?.jsonPrimitive?.contentOrNull?.let {
                         warnings.add("$configuration / Kotlin $kotlin / Compose $compose: $it")
                     }
@@ -180,7 +181,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
                 }
             }
     }
-    val payload = reportJson.encodeToString(ChartReport(composeVersions, runs, warnings, configurations))
+    val payload = reportJson.encodeToString(ChartReport(composeVersions.toList(), runs, warnings, configurations))
         // JSON lives in a script raw-text element, not in an HTML text node.
         .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     val html = createHTML().html {
@@ -269,14 +270,13 @@ private fun shellArgument(value: String): String =
     else "'" + value.replace("'", "'\"'\"'") + "'"
 
 private fun reportResource(name: String): String =
-    requireNotNull(ChartRun::class.java.getResource("/org/jetbrains/compose/benchmarks/launcher/$name")) {
+    requireNotNull(ChartRun::class.java.getResource("/org/jetbrains/compose/benchmarks/report/$name")) {
         "missing report resource: $name"
     }.readText()
 
 private fun JsonObject.requiredText(key: String): String = getValue(key).jsonPrimitive.content
 
-/** Converts the collector's JSON representation without changing the shared report models. */
-internal fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = buildList {
+private fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = buildList {
     fun addValue(title: String, unit: String, value: Double) {
         if (value.isFinite()) add(ChartMeasurement(title, unit, value))
     }
@@ -324,7 +324,7 @@ internal fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = bu
     }
 }
 
-internal fun reportDistributions(report: JsonObject): List<ChartDistribution> {
+private fun reportDistributions(report: JsonObject): List<ChartDistribution> {
     if (report.requiredText("type") != "fps") return emptyList()
     val frames = report.getValue("frames").jsonArray.map { it.jsonObject }
     return listOf(
