@@ -33,8 +33,8 @@ import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.captureScreenshot
 import androidx.compose.ui.test.findLayersViewController
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.test.utils.forEachPixel
 import androidx.compose.ui.test.utils.forEachPixelInRect
+import androidx.compose.ui.test.utils.forEachSampledPixel
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -51,6 +51,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.CoreGraphics.CGImageGetHeight
+import platform.CoreGraphics.CGImageGetWidth
 import platform.Foundation.NSNotificationCenter
 import platform.UIKit.UIApplicationDidReceiveMemoryWarningNotification
 import platform.UIKit.UIImage
@@ -96,26 +100,35 @@ class LayersRenderingTest {
             }
         }
 
+        fun popupBoundsAt(origin: DpOffset) = with(density) {
+            DpRect(origin = origin, size = DpSize(popupSize, popupSize)).toRect().roundToIntRect()
+        }
+        val originPopupBounds = popupBoundsAt(DpOffset.Zero)
+        val expectedPopupBounds = popupBoundsAt(
+            DpOffset(
+                x = (screenSize.width - popupSize) / 2,
+                y = (screenSize.height - popupSize) / 2,
+            )
+        )
+
         captureNextParentDraw = true
         showPopup = true
         waitUntil("First popup frame should be captured") { firstPopupFrame != null }
 
-        firstPopupFrame!!.forEachPixel(step = 4) { _, _, color ->
+        val firstFrame = firstPopupFrame!!
+        firstFrame.forEachPixelInRect(originPopupBounds, step = 4) { _, _, color ->
+            assertEquals(Color.Blue, color, "Popup content appeared at origin before its anchor was available")
+        }
+        firstFrame.forEachPixelInRect(expectedPopupBounds, step = 4) { _, _, color ->
+            assertEquals(Color.Blue, color, "Popup content appeared before its anchor was available")
+        }
+        firstFrame.forEachSampledPixel(maxSamples = FullScreenSamples) { _, _, color ->
             assertEquals(Color.Blue, color, "Popup content appeared before its anchor was available")
         }
 
         waitUntil("Popup content should be placed") { popupContentPlaced }
         waitForIdle()
         val settledPopupFrame = assertNotNull(captureScreenshot())
-        val expectedPopupBounds = with(density) {
-            DpRect(
-                origin = DpOffset(
-                    x = (screenSize.width - popupSize) / 2,
-                    y = (screenSize.height - popupSize) / 2,
-                ),
-                size = DpSize(popupSize, popupSize),
-            ).toRect().roundToIntRect()
-        }
         settledPopupFrame.forEachPixelInRect(expectedPopupBounds, step = 4) { _, _, color ->
             assertEquals(Color.Red, color, "Popup content was not drawn at its expected position")
         }
@@ -165,12 +178,12 @@ class LayersRenderingTest {
 
         fun assertFrameColor(expectedColor: Color) {
             waitForIdle()
-            assertNotNull(captureScreenshot()).forEachPixel(step = 4) { _, _, actualColor ->
-                assertEquals(
-                    expectedColor,
-                    actualColor,
-                    "Expected to draw $expectedColor background"
-                )
+            assertNotNull(captureScreenshot()).forEachSampledPixel(
+                maxSamples = FullScreenSamples
+            ) { x, y, actualColor ->
+                if (actualColor != expectedColor) {
+                    fail("Expected to draw $expectedColor background, but was $actualColor at $x, $y")
+                }
             }
         }
 
@@ -245,6 +258,7 @@ class LayersRenderingTest {
         assertTrue(screenshotMatches(listOf(bluePopup)))
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testDialogDrawsAfterMemoryWarningReleasedLayersView() = runUIKitInstrumentedTest {
         var showDialog by mutableStateOf(true)
@@ -287,8 +301,12 @@ class LayersRenderingTest {
 
         showDialog = true
         waitForIdle()
-        assertNotNull(captureScreenshot()).forEachPixel(step = 4) { _, _, color ->
-            assertEquals(Color.Red, color, "Dialog was not drawn after the memory warning")
+        assertNotNull(captureScreenshot()).forEachSampledPixel(
+            maxSamples = FullScreenSamples
+        ) { x, y, actualColor ->
+            if (actualColor != Color.Red) {
+                fail("Dialog was not drawn after the memory warning, but was $actualColor at $x, $y")
+            }
         }
     }
 }
@@ -303,17 +321,44 @@ private data class ExpectedColorRect(
     val color: Color,
 )
 
+/**
+ * Checks every pixel around [expectedColorRects] and samples the rest of the image, since the
+ * content outside of the expected rects is expected to be a solid [backgroundColor].
+ */
+@OptIn(ExperimentalForeignApi::class)
 private fun UIImage.matchesColorLayout(
     backgroundColor: Color,
     expectedColorRects: List<ExpectedColorRect>,
 ): Boolean {
     var matches = true
-    forEachPixel { x, y, actualColor ->
+    val onPixel = { x: Int, y: Int, actualColor: Color ->
         val expectedColor = expectedColorRects.firstOrNull {
             x in it.bounds.left until it.bounds.right &&
                 y in it.bounds.top until it.bounds.bottom
         }?.color ?: backgroundColor
         if (actualColor != expectedColor) matches = false
     }
+    val bounds = expectedColorRects.map { it.bounds }
+    val margin = bounds.maxOf { maxOf(it.width, it.height) }
+    val imageBounds = IntRect(
+        left = 0,
+        top = 0,
+        right = CGImageGetWidth(CGImage).toInt(),
+        bottom = CGImageGetHeight(CGImage).toInt()
+    )
+    val checkedBounds = IntRect(
+        left = bounds.minOf { it.left },
+        top = bounds.minOf { it.top },
+        right = bounds.maxOf { it.right },
+        bottom = bounds.maxOf { it.bottom },
+    ).inflate(margin).intersect(imageBounds)
+    forEachPixelInRect(checkedBounds, onPixel = onPixel)
+    forEachSampledPixel(maxSamples = FullScreenSamples, onPixel = onPixel)
     return matches
 }
+
+/**
+ * The number of pixels sampled across the whole screenshot when it is expected to be filled with
+ * a solid color, apart from the explicitly checked regions.
+ */
+private const val FullScreenSamples = 4096
