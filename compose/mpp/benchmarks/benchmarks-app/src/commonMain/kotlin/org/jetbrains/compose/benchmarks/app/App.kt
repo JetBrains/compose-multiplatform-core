@@ -19,7 +19,7 @@ package org.jetbrains.compose.benchmarks.app
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.benchmarks.MeasureApplicationRealFrames
 import org.jetbrains.compose.benchmarks.MeasureApplicationStartup
-import org.jetbrains.compose.benchmarks.report.BenchmarkReportType
+import org.jetbrains.compose.benchmarks.data.BenchmarkReportType
 
 @Composable
 internal fun App(

@@ -19,7 +19,7 @@ package org.jetbrains.compose.benchmarks
 
 import kotlin.experimental.ExperimentalNativeApi
 import kotlinx.cinterop.*
-import org.jetbrains.compose.benchmarks.report.TargetEnvironment
+import org.jetbrains.compose.benchmarks.data.TargetEnvironment
 import platform.Foundation.NSProcessInfo
 import platform.Metal.MTLCreateSystemDefaultDevice
 import platform.darwin.sysctlbyname

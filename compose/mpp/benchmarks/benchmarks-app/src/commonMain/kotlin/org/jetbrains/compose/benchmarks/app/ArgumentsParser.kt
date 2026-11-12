@@ -25,7 +25,7 @@ import org.jetbrains.compose.benchmarks.app.benchmarks.lazygrid.LazyGrid
 import org.jetbrains.compose.benchmarks.app.benchmarks.multipleComponents.MultipleComponentsExample
 import org.jetbrains.compose.benchmarks.app.benchmarks.textlayout.TextLayout
 import org.jetbrains.compose.benchmarks.app.benchmarks.visualeffects.NYContent
-import org.jetbrains.compose.benchmarks.report.BenchmarkReportType
+import org.jetbrains.compose.benchmarks.data.BenchmarkReportType
 
 
 internal fun parseBenchmarkType(value: String): BenchmarkReportType = when (value) {

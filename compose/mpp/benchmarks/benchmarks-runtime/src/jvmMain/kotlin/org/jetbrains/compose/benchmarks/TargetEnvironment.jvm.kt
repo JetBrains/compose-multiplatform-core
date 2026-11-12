@@ -22,7 +22,7 @@ import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
-import org.jetbrains.compose.benchmarks.report.TargetEnvironment
+import org.jetbrains.compose.benchmarks.data.TargetEnvironment
 
 internal actual fun collectTargetEnvironment(id: String): TargetEnvironment {
     val probe = EnvironmentProbe()

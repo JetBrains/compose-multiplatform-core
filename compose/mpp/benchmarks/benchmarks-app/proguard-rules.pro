@@ -3,4 +3,4 @@
 -keep class io.ktor.serialization.kotlinx.json.KotlinxSerializationJsonExtensionProvider { *; }
 
 # JSON serialization resolves report serializers at runtime.
--keep class org.jetbrains.compose.benchmarks.report.** { *; }
+-keep class org.jetbrains.compose.benchmarks.data.** { *; }

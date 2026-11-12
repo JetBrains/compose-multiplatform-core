@@ -22,7 +22,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import org.jetbrains.compose.benchmarks.report.TargetEnvironment
+import org.jetbrains.compose.benchmarks.data.TargetEnvironment
 
 internal expect fun collectTargetEnvironment(id: String): TargetEnvironment
 

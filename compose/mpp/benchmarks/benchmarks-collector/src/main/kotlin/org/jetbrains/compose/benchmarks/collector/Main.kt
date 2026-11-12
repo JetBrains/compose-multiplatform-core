@@ -43,13 +43,13 @@ import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.jetbrains.compose.benchmarks.report.AverageFrameReport
-import org.jetbrains.compose.benchmarks.report.BenchmarkReport
-import org.jetbrains.compose.benchmarks.report.BenchmarkReportType
-import org.jetbrains.compose.benchmarks.report.FpsReport
-import org.jetbrains.compose.benchmarks.report.RealFramesReport
-import org.jetbrains.compose.benchmarks.report.StartupReport
-import org.jetbrains.compose.benchmarks.report.TargetEnvironment
+import org.jetbrains.compose.benchmarks.data.AverageFrameReport
+import org.jetbrains.compose.benchmarks.data.BenchmarkReport
+import org.jetbrains.compose.benchmarks.data.BenchmarkReportType
+import org.jetbrains.compose.benchmarks.data.FpsReport
+import org.jetbrains.compose.benchmarks.data.RealFramesReport
+import org.jetbrains.compose.benchmarks.data.StartupReport
+import org.jetbrains.compose.benchmarks.data.TargetEnvironment
 
 fun main(args: Array<String>) {
     require(args.size == 2) { "Usage: benchmarks-collector <port> <output-directory>" }

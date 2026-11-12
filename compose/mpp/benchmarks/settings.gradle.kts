@@ -43,7 +43,7 @@ dependencyResolutionManagement {
 }
 
 include(":benchmarks-runtime")
-include(":benchmarks-report")
+include(":benchmarks-data")
 include(":benchmarks-collector")
 include(":benchmarks-launcher")
 include(":benchmarks-app")

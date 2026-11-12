@@ -39,7 +39,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             compileOnly(libs.compose.ui)
-            implementation(project(":benchmarks-report"))
+            implementation(project(":benchmarks-data"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
