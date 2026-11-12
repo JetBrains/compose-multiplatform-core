@@ -17,10 +17,18 @@
 package org.jetbrains.compose.benchmarks.launcher
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.ProgramResult
+import com.github.ajalt.clikt.core.UsageError
+import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.options.*
+import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
+import com.github.ajalt.clikt.parameters.types.restrictTo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -38,13 +46,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.*
 import kotlin.math.round
-import kotlin.system.exitProcess
 
 private val cases = listOf(
     "AnimatedVisibility", "LazyGrid", "LazyGrid-ItemLaunchedEffect", "LazyGrid-SmoothScroll",
     "LazyGrid-SmoothScroll-ItemLaunchedEffect", "VisualEffects", "LazyList", "MultipleComponents",
     "MultipleComponents-NoVectorGraphics", "TextLayout", "CanvasDrawing", "HeavyShader",
 )
+private val availableTargets = listOf("jvm", "macos", "js", "wasmJs", "ios")
 private val modes = listOf("averageFrame", "fps", "realFrames", "startup")
 private val json = Json { prettyPrint = true; encodeDefaults = true; explicitNulls = false }
 
@@ -73,24 +81,78 @@ private fun browserArguments(args: Array<String>): List<String> = buildList {
 }
 
 private class Launcher(private val invocationArguments: List<String>) : CliktCommand(name = "benchmarks-launcher") {
-    private val targets by option("--target", help = "Targets: jvm, macos, js, wasmJs, ios; space/comma separated")
-        .varargValues().required()
+    init {
+        context {
+            helpFormatter = {
+                MordantHelpFormatter(it, showDefaultValues = true, showRequiredTag = true)
+            }
+        }
+    }
+
+    override fun help(context: Context) = """
+        Build and run release benchmarks for each combination of Kotlin version, Compose version,
+        and target. Each selected browser runs on every web target; non-web targets ignore browsers.
+        Each configuration runs the selected cases and modes with the requested repetitions.
+        Results, logs, and an HTML report are saved in a timestamped directory.
+        Requires macOS or Linux; Apple targets require macOS.
+    """.trimIndent()
+
+    override fun helpEpilog(context: Context) = """
+        Examples:
+
+        benchmarks-launcher --target jvm --tests LazyGrid TextLayout --modes startup --repeat 3
+
+        benchmarks-launcher --target wasmJs --browser "/Applications/Firefox.app" --tests LazyGrid
+
+        benchmarks-launcher --target jvm --compose-version local --compose-core-path /path/to/core
+
+        Lists accept spaces or commas. Use all alone to select all targets, cases, or modes.
+        Web targets require --browser. With no --simulator, iOS requires exactly one booted simulator.
+        Compose defaults to local when a core checkout is configured, otherwise to the version catalog.
+    """.trimIndent()
+
+    // split() resets the value count; use valueSplit to preserve space-separated varargs as well.
+    private val targets by option("--target", help = "Targets, space/comma separated, or all")
+        .choice(availableTargets + "all").varargValues()
+        .copy(valueSplit = { it.split(",") }).required()
+        .validate {
+            require("all" !in it || it == listOf("all")) { "use all alone" }
+            val selected = select(it, availableTargets)
+            require(selected.none { it in listOf("ios", "macos") } || isMac) { "Apple targets require macOS" }
+            require(selected.none { it in listOf("js", "wasmJs") } || browsers.isNotEmpty()) {
+                "web targets require --browser"
+            }
+        }
     private val composeVersions by option(
         "--compose-version",
-        help = "Compose versions or local, space/comma separated; default: version catalog"
-    ).varargValues().default(emptyList())
+        help = "Compose versions or local, space/comma separated"
+    ).varargValues().default(emptyList(), defaultForHelp = "local if a core checkout is configured, otherwise version catalog")
     private val kotlinVersions by option(
         "--kotlin-version",
-        help = "Kotlin versions, space/comma separated; default: version catalog"
-    ).varargValues().default(emptyList())
-    private val port by option(help = "Collector port").int().default(8090)
-    private val tests by option(help = "Case names, space/comma separated, or all").varargValues()
-        .default(listOf("all"))
+        help = "Kotlin versions, space/comma separated"
+    ).varargValues().default(emptyList(), defaultForHelp = "version catalog")
+        .validate {
+            require(it.flatMap { value -> value.split(",") }.none { value -> value == "local" }) {
+                "Kotlin must use published versions"
+            }
+        }
+    private val port by option(help = "Collector port").int().restrictTo(1..65535).default(8090)
+    private val tests by option(
+        help = "Case names, space/comma separated, or all. Available: ${cases.joinToString()}"
+    )
+        .choice(cases + "all", metavar = "CASE").varargValues()
+        .copy(valueSplit = { it.split(",") })
+        .default(listOf("all"), defaultForHelp = "all")
+        .check("use all alone") { "all" !in it || it == listOf("all") }
     private val selectedModes by option("--modes", help = "Modes, space/comma separated, or all")
-        .varargValues().default(listOf("all"))
-    private val repeat by option(help = "Repetitions of each case/mode").int().default(1)
+        .choice(modes + "all").varargValues()
+        .copy(valueSplit = { it.split(",") })
+        .default(listOf("all"), defaultForHelp = "all")
+        .check("use all alone") { "all" !in it || it == listOf("all") }
+    private val repeat by option(help = "Repetitions of each case/mode").int().restrictTo(min = 1).default(1)
     private val timeout by option(help = "Seconds per test, excluding build time").double()
         .default(300.0)
+        .check("must be finite and positive") { it.isFinite() && it > 0 }
     private val outputDir by option(
         "--output-dir",
         help = "Base directory for timestamped results; default: out/benchmark-reports"
@@ -105,12 +167,18 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         help = "Core checkout for local Compose; default: current core checkout"
     )
         .convert { absolutePath(it) }
+        .validate {
+            require(composeVersions.isEmpty() || composeVersions.flatMap { value -> value.split(",") }.contains("local")) {
+                "--compose-core-path requires local in --compose-version"
+            }
+        }
     private val browsers by option("--browser", help = "Browser executables, commands, or macOS .apps; space/comma separated")
         .multiple()
+        .check("browser must not be empty") { values -> values.flatMap { it.split(",") }.none { it.isBlank() } }
     private val webPort by option(
         "--web-port",
         help = "Static file port, 0 selects a free port"
-    ).int().default(0)
+    ).int().restrictTo(0..65535).default(0)
     private val simulator by option(help = "iOS Simulator UUID or unique name; default: one booted device")
 
     override fun run() {
@@ -118,19 +186,14 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             require(
                 !System.getProperty("os.name").startsWith("Windows")
             ) { "this launcher requires macOS or Linux" }
-            val selectedTargets = select(targets, listOf("jvm", "macos", "js", "wasmJs", "ios"))
+            val selectedTargets = select(targets, availableTargets)
             val selectedBrowsers = browsers.flatMap { it.split(",") }.distinct()
-            require(selectedBrowsers.none { it.isBlank() }) { "browser must not be empty" }
-            require(selectedTargets.none { it in listOf("ios", "macos") } || isMac) { "Apple targets require macOS" }
-            require(port in 1..65535 && webPort in 0..65535) { "invalid port" }
-            require(repeat > 0 && timeout.isFinite() && timeout > 0) { "repeat and timeout must be positive" }
-            require(selectedTargets.none { it in listOf("js", "wasmJs") } || selectedBrowsers.isNotEmpty()) {
-                "web targets require --browser"
-            }
             launchSeries(selectedTargets, selectedBrowsers)
+        } catch (error: CliktError) {
+            throw error
         } catch (error: Exception) {
             echo("Error: ${error.message}", err = true)
-            exitProcess(1)
+            throw ProgramResult(1)
         }
     }
 
@@ -141,14 +204,10 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             (if (it.isAbsolute) it else root.resolve(it)).toAbsolutePath().normalize()
         }
         val selectedKotlin = selectVersions(kotlinVersions, catalogVersion(root, "kotlin"))
-        require("local" !in selectedKotlin) { "Kotlin must use published versions" }
         val catalogCompose = validateVersion(catalogVersion(root, "compose-multiplatform"))
         require(catalogCompose != "local") { "the catalog must contain a published Compose version" }
         val configuredCore = corePath ?: configuredCorePath(root)
         val selectedCompose = selectVersions(composeVersions, if (configuredCore != null) "local" else catalogCompose)
-        require(corePath == null || "local" in selectedCompose) {
-            "--compose-core-path requires local in --compose-version"
-        }
         val selectedTests = select(tests, cases)
         val measurementModes = select(selectedModes, modes)
         val stamp = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS").withZone(ZoneOffset.UTC)
@@ -237,7 +296,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         println("Finished matrix: $passed/$total configurations passed. Results: $session")
         if (!shuttingDown.get()) {
             val code = if (interrupted) 130 else if (passed != total || reportFailed) 1 else 0
-            if (code != 0) exitProcess(code)
+            if (code != 0) throw ProgramResult(code)
         }
     }
 
@@ -475,7 +534,7 @@ private fun findRoot(explicit: Path?): Path {
     fun valid(candidate: Path) = candidate.resolve("settings.gradle.kts").exists() &&
             candidate.resolve("gradlew").exists() && candidate.resolve("benchmarks-app").isDirectory()
     if (explicit != null) {
-        require(valid(explicit)) { "not a benchmarks project: $explicit" }
+        if (!valid(explicit)) throw UsageError("not a benchmarks project: $explicit", paramName = "--project-dir")
         return explicit
     }
     val cwd = absolutePath(".")
@@ -487,10 +546,7 @@ private fun findRoot(explicit: Path?): Path {
 }
 
 private fun select(values: List<String>, available: List<String>): List<String> {
-    val items = values.flatMap { it.split(",") }
-    if (items == listOf("all")) return available
-    require(items.all { it in available }) { "unknown values: ${(items - available.toSet()).joinToString()}" }
-    return items.distinct()
+    return if (values == listOf("all")) available else values.distinct()
 }
 
 private fun ensureFreePort(port: Int) {
