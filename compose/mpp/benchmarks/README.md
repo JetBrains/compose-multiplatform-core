@@ -182,6 +182,37 @@ For local Compose, the version directory is named `kotlin(<version>)-cmp(local)-
 Its summary records the actual Compose version from the catalog, `localCompose: true`, and the core
 checkout path. Published configurations have `localCompose: false`. Existing results are not overwritten.
 
+## Target environment collection
+
+The app has a separate service mode that collects target-process metadata without creating
+benchmark content, opening a benchmark window, or running measurements. It is not a benchmark type
+and requires no test name. The launcher does not invoke this mode or include its output in HTML yet.
+
+Start the collector, then invoke the app with its environment endpoint:
+
+```bash
+./gradlew :benchmarks-collector:installDist --console=plain
+./benchmarks-collector/build/install/benchmarks-collector/bin/benchmarks-collector 8090 ./environment-results
+
+# In another terminal (JVM):
+./gradlew :benchmarks-app:run \
+  --args="environment target-jvm http://127.0.0.1:8090/environment" --console=plain
+```
+
+Native macOS executables and the iOS app accept the same three arguments:
+
+```text
+environment <id> <environmentCollectorUrl>
+```
+
+Benchmark launches use `<benchmark-type> <id> <benchmarkCollectorUrl> <test-name>`.
+
+For JS and WasmJS, open the app with these query parameters (no `test` parameter):
+
+```text
+?type=environment&id=target-web&benchmarkCollectorUrl=http%3A%2F%2F127.0.0.1%3A8090%2Fenvironment
+```
+
 ## HTML reports
 
 The launcher's final step generates `index.html` in the current timestamp directory and prints its

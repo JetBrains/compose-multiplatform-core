@@ -24,6 +24,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.jetbrains.compose.benchmarks.reportTargetEnvironment
 import org.jetbrains.skiko.InternalSkikoApi
 import org.jetbrains.skiko.wasm.awaitSkiko
 import org.w3c.dom.url.URLSearchParams
@@ -33,8 +34,12 @@ fun main() {
     val startupTiming = captureStartupTiming()
     val parameters = URLSearchParams(window.location.search.toJsString())
     val benchmarkCollectorUrl = requireNotNull(parameters.get("benchmarkCollectorUrl")) { "Missing query parameter: benchmarkCollectorUrl" }
-    val testName = requireNotNull(parameters.get("test")) { "Missing query parameter: test" }
     val id = requireNotNull(parameters.get("id")) { "Missing query parameter: id" }
+    if (parameters.get("type") == "environment") {
+        MainScope().launch { reportTargetEnvironment(benchmarkCollectorUrl, id) }
+        return
+    }
+    val testName = requireNotNull(parameters.get("test")) { "Missing query parameter: test" }
     val benchmarkType = parseBenchmarkType(
         requireNotNull(parameters.get("type")) { "Missing query parameter: type" }
     )

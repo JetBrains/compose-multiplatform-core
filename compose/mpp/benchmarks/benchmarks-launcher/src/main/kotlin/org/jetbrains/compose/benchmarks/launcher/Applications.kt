@@ -192,7 +192,7 @@ internal fun runApplication(
         processes.start(command, log).use { waitForReport(it.process) }
         return
     }
-    val query = listOf("benchmarkCollectorUrl", "test", "type", "id").zip(parameters)
+    val query = listOf("type", "id", "benchmarkCollectorUrl", "test").zip(parameters)
         .joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, Charsets.UTF_8)}" }
     val url = "$webUrl/?$query"
     if (kind == "safari") {
