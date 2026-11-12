@@ -329,9 +329,6 @@ private class CoreTextFieldInputDelegate(
     override val selectionTextRange: TextRange
         get() = value.selection
 
-    override val markedTextRange: TextRange?
-        get() = value.composition
-
     override fun insertText(text: String) {
         sendEditCommands(CommitTextCommand(text, 1))
     }
@@ -357,18 +354,6 @@ private class CoreTextFieldInputDelegate(
     override fun setSelectedText(range: TextRange?) {
         val selection = range ?: TextRange(text.length)
         sendEditCommands(SetSelectionCommand(selection.min, selection.max))
-    }
-
-    override fun setMarkedText(markedText: String?, selectedRange: TextRange) {
-        if (markedText == null) {
-            unmarkText()
-        } else {
-            sendEditCommands(SetComposingTextCommand(markedText, 1))
-        }
-    }
-
-    override fun unmarkText() {
-        sendEditCommands(FinishComposingTextCommand())
     }
 
     private fun sendEditCommands(vararg commands: EditCommand) {
