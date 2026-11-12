@@ -4706,6 +4706,11 @@ final inline fun androidx.compose.ui.platform/debugInspectorInfo(crossinline kot
 final suspend fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.relocation/bringIntoView(kotlin/Function0<androidx.compose.ui.geometry/Rect?>? = ...) // androidx.compose.ui.relocation/bringIntoView|bringIntoView@androidx.compose.ui.node.DelegatableNode(kotlin.Function0<androidx.compose.ui.geometry.Rect?>?){}[0]
 final suspend fun (androidx.compose.ui.platform/PlatformTextInputModifierNode).androidx.compose.ui.platform/establishTextInputSession(kotlin.coroutines/SuspendFunction1<androidx.compose.ui.platform/PlatformTextInputSessionScope, kotlin/Nothing>): kotlin/Nothing // androidx.compose.ui.platform/establishTextInputSession|establishTextInputSession@androidx.compose.ui.platform.PlatformTextInputModifierNode(kotlin.coroutines.SuspendFunction1<androidx.compose.ui.platform.PlatformTextInputSessionScope,kotlin.Nothing>){}[0]
 
+// Targets: [apple]
+final class androidx.compose.ui.platform/SynchronizedObject : kotlinx.atomicfu.locks/SynchronizedObject { // androidx.compose.ui.platform/SynchronizedObject|null[0]
+    constructor <init>() // androidx.compose.ui.platform/SynchronizedObject.<init>|<init>(){}[0]
+}
+
 // Targets: [ios]
 abstract interface androidx.compose.ui.uikit/ComposeUIViewControllerDelegate { // androidx.compose.ui.uikit/ComposeUIViewControllerDelegate|null[0]
     open val preferredStatusBarStyle // androidx.compose.ui.uikit/ComposeUIViewControllerDelegate.preferredStatusBarStyle|{}preferredStatusBarStyle[0]
@@ -5012,6 +5017,11 @@ final fun androidx.compose.ui.window/ComposeUIViewController(kotlin/Function1<an
 
 // Targets: [ios]
 final fun androidx.compose.ui.window/ComposeUIViewController(kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): platform.UIKit/UIViewController // androidx.compose.ui.window/ComposeUIViewController|ComposeUIViewController(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
+
+// Targets: [js, wasmJs]
+final class androidx.compose.ui.platform/SynchronizedObject { // androidx.compose.ui.platform/SynchronizedObject|null[0]
+    constructor <init>() // androidx.compose.ui.platform/SynchronizedObject.<init>|<init>(){}[0]
+}
 
 // Targets: [js, wasmJs]
 final class androidx.compose.ui.window/ComposeViewportConfiguration { // androidx.compose.ui.window/ComposeViewportConfiguration|null[0]
