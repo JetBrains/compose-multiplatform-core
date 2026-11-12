@@ -310,7 +310,7 @@ class CfWA11YTest : OnCanvasTests {
         var order by mutableStateOf(listOf(1, 2, 3))
 
         createComposeWindow {
-            Column(modifier = Modifier.testTag("parent")) {
+            Column(modifier = Modifier.testTagWithTraversalGroup("parent")) {
                 order.forEach { item ->
                     key(item) {
                         Button(modifier = Modifier.testTag("button$item"), onClick = {}) {
@@ -371,7 +371,7 @@ class CfWA11YTest : OnCanvasTests {
 
         createComposeWindow {
             Column {
-                Column(modifier = Modifier.size(100.dp).testTag("parent1").recordCoordinates("parent1")) {
+                Column(modifier = Modifier.size(100.dp).testTagWithTraversalGroup("parent1").recordCoordinates("parent1")) {
                     Button(modifier = Modifier.height(30.dp).testTag("button1"), onClick = {}) {
                         Text("Button1")
                     }
@@ -380,7 +380,7 @@ class CfWA11YTest : OnCanvasTests {
                         Text("Button2")
                     }
                 }
-                Box(modifier = Modifier.size(100.dp).testTag("parent2").recordCoordinates("parent2")) {
+                Box(modifier = Modifier.size(100.dp).testTagWithTraversalGroup("parent2").recordCoordinates("parent2")) {
                     if (moveToSecondParent) buttonInMovableContent()
                 }
             }
@@ -818,9 +818,10 @@ class CfWA11YTest : OnCanvasTests {
 
         awaitA11YChanges()
 
-        val rangeSlider = getShadowRoot().getElementById("rangeSlider") as? HTMLElement
-        assertNotNull(rangeSlider)
-        val sliders = rangeSlider.querySelectorAll("[role=slider]")
+        // The RangeSlider node itself exposes nothing to accessibility (only a testTag), so it has
+        // no a11y element of its own; the thumbs are hoisted to its parent.
+        assertNull(getShadowRoot().getElementById("rangeSlider"))
+        val sliders = getA11YContainer()!!.querySelectorAll("[role=slider]")
         assertEquals(2, sliders.length)
         assertEquals(0.25f, (sliders[0] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
         assertEquals(0.75f, (sliders[1] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
@@ -952,7 +953,11 @@ class CfWA11YTest : OnCanvasTests {
 
         createComposeWindow {
             Column(
-                modifier = if (addSemantics) Modifier.testTag("myColumn") else Modifier
+                modifier = if (addSemantics) {
+                    Modifier.testTagWithTraversalGroup("myColumn")
+                } else {
+                    Modifier
+                }
             ) {
                 Text("ChildText")
             }

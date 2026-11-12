@@ -340,11 +340,15 @@ internal class ComposeWebSemanticsListener(
         htmlParent: HTMLElement,
         parentA11YExposure: A11YReachability,
     ) {
-        if (children.isEmpty()) return
+        // The reachability inherited by the children hoisted from the flattened wrappers.
+        // The other children inherit parentA11YExposure.
+        val hoistedReachabilities = MutableIntObjectMap<A11YReachability>()
+        val flattenedChildren = children.flattenA11YWrappers(parentA11YExposure, hoistedReachabilities)
+        if (flattenedChildren.isEmpty()) return
 
         // Prepare the children bounds to avoid recomputing them during grouping and comparison.
-        val bounds = MutableIntObjectMap<Rect>(children.size)
-        children.fastForEach { child ->
+        val bounds = MutableIntObjectMap<Rect>(flattenedChildren.size)
+        flattenedChildren.fastForEach { child ->
             // Scroll-reachable children remain accessible offscreen, where clipped bounds may be empty,
             // so use unclipped bounds.
             bounds[child.id] = if (parentA11YExposure == A11YReachability.ReachableByScroll) {
@@ -355,14 +359,16 @@ internal class ComposeWebSemanticsListener(
         }
 
         val reversedChildren = parent.sortByGeometryGroupingsForWeb(
-            parentListToSort = children,
+            parentListToSort = flattenedChildren,
             boundsOf = { checkNotNull(bounds[it.id]) }
         ).asReversed()
 
         dfsSemanticsNodes.addAll(reversedChildren)
-        repeat(reversedChildren.size) {
+        reversedChildren.fastForEach { child ->
             dfsA11YParents.addLast(htmlParent)
-            dfsA11YReachabilities.addLast(parentA11YExposure)
+            dfsA11YReachabilities.addLast(
+                hoistedReachabilities.getOrDefault(child.id, parentA11YExposure)
+            )
         }
     }
 
@@ -757,14 +763,3 @@ internal class ComposeWebSemanticsListener(
         hasStopped = true
     }
 }
-
-private fun SemanticsNode.placedA11YChildren(): List<SemanticsNode> =
-    replacedChildren.filter { child ->
-        // Lazy lists prefetch upcoming items by composing and measuring them before placement.
-        // These items have no position in the list yet, and a reused layout node may still contain
-        // coordinates from its previous item. Exclude them so stale bounds cannot affect the order
-        // or position of elements in the accessibility DOM. Placed offscreen items remain eligible.
-        // Synthetic ("fake") semantics nodes expose a parent's role or content description using
-        // the parent's bounds; their own layout nodes are not attached or placed.
-        child.isFake || child.layoutNode.let { it.isAttached && it.isPlaced }
-    }

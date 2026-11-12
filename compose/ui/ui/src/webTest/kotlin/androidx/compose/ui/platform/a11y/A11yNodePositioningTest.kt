@@ -42,8 +42,8 @@ class A11yNodePositioningTest : OnCanvasTests {
     fun nestedNodeIsRenderedAtTheSameRectAsAnEquivalentFlatNode() = runApplicationTest {
         createComposeWindow {
             Box(Modifier.fillMaxSize()) {
-                Box(Modifier.offset(40.dp, 40.dp).testTag("outer")) {
-                    Box(Modifier.offset(30.dp, 30.dp).testTag("middle")) {
+                Box(Modifier.offset(40.dp, 40.dp).testTagWithTraversalGroup("outer")) {
+                    Box(Modifier.offset(30.dp, 30.dp).testTagWithTraversalGroup("middle")) {
                         Box(Modifier.offset(20.dp, 20.dp).size(50.dp).testTag("nested"))
                     }
                 }
@@ -59,7 +59,7 @@ class A11yNodePositioningTest : OnCanvasTests {
     fun childOfAnOffsetNodeIsNotShiftedByItsParentOffsetTwice() = runApplicationTest {
         createComposeWindow {
             Box(Modifier.fillMaxSize()) {
-                Box(Modifier.offset(40.dp, 40.dp).size(50.dp).testTag("parent")) {
+                Box(Modifier.offset(40.dp, 40.dp).size(50.dp).testTagWithTraversalGroup("parent")) {
                     Box(Modifier.size(50.dp).testTag("child"))
                 }
             }
