@@ -74,15 +74,17 @@ private data class ChartReport(
 /** Reads only this session. No server is needed to open the resulting file. */
 internal fun generateHtmlReport(session: Path, composeVersions: List<String>): Path {
     val warnings = mutableListOf<String>()
-    val launcherCommand = try {
+    val sessionInfo = try {
         val file = session.resolve("session.json")
-        if (Files.exists(file)) {
-            reportJson.parseToJsonElement(file.readText()).jsonObject.getValue("launcherCommand").jsonArray
-                .joinToString(" ") { shellArgument(it.jsonPrimitive.content) }
-        } else null
+        if (Files.exists(file)) reportJson.parseToJsonElement(file.readText()).jsonObject else null
     } catch (error: Exception) {
-        warnings.add("Cannot read launcher command: "+error.message)
+        warnings.add("Cannot read session metadata: "+error.message)
         null
+    }
+    val launcherCommand = sessionInfo?.get("launcherCommand")?.jsonArray
+        ?.joinToString(" ") { shellArgument(it.jsonPrimitive.content) }
+    val totalTime = sessionInfo?.get("totalTimeSeconds")?.jsonPrimitive?.longOrNull?.let { seconds ->
+        String.format(java.util.Locale.ROOT, "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
     }
     val runs = mutableListOf<ChartRun>()
     val configurations = mutableListOf<ChartConfiguration>()
@@ -183,6 +185,7 @@ internal fun generateHtmlReport(session: Path, composeVersions: List<String>): P
             header {
                 h1 { +"Compose benchmark reports" }
                 p { +"Session: ${session.fileName}" }
+                totalTime?.let { p { +"Total time: $it" } }
                 launcherCommand?.let { command ->
                     p(classes = "launcher-command-label") { +"Launcher command" }
                     pre(classes = "launcher-command") { code { +command } }

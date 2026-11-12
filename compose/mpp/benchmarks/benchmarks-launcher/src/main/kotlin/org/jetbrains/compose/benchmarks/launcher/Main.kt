@@ -134,6 +134,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
     }
 
     private fun launchSeries(selectedTargets: List<String>, selectedBrowsers: List<String>) {
+        val sessionStarted = System.nanoTime()
         val root = findRoot(projectDir)
         val out = path(System.getenv("OUT_DIR") ?: root.resolve("out").toString()).let {
             (if (it.isAbsolute) it else root.resolve(it)).toAbsolutePath().normalize()
@@ -154,9 +155,8 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         val base = outputDir ?: out.resolve("benchmark-reports")
         Files.createDirectories(base)
         val session = Files.createDirectory(base.resolve(stamp))
-        session.resolve("session.json").writeText(
-            json.encodeToString(Session(listOf("benchmarks-launcher") + invocationArguments)) + "\n"
-        )
+        val sessionInfo = Session(listOf("benchmarks-launcher") + invocationArguments)
+        session.resolve("session.json").writeText(json.encodeToString(sessionInfo) + "\n")
         val summaries = mutableListOf<Summary>()
         val activeProcesses = AtomicReference<Processes?>()
         val shuttingDown = AtomicBoolean()
@@ -219,6 +219,8 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             } finally {
                 Thread.interrupted()
                 try {
+                    sessionInfo.totalTimeSeconds = (System.nanoTime() - sessionStarted) / 1_000_000_000
+                    session.resolve("session.json").writeText(json.encodeToString(sessionInfo) + "\n")
                     println("Generating HTML report...")
                     val html = generateHtmlReport(session, selectedCompose)
                     println("HTML report: $html")
@@ -546,7 +548,10 @@ private fun waitForEnvironment(
 }
 
 @Serializable
-private data class Session(val launcherCommand: List<String>)
+private data class Session(
+    val launcherCommand: List<String>,
+    var totalTimeSeconds: Long? = null,
+)
 
 @Serializable
 private data class Summary(
