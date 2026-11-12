@@ -11,6 +11,7 @@ and requires JDK 17 or newer. Apple targets require macOS with Xcode.
 - `benchmarks-app` — an application with Compose benchmark cases.
 - `benchmarks-runtime` — runs measurements and sends results.
 - `benchmarks-data` — shared report models.
+- `benchmarks-report` — a JVM library that generates a static HTML report from a session directory.
 - `benchmarks-collector` — receives reports over HTTP and saves them as JSON files.
 - `benchmarks-launcher` — a console application that builds and runs benchmarks sequentially.
 - `benchmarks-ios-app` — an iOS host application for benchmarks; a separate Xcode project.
@@ -222,8 +223,8 @@ For JS and WasmJS, open the app with these query parameters (no `test` parameter
 
 The launcher's final step generates `index.html` in the current timestamp directory and prints its
 path. Open it manually in a browser. All measurement data is embedded in the file; no local server
-is required. The minified Chart.js 4.4.8 library is bundled in the launcher
-resources and embedded in the HTML, so reports work offline as a single file.
+is required. The minified Chart.js 4.4.8 library is bundled in the resources of `benchmarks-report`
+and embedded in the HTML, so reports work offline as a single file.
 HTML is generated with kotlinx.html.
 
 `OUT_DIR` overrides the base directory for results and iOS DerivedData.

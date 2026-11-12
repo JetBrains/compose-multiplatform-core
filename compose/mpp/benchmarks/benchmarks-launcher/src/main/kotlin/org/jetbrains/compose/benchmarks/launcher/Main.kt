@@ -24,6 +24,7 @@ import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import org.jetbrains.compose.benchmarks.report.generateHtmlReport
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -222,7 +223,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                     sessionInfo.totalTimeSeconds = (System.nanoTime() - sessionStarted) / 1_000_000_000
                     session.resolve("session.json").writeText(json.encodeToString(sessionInfo) + "\n")
                     println("Generating HTML report...")
-                    val html = generateHtmlReport(session, selectedCompose)
+                    val html = generateHtmlReport(session)
                     println("HTML report: $html")
                 } catch (error: Exception) {
                     reportFailed = true
