@@ -16,57 +16,6 @@ and requires JDK 17 or newer. Apple targets require macOS with Xcode.
 - `benchmarks-launcher` — a console application that builds and runs benchmarks sequentially.
 - `benchmarks-ios-app` — an iOS host application for benchmarks; a separate Xcode project.
 
-## Compose and Kotlin versions
-
-Set the versions of published libraries and plugins in the `gradle/libs.versions.toml` version catalog:
-
-```toml
-[versions]
-kotlin = "2.4.21"
-compose-multiplatform = "1.13.0-beta02"
-```
-
-`kotlin` sets the default version of Kotlin and the matching Compose Compiler plugin.
-`compose-multiplatform` sets the default version of Compose libraries, resources, and the Compose
-Multiplatform Gradle plugin. Keep a published Compose version in this catalog.
-
-Use `--kotlin-version` and `--compose-version` to pass lists of versions without editing the catalog
-or rebuilding the launcher. Lists accept spaces or commas. The launcher runs every Kotlin × Compose
-combination sequentially in one timestamped session. Duplicate entries are ignored.
-A published Compose version also selects that version of the resources and Gradle plugin.
-Use compatible Kotlin and Compose versions.
-
-### Using core sources
-
-You can use a core checkout as an included build instead of published Compose libraries.
-Add this property to `gradle.properties`:
-
-```properties
-composeCorePath=../../..
-```
-
-Or pass the property on the Gradle command line:
-
-```bash
-./gradlew :benchmarks-launcher:installDist -PcomposeCorePath=/path/to/core --console=plain
-```
-
-In the launcher, use `--compose-version local` to select the current core checkout at `../../..`.
-Add `--compose-core-path /path/to/core` to select another checkout or worktree. The existing core path
-option or property also selects local Compose when `--compose-version` is omitted. Published entries
-in a version list disable substitution even if the property is configured. `--compose-core-path`
-requires `local` in the list and applies only to local configurations.
-
-The launcher passes the resolved version numbers and core path to child Gradle builds, including
-Xcode's framework build. Only a non-empty `composeCorePath` enables the included build; the launcher
-passes an empty value for published configurations to override any configured path. A relative path in the Gradle property is resolved from this project. A relative path
-in the launcher argument is resolved from the current working directory.
-
-For a `local` entry, the resolved Compose version is taken from the catalog, with core projects
-substituted through the included build. Resources and the Compose Multiplatform Gradle plugin also
-use that catalog version. `--kotlin-version` changes Kotlin in the benchmark project only;
-core uses its own compiler version.
-
 ## Building the launcher
 
 Build the launcher and copy the distribution:
@@ -76,6 +25,8 @@ Build the launcher and copy the distribution:
 mkdir -p launcher
 cp -R benchmarks-launcher/build/install/benchmarks-launcher/. ./launcher/
 ```
+
+See all available options:
 
 ```bash
 ./launcher/bin/benchmarks-launcher --help
@@ -160,6 +111,8 @@ Build core sources and use Kotlin 2.4.20 for the benchmark project:
   --tests LazyGrid --modes startup --output-dir ./results
 ```
 
+## Launcher results
+
 By default, results go under `out/benchmark-reports`. `--output-dir` replaces this base directory.
 Each invocation creates a UTC timestamp directory in `yyyy-MM-dd-HH-mm-ss-SSS` format, then groups
 results by versions and target:
@@ -175,57 +128,93 @@ results by versions and target:
             summary.json   # Versions, build metadata, environment reference, and benchmark runs
 ```
 
-All configurations share the same timestamp directory, each with its own version/target subtree.
-Web targets have an additional `browser-<index>-<name>` subdirectory containing their `reports`,
-`logs`, and `summary.json`, so results from different browsers never overwrite each other.
-All targets and browsers are included in one HTML report. Selecting a web target shows an additional
-browser switch with browser names; non-web targets hide it.
-For local Compose, the version directory is named `kotlin(<version>)-cmp(local)-reports`.
-Its summary records the actual Compose version from the catalog, `localCompose: true`, and the core
-checkout path. Published configurations have `localCompose: false`. Existing results are not overwritten.
+## How to add a new benchmark case
 
-## Target environment collection
+The steps below use `MyBenchmark` as the case name. File paths are relative to
+`compose/mpp/benchmarks`; run the commands from that directory.
 
-The app has a separate service mode that collects target-process metadata without creating
-benchmark content, opening a benchmark window, or running measurements. It is not a benchmark type
-and requires no test name. The launcher invokes it once per version/target/browser configuration,
-before running benchmarks. The service operation has a separate id and log and is not counted as
-a test or included in benchmark charts. Its JSON path and receive time are recorded in
-`summary.json` under `environment`. Collection failures are recorded there without discarding
-benchmark results.
+### 1. Implement the Compose UI case
 
-Start the collector, then invoke the app with its environment endpoint:
+Add a package and Kotlin file under
+`benchmarks-app/src/commonMain/kotlin/org/jetbrains/compose/benchmarks/app/benchmarks`, for example
+`mybenchmark/MyBenchmark.kt`, with a `@Composable fun MyBenchmark()` entry point.
+Use an existing case such as `canvasdrawing/CanvasDrawing.kt` or `lazygrid/LazyGrid.kt` as a reference.
+
+Keep the case multiplatform and self-contained: avoid platform-specific APIs, network requests, and
+manual interaction. For frame measurements, make the workload update automatically (for example,
+with an animation or scrolling in `LaunchedEffect`) so it continues producing frames throughout
+warmup and measurement. Keep input data and random seeds reproducible. The measurement runtime
+already handles warmup, frame counts, timing, and report submission; do not implement these in the
+UI case.
+
+### 2. Register the case in `benchmarkContent`
+
+In `benchmarks-app/src/commonMain/kotlin/org/jetbrains/compose/benchmarks/app/ArgumentsParser.kt`,
+import the composable:
+
+```kotlin
+import org.jetbrains.compose.benchmarks.app.benchmarks.mybenchmark.MyBenchmark
+```
+
+Add a branch to the existing `when` in `benchmarkContent`, before `else`:
+
+```kotlin
+"MyBenchmark" -> { { MyBenchmark() } }
+```
+
+The outer branch returns a composable lambda; it must not call the composable directly. The string
+is the case's identifier in launch arguments, JSON reports, and the HTML report. Names are
+case-sensitive.
+
+### 3. Register the case in the launcher
+
+Add `"MyBenchmark"` to the `cases` list in
+`benchmarks-launcher/src/main/kotlin/org/jetbrains/compose/benchmarks/launcher/Main.kt`.
+Use exactly the same name as in `benchmarkContent`. This makes the case available to `--tests`,
+includes it in `--tests all`, and exposes it in the launcher's help and validation.
+
+No additional registration is needed in the collector or HTML report generator: they use the case
+name from the report. Adding a UI case does not require a new measurement mode or report format.
+
+### 4. Rebuild and refresh the launcher distribution
+
+The copied launcher is not updated automatically when its source changes:
 
 ```bash
-./gradlew :benchmarks-collector:installDist --console=plain
-./benchmarks-collector/build/install/benchmarks-collector/bin/benchmarks-collector 8090 ./environment-results
-
-# In another terminal (JVM):
-./gradlew :benchmarks-app:run \
-  --args="environment target-jvm http://127.0.0.1:8090/environment" --console=plain
+./gradlew :benchmarks-launcher:installDist --console=plain
+mkdir -p launcher
+cp -R benchmarks-launcher/build/install/benchmarks-launcher/. ./launcher/
+./launcher/bin/benchmarks-launcher --help
 ```
 
-Native macOS executables and the iOS app accept the same three arguments:
+Check that `MyBenchmark` appears among the available cases. If the launcher rejects it as an
+unknown `--tests` value, check the registration and make sure you are using the rebuilt distribution.
 
-```text
-environment <id> <environmentCollectorUrl>
+### 5. Run the new case through the launcher
+
+Start with a single target and mode, using explicit versions for a reproducible run:
+
+```bash
+./launcher/bin/benchmarks-launcher --target jvm \
+  --kotlin-version 2.4.21 --compose-version 1.13.0-beta02 \
+  --tests MyBenchmark --modes realFrames --repeat 1 \
+  --output-dir ./out/new-case-results
 ```
 
-Benchmark launches use `<benchmark-type> <id> <benchmarkCollectorUrl> <test-name>`.
+The launcher builds the application containing the new case, starts the collector, runs the case,
+and generates an HTML report. There is no need to build the application or start the collector
+separately. Use `--compose-version local` instead to investigate changes in a core checkout.
 
-For JS and WasmJS, open the app with these query parameters (no `test` parameter):
+After the first successful run, check the other relevant modes (`startup`, `averageFrame`, and
+`fps`) and platforms. For iOS, use `--target ios --simulator <simulator-uuid>` on macOS; for web,
+select `--target js` or `--target wasmJs` and add `--browser`. Offscreen modes (`averageFrame` and
+`fps`) must work without a platform window or user interaction.
 
-```text
-?type=environment&id=target-web&benchmarkCollectorUrl=http%3A%2F%2F127.0.0.1%3A8090%2Fenvironment
+### 6. Check the HTML report and diagnose failures
+
+The launcher prints `HTML report: <path>` when report generation finishes. Open that `index.html`
+in a browser, for example on macOS:
+
+```bash
+open "./out/new-case-results/<session-timestamp>/index.html"
 ```
-
-## HTML reports
-
-The launcher's final step generates `index.html` in the current timestamp directory and prints its
-path. Open it manually in a browser. All measurement data is embedded in the file; no local server
-is required. The minified Chart.js 4.4.8 library is bundled in the resources of `benchmarks-report`
-and embedded in the HTML, so reports work offline as a single file.
-HTML is generated with kotlinx.html.
-
-`OUT_DIR` overrides the base directory for results and iOS DerivedData.
-A relative `OUT_DIR` is resolved from the project root. Gradle artifacts remain in `<module>/build`.
