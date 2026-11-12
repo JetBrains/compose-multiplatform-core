@@ -16,11 +16,18 @@
 
 package androidx.compose.ui.interaction
 
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.unit.DpOffset
@@ -28,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private val DragDistance = 20.dp
 private val DragDuration = 10.milliseconds
@@ -112,5 +120,63 @@ class MultiTouchTrackingTest {
 
         waitForIdle()
         assertTouchesDown(0, "all the touches are released")
+    }
+
+    @Test
+    fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTest {
+        var touchesDown = 0
+        var touchesUp = 0
+
+        setContent {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .size(250.dp)
+                        .testTag("Box 1")
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                while (true) {
+                                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                                    event.changes.forEach { change ->
+                                        if (change.changedToDown()) {
+                                            touchesDown++
+                                        } else if (change.changedToUp()) {
+                                            touchesUp++
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                )
+                Box(
+                    modifier = Modifier
+                        .size(250.dp)
+                        .testTag("Box 2")
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                while (true) {
+                                    awaitPointerEvent(pass = PointerEventPass.Initial)
+                                }
+                            }
+                        }
+                )
+            }
+        }
+
+        val tap1 = findNodeWithTag("Box 1").touchDown()
+        val tap2 = findNodeWithTag("Box 2").touchDown()
+
+        assertEquals(1, touchesDown)
+        assertEquals(0, touchesUp)
+
+        tap1.dragBy(dx = 20.dp, duration = 0.1.seconds)
+        tap2.dragBy(dx = 20.dp, duration = 0.1.seconds)
+
+        tap1.up()
+        tap2.up()
+        waitForIdle()
+
+        assertEquals(1, touchesDown)
+        assertEquals(1, touchesUp)
     }
 }
