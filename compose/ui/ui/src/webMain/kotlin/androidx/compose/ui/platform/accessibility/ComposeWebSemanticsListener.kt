@@ -343,13 +343,12 @@ internal class ComposeWebSemanticsListener(
         // The reachability inherited by the children hoisted from the flattened wrappers.
         // The other children inherit parentA11YExposure.
         val hoistedReachabilities = MutableIntObjectMap<A11YReachability>()
-        @Suppress("NAME_SHADOWING")
-        val children = children.flattenA11YWrappers(parentA11YExposure, hoistedReachabilities)
-        if (children.isEmpty()) return
+        val flattenedChildren = children.flattenA11YWrappers(parentA11YExposure, hoistedReachabilities)
+        if (flattenedChildren.isEmpty()) return
 
         // Prepare the children bounds to avoid recomputing them during grouping and comparison.
-        val bounds = MutableIntObjectMap<Rect>(children.size)
-        children.fastForEach { child ->
+        val bounds = MutableIntObjectMap<Rect>(flattenedChildren.size)
+        flattenedChildren.fastForEach { child ->
             // Scroll-reachable children remain accessible offscreen, where clipped bounds may be empty,
             // so use unclipped bounds.
             bounds[child.id] = if (parentA11YExposure == A11YReachability.ReachableByScroll) {
@@ -360,7 +359,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         val reversedChildren = parent.sortByGeometryGroupingsForWeb(
-            parentListToSort = children,
+            parentListToSort = flattenedChildren,
             boundsOf = { checkNotNull(bounds[it.id]) }
         ).asReversed()
 
