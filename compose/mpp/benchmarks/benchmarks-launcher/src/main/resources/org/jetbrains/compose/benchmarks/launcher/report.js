@@ -25,6 +25,46 @@
         return node;
     }
 
+    const rawDialog = element('dialog', null, document.body, 'raw-dialog');
+    rawDialog.setAttribute('aria-labelledby', 'raw-dialog-title');
+    rawDialog.addEventListener('click', event => {
+        const bounds = rawDialog.getBoundingClientRect();
+        if (event.target === rawDialog && (event.clientX < bounds.left || event.clientX > bounds.right
+            || event.clientY < bounds.top || event.clientY > bounds.bottom)) rawDialog.close();
+    });
+
+    function chartHeading(card, title, sourceRuns) {
+        const heading = element('div', null, card, 'chart-heading');
+        element('h3', title, heading);
+        const button = element('button', 'raw', heading, 'chart-raw-button');
+        button.type = 'button';
+        button.setAttribute('aria-label', 'Raw JSON reports for ' + title);
+        button.addEventListener('click', () => {
+            rawDialog.replaceChildren();
+            const header = element('div', null, rawDialog, 'raw-dialog-heading');
+            element('h2', 'Raw reports', header).id = 'raw-dialog-title';
+            const close = element('button', 'Close', header, 'chart-raw-button');
+            close.type = 'button';
+            close.addEventListener('click', () => rawDialog.close());
+            element('p', test.dataset.value + ' — ' + title, rawDialog);
+            const runs = sourceRuns().filter(run => run.reportPath);
+            const unique = [...new Map(runs.map(run => [run.reportPath, run])).values()];
+            if (!unique.length) element('p', 'No raw reports for the currently visible series.', rawDialog);
+            else {
+                const list = element('ul', null, rawDialog, 'raw-report-list');
+                unique.forEach(run => {
+                    const item = element('li', null, list);
+                    element('small', 'Kotlin ' + run.kotlin + ' / Compose ' + run.compose + ' / run ' + run.iteration, item);
+                    const link = element('a', run.reportPath.split('/').pop(), item);
+                    link.href = run.reportPath.split('/').map(encodeURIComponent).join('/');
+                    link.target = '_blank';
+                    link.rel = 'noopener';
+                });
+            }
+            rawDialog.showModal();
+        });
+    }
+
     function options(control, values, onChange, labelFor = value => value) {
         const previous = control.dataset.value;
         control.dataset.value = values.includes(previous) ? previous : (values[0] ?? '');
@@ -288,7 +328,12 @@
             for (const title of metricNames) {
                 const unit = testRuns.flatMap(run => run.measurements).find(metric => metric.title === title).unit;
                 const card = element('article', null, grid, 'chart-card');
-                element('h3', `${title} (${unit})`, card);
+                let chart;
+                chartHeading(card, `${title} (${unit})`, () => testRuns.filter(run =>
+                    report.composeVersions.includes(run.compose)
+                    && run.measurements.some(metric => metric.title === title && Number.isFinite(metric.value))
+                    && chart.data.datasets.some((dataset, index) => dataset.seriesKey === run.kotlin && chart.isDatasetVisible(index))
+                ));
                 const container = element('div', null, card, 'canvas-container');
                 const canvas = element('canvas', null, container);
                 canvas.setAttribute('role', 'img');
@@ -321,7 +366,7 @@
                         spanGaps: false
                     };
                 });
-                instances.push(new Chart(canvas, {
+                instances.push(chart = new Chart(canvas, {
                     type: 'line',
                     data: { labels: report.composeVersions, datasets },
                     plugins: [minMaxWhiskers],
@@ -392,6 +437,7 @@
                     return {
                         seriesKey: kotlin,
                         label: `Compose ${compose} (n=${values.length})`,
+                        composeVersion: compose,
                         data,
                         borderColor: `hsl(${hue}, 68%, 42%)`,
                         backgroundColor: `hsl(${hue}, 68%, 42%)`,
@@ -405,12 +451,17 @@
                 const card = element('article', null, grid, 'chart-card');
                 card.hidden = hidden.has(kotlin);
                 distributionCards.push({ kotlin, card });
-                element('h3', `${title} (${unit}) — Kotlin ${kotlin}`, card);
+                let chart;
+                chartHeading(card, `${title} (${unit}) — Kotlin ${kotlin}`, () => kotlinRuns.filter(run =>
+                    !hidden.has(kotlin)
+                    && run.distributions?.some(metric => metric.title === title && metric.values.some(Number.isFinite))
+                    && chart.data.datasets.some((dataset, index) => dataset.composeVersion === run.compose && chart.isDatasetVisible(index))
+                ));
                 const container = element('div', null, card, 'canvas-container');
                 const canvas = element('canvas', null, container);
                 canvas.setAttribute('role', 'img');
                 canvas.setAttribute('aria-label', `${test.dataset.value}: ${title} percentiles, Kotlin ${kotlin}, by Compose version`);
-                instances.push(new Chart(canvas, {
+                instances.push(chart = new Chart(canvas, {
                     type: 'line',
                     data: { datasets },
                     options: {

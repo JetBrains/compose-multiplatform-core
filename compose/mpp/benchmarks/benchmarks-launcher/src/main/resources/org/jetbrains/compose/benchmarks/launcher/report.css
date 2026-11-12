@@ -111,7 +111,7 @@ p { margin: 10px 0; }
 #message:empty { display: none; }
 .test-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 28px 0 12px; }
 .test-heading h2 { margin: 0; }
-.test-info-button {
+.test-info-button, .chart-raw-button {
     padding: 3px 10px;
     border: 1px solid #c7d5ec;
     border-radius: 6px;
@@ -121,8 +121,8 @@ p { margin: 10px 0; }
     font-size: 12px;
     cursor: pointer;
 }
-.test-info-button:hover, .test-info-button[aria-expanded="true"] { background: #dce7f8; }
-.test-info-button:focus-visible { outline: 2px solid #1849ab; outline-offset: 2px; }
+.test-info-button:hover, .test-info-button[aria-expanded="true"], .chart-raw-button:hover { background: #dce7f8; }
+.test-info-button:focus-visible, .chart-raw-button:focus-visible { outline: 2px solid #1849ab; outline-offset: 2px; }
 .test-parameters { margin-bottom: 16px; }
 .test-parameters-table { background: #fff; }
 .chart-grid {
@@ -137,6 +137,28 @@ p { margin: 10px 0; }
     border-radius: 10px;
     background: #fff;
 }
+.chart-heading, .raw-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.chart-heading { margin-bottom: 12px; }
+.chart-heading h3, .raw-dialog-heading h2 { margin: 0; }
+.chart-raw-button { flex-shrink: 0; }
+.raw-dialog {
+    width: min(760px, calc(100% - 64px));
+    max-height: 80vh;
+    overflow: auto;
+    padding: 24px;
+    border: 1px solid #dce1ea;
+    border-radius: 12px;
+    background: #fff;
+    color: #182235;
+    font: inherit;
+    box-shadow: 0 16px 60px #18223540;
+}
+.raw-dialog::backdrop { background: #18223580; }
+.raw-dialog-heading h2 { font-size: 20px; }
+.raw-report-list { margin: 16px 0 0; padding: 0; list-style: none; }
+.raw-report-list li { padding: 12px 0; border-top: 1px solid #e9edf4; }
+.raw-report-list small { display: block; margin-bottom: 4px; color: #617089; }
+.raw-report-list a { color: #1849ab; overflow-wrap: anywhere; }
 .canvas-container { position: relative; height: 360px; }
 .warning {
     margin: 12px 0;
