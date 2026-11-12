@@ -9,6 +9,12 @@
     const test = document.getElementById('test');
     const charts = document.getElementById('charts');
     const message = document.getElementById('message');
+    const environmentInfoButton = document.getElementById('environment-info-button');
+    const environmentInfo = document.getElementById('environment-info');
+    environmentInfoButton.addEventListener('click', () => {
+        environmentInfo.hidden = !environmentInfo.hidden;
+        environmentInfoButton.setAttribute('aria-expanded', String(!environmentInfo.hidden));
+    });
     const modes = ['startup', 'realFrames', 'averageFrame', 'fps'];
     const distinct = values => [...new Set(values)];
     const configurations = report.configurations ?? [];
@@ -56,7 +62,7 @@
                     const item = element('li', null, list);
                     element('small', 'Kotlin ' + run.kotlin + ' / Compose ' + run.compose + ' / run ' + run.iteration, item);
                     const link = element('a', run.reportPath.split('/').pop(), item);
-                    link.href = run.reportPath.split('/').map(encodeURIComponent).join('/');
+                    link.setAttribute('href', './' + run.reportPath.split('/').map(encodeURIComponent).join('/'));
                     link.target = '_blank';
                     link.rel = 'noopener';
                 });
@@ -156,10 +162,9 @@
     }
 
     function renderEnvironment() {
-        const container = document.getElementById('environment');
+        const container = document.getElementById('environment-info');
         container.replaceChildren();
         const selected = configurations.filter(selectedPlatform);
-        element('h2', 'Build and target environment', container);
         if (!selected.length) {
             element('p', 'Environment metadata is unavailable in this report.', container, 'environment-empty');
             return;
@@ -256,14 +261,7 @@
             button.setAttribute('aria-expanded', String(!panel.hidden));
         });
 
-        const groups = new Map();
-        runs.forEach(run => {
-            const parameters = { type: run.type, ...run.parameters };
-            const key = JSON.stringify([run.kotlin, run.compose, Object.entries(parameters).sort(([a], [b]) => a.localeCompare(b))]);
-            if (!groups.has(key)) groups.set(key, { ...run, parameters, iterations: [] });
-            groups.get(key).iterations.push(run.iteration);
-        });
-        const columns = [...groups.values()];
+        const parameters = Object.assign({}, ...runs.map(run => ({ type: run.type, ...run.parameters })));
         const scroll = element('div', null, panel, 'environment-scroll');
         scroll.tabIndex = 0;
         scroll.setAttribute('role', 'region');
@@ -271,25 +269,16 @@
         const table = element('table', null, scroll, 'environment-table test-parameters-table');
         const head = element('tr', null, element('thead', null, table));
         element('th', 'Parameter', head).scope = 'col';
-        columns.forEach(run => {
-            const th = element('th', null, head);
-            th.scope = 'col';
-            element('span', 'Kotlin ' + run.kotlin, th);
-            element('small', 'Compose ' + run.compose, th);
-            element('small', 'Runs: ' + distinct(run.iterations).join(', '), th);
-        });
+        element('th', 'Value', head).scope = 'col';
         const body = element('tbody', null, table);
         const preferred = ['type', 'width', 'height', 'targetFps', 'warmupCount', 'frameCount', 'repeat', 'timeoutSeconds'];
-        const keys = distinct(columns.flatMap(run => Object.keys(run.parameters)));
+        const keys = Object.keys(parameters);
         const ordered = [...preferred.filter(key => keys.includes(key)), ...keys.filter(key => !preferred.includes(key))];
         const format = value => value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value);
         ordered.forEach(key => {
             const row = element('tr', null, body);
             element('th', key, row).scope = 'row';
-            const values = columns.map(run => format(run.parameters[key]));
-            if (values.every(value => value === values[0])) {
-                element('td', values[0], row).colSpan = columns.length;
-            } else values.forEach(value => element('td', value, row));
+            element('td', format(parameters[key]), row);
         });
     }
 
