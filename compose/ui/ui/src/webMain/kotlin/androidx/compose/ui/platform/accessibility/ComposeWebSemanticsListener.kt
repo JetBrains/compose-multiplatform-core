@@ -30,7 +30,6 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.time.Duration.Companion.milliseconds
@@ -765,61 +764,3 @@ internal class ComposeWebSemanticsListener(
         hasStopped = true
     }
 }
-
-/**
- * Web counterpart of the hierarchy flattening in `SemanticsNode.geometryDepthFirstSearch`
- * (`compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsSort.kt`).
- *
- * Only traversal groups keep their children together in the reading order. Any other node is
- * transparent for the order: its children are sorted by geometry together with the node's siblings.
- * The a11y DOM is read in tree order, so a node exposing nothing to accessibility (for example, a
- * layout wrapper with only a `testTag`) doesn't get an element of its own, and its children are
- * hoisted to the nearest exposed ancestor instead.
- *
- * Nodes exposing something (a label, a role, an action, a scroll container, etc.) keep their
- * element and nest their children in it, because the DOM can't both expose the node and interleave
- * its children with its siblings. Leaves are kept as well: they have nothing to hoist, and their
- * `testTag` ids remain addressable.
- *
- * A flattened wrapper still affects the reachability of its subtree (e.g. a fully clipped wrapper
- * makes its children unreachable), so the reachability each hoisted child inherits is recorded in
- * [hoistedReachabilities].
- */
-private fun List<SemanticsNode>.flattenA11YWrappers(
-    parentReachability: A11YReachability,
-    hoistedReachabilities: MutableIntObjectMap<A11YReachability>,
-): List<SemanticsNode> {
-    if (!fastAny { it.isA11YWrapper() }) return this
-
-    val flattened = ArrayList<SemanticsNode>(size)
-    fun collect(nodes: List<SemanticsNode>, reachability: A11YReachability, hoisted: Boolean) {
-        nodes.fastForEach { node ->
-            if (node.isA11YWrapper()) {
-                collect(node.placedA11YChildren(), node.a11yReachability(reachability), hoisted = true)
-            } else {
-                if (hoisted) hoistedReachabilities[node.id] = reachability
-                flattened.add(node)
-            }
-        }
-    }
-    collect(this, parentReachability, hoisted = false)
-    return flattened
-}
-
-private fun SemanticsNode.isA11YWrapper(): Boolean =
-    !isFake &&
-        !unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false } &&
-        !unmergedConfig.isMergingSemanticsOfDescendants &&
-        !unmergedConfig.containsImportantForAccessibility() &&
-        replacedChildren.isNotEmpty()
-
-private fun SemanticsNode.placedA11YChildren(): List<SemanticsNode> =
-    replacedChildren.filter { child ->
-        // Lazy lists prefetch upcoming items by composing and measuring them before placement.
-        // These items have no position in the list yet, and a reused layout node may still contain
-        // coordinates from its previous item. Exclude them so stale bounds cannot affect the order
-        // or position of elements in the accessibility DOM. Placed offscreen items remain eligible.
-        // Synthetic ("fake") semantics nodes expose a parent's role or content description using
-        // the parent's bounds; their own layout nodes are not attached or placed.
-        child.isFake || child.layoutNode.let { it.isAttached && it.isPlaced }
-    }
