@@ -49,6 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -81,6 +84,7 @@ internal actual fun ContextMenuArea(
     val holder = remember(manager) { { manager.state?.holder } }
 
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+        LaunchedEffect(manager) { manager.updateClipboardEntry() }
         // The first time the menu is called up, the menu item provider contains a non-final set of
         // menu items, which causes the context menu callout to blink.
         // Adding a small delay resolves this issue.
@@ -88,7 +92,8 @@ internal actual fun ContextMenuArea(
             holder = holder,
             selection = remember(manager) { { manager.value.selection } },
             menuDelay = 100.milliseconds,
-            modifier = manager.contextMenuAreaModifier,
+            modifier = manager.contextMenuAreaModifier
+                .then(Modifier.nativeGesturesGate(holder)),
             content = content
         )
     } else {
@@ -114,6 +119,7 @@ internal actual fun ContextMenuArea(
     val holder = remember(selectionState) { { selectionState.textFieldState.holder } }
 
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+        LaunchedEffect(selectionState) { selectionState.updateClipboardEntry() }
         ProvideNewContextMenuDefaultProviders(
             holder = holder,
             selection = remember(selectionState) {
@@ -125,7 +131,7 @@ internal actual fun ContextMenuArea(
                 )
             } else {
                 Modifier
-            },
+            }.then(Modifier.nativeGesturesGate(holder)),
             content = content
         )
     } else {
@@ -203,19 +209,39 @@ private fun LegacyNativeEditMenuArea(
     items: () -> ContextMenuItems,
     content: @Composable () -> Unit
 ) {
-    LaunchedEffect(holder, items) {
-        snapshotFlow { holder() to items() }.collect { (holder, items) ->
-            holder?.updateNativeTextInputEditMenuState(
-                copy = items.copy,
-                cut = items.cut,
-                paste = items.paste,
-                selectAll = items.selectAll,
-                customActions = items.customActions
-            )
+    Box(
+        modifier = Modifier.nativeGesturesGate(holder),
+        propagateMinConstraints = true
+    ) {
+        LaunchedEffect(holder, items) {
+            snapshotFlow { holder() to items() }.collect { (holder, items) ->
+                holder?.updateNativeTextInputEditMenuState(
+                    copy = items.copy,
+                    cut = items.cut,
+                    paste = items.paste,
+                    selectAll = items.selectAll,
+                    customActions = items.customActions
+                )
+            }
+        }
+        content()
+    }
+}
+
+private fun Modifier.nativeGesturesGate(holder: () -> TextInputContainer.Holder?) =
+    pointerInput(holder) {
+        awaitPointerEventScope {
+            while (true) {
+                val initialEvent = awaitPointerEvent(PointerEventPass.Initial)
+                if (initialEvent.changes.none { it.changedToDown() }) continue
+                holder()?.setNativeGesturesEnabled(false)
+                val mainEvent = awaitPointerEvent(PointerEventPass.Main)
+                if (mainEvent.changes.any { it.changedToDown() }) {
+                    holder()?.setNativeGesturesEnabled(true)
+                }
+            }
         }
     }
-    content()
-}
 
 private data class NativeEditMenuElement(
     private val holder: () -> TextInputContainer.Holder?,

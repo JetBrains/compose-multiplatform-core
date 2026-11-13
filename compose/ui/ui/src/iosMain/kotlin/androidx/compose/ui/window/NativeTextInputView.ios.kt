@@ -762,6 +762,10 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         setClipsToBounds(true)
     }
 
+    // Set at the beginning of every touch and serve as switch between the native text selection
+    // gestures and the own text field decorative box nodes.
+    var nativeGesturesEnabled = true
+
     var textView: NativeTextInputView? = null
         set(value) {
             if (field != value) {
@@ -843,15 +847,11 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         val scrollContentSize = textBounds.useContents { size.readValue() }
         val scrollContentOffset = textBounds.useContents { origin.readValue() }
 
-        textView?.selectionWillChange()
-
         textView?.setFrame(textViewFrame)
         setFrame(newFrame)
         setContentInset(insets)
         setContentSize(scrollContentSize)
         setContentOffset(scrollContentOffset)
-
-        textView?.selectionDidChange()
     }
 
     fun interactionModeAt(point: CValue<CGPoint>): UIKitInteropInteractionMode? {
