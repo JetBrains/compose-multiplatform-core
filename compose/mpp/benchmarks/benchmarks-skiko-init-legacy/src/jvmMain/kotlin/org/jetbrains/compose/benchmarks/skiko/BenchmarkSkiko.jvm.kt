@@ -37,6 +37,8 @@ internal actual fun initGraphicsContext() {
     val graphicsContext: GraphicsContext by lazy {
         val context = when {
             hostOs.isWindows -> DirectXGraphicsContext()
+            hostOs.isMacOS -> MetalGraphicsContext()
+            hostOs.isLinux -> OpenGLGraphicsContext()
             else -> fallback()
         }
         try {
@@ -75,7 +77,7 @@ private class DirectXGraphicsContext : GraphicsContext {
     }
 }
 
-private fun DirectContext.makeSurface(
+internal fun DirectContext.makeSurface(
     renderTarget: BackendRenderTarget,
     origin: SurfaceOrigin,
     format: SurfaceColorFormat,
