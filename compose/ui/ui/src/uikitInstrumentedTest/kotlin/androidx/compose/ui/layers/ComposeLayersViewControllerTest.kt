@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.scene.ComposeHostingViewController
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.captureScreenshot
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.forEachPixel
@@ -41,6 +42,9 @@ import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.fail
+import platform.UIKit.UIColor
+import platform.UIKit.UIModalPresentationFullScreen
 import platform.UIKit.UIViewController
 
 class ComposeLayersViewControllerTest {
@@ -163,6 +167,98 @@ class ComposeLayersViewControllerTest {
         assertEquals(1, trackingVC.viewDidAppearCount)
         assertEquals(1, trackingVC.viewWillDisappearCount)
         assertEquals(1, trackingVC.viewDidDisappearCount)
+    }
+
+    @Test
+    fun testPopupIsVisibleAfterDismissingViewControllerPresentedFromPopup() =
+        runUIKitInstrumentedTest(params = listOf(true, false)) { animated ->
+            var popupViewController: UIViewController? = null
+
+            setContent {
+                Popup(
+                    properties = PopupProperties(
+                        usePlatformDefaultWidth = false,
+                        usePlatformInsets = false
+                    )
+                ) {
+                    popupViewController = LocalUIViewController.current
+                    Box(Modifier.fillMaxSize().background(Color.Red))
+                }
+            }
+            waitForIdle()
+            assertScreenColor(Color.Red)
+
+            presentAndDismissViewController(
+                presenter = assertNotNull(popupViewController),
+                animated = animated
+            )
+            assertScreenColor(Color.Red)
+        }
+
+    @Test
+    fun testPopupIsVisibleAfterDismissingViewControllerPresentedFromRootScene() =
+        runUIKitInstrumentedTest(params = listOf(true, false)) { animated ->
+            var rootViewController: UIViewController? = null
+
+            setContent {
+                rootViewController = LocalUIViewController.current
+                Popup(
+                    properties = PopupProperties(
+                        usePlatformDefaultWidth = false,
+                        usePlatformInsets = false
+                    )
+                ) {
+                    Box(Modifier.fillMaxSize().background(Color.Red))
+                }
+            }
+            waitForIdle()
+            assertScreenColor(Color.Red)
+
+            presentAndDismissViewController(
+                presenter = assertNotNull(rootViewController),
+                animated = animated
+            )
+            assertScreenColor(Color.Red)
+        }
+
+    private fun UIKitInstrumentedTest.presentAndDismissViewController(
+        presenter: UIViewController,
+        animated: Boolean
+    ) {
+        val orangeViewController = OverlayViewController()
+
+        var presented = false
+        presenter.presentViewController(orangeViewController, animated = animated) {
+            presented = true
+        }
+        waitUntil("Orange view controller should be presented") { presented }
+        waitForIdle()
+        assertScreenColor(Color.Blue)
+
+        var dismissed = false
+        orangeViewController.dismissViewControllerAnimated(animated) { dismissed = true }
+        waitUntil("Orange view controller should be dismissed") { dismissed }
+        waitForIdle()
+    }
+
+    private fun UIKitInstrumentedTest.assertScreenColor(expectedColor: Color) {
+        assertNotNull(captureScreenshot()).forEachPixel(step = 4) { x, y, actualColor ->
+            if (actualColor != expectedColor) {
+                fail("Expected to draw $expectedColor, but was $actualColor at $x, $y")
+            }
+        }
+    }
+}
+
+private class OverlayViewController : UIViewController(nibName = null, bundle = null) {
+    init {
+        modalPresentationStyle = UIModalPresentationFullScreen
+    }
+
+    override fun viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = UIColor.blueColor()
     }
 }
 
