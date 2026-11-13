@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.geometry.Offset
@@ -54,6 +55,7 @@ import org.w3c.dom.HTMLElement
 /**
  * Implements [PlatformContext] bindings using browser APIs.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 internal abstract class WebWindowPlatformContext(
     private val canvas: HTMLCanvasElement,
     private val layerRoot: HTMLElement,
@@ -71,10 +73,9 @@ internal abstract class WebWindowPlatformContext(
     @ExperimentalMediaQueryApi
     override val mediaScope: WebMediaScope = WebMediaScope(windowInfo)
 
-    override val screenReader: PlatformScreenReader
-        get() = object : PlatformScreenReader {
-            override var isActive = configuration.isA11YEnabled
-        }
+    override val screenReader: PlatformScreenReader = object : PlatformScreenReader {
+        override val isActive: Boolean get() = webSemanticsListener?.isActive == true
+    }
 
     override val outOfFrameExecutor: WebOutOfFrameExecutor? by lazy(LazyThreadSafetyMode.NONE) {
         if (isPostingTasksSupported) WebOutOfFrameExecutor() else null
@@ -106,16 +107,15 @@ internal abstract class WebWindowPlatformContext(
     override val prefetchScheduler: PlatformPrefetchScheduler =
         if (isIdleCallbackSupported) WebPrefetchScheduler() else super.prefetchScheduler
 
-    override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
-        if (configuration.isA11YEnabled) {
-            ComposeWebSemanticsListener(
-                webSemanticsRoot = a11yContainerElement?.also {
-                    it.prepareA11yContainer()
-                } ?: error("a11yContainerElement must be provided"),
-            )
-        } else {
-            null
-        }
+    val webSemanticsListener: ComposeWebSemanticsListener? = a11yContainerElement?.let {
+        it.prepareA11yContainer()
+        val eager = configuration.accessibilityActivation == WebAccessibilityActivation.Eager
+        it.setAttribute("data-cmp-a11y-state", if (eager) "activating" else "awaiting")
+        ComposeWebSemanticsListener(it, initiallyActive = eager)
+    }
+
+    override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?
+        get() = webSemanticsListener
 
     private fun HTMLElement.prepareA11yContainer() {
         setAttribute("aria-label", "")

@@ -43,6 +43,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
@@ -97,7 +99,7 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var clickCounter = 0
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(onClick = {
                 clickCounter++
             }) {
@@ -125,7 +127,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun mergeDescendantsMergesText() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("mergedItem")
@@ -154,7 +156,7 @@ class CfWA11YTest : OnCanvasTests {
 
         var showButton2 by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(onClick = {
                 clickCounter1++
             }) {
@@ -212,7 +214,7 @@ class CfWA11YTest : OnCanvasTests {
     fun survivingNodeIsNotDetachedWhenSiblingIsInserted() = runApplicationTest {
         var showButton2 by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(
                 modifier = Modifier.testTag("button1"),
                 onClick = {},
@@ -267,7 +269,7 @@ class CfWA11YTest : OnCanvasTests {
     fun survivingNodeIsNotDetachedWhenSiblingIsRemoved() = runApplicationTest {
         var showButton2 by mutableStateOf(true)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(modifier = Modifier.testTag("button1"), onClick = {}) {
                 Text("Button1")
             }
@@ -310,7 +312,7 @@ class CfWA11YTest : OnCanvasTests {
     fun reorderedNodesRetainTheirElements() = runApplicationTest {
         var order by mutableStateOf(listOf(1, 2, 3))
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(modifier = Modifier.testTagWithTraversalGroup("parent")) {
                 order.forEach { item ->
                     key(item) {
@@ -370,7 +372,7 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Column(modifier = Modifier.size(100.dp).testTagWithTraversalGroup("parent1").recordCoordinates("parent1")) {
                     Button(modifier = Modifier.height(30.dp).testTag("button1"), onClick = {}) {
@@ -447,7 +449,7 @@ class CfWA11YTest : OnCanvasTests {
         var show2 by mutableStateOf(false)
         var show3 by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (show1) {
                 Button(onClick = {}) {
                     Text("Button1")
@@ -515,7 +517,7 @@ class CfWA11YTest : OnCanvasTests {
         var value by mutableStateOf(0)
 
         var recompositions = 0
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(onClick = {}) {
                 Text("Text in Button - $value")
                 recompositions++
@@ -562,7 +564,7 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var value by mutableStateOf(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(onClick = {}) {
                 Text("Text in Button - $value")
             }
@@ -619,7 +621,7 @@ class CfWA11YTest : OnCanvasTests {
         var show by mutableStateOf(true)
 
         var recompositions = 0
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (show) {
                 Text("Test", modifier = Modifier.testTag("testText"))
             }
@@ -658,7 +660,7 @@ class CfWA11YTest : OnCanvasTests {
 
         var clickListenerSwitch by mutableStateOf(true)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(
                 onClick = if (clickListenerSwitch) {
                 { clickCounter1++ }
@@ -729,7 +731,7 @@ class CfWA11YTest : OnCanvasTests {
         var showButton by mutableStateOf(true)
         var clickCounter = 0
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (showButton) {
                 Button(
                     onClick = {
@@ -760,7 +762,7 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var text by mutableStateOf("Hello, World!")
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             TextField(
                 value = text,
                 onValueChange = { text = it },
@@ -781,7 +783,7 @@ class CfWA11YTest : OnCanvasTests {
     fun sliderHasSliderRoleAndRangeValues() = runApplicationTest {
         var value by mutableStateOf(0.5f)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Slider(
                 value = value,
                 onValueChange = { value = it },
@@ -809,7 +811,7 @@ class CfWA11YTest : OnCanvasTests {
     @OptIn(ExperimentalMaterialApi::class)
     @Test
     fun rangeSliderHasSliderRoleForBothThumbs() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             RangeSlider(
                 value = 0.25f..0.75f,
                 onValueChange = {},
@@ -830,7 +832,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun progressIndicatorsHaveProgressbarRoleAndRangeValues() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LinearProgressIndicator(
                 progress = 0.4f,
                 modifier = Modifier.testTag("progress"),
@@ -849,7 +851,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun indeterminateProgressIndicatorOmitsRangeValues() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LinearProgressIndicator(modifier = Modifier.testTag("progress"))
         }
 
@@ -865,7 +867,7 @@ class CfWA11YTest : OnCanvasTests {
     fun switchHasSwitchRoleAndCheckedState() = runApplicationTest {
         var checked by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Switch(
                 checked = checked,
                 onCheckedChange = { checked = it },
@@ -887,7 +889,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun liveRegionModesAreMappedToAriaLive() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Text(
                     "Polite",
@@ -917,7 +919,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun clickableNodeKeepsItsExplicitRole() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Box(
                     Modifier.testTag("checkbox").size(24.dp)
@@ -952,7 +954,7 @@ class CfWA11YTest : OnCanvasTests {
         // through it). The same semanticsId reappears when the modifier is re-added.
         var addSemantics by mutableStateOf(true)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = if (addSemantics) {
                     Modifier.testTagWithTraversalGroup("myColumn")
@@ -988,7 +990,7 @@ class CfWA11YTest : OnCanvasTests {
         var clickCounter = 0
         var clickable by mutableStateOf(true)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text(
                 "Tap me",
                 modifier = Modifier
@@ -1026,7 +1028,7 @@ class CfWA11YTest : OnCanvasTests {
         var outerClickCounter = 0
         var innerClickCounter = 0
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             // A clickable Box is a "merging" semantics node (shouldMergeDescendantSemantics == true),
             // so it survives the outer clickable's descendant-merge and stays as a separate
             // nested a11y node (the same way a Button stays separate inside a clickable Row).
@@ -1078,7 +1080,7 @@ class CfWA11YTest : OnCanvasTests {
         var clickCounter = 0
         var showButton2 by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(onClick = { clickCounter++ }) {
                 Text("Button1")
             }
@@ -1131,7 +1133,7 @@ class CfWA11YTest : OnCanvasTests {
         var clickCounter = 0
         var buttonEnabled by mutableStateOf(true)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(
                 onClick = { clickCounter++ },
                 enabled = buttonEnabled,
@@ -1176,7 +1178,7 @@ class CfWA11YTest : OnCanvasTests {
         // while keeping the same LayoutNode and semanticsId.
         var enableClip by mutableStateOf(true)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             // Conditionally add/remove the entire graphicsLayer modifier so
             // the modifier chain rebuild triggers semantics invalidation.
             Spacer(

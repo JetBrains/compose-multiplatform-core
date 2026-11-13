@@ -67,6 +67,7 @@ import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.browser.document
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import org.jetbrains.skia.DirectContext
@@ -116,7 +117,7 @@ internal class ComposeWindow(
 
     @VisibleForTesting
     internal val webSemanticsListener: ComposeWebSemanticsListener?
-        get() = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
+        get() = platformContext.webSemanticsListener
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -331,6 +332,30 @@ internal class ComposeWindow(
         )
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.addInput(navigationEventInput)
+    }
+
+    internal fun activateAccessibility() {
+        val listener = webSemanticsListener ?: return
+        val root = listener.webSemanticsRoot
+        if (isDisposed || listener.isActive || root.getAttribute("data-cmp-a11y-state") == "activating") {
+            return
+        }
+
+        root.setAttribute("data-cmp-a11y-state", "activating")
+        try {
+            scene.measureAndLayout()
+            if (isDisposed) return
+            listener.activate(CoroutineScope(Dispatchers.Main))
+        } catch (failure: Throwable) {
+            root.setAttribute("data-cmp-a11y-state", "awaiting")
+            throw failure
+        }
+
+        root.style.removeProperty("pointer-events")
+        // The user activated accessibility explicitly, so they expect to start interacting
+        // with the a11y tree — hand the focus over to it.
+        listener.requestActivationFocus()
+        root.setAttribute("data-cmp-a11y-state", "active")
     }
 
     private fun setSceneContent(content: @Composable () -> Unit) {
