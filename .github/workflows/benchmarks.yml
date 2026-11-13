@@ -63,7 +63,7 @@ jobs:
 
   web:
     name: Web benchmarks (${{ matrix.target }})
-    runs-on: ubuntu-24.04
+    runs-on: macos-26-xlarge
     timeout-minutes: 360
     strategy:
       fail-fast: false
@@ -88,11 +88,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Setup virtual display and check Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb xauth
-          google-chrome --version
+      - name: Check Chrome
+        run: '"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version'
 
       - name: Resolve latest versions from Maven Central
         uses: ./.github/actions/resolve-benchmark-versions
@@ -103,16 +100,15 @@ jobs:
       - name: Run benchmarks in Chrome
         env:
           BENCHMARK_TARGET: ${{ matrix.target }}
-          # Explicit software WebGL for the isolated CI browser; not representative of hardware GPU performance.
-          BENCHMARK_CHROME_ARGUMENTS: '["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]'
+          # Use the runner's GPU through ANGLE's Metal backend instead of SwiftShader.
+          BENCHMARK_CHROME_ARGUMENTS: '["--use-gl=angle", "--use-angle=metal"]'
         run: |
-          xvfb-run -a -s "-screen 0 1920x1080x24" \
-            ./benchmarks-launcher/build/install/benchmarks-launcher/bin/benchmarks-launcher \
+          ./benchmarks-launcher/build/install/benchmarks-launcher/bin/benchmarks-launcher \
             --target "$BENCHMARK_TARGET" \
             --compose-version "$COMPOSE_VERSIONS" \
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
-            --browser "$(command -v google-chrome)" \
+            --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
             --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
             --repeat 1 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
