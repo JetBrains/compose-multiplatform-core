@@ -87,18 +87,19 @@ internal class ContentMeasurement(
         frameInfos.filterNotNull()
     }
 
-    private suspend fun <T> measure(action: suspend (BenchmarkComposeScene, Surface) -> T): T {
-        val scene = BenchmarkComposeScene(width, height).apply { setContent(content) }
-        val surface = graphicsContext.createSurface(width, height)
-
-        try {
-            warmup(scene, surface)
-            return action(scene, surface)
-        } finally {
-            scene.close()
-            surface.close()
-            Platform.runGC()
+    private suspend fun <T> measure(action: suspend (BenchmarkComposeScene, Surface) -> T): T = try {
+        graphicsContext.withSurface(width, height) { surface ->
+            val scene = BenchmarkComposeScene(width, height)
+            try {
+                scene.setContent(content)
+                warmup(scene, surface)
+                action(scene, surface)
+            } finally {
+                scene.close()
+            }
         }
+    } finally {
+        Platform.runGC()
     }
 
     private suspend fun warmup(scene: BenchmarkComposeScene, surface: Surface) {

@@ -61,6 +61,7 @@ internal actual fun collectTargetEnvironment(id: String): TargetEnvironment {
                 ?.totalMemorySize?.takeIf { it > 0 }
         },
         deviceModel = if (osName?.startsWith("Mac") == true) sysctl("hw.model") else null,
+        graphicsBackend = probe.read("graphicsBackend") { Platform.getGraphicsContext()::class.simpleName },
         jvmName = property("java.vm.name"),
         jvmVersion = property("java.vm.version"),
         jvmVendor = property("java.vm.vendor"),

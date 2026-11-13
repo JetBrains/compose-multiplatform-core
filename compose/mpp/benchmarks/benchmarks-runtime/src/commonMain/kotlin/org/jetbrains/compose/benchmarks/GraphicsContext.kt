@@ -17,13 +17,15 @@
 package org.jetbrains.compose.benchmarks
 
 import org.jetbrains.skia.Surface
+import org.jetbrains.skia.impl.use
 
 interface GraphicsContext {
-    fun createSurface(width: Int, height: Int): Surface
+    suspend fun <T> withSurface(width: Int, height: Int, action: suspend (Surface) -> T): T
     suspend fun awaitGPUCompletion()
 }
 
 internal object EmptyGraphicsContext : GraphicsContext {
-    override fun createSurface(width: Int, height: Int): Surface = Surface.makeNull(width, height)
+    override suspend fun <T> withSurface(width: Int, height: Int, action: suspend (Surface) -> T): T =
+        Surface.makeNull(width, height).use { action(it) }
     override suspend fun awaitGPUCompletion() = Unit
 }
