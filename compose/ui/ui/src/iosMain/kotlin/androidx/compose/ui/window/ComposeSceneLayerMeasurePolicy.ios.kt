@@ -40,9 +40,8 @@ internal actual fun rememberComposeSceneLayerConstraintsModifier(
     if (!usePlatformDefaultWidth) {
         return defaultPlatformConstraintsModifier(usePlatformDefaultWidth, platformInsets)
     }
-    val view = LocalUIView.current
     val sceneSize = LocalSceneDestinationSize.current
-    return remember(view, platformInsets) {
+    return remember(sceneSize, platformInsets) {
         { constraints ->
             // During the size transition animation (e.g. device rotation), the layer constraints
             // are interpolated between the initial and the target sizes, so their smallest
