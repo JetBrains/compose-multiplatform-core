@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
@@ -91,7 +92,7 @@ class A11yScrollTest : OnCanvasTests {
         val itemCount = 20
         var a11ySyncMarker by mutableStateOf("initial")
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Spacer(Modifier.height(30.dp))
                 Column(
@@ -169,7 +170,7 @@ class A11yScrollTest : OnCanvasTests {
         val scrollState = ScrollState(0)
         var a11ySyncMarker by mutableStateOf("initial")
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Spacer(Modifier.height(30.dp))
                 Column(
@@ -241,7 +242,7 @@ class A11yScrollTest : OnCanvasTests {
     fun verticalScrollableBecomesScrollContainer() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -290,7 +291,7 @@ class A11yScrollTest : OnCanvasTests {
     fun domScrollDrivesComposeScroll() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -329,7 +330,7 @@ class A11yScrollTest : OnCanvasTests {
     fun composeScrollSyncsDomScrollOffset() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -358,7 +359,7 @@ class A11yScrollTest : OnCanvasTests {
     fun reverseScrollingMapsDomOffsetsToCompose() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -387,7 +388,7 @@ class A11yScrollTest : OnCanvasTests {
     fun horizontalScrollableBecomesScrollContainer() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Row(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -420,7 +421,7 @@ class A11yScrollTest : OnCanvasTests {
         val outerState = ScrollState(0)
         val innerState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("outer")
@@ -466,7 +467,7 @@ class A11yScrollTest : OnCanvasTests {
         // the scroll offset), while the container's scroll offset provides the shift.
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -510,7 +511,7 @@ class A11yScrollTest : OnCanvasTests {
     fun lazyListItemIsScrolledIntoViewByBrowser() = runApplicationTest {
         val state = LazyListState()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LazyColumn(
                 modifier = Modifier.testTag("scrollable").width(100.dp).height(150.dp),
                 state = state,
@@ -580,7 +581,7 @@ class A11yScrollTest : OnCanvasTests {
     fun lazyGridItemIsScrolledIntoViewByBrowser() = runApplicationTest {
         val state = LazyGridState()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.testTag("scrollable").width(300.dp).height(150.dp),
@@ -644,7 +645,7 @@ class A11yScrollTest : OnCanvasTests {
     fun lazyGridItemsRemainAlignedWithComposeAfterRepeatedScrolls() = runApplicationTest {
         val state = LazyGridState()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.testTag("scrollable").size(300.dp),
@@ -685,7 +686,7 @@ class A11yScrollTest : OnCanvasTests {
         var prefix by mutableStateOf("Before ")
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text(
                 text = buildAnnotatedString {
                     append(prefix)
@@ -732,7 +733,7 @@ class A11yScrollTest : OnCanvasTests {
         val scrollState = ScrollState(0)
         var scrollable by mutableStateOf(true)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .semantics { isTraversalGroup = true }

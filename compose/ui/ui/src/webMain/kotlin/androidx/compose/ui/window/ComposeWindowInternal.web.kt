@@ -65,12 +65,14 @@ import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.browser.document
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import org.jetbrains.skia.DirectContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.w3c.dom.Element
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
@@ -96,7 +98,8 @@ internal class ComposeWindow(
     private val a11yContainerElement: HTMLDivElement?,
     private val configuration: ComposeViewportConfiguration,
     content: @Composable () -> Unit,
-    private val state: ComposeWindowState
+    private val state: ComposeWindowState,
+    private val activationButton: HTMLButtonElement? = null,
 ) {
     private var isDisposed = false
 
@@ -114,7 +117,9 @@ internal class ComposeWindow(
 
     @VisibleForTesting
     internal val webSemanticsListener: ComposeWebSemanticsListener?
-        get() = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
+        get() = platformContext.webSemanticsListener
+
+    private val activationEvents = activationButton?.let(::EventTargetListener)
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -316,12 +321,39 @@ internal class ComposeWindow(
 
         setSceneContent(content)
 
+        activationEvents?.addDisposableEvent("click") { activateAccessibility() }
+
         archComponentsOwner.lifecycle.handleLifecycleEvent(
             if (document.hasFocus()) Lifecycle.Event.ON_RESUME
             else Lifecycle.Event.ON_START
         )
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.addInput(navigationEventInput)
+    }
+
+    private fun activateAccessibility() {
+        val button = activationButton ?: return
+        val listener = webSemanticsListener ?: return
+        val root = listener.webSemanticsRoot
+        if (isDisposed || listener.isActive || root.getAttribute("data-cmp-a11y-state") == "activating") {
+            return
+        }
+
+        root.setAttribute("data-cmp-a11y-state", "activating")
+        try {
+            scene.measureAndLayout()
+            if (isDisposed) return
+            listener.activate(CoroutineScope(Dispatchers.Main))
+        } catch (failure: Throwable) {
+            root.setAttribute("data-cmp-a11y-state", "awaiting")
+            throw failure
+        }
+
+        root.style.removeProperty("pointer-events")
+        if (button.isFocused()) listener.focusEntry()
+        activationEvents?.dispose()
+        button.remove()
+        root.setAttribute("data-cmp-a11y-state", "active")
     }
 
     private fun setSceneContent(content: @Composable () -> Unit) {
@@ -453,6 +485,8 @@ internal class ComposeWindow(
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
+        activationEvents?.dispose()
+        activationButton?.remove()
         webSemanticsListener?.stop()
         platformContext.outOfFrameExecutor?.dispose()
         scene.close()

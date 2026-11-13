@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -61,7 +62,7 @@ class A11yTraversalGroupTest : OnCanvasTests {
 
     @Test
     fun nestedTraversalGroupIndexOverridesGeometryAndChildrenSortWithinGroup() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(0.dp, 0.dp)
@@ -114,7 +115,7 @@ class A11yTraversalGroupTest : OnCanvasTests {
 
     @Test
     fun rtlTraversalGroupsSortRightToLeftAtEachLevel() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Box(
                     Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent"),
@@ -169,7 +170,7 @@ class A11yTraversalGroupTest : OnCanvasTests {
         val scrollState = ScrollState(0)
         var syncMarker by mutableStateOf("initial")
         var scrollContainerSemantics: SemanticsNode? = null
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 Modifier.size(100.dp, 80.dp)
                     // Keep this outside verticalScroll so it overrides the scroll modifier's
@@ -245,7 +246,7 @@ class A11yTraversalGroupTest : OnCanvasTests {
     @Test
     fun togglingTraversalGroupUpdatesOrderWithoutReplacingElements() = runApplicationTest {
         var grouped by mutableStateOf(true)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(
                 Modifier.fillMaxSize()
                     .semantics { contentDescription = if (grouped) "grouped" else "ungrouped" }
@@ -341,7 +342,7 @@ class A11yTraversalGroupTest : OnCanvasTests {
         fun columnModifier(tag: String) = Modifier.width(160.dp)
             .semantics { if (groupColumns != null) isTraversalGroup = groupColumns }
             .then(if (tagColumns) Modifier.testTag(tag) else Modifier)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Row(Modifier.semantics { isTraversalGroup = true }.testTag("parent")) {
                 Column(columnModifier("leftColumn")) {
                     Text("This sentence is in ", Modifier.size(160.dp, 40.dp).testTag("textLeftTop"), fontSize = 12.sp)

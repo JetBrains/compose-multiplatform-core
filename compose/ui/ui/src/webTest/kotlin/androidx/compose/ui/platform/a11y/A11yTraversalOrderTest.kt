@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
@@ -50,7 +51,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
 
     @Test
     fun siblingsAreSortedByGeometry() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(Modifier.absoluteOffset(100.dp, 0.dp).size(20.dp).testTag("right"))
                 Box(Modifier.absoluteOffset(0.dp, 0.dp).size(20.dp).testTag("left"))
@@ -64,7 +65,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
 
     @Test
     fun traversalIndexOverridesGeometry() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(0.dp, 0.dp)
@@ -91,7 +92,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
         fun Modifier.recordCoordinates(tag: String) = onGloballyPositioned {
             coordinates[tag] = it
         }
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 // Absolute offsets need a physical left origin; TopStart would align these
                 // children to the right in RTL and push the offset child outside the viewport.
@@ -122,7 +123,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
 
     @Test
     fun traversalGroupsKeepTheirChildrenTogetherAndSortWithinEachGroup() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(100.dp, 0.dp)
@@ -154,7 +155,7 @@ class A11yTraversalOrderTest : OnCanvasTests {
     @Test
     fun geometryChangesReorderChildrenWithoutReplacingTheirElements() = runApplicationTest {
         var swapped by mutableStateOf(false)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.fillMaxSize().semantics { isTraversalGroup = true }.testTag("parent")) {
                 Box(
                     Modifier.absoluteOffset(if (swapped) 100.dp else 0.dp, 0.dp)

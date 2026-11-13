@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.WebApplicationScope
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
@@ -61,7 +62,7 @@ class A11yReachabilityTest : OnCanvasTests {
 
     @Test
     fun fullyClippedNonScrollNodeIsInertButRetainsMeasuredSize() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.size(100.dp).clipToBounds()) {
                 Box(Modifier.offset(200.dp, 0.dp).size(40.dp).testTag("panel"))
             }
@@ -77,7 +78,7 @@ class A11yReachabilityTest : OnCanvasTests {
     @Test
     fun clippingTransitionTogglesInertnessWithoutReplacingElement() = runApplicationTest {
         var hidden by mutableStateOf(true)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.size(100.dp).clipToBounds()) {
                 Box(
                     Modifier.offset(if (hidden) 200.dp else 0.dp, 0.dp)
@@ -104,7 +105,7 @@ class A11yReachabilityTest : OnCanvasTests {
     @Test
     fun descendantOfVisibleScrollContainerRemainsReachable() = runApplicationTest {
         val scrollState = ScrollState(0)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(Modifier.size(100.dp).verticalScroll(scrollState).testTag("scroller")) {
                 Box(Modifier.size(100.dp))
                 Box(Modifier.size(40.dp).testTag("item"))
@@ -127,7 +128,7 @@ class A11yReachabilityTest : OnCanvasTests {
 
     @Test
     fun hiddenScrollableSubtreeCannotReactivateDescendants() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.size(100.dp).clipToBounds()) {
                 Column(
                     Modifier.offset(200.dp, 0.dp)
@@ -147,7 +148,7 @@ class A11yReachabilityTest : OnCanvasTests {
 
     @Test
     fun partiallyClippedAndZeroSizedNodesRemainReachable() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(Modifier.size(100.dp).clipToBounds()) {
                 Box(Modifier.offset(80.dp, 0.dp).size(40.dp).testTag("partial"))
                 Box(Modifier.size(0.dp).testTag("zero"))

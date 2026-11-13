@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -52,7 +53,7 @@ class A11yContainerSizingTest : OnCanvasTests {
 
     @Test
     fun a11yContainerHasNonZeroRenderedSizeAfterInit() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("a11y sizing regression")
         }
 
@@ -81,7 +82,7 @@ class A11yContainerSizingTest : OnCanvasTests {
      */
     @Test
     fun a11yContainerCoversCanvasForHitTesting() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("a11y hit region regression")
         }
 
@@ -131,7 +132,7 @@ class A11yContainerSizingTest : OnCanvasTests {
     fun semanticNodeLiesWithinA11yHitRegion() = runApplicationTest {
         var showButton by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (showButton) {
                 Button(onClick = {}) {
                     Text("Hittable")

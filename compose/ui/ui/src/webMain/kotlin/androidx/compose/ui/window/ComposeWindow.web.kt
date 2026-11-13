@@ -18,10 +18,12 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlin.js.js
 import kotlinx.browser.document
 import org.w3c.dom.DocumentReadyState
 import org.w3c.dom.Element
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
@@ -65,6 +67,7 @@ fun ComposeViewport(
  *     <shadow_container.shadow>
  *       <style/>
  *       <app_container>
+ *         <button data-cmp-a11y-activation/> (when activation is on user request)
  *         <canvas/>
  *         <a11y_container/>
  *       </app_container>
@@ -75,6 +78,7 @@ fun ComposeViewport(
  *
  * Note: The viewportContainer will be cleared on composition creation.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 fun ComposeViewport(
     viewportContainer: Element,
     configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -131,6 +135,22 @@ fun ComposeViewport(
                width: 100%;
                height: 100%;
         }
+
+        [data-cmp-a11y-activation] {
+            position: absolute;
+            inset-block-start: 0.5rem;
+            inset-inline-start: 0.5rem;
+            z-index: 1;
+            max-inline-size: calc(100% - 1rem);
+        }
+
+        [data-cmp-a11y-activation]:not(:focus) {
+            inline-size: 1px;
+            block-size: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            pointer-events: none;
+        }
         
        .compose-backing-field {
             position: absolute;
@@ -167,6 +187,21 @@ fun ComposeViewport(
     }
     shadowRoot.appendChild(appContainer)
 
+    val configuration = ComposeViewportConfiguration().apply(configure)
+    val activation = configuration.accessibilityActivation
+    val activationButton = if (activation is WebAccessibilityActivation.OnUserRequest) {
+        val button = document.createElement("button") as HTMLButtonElement
+        button.type = "button"
+        button.setAttribute("data-cmp-a11y-activation", "")
+        button.textContent = activation.activationLabel.ifBlank {
+            WebAccessibilityActivation.OnUserRequest().activationLabel
+        }
+        appContainer.appendChild(button)
+        button
+    } else {
+        null
+    }
+
     //canvas
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
@@ -195,7 +230,6 @@ fun ComposeViewport(
     appContainer.appendChild(canvas)
 
     //a11y container
-    val configuration = ComposeViewportConfiguration().apply(configure)
     val a11yContainerElement = if (configuration.isA11YEnabled) {
         (document.createElement("div") as HTMLDivElement).also { a11yContainer ->
             a11yContainer.style.apply {
@@ -232,7 +266,8 @@ fun ComposeViewport(
         a11yContainerElement = a11yContainerElement,
         content = content,
         configuration = configuration,
-        state = DefaultWindowState(viewportContainer)
+        state = DefaultWindowState(viewportContainer),
+        activationButton = activationButton,
     )
 
     ComposeWindowCustomElement.onDispose(positioningContainer) {

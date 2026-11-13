@@ -20,9 +20,13 @@ import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableScatterMap
 import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectListOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -45,11 +49,14 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.Text
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
+import org.w3c.dom.get
 
 internal class ComposeWebSemanticsListener(
     val webSemanticsRoot: HTMLElement,
+    initiallyActive: Boolean,
 ) : PlatformContext.SemanticsOwnerListener {
 
     private val invalidationChannel =
@@ -65,6 +72,20 @@ internal class ComposeWebSemanticsListener(
     private var hasStarted = false
     private var hasStopped = false
     private val startJob = Job()
+    var isActive by mutableStateOf(initiallyActive)
+        private set
+
+    internal fun activate(coroutineScope: CoroutineScope) {
+        check(!isActive && !hasStopped)
+        try {
+            syncSemanticsWithWebA11Y()
+        } catch (failure: Throwable) {
+            clearTree()
+            throw failure
+        }
+        isActive = true
+        start(coroutineScope)
+    }
 
     /**
      * @param coroutineScope The [CoroutineScope] used to run this listener,
@@ -72,7 +93,7 @@ internal class ComposeWebSemanticsListener(
      */
     internal fun start(coroutineScope: CoroutineScope) {
         check(!hasStopped) { "ComposeWebSemanticsListener can't be started after it was stopped" }
-        if (hasStarted) return
+        if (!isActive || hasStarted) return
         hasStarted = true
 
         // Here we do the following:
@@ -118,6 +139,7 @@ internal class ComposeWebSemanticsListener(
                         lastDebouncedTime = 0L
                         lastSyncTime = currentTime
                         syncSemanticsWithWebA11Y()
+                        webSemanticsRoot.setAttribute("data-cmp-a11y-state", "active")
                     } else {
                         syncTriggerChannel.trySend(currentTime)
                     }
@@ -136,6 +158,7 @@ internal class ComposeWebSemanticsListener(
                         lastDebouncedTime = 0L
                         lastSyncTime = currentTime
                         syncSemanticsWithWebA11Y()
+                        webSemanticsRoot.setAttribute("data-cmp-a11y-state", "active")
                     }
                 }
             }
@@ -151,23 +174,60 @@ internal class ComposeWebSemanticsListener(
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
         if (semanticsOwners.contains(semanticsOwner)) return
         semanticsOwners.add(semanticsOwner)
-        invalidationChannel.trySend(Unit)
+        invalidate()
     }
 
     override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
         if (semanticsOwners.remove(semanticsOwner)) {
-            invalidationChannel.trySend(Unit)
+            invalidate()
         }
     }
 
     override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {
-        invalidationChannel.trySend(Unit)
+        invalidate()
     }
 
     override fun onLayoutChange(
         semanticsOwner: SemanticsOwner, semanticsNodeId: Int
     ) {
-        invalidationChannel.trySend(Unit)
+        invalidate()
+    }
+
+    private fun invalidate() {
+        if (isActive) invalidationChannel.trySend(Unit)
+    }
+
+    internal fun focusEntry() {
+        var firstExposed: HTMLElement? = null
+        var focused: HTMLElement? = null
+        val elements = webSemanticsRoot.querySelectorAll("*")
+        for (index in 0 until elements.length) {
+            val element = elements[index] as? HTMLElement ?: continue
+            val node = a11yNodeToSemanticsNode[element] ?: continue
+            // Focusing editable nodes invokes their click handler and can open the keyboard.
+            if (element.hasAttribute("contenteditable") ||
+                element.closest("[inert], [aria-hidden=true]") != null
+            ) continue
+
+            if (node.config.getOrNull(SemanticsProperties.Focused) == true) {
+                focused = element
+                break
+            }
+            if (firstExposed == null && (
+                    element.hasAttribute("role") ||
+                        element.hasAttribute("aria-label") ||
+                        element.firstChild is Text
+                )
+            ) {
+                firstExposed = element
+            }
+        }
+
+        val entry = focused ?: firstExposed ?: webSemanticsRoot.also {
+            it.setAttribute("role", "group")
+        }
+        if (!entry.hasAttribute("tabindex")) entry.tabIndex = -1
+        focusExt(entry, true)
     }
 
     // Three array deques for dfs traversal / tree sync:
@@ -571,7 +631,7 @@ internal class ComposeWebSemanticsListener(
             config.contains(SemanticsActions.SetProgress)
         ) {
             htmlNode.setAttribute("tabindex", "0")
-        } else {
+        } else if (htmlNode.getAttribute("tabindex") != "-1") {
             htmlNode.removeAttribute("tabindex")
         }
 
@@ -781,10 +841,20 @@ internal class ComposeWebSemanticsListener(
     }
 
     internal fun stop() {
-        if (!hasStarted || hasStopped) return
+        if (hasStopped) return
+        hasStopped = true
+        isActive = false
 
         webSemanticsRoot.removeEventListener("click", onClick)
         webSemanticsRoot.removeEventListener("keydown", onKeyDown)
+        semanticsOwners.clear()
+        invalidationChannel.close()
+        syncTriggerChannel.close()
+        startJob.cancel()
+        clearTree()
+    }
+
+    private fun clearTree() {
         a11YScrollController.clear()
 
         dfsSemanticsNodes.clear()
@@ -796,12 +866,7 @@ internal class ComposeWebSemanticsListener(
         targetParentToChildren.clear()
         targetChildToParent.clear()
 
-        invalidationChannel.close()
-        syncTriggerChannel.close()
-        startJob.cancel()
-
         removeAllChildrenOf(webSemanticsRoot)
-        hasStopped = true
     }
 }
 
