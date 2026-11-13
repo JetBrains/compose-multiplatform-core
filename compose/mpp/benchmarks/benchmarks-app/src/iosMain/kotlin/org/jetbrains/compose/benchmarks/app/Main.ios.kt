@@ -20,6 +20,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.benchmarks.reportTargetEnvironment
+import org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko
 import platform.UIKit.UIViewController
 
 private var applicationStartupTiming: StartupTiming? = null
@@ -28,6 +29,7 @@ private var applicationStartupTiming: StartupTiming? = null
 fun initializeStartupTiming() {
     if (applicationStartupTiming == null) {
         applicationStartupTiming = captureStartupTiming()
+        configureBenchmarkSkiko()
     }
 }
 

@@ -48,6 +48,8 @@ include(":benchmarks-report")
 include(":benchmarks-collector")
 include(":benchmarks-launcher")
 include(":benchmarks-app")
+include(":benchmarks-skiko-init-legacy")
+include(":benchmarks-skiko-init-current")
 
 val composeCorePath = providers.gradleProperty("composeCorePath").orNull?.takeIf { it.isNotBlank() }
 if (composeCorePath != null) {

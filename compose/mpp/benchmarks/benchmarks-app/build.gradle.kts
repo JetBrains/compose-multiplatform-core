@@ -60,6 +60,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":benchmarks-runtime"))
+            implementation(project(":benchmarks-skiko-init-current"))
             implementation(project(":benchmarks-data"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.ui)
@@ -73,6 +74,19 @@ kotlin {
         }
         webMain.dependencies {
             implementation(libs.kotlinXw3c)
+        }
+    }
+}
+
+// Only the published 1.12.2 release needs legacy initialization; local core uses current.
+if (libs.versions.compose.multiplatform.get() == "1.12.2" &&
+    providers.gradleProperty("composeCorePath").orNull.isNullOrBlank()
+) {
+    configurations.configureEach {
+        resolutionStrategy.dependencySubstitution {
+            substitute(project(":benchmarks-skiko-init-current"))
+                .using(project(":benchmarks-skiko-init-legacy"))
+                .because("Compose 1.12.2 requires legacy Skiko initialization")
         }
     }
 }

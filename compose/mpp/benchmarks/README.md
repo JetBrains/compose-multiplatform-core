@@ -10,6 +10,7 @@ and requires JDK 17 or newer. Apple targets require macOS with Xcode.
 
 - `benchmarks-app` — an application with Compose benchmark cases.
 - `benchmarks-runtime` — runs measurements and sends results.
+- `benchmarks-skiko-init-legacy` / `benchmarks-skiko-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
 - `benchmarks-data` — shared report models.
 - `benchmarks-report` — a JVM library that generates a static HTML report from a session directory.
 - `benchmarks-collector` — receives reports over HTTP and saves them as JSON files.
@@ -110,6 +111,23 @@ Build core sources and use Kotlin 2.4.20 for the benchmark project:
   --compose-version local --kotlin-version 2.4.20 \
   --tests LazyGrid --modes startup --output-dir ./results
 ```
+
+## Compose and Skiko compatibility
+
+`benchmarks-runtime` owns the scene and exposes configuration hooks without depending on any init
+module. Both init modules provide the same `org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko()` function.
+The app calls it at startup to configure `onBenchmarkComposeSceneInit` and, on JVM,
+`getJvmGraphicsContext`. No reflection or service loading is needed.
+
+The app declares `benchmarks-skiko-init-current` in `commonMain`. When the Compose version is
+exactly `1.12.2`, Gradle substitutes `benchmarks-skiko-init-legacy` on all targets. The version comes
+from `benchmarkComposeVersion` or the catalog default. Other versions and local core builds keep
+current initialization. Skiko and its native libraries come from Compose and are not overridden.
+
+Current initialization supports Metal/OpenGL/DirectX offscreen contexts on JVM. Legacy initialization
+for Compose `1.12.2` uses DirectX on Windows and null-rendering on macOS/Linux, as in the original
+multiplatform benchmarks, and leaves the scene initialization hook as a no-op. Offscreen GPU results
+from different backends are not directly comparable. Other old Compose versions are not supported.
 
 ## Launcher results
 
