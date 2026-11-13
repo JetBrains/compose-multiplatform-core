@@ -130,7 +130,9 @@ internal class KeyboardInsetsCustomInputViewsTest {
         val keyboardOverlapWithoutAccessory = keyboardOverlapHeight()
 
         inputAccessoryView.value = nonZeroInputAccessoryView
-        waitForIdle()
+        waitUntil("Input accessory view must increase the IME overlap") {
+            keyboardOverlapHeight() > keyboardOverlapWithoutAccessory
+        }
         val keyboardOverlapWithAccessory = keyboardOverlapHeight()
 
         assertTrue(keyboardOverlapWithoutAccessory > 100.0)
@@ -291,6 +293,9 @@ internal class KeyboardInsetsCustomInputViewsTest {
     }
 
     private fun UIKitInstrumentedTest.assertKeyboardOverlapAtLeast(minimum: Double) {
+        waitUntil("Expected keyboard overlap >= $minimum") {
+            keyboardOverlapHeight() >= minimum
+        }
         val keyboardOverlap = keyboardOverlapHeight()
         assertTrue(
             keyboardOverlap >= minimum,
