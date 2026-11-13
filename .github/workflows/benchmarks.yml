@@ -114,6 +114,8 @@ jobs:
       - name: Run benchmarks in Chrome
         env:
           BENCHMARK_TARGET: ${{ matrix.target }}
+          # Explicit software WebGL for the isolated CI browser; not representative of hardware GPU performance.
+          BENCHMARK_CHROME_ARGUMENTS: '["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]'
         run: |
           xvfb-run -a -s "-screen 0 1920x1080x24" \
             ./benchmarks-launcher/build/install/benchmarks-launcher/bin/benchmarks-launcher \

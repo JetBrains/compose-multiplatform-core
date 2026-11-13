@@ -16,6 +16,9 @@
 
 package org.jetbrains.compose.benchmarks.launcher
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import org.openqa.selenium.PageLoadStrategy
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
@@ -104,6 +107,11 @@ internal class SeleniumSession(
     private val log: Path,
     timeout: Double,
 ) : WebSession {
+    private val chromeArguments = if (kind == "chromium") {
+        System.getenv("BENCHMARK_CHROME_ARGUMENTS")?.let { value ->
+            Json.parseToJsonElement(value).jsonArray.map { it.jsonPrimitive.content }
+        }.orEmpty()
+    } else emptyList()
     private val commandTimeout = Duration.ofMillis((timeout * 1000).toLong().coerceAtLeast(1))
     private val clientConfig = ClientConfig.defaultConfig()
         .connectionTimeout(commandTimeout)
@@ -131,13 +139,38 @@ internal class SeleniumSession(
     @Synchronized
     override fun navigate(url: String, log: Path) {
         check(!closed) { "browser session is closed" }
-        val current = driver ?: start().also { driver = it }
+        val current = driver ?: start().also {
+            // Retain ownership before validation so failure cleanup also closes this browser.
+            driver = it
+            checkWebGL(it)
+        }
         appendLog(log, "WebDriver session ${current.sessionId}: $url\n")
         current.get(url)
     }
 
+    private fun checkWebGL(current: RemoteWebDriver) {
+        val renderer = current.executeScript(
+            """
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl2');
+            if (!gl) return null;
+            const debug = gl.getExtension('WEBGL_debug_renderer_info');
+            const renderer = gl.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
+            const loseContext = gl.getExtension('WEBGL_lose_context');
+            if (loseContext) loseContext.loseContext();
+            return renderer;
+            """.trimIndent()
+        )
+        check(renderer != null) {
+            "WebGL2 context is unavailable in $browser; see $driverLog. " +
+                "On GPU-less Chromium CI, configure SwiftShader via BENCHMARK_CHROME_ARGUMENTS."
+        }
+        appendLog(log, "WebGL2 renderer: $renderer\n")
+    }
+
     private fun start(): RemoteWebDriver {
         appendLog(log, "Starting WebDriver: $browser\n")
+        if (kind == "chromium") appendLog(log, "Additional Chrome arguments: $chromeArguments\n")
         if (kind != "safari") appendLog(log, "Driver log: $driverLog\n")
         return when (kind) {
             "chromium" -> ChromeDriver(
@@ -146,6 +179,7 @@ internal class SeleniumSession(
                     setBinary(browser.toFile())
                     setPageLoadStrategy(PageLoadStrategy.NONE)
                     addArguments("--no-first-run", "--no-default-browser-check")
+                    addArguments(chromeArguments)
                 },
                 clientConfig,
             )
