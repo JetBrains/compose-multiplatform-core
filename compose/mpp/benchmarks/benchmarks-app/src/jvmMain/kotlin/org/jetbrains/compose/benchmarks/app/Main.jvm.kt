@@ -21,9 +21,11 @@ import androidx.compose.ui.window.application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.benchmarks.reportTargetEnvironment
+import org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko
 
 fun main(args: Array<String>) {
     val startupTiming = captureStartupTiming()
+    configureBenchmarkSkiko()
     if (isEnvironmentCollection(args)) {
         val (collectorUrl, environmentId) = parseEnvironmentArguments(args)
         runBlocking { reportTargetEnvironment(collectorUrl, environmentId) }

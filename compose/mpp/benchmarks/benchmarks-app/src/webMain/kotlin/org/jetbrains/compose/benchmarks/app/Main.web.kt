@@ -16,6 +16,7 @@
 
 package org.jetbrains.compose.benchmarks.app
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -25,13 +26,15 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.compose.benchmarks.reportTargetEnvironment
+import org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko
 import org.jetbrains.skiko.InternalSkikoApi
 import org.jetbrains.skiko.wasm.awaitSkiko
 import org.w3c.dom.url.URLSearchParams
 
-@OptIn(ExperimentalWasmJsInterop::class)
+@OptIn(ExperimentalWasmJsInterop::class, ExperimentalComposeUiApi::class)
 fun main() {
     val startupTiming = captureStartupTiming()
+    configureBenchmarkSkiko()
     val parameters = URLSearchParams(window.location.search.toJsString())
     val benchmarkCollectorUrl = requireNotNull(parameters.get("benchmarkCollectorUrl")) { "Missing query parameter: benchmarkCollectorUrl" }
     val id = requireNotNull(parameters.get("id")) { "Missing query parameter: id" }

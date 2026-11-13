@@ -19,6 +19,7 @@ package org.jetbrains.compose.benchmarks.app
 import androidx.compose.ui.window.Window
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.benchmarks.reportTargetEnvironment
+import org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko
 import platform.AppKit.NSApplication
 import platform.AppKit.NSApplicationActivationPolicy
 import platform.AppKit.NSApplicationDelegateProtocol
@@ -26,6 +27,7 @@ import platform.darwin.NSObject
 
 fun main(args: Array<String>) {
     val startupTiming = captureStartupTiming()
+    configureBenchmarkSkiko()
     if (isEnvironmentCollection(args)) {
         val (collectorUrl, environmentId) = parseEnvironmentArguments(args)
         runBlocking { reportTargetEnvironment(collectorUrl, environmentId) }

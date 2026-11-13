@@ -20,15 +20,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.platform.FrameRecomposer
-import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.Dispatchers
 
+
+/**
+ * Scene initialization differs between Compose/Skiko versions: newer versions require explicit
+ * Skiko implementation registration, while older versions do not provide that API. The app selects
+ * a compatible benchmarks-skiko-init module, which configures this hook before measurements start,
+ * keeping version-specific APIs out of the measurement runtime.
+ */
+object BenchmarkComposeSceneConfiguration {
+    var onBenchmarkComposeSceneInit: () -> Unit = {}
+}
+
 @OptIn(InternalComposeUiApi::class)
 internal class BenchmarkComposeScene(width: Int, height: Int) {
     init {
-        registerSkikoComposeImplementation()
+        BenchmarkComposeSceneConfiguration.onBenchmarkComposeSceneInit()
     }
 
     private val frameRecomposer = FrameRecomposer(Dispatchers.Unconfined)
