@@ -17,36 +17,37 @@
 package androidx.compose.ui.keyboard
 
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.material.TextField
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.input.PlatformImeOptions
-import androidx.compose.ui.window.KeyboardVisibilityListener
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
-import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGRect
-import platform.CoreGraphics.CGRectGetMinY
-import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIInputView
 import platform.UIKit.UIInputViewStyle
-import platform.UIKit.UIScreen
 import platform.UIKit.UIView
+import platform.UIKit.UIColor
 
 @OptIn(ExperimentalForeignApi::class)
 internal class KeyboardInsetsCustomInputViewsTest {
+    private var imeOverlapHeight = 0.0
 
     @Test
     fun testInputAccessoryViewHeightChangesKeyboardOverlapByItsHeight() = runUIKitInstrumentedTest {
@@ -59,11 +60,11 @@ internal class KeyboardInsetsCustomInputViewsTest {
 
         setContentWithChangingInputAccessoryView(inputAccessoryView)
         waitForIdle()
-        val keyboardOverlapWithoutAccessory = keyboardOverlapHeight()
+        val keyboardOverlapWithoutAccessory = imeOverlapHeight
 
         inputAccessoryView.value = nonZeroInputAccessoryView
         waitForIdle()
-        val keyboardOverlapWithAccessory = keyboardOverlapHeight()
+        val keyboardOverlapWithAccessory = imeOverlapHeight
 
         assertTrue(keyboardOverlapWithoutAccessory > 100.0)
         assertTrue(
@@ -90,7 +91,7 @@ internal class KeyboardInsetsCustomInputViewsTest {
 
         setContentWithInputViews(customInputView = customInputView)
 
-        assertEquals(300.0, keyboardOverlapHeight())
+        assertEquals(300.0, imeOverlapHeight)
     }
 
     @Test
@@ -102,7 +103,7 @@ internal class KeyboardInsetsCustomInputViewsTest {
 
         setContentWithInputViews(customInputView = customInputView)
 
-        assertKeyboardOverlapAtLeast(300.0)
+        assertImeOverlapAtLeast(300.0)
     }
 
     @Test
@@ -115,7 +116,7 @@ internal class KeyboardInsetsCustomInputViewsTest {
 
         setContentWithInputViews(customInputView, customInputAccessoryView)
 
-        assertEquals(300.0, keyboardOverlapHeight())
+        assertEquals(300.0, imeOverlapHeight)
     }
 
     @Test
@@ -128,7 +129,7 @@ internal class KeyboardInsetsCustomInputViewsTest {
 
         setContentWithInputViews(customInputView, customInputAccessoryView)
 
-        assertKeyboardOverlapAtLeast(300.0)
+        assertImeOverlapAtLeast(300.0)
     }
 
     @Test
@@ -141,7 +142,7 @@ internal class KeyboardInsetsCustomInputViewsTest {
 
         setContentWithInputViews(customInputView, customInputAccessoryView)
 
-        assertEquals(400.0, keyboardOverlapHeight())
+        assertEquals(400.0, imeOverlapHeight)
     }
 
     @Test
@@ -154,7 +155,9 @@ internal class KeyboardInsetsCustomInputViewsTest {
 
         setContentWithInputViews(customInputView, customInputAccessoryView)
 
-        assertKeyboardOverlapAtLeast(400.0)
+        delay(1000)
+
+        assertImeOverlapAtLeast(400.0)
     }
 
     private fun UIKitInstrumentedTest.setContentWithInputViews(
@@ -164,6 +167,7 @@ internal class KeyboardInsetsCustomInputViewsTest {
         val focusRequester = FocusRequester()
 
         setContent {
+            updateImeOverlapHeight()
             @Suppress("DEPRECATION")
             TextField(
                 value = "",
@@ -188,6 +192,7 @@ internal class KeyboardInsetsCustomInputViewsTest {
         val focusRequester = FocusRequester()
 
         setContent {
+            updateImeOverlapHeight()
             @Suppress("DEPRECATION")
             TextField(
                 value = "",
@@ -208,25 +213,30 @@ internal class KeyboardInsetsCustomInputViewsTest {
     private fun customInputView(frame: CValue<CGRect>): UIInputView = object : UIInputView(
         frame = frame,
         inputViewStyle = UIInputViewStyle.UIInputViewStyleKeyboard
-    ) {}
+    ) {
+        init {
+            backgroundColor = UIColor.redColor
+        }
+    }
 
     private fun customInputAccessoryView(frame: CValue<CGRect>): UIView = object : UIView(
         frame = frame
-    ) {}
-
-    private fun keyboardOverlapHeight(): Double {
-        val keyboardFrame = KeyboardVisibilityListener.keyboardFrame
-        if (CGRectIsEmpty(keyboardFrame)) return 0.0
-
-        val screenHeight = UIScreen.mainScreen.bounds.useContents { size.height }
-        return (screenHeight - CGRectGetMinY(keyboardFrame)).coerceAtLeast(0.0)
+    ) {
+        init {
+            backgroundColor = UIColor.blueColor
+        }
     }
 
-    private fun assertKeyboardOverlapAtLeast(minimum: Double) {
-        val keyboardOverlap = keyboardOverlapHeight()
+    @Composable
+    private fun updateImeOverlapHeight() {
+        val density = LocalDensity.current
+        imeOverlapHeight = WindowInsets.ime.getBottom(density).toDouble() / density.density
+    }
+
+    private fun assertImeOverlapAtLeast(minimum: Double) {
         assertTrue(
-            keyboardOverlap >= minimum,
-            "Expected keyboard overlap >= $minimum, actual=$keyboardOverlap"
+            imeOverlapHeight >= minimum,
+            "Expected IME overlap >= $minimum, actual=$imeOverlapHeight"
         )
     }
 

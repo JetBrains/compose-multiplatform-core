@@ -850,6 +850,7 @@ internal class ComposeSceneMediator(
         if (isLayoutTransitionAnimating) {
             return
         }
+        keyboardManager.updateOverlapForCurrentGeometry()
         windowInsetsManager.updateInsets()
         composeSceneSize = currentViewSize.roundToIntSize()
         interactionBounds = with(screenDensity) {
