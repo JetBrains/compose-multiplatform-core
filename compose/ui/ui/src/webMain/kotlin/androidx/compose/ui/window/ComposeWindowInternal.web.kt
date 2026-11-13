@@ -67,7 +67,6 @@ import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.browser.document
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import org.jetbrains.skia.DirectContext
@@ -337,25 +336,19 @@ internal class ComposeWindow(
     internal fun activateAccessibility() {
         val listener = webSemanticsListener ?: return
         val root = listener.webSemanticsRoot
-        if (isDisposed || listener.isActive || root.getAttribute("data-cmp-a11y-state") == "activating") {
+        if (isDisposed || listener.isActive) {
             return
         }
 
-        root.setAttribute("data-cmp-a11y-state", "activating")
-        try {
-            scene.measureAndLayout()
-            if (isDisposed) return
-            listener.activate(CoroutineScope(Dispatchers.Main))
-        } catch (failure: Throwable) {
-            root.setAttribute("data-cmp-a11y-state", "awaiting")
-            throw failure
-        }
+        scene.measureAndLayout()
+        if (isDisposed) return
+        listener.activate()
 
+        // `pointer-events: none` affects touch exploration with TalkBack
         root.style.removeProperty("pointer-events")
         // The user activated accessibility explicitly, so they expect to start interacting
         // with the a11y tree — hand the focus over to it.
         listener.requestActivationFocus()
-        root.setAttribute("data-cmp-a11y-state", "active")
     }
 
     private fun setSceneContent(content: @Composable () -> Unit) {
@@ -398,7 +391,10 @@ internal class ComposeWindow(
                             // The initial composition would create a lot of noisy invalidations,
                             // so it makes sense to start the listener here - after the initial composition.
                             // The composition's coroutine scope ties the listener's lifetime to the composition.
-                            webSemanticsListener?.start(this)
+                            // The listener is started in every activation mode, right after the
+                            // initial composition: for eager activation it also activates immediately,
+                            // while awaiting activation it stays idle until the user activates it.
+                            webSemanticsListener?.start(this, configuration.isA11YActivatedEagerly)
                         }
                     }
 

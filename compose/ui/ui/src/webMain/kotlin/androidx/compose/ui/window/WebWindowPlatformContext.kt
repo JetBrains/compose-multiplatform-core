@@ -74,7 +74,11 @@ internal abstract class WebWindowPlatformContext(
     override val mediaScope: WebMediaScope = WebMediaScope(windowInfo)
 
     override val screenReader: PlatformScreenReader = object : PlatformScreenReader {
-        override val isActive: Boolean get() = webSemanticsListener?.isActive == true
+        // Eagerly activated accessibility is "on" from the moment the window exists — before the
+        // listener's loop is started at composition time — so that semantics composed in the
+        // initial composition already observe it.
+        override val isActive: Boolean
+            get() = configuration.isA11YActivatedEagerly || webSemanticsListener?.isActive == true
     }
 
     override val outOfFrameExecutor: WebOutOfFrameExecutor? by lazy(LazyThreadSafetyMode.NONE) {
@@ -109,9 +113,7 @@ internal abstract class WebWindowPlatformContext(
 
     val webSemanticsListener: ComposeWebSemanticsListener? = a11yContainerElement?.let {
         it.prepareA11yContainer()
-        val eager = configuration.accessibilityActivation == WebAccessibilityActivation.Eager
-        it.setAttribute("data-cmp-a11y-state", if (eager) "activating" else "awaiting")
-        ComposeWebSemanticsListener(it, initiallyActive = eager)
+        ComposeWebSemanticsListener(it)
     }
 
     override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?

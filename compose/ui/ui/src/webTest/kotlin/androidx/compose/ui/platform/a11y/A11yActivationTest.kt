@@ -90,7 +90,7 @@ class A11yActivationTest : OnCanvasTests {
             getShadowRoot().getElementById("cmp_a11y_activation_button"),
         )
         assertEquals(label, activationButton.textContent)
-        assertEquals(label, activationButton.getAttribute("aria-label") ?: activationButton.textContent)
+        assertEquals(label, activationButton.textContent)
     }
 
     @Test

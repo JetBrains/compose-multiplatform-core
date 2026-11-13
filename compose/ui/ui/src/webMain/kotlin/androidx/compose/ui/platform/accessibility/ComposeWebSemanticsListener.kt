@@ -53,9 +53,9 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 
+
 internal class ComposeWebSemanticsListener(
     val webSemanticsRoot: HTMLElement,
-    initiallyActive: Boolean,
 ) : PlatformContext.SemanticsOwnerListener {
 
     private val invalidationChannel =
@@ -72,10 +72,15 @@ internal class ComposeWebSemanticsListener(
     private var hasStopped = false
     private val startJob = Job()
 
-    var isActive by mutableStateOf(initiallyActive)
+    var isActive by mutableStateOf(false)
         private set
 
-    internal fun activate(coroutineScope: CoroutineScope) {
+    /**
+     * Activates the listener: synchronously builds the a11y tree and starts accepting
+     * invalidations. The sync loop itself is started by [start] at composition time; it stays
+     * idle until activation because [invalidate] drops events while the listener is inactive.
+     */
+    internal fun activate() {
         check(!isActive && !hasStopped)
         try {
             syncSemanticsWithWebA11Y()
@@ -84,16 +89,26 @@ internal class ComposeWebSemanticsListener(
             throw failure
         }
         isActive = true
-        start(coroutineScope)
     }
 
     /**
+     * Starts the sync loop, which keeps the a11y tree in sync with the Compose semantics.
+     *
+     * The loop is started at composition time in all activation modes. When [activateEagerly] is
+     * true, the listener becomes active right away; the tree is built later, from the layout
+     * change invalidations of the initial layout. Otherwise, the listener stays idle until
+     * [activate] is called on user request.
+     *
      * @param coroutineScope The [CoroutineScope] used to run this listener,
      * typically the composition scope so the listener follows the composition lifecycle.
+     * @param activateEagerly Whether to activate the listener immediately (eager activation).
      */
-    internal fun start(coroutineScope: CoroutineScope) {
+    internal fun start(
+        coroutineScope: CoroutineScope,
+        activateEagerly: Boolean = false
+    ) {
         check(!hasStopped) { "ComposeWebSemanticsListener can't be started after it was stopped" }
-        if (!isActive || hasStarted) return
+        if (hasStarted) return
         hasStarted = true
 
         // Here we do the following:
@@ -139,7 +154,6 @@ internal class ComposeWebSemanticsListener(
                         lastDebouncedTime = 0L
                         lastSyncTime = currentTime
                         syncSemanticsWithWebA11Y()
-                        webSemanticsRoot.setAttribute("data-cmp-a11y-state", "active")
                     } else {
                         syncTriggerChannel.trySend(currentTime)
                     }
@@ -158,7 +172,6 @@ internal class ComposeWebSemanticsListener(
                         lastDebouncedTime = 0L
                         lastSyncTime = currentTime
                         syncSemanticsWithWebA11Y()
-                        webSemanticsRoot.setAttribute("data-cmp-a11y-state", "active")
                     }
                 }
             }
@@ -167,6 +180,11 @@ internal class ComposeWebSemanticsListener(
         // Event delegation: all nodes delegate to global accessibility action listeners.
         webSemanticsRoot.addEventListener("click", onClick)
         webSemanticsRoot.addEventListener("keydown", onKeyDown)
+
+        if (activateEagerly) {
+            // The tree is built from the initial layout's invalidations, not synchronously here.
+            isActive = true
+        }
     }
 
     private val semanticsOwners = mutableObjectListOf<SemanticsOwner>()

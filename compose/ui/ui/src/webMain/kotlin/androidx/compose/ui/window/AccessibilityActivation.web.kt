@@ -27,12 +27,15 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.Text
 import org.w3c.dom.get
 
+/** The stable DOM id of the accessibility activation button, targeted by its CSS rules. */
+internal const val A11Y_ACTIVATION_BUTTON_ID = "cmp_a11y_activation_button"
+
 /**
  * CSS rules for the accessibility activation button. The button is visually hidden until focused
  * so it doesn't clutter the page, but remains discoverable via keyboard navigation and screen readers.
  */
 internal val a11yActivationButtonCss = """
-    #cmp_a11y_activation_button {
+    #$A11Y_ACTIVATION_BUTTON_ID {
         position: absolute;
         inset-block-start: 0.5rem;
         inset-inline-start: 0.5rem;
@@ -40,7 +43,7 @@ internal val a11yActivationButtonCss = """
         max-inline-size: calc(100% - 1rem);
     }
 
-    #cmp_a11y_activation_button:not(:focus) {
+    #$A11Y_ACTIVATION_BUTTON_ID:not(:focus) {
         inline-size: 1px;
         block-size: 1px;
         overflow: hidden;
@@ -59,11 +62,9 @@ internal val a11yActivationButtonCss = """
 internal fun createA11yActivationButton(activation: WebAccessibilityActivation): HTMLButtonElement? =
     if (activation is WebAccessibilityActivation.OnUserRequest) {
         (document.createElement("button") as HTMLButtonElement).apply {
-            id = "cmp_a11y_activation_button"
+            id = A11Y_ACTIVATION_BUTTON_ID
             type = "button"
-            textContent = activation.activationLabel.ifBlank {
-                WebAccessibilityActivation.OnUserRequest().activationLabel
-            }
+            textContent = activation.activationLabel.ifBlank { DEFAULT_A11Y_ACTIVATION_LABEL }
         }
     } else {
         null
@@ -86,6 +87,8 @@ internal fun findFirstEligibleA11YElementToFocus(
     webSemanticsRoot: HTMLElement,
     a11yNodeToSemanticsNode: MutableScatterMap<HTMLElement, SemanticsNode>,
 ): HTMLElement? {
+    // A one-time scan on activation: [Element.closest] walks the ancestors for every element,
+    // which is fine here — don't reuse this pattern in per-frame paths.
     var firstExposed: HTMLElement? = null
     var focused: HTMLElement? = null
     val elements = webSemanticsRoot.querySelectorAll("*")
