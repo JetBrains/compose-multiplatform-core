@@ -47,7 +47,8 @@ jobs:
             --compose-version "$COMPOSE_VERSIONS" \
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
-            --repeat 3 \
+            --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
+            --repeat 1 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
       # GitHub packages the whole session, including index.html, as one ZIP artifact.
@@ -112,7 +113,8 @@ jobs:
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
             --browser "$(command -v google-chrome)" \
-            --repeat 3 \
+            --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
+            --repeat 1 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
       # GitHub packages the whole session, including index.html, as one ZIP artifact.
@@ -164,7 +166,8 @@ jobs:
             --compose-version "$COMPOSE_VERSIONS" \
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
-            --repeat 3 \
+            --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
+            --repeat 1 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
       # GitHub packages the whole session, including index.html, as one ZIP artifact.
