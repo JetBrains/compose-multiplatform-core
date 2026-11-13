@@ -37,9 +37,13 @@ See all available options:
 
 For each version pair, the launcher visits every selected target and, for JS/WasmJS, every selected
 browser. For each configuration it builds the collector and the release application, starts the
-collector, and runs tests sequentially. Each test run gets a separate process and UUID.
-After receiving a report, it closes the application and starts the next test. It then moves to the next
-version pair. Builds always run; Gradle can reuse unchanged task outputs.
+collector, and runs tests sequentially. Each test run gets a separate UUID. Native targets use a
+separate application process per run. Web targets use Selenium WebDriver: rendering runs reuse one
+browser session and tab per configuration, navigating to a new URL for each run. After receiving a
+report, the tab navigates to `about:blank` to stop the previous workload. All web rendering runs finish
+before startup runs; the rendering browser is closed, and every startup run launches and closes a
+fresh browser session. It then moves to the next version pair. Builds always run; Gradle can reuse
+unchanged task outputs.
 
 The matrix continues after test errors, timeouts, or a failed configuration build. If any configuration
 fails, the launcher returns a nonzero exit code. On completion or interruption, it stops the processes
@@ -67,8 +71,24 @@ Main options:
 Browser targets require `--browser` with a list of executable paths, commands on `PATH`, or macOS
 `.app` bundles, separated by spaces or commas. Quote paths containing spaces. Duplicate entries are
 ignored. Each selected browser runs on each selected web target; non-web targets ignore this list.
-Chromium, Firefox, and Safari are detected from the executable name. Chromium and Firefox use temporary
-profiles. Safari must be closed before the series and uses its normal profile without clearing the cache.
+Chromium, Firefox, and Safari are detected from the executable name. ChromeDriver/GeckoDriver launch
+the selected Chromium/Firefox executable with a temporary profile for each session. Rendering runs
+share the profile and its caches; there is no separate preload run. JS/Wasm and other static resources
+are cacheable, while HTML is loaded on every navigation. Every startup run gets a fresh profile in
+Chromium/Firefox. Safari uses an automation session managed by `safaridriver`; its caches are not
+explicitly cleared. Safari must be closed before the series, and the launcher also quits the Safari
+application after ending a session to ensure startup runs restart the browser.
+
+Selenium Manager resolves ChromeDriver/GeckoDriver automatically, downloading them when necessary.
+The first run may require network access; cache `~/.cache/selenium` on CI. Drivers can also be
+provisioned explicitly using Selenium's `SE_CHROMEDRIVER` / `SE_GECKODRIVER` environment variables.
+Safari uses the system `safaridriver` (or the Technology Preview driver for Safari Technology Preview).
+Enable **Allow remote automation** in Safari's developer settings before running Safari benchmarks;
+the launcher does not change this setting. Browser runs require a graphical desktop/session, as before.
+WebDriver does not wait for the page's `load` event; the collector report determines completion.
+After an error or timeout, the current run is failed without a retry, and the next run starts a new
+browser session.
+
 For iOS, select a simulator with `--simulator UUID`. Without this option, exactly one available
 simulator must already be booted.
 

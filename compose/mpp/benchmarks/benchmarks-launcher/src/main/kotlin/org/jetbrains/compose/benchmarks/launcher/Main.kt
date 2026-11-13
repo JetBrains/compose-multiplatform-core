@@ -368,18 +368,31 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                     logs.resolve("web-server.log")
                 ) else null
                 server.use {
+                    val webApplications = if (browserPath != null) processes.manage(
+                        WebApplications { log ->
+                            SeleniumSession(browserPath, requireNotNull(kind), processes, log, timeout)
+                        }
+                    ) else null
+                    fun run(parameters: List<String>, log: Path, wait: (() -> Boolean) -> Unit) {
+                        if (webApplications != null) {
+                            webApplications.run(requireNotNull(server).url, parameters, log, wait)
+                        } else {
+                            runApplication(processes, target, app, device, parameters, log) { process ->
+                                wait { process.isAlive }
+                            }
+                        }
+                    }
                     val environment = EnvironmentCollection(UUID.randomUUID().toString())
                     summary.environment = environment
                     summary.save(directory)
                     println("Collecting target environment...")
                     try {
                         val started = System.nanoTime()
-                        runApplication(
-                            processes, target, app, browserPath, kind, device,
+                        run(
                             listOf("environment", environment.id, "http://127.0.0.1:$port/environment"),
-                            server?.url, logs.resolve("environment.log"),
-                        ) { process ->
-                            val report = waitForEnvironment(reports, environment.id, started, timeout, process, collector.process)
+                            logs.resolve("environment.log"),
+                        ) { isAlive ->
+                            val report = waitForEnvironment(reports, environment.id, started, timeout, isAlive, collector.process)
                             environment.report = directory.relativize(report).toString()
                             environment.collectedAt = Instant.now().toString()
                         }
@@ -392,13 +405,11 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                         summary.save(directory)
                     }
                     val total = summary.tests.size * summary.modes.size * repeat
-                    for (name in summary.tests) for (mode in summary.modes) for (iteration in 1..repeat) {
+                    for ((name, mode, iteration) in benchmarkRuns(
+                        summary.tests, summary.modes, repeat, groupStartup = webApplications != null,
+                    )) {
                         if (Thread.interrupted()) throw InterruptedException()
                         check(collector.process.isAlive) { "collector exited; see logs/collector.log" }
-                        if (kind == "safari") requireSafariClosed(
-                            requireNotNull(browserPath),
-                            processes
-                        )
                         val id = UUID.randomUUID().toString()
                         val log = logs.resolve("$id.log")
                         val result = RunResult(id, name, mode, iteration, log = "logs/$id.log")
@@ -407,17 +418,10 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                         val started = System.nanoTime()
                         println("[${summary.runs.size}/$total] $name / $mode / $id")
                         try {
-                            runApplication(
-                                processes,
-                                target,
-                                app,
-                                browserPath,
-                                kind,
-                                device,
+                            run(
                                 listOf(mode, id, "http://127.0.0.1:$port/reports", name),
-                                server?.url,
-                                log
-                            ) { process ->
+                                log,
+                            ) { isAlive ->
                                 val report = waitForReport(
                                     reports,
                                     id,
@@ -425,7 +429,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                                     mode,
                                     started,
                                     timeout,
-                                    process,
+                                    isAlive,
                                     collector.process
                                 )
                                 result.status = "passed"
@@ -528,6 +532,15 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
     }
 }
 
+internal fun benchmarkRuns(
+    tests: List<String>, modes: List<String>, repeat: Int, groupStartup: Boolean,
+): List<Triple<String, String, Int>> {
+    val runs = tests.flatMap { name ->
+        modes.flatMap { mode -> (1..repeat).map { iteration -> Triple(name, mode, iteration) } }
+    }
+    return if (groupStartup) runs.sortedBy { if (it.second == "startup") 1 else 0 } else runs
+}
+
 private fun absolutePath(value: String): Path = path(value).toAbsolutePath().normalize()
 
 private fun findRoot(explicit: Path?): Path {
@@ -569,7 +582,7 @@ private fun waitForCollector(process: Process, port: Int) {
 
 private fun waitForReport(
     reports: Path, id: String, name: String, mode: String, started: Long, timeout: Double,
-    application: Process, collector: Process,
+    applicationIsAlive: () -> Boolean, collector: Process,
 ): Path {
     fun find(): Path? = reports.listDirectoryEntries("$id-*.json").firstOrNull()?.also {
         val report = Json.parseToJsonElement(it.readText()).jsonObject
@@ -581,13 +594,13 @@ private fun waitForReport(
         find()?.let { return it }
         check(collector.isAlive) { "collector exited; see logs/collector.log" }
         check((System.nanoTime() - started) / 1e9 < timeout) { "no report before test timeout" }
-        if (!application.isAlive) return find() ?: error("application exited without a report")
+        if (!applicationIsAlive()) return find() ?: error("application exited without a report")
         Thread.sleep(100)
     }
 }
 
 private fun waitForEnvironment(
-    reports: Path, id: String, started: Long, timeout: Double, application: Process, collector: Process,
+    reports: Path, id: String, started: Long, timeout: Double, applicationIsAlive: () -> Boolean, collector: Process,
 ): Path {
     fun find(): Path? = reports.listDirectoryEntries("$id-environment-*.json").firstOrNull()?.also {
         val document = Json.parseToJsonElement(it.readText()).jsonObject
@@ -599,7 +612,7 @@ private fun waitForEnvironment(
         find()?.let { return it }
         check(collector.isAlive) { "collector exited; see logs/collector.log" }
         check((System.nanoTime() - started) / 1e9 < timeout) { "no environment before collection timeout" }
-        if (!application.isAlive) return find() ?: error("application exited without environment data")
+        if (!applicationIsAlive()) return find() ?: error("application exited without environment data")
         Thread.sleep(100)
     }
 }

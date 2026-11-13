@@ -18,12 +18,10 @@ package org.jetbrains.compose.benchmarks.launcher
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
-import java.net.URLEncoder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.name
-import kotlin.io.path.writeText
 
 internal const val bundleId = "org.jetbrains.compose.benchmarks.app.BenchmarksIosApp"
 internal val isMac = System.getProperty("os.name").startsWith("Mac")
@@ -128,7 +126,7 @@ internal fun requireSafariClosed(browser: Path, processes: Processes) {
     }
 }
 
-private fun quitSafari(browser: Path, processes: Processes, log: Path) {
+internal fun quitSafari(browser: Path, processes: Processes, log: Path) {
     val owned = safariPids(browser, processes).mapNotNull { ProcessHandle.of(it).orElse(null) }
     if (owned.isEmpty()) return
     var interrupted = Thread.interrupted()
@@ -172,11 +170,8 @@ internal fun runApplication(
     processes: Processes,
     target: String,
     app: Path,
-    browser: Path?,
-    kind: String?,
     simulator: Simulator?,
     parameters: List<String>,
-    webUrl: String?,
     log: Path,
     waitForReport: (Process) -> Unit,
 ) {
@@ -197,54 +192,10 @@ internal fun runApplication(
         }
         return
     }
-    if (browser == null) {
-        val command = if (target == "jvm") {
-            val java = System.getenv("JAVA_HOME")?.let { path(it).resolve("bin/java").toString() }
-                ?: "java"
-            listOf(executable(java, processes).toString(), "-jar", app.toString()) + parameters
-        } else listOf(app.toString()) + parameters
-        processes.start(command, log).use { waitForReport(it.process) }
-        return
-    }
-    val query = listOf("type", "id", "benchmarkCollectorUrl", "test").zip(parameters)
-        .joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, Charsets.UTF_8)}" }
-    val url = "$webUrl/?$query"
-    if (kind == "safari") {
-        requireSafariClosed(browser, processes)
-        val command = listOf("open", "-W", "-a", safariBundle(browser).toString(), url)
-        processes.start(command, log)
-            .use {
-                try {
-                    waitForReport(it.process)
-                } finally {
-                    quitSafari(browser, processes, log)
-                }
-            }
-        return
-    }
-    val profile = Files.createTempDirectory("benchmark-browser-")
-    try {
-        val arguments = if (kind == "chromium") {
-            listOf(
-                "--user-data-dir=$profile",
-                "--no-first-run",
-                "--no-default-browser-check",
-                "--new-window"
-            )
-        } else {
-            profile.resolve("user.js").writeText(
-                "user_pref(\"browser.shell.checkDefaultBrowser\", false);\n" +
-                        "user_pref(\"browser.startup.homepage_override.mstone\", \"ignore\");\n"
-            )
-            listOf("--no-remote", "--profile", profile.toString(), "--new-window")
-        }
-        val command = buildList {
-            addAll(listOf(browser.toString()))
-            addAll(arguments)
-            add(url)
-        }
-        processes.start(command, log).use { waitForReport(it.process) }
-    } finally {
-        deleteTree(profile)
-    }
+    val command = if (target == "jvm") {
+        val java = System.getenv("JAVA_HOME")?.let { path(it).resolve("bin/java").toString() }
+            ?: "java"
+        listOf(executable(java, processes).toString(), "-jar", app.toString()) + parameters
+    } else listOf(app.toString()) + parameters
+    processes.start(command, log).use { waitForReport(it.process) }
 }
