@@ -21,6 +21,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.platform.FONT_FALLBACK_BASE_URL
 
+/** The default text of the accessibility activation button. */
+internal const val DEFAULT_A11Y_ACTIVATION_LABEL = "Enable accessibility"
+
 /** Controls when a Compose viewport exposes its accessibility tree. */
 @ExperimentalComposeUiApi
 sealed interface WebAccessibilityActivation {
@@ -33,7 +36,7 @@ sealed interface WebAccessibilityActivation {
      * @property activationLabel The localized button text and accessible name.
      */
     data class OnUserRequest(
-        val activationLabel: String = "Enable accessibility",
+        val activationLabel: String = DEFAULT_A11Y_ACTIVATION_LABEL,
     ) : WebAccessibilityActivation
 
     /** Builds the accessibility tree at startup. */
@@ -110,4 +113,11 @@ class ComposeViewportConfiguration internal constructor() {
      * manage padding manually.
      */
     var enableBrowserWindowInsets: Boolean = false
+
+    /**
+     * Whether accessibility is activated eagerly: the tree is built at startup rather than on
+     * user request.
+     */
+    internal val isA11YActivatedEagerly: Boolean
+        get() = accessibilityActivation == WebAccessibilityActivation.Eager
 }
