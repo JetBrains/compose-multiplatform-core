@@ -35,7 +35,18 @@ internal class Processes(
     private val commandLog: Path,
 ) : AutoCloseable {
     private val active = mutableSetOf<ManagedProcess>()
+    private val resources = mutableListOf<AutoCloseable>()
     private var closed = false
+
+    @Synchronized
+    fun <T : AutoCloseable> manage(resource: T): T {
+        if (closed) {
+            resource.close()
+            error("launcher is stopping")
+        }
+        resources.add(resource)
+        return resource
+    }
 
     @Synchronized
     fun start(command: List<String>, log: Path, output: Path = log): ManagedProcess {
@@ -87,11 +98,16 @@ internal class Processes(
     }
 
     override fun close() {
-        val children = synchronized(this) {
+        val (ownedResources, children) = synchronized(this) {
             closed = true
-            active.toList().reversed()
+            resources.toList().reversed().also { resources.clear() } to active.toList().reversed()
         }
-        children.forEach { it.close() }
+        // WebDriver owns processes outside ProcessBuilder; close its sessions on shutdown too.
+        (ownedResources + children).forEach {
+            runCatching { it.close() }.onFailure { error ->
+                appendLog(commandLog, "Cleanup failed: ${error.stackTraceToString()}\n")
+            }
+        }
     }
 }
 

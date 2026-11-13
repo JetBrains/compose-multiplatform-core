@@ -58,6 +58,11 @@ internal class WebServer(directory: Path, port: Int, log: Path) : AutoCloseable 
                         else -> Files.probeContentType(file) ?: "application/octet-stream"
                     }
                     exchange.responseHeaders.set("Content-Type", contentType)
+                    // A browser profile is scoped to one configuration with unchanged artifacts.
+                    exchange.responseHeaders.set(
+                        "Cache-Control",
+                        if (file.extension == "html") "no-store" else "public, max-age=3600",
+                    )
                     val length = Files.size(file)
                     exchange.responseHeaders.set("Content-Length", length.toString())
                     exchange.sendResponseHeaders(200, if (method == "HEAD") -1 else length)
