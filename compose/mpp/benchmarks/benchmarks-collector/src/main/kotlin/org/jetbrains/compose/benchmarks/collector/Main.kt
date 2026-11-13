@@ -182,7 +182,9 @@ private fun saveReport(outputDirectory: Path, id: String, type: BenchmarkReportT
 private fun saveDocument(outputDirectory: Path, id: String, kind: String, body: String): String {
     var fileName: String
     do {
-        fileName = "$id-$kind-${Instant.now()}.json"
+        // GitHub Actions artifacts reject colons in file names.
+        val timestamp = Instant.now().toString().replace(':', '-')
+        fileName = "$id-$kind-$timestamp.json"
     } while (Files.exists(outputDirectory.resolve(fileName)))
 
     val temporaryFile = Files.createTempFile(outputDirectory, ".$kind-", ".tmp")
