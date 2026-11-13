@@ -59,7 +59,7 @@ class RecomposerTests {
             var lastRecomposedState = -1
             composition.setContent { lastRecomposedState = state }
             assertEquals(0, lastRecomposedState, "initial composition")
-            Snapshot.withMutableSnapshot { state = 1 }
+            DataSource.isolate { state = 1 }
             assertNotNull(
                 withTimeoutOrNull(3_000) { recomposer.awaitIdle() },
                 "timed out waiting for recomposer idle for recomposition",
@@ -74,7 +74,7 @@ class RecomposerTests {
                 withTimeoutOrNull(3_000) { runner.join() },
                 "timed out waiting for recomposer runner job",
             )
-            Snapshot.withMutableSnapshot { state = 2 }
+            DataSource.isolate { state = 2 }
             assertNotNull(
                 withTimeoutOrNull(3_000) {
                     recomposer.currentState.first { it <= Recomposer.State.PendingWork }
@@ -317,7 +317,7 @@ class RecomposerTests {
 
                 assertTrue(launched, "Recomposer was never started")
 
-                Snapshot.withMutableSnapshot { state = 1 }
+                DataSource.isolate { state = 1 }
 
                 recomposer.cancel()
 
@@ -360,7 +360,7 @@ class RecomposerTests {
         // Register the apply observer after changing state to invalidate composition, but
         // before actually allowing the recomposition to happen.
         val observerHandle =
-            Snapshot.registerApplyObserver { applied, _ -> applications += applied }
+            DataSource.registerInvalidator { applied -> applications += applied }
 
         try {
             assertTrue(applications.isEmpty())
@@ -445,7 +445,7 @@ class RecomposerTests {
                 val nanosAfterInitialComposition = lastNanosSeen
 
                 // Force a recompose and test assumptions of the test
-                Snapshot.withMutableSnapshot { state++ }
+                DataSource.isolate { state++ }
                 dispatcher.scheduler.advanceTimeBy(1_000)
                 assertTrue(launched, "assumed recomposer was running")
                 assertEquals(state, lastStateSeen, "assume composition would have happened")
@@ -459,13 +459,13 @@ class RecomposerTests {
                 val nanosAfterPause = lastNanosSeen
 
                 // Force a recompose
-                Snapshot.withMutableSnapshot { state++ }
+                DataSource.isolate { state++ }
                 dispatcher.scheduler.advanceTimeBy(1_000)
                 assertEquals(state, lastStateSeen, "expected composition didn't occur")
                 assertEquals(nanosAfterPause, lastNanosSeen, "unexpected call to withFrameNanos")
 
                 // Force another recompose
-                Snapshot.withMutableSnapshot { state++ }
+                DataSource.isolate { state++ }
                 dispatcher.scheduler.advanceTimeBy(1_000)
                 assertEquals(state, lastStateSeen, "expected composition didn't occur")
                 assertEquals(nanosAfterPause, lastNanosSeen, "unexpected call to withFrameNanos")
@@ -480,7 +480,7 @@ class RecomposerTests {
                 val nanosAfterResume = lastNanosSeen
 
                 // Force another recompose
-                Snapshot.withMutableSnapshot { state++ }
+                DataSource.isolate { state++ }
                 dispatcher.scheduler.advanceTimeBy(1_000)
                 assertEquals(state, lastStateSeen, "expected composition didn't occur")
                 assertTrue(
