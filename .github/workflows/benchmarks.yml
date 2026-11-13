@@ -12,7 +12,7 @@ permissions:
 jobs:
   jvm:
     name: JVM benchmarks
-    runs-on: ubuntu-24.04
+    runs-on: macos-26-xlarge
     timeout-minutes: 360
 
     defaults:
@@ -33,12 +33,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Setup virtual display and Mesa OpenGL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            xvfb xauth mesa-utils libgl1 libgl1-mesa-dri libglx-mesa0
-
       - name: Resolve latest versions from Maven Central
         uses: ./.github/actions/resolve-benchmark-versions
 
@@ -46,13 +40,8 @@ jobs:
         run: ./gradlew :benchmarks-launcher:installDist --console=plain
 
       - name: Run JVM benchmarks
-        env:
-          LIBGL_ALWAYS_SOFTWARE: "1"
-          LIBGL_DEBUG: verbose
         run: |
           mkdir -p "$RUNNER_TEMP/benchmark-results"
-          xvfb-run -a -s "-screen 0 1920x1080x24" bash -euo pipefail <<'BENCHMARKS'
-          glxinfo -B 2>&1 | tee "$RUNNER_TEMP/benchmark-results/jvm-glxinfo.log"
           ./benchmarks-launcher/build/install/benchmarks-launcher/bin/benchmarks-launcher \
             --target jvm \
             --compose-version "$COMPOSE_VERSIONS" \
@@ -60,7 +49,6 @@ jobs:
             --compose-core-path "$GITHUB_WORKSPACE" \
             --repeat 3 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
-          BENCHMARKS
 
       # GitHub packages the whole session, including index.html, as one ZIP artifact.
       - name: Upload benchmark results
