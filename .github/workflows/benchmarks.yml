@@ -73,9 +73,13 @@ jobs:
           retention-days: 30
 
   web:
-    name: Web benchmarks
+    name: Web benchmarks (${{ matrix.target }})
     runs-on: ubuntu-24.04
     timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [js, wasmJs]
 
     defaults:
       run:
@@ -108,10 +112,12 @@ jobs:
         run: ./gradlew :benchmarks-launcher:installDist --console=plain
 
       - name: Run benchmarks in Chrome
+        env:
+          BENCHMARK_TARGET: ${{ matrix.target }}
         run: |
           xvfb-run -a -s "-screen 0 1920x1080x24" \
             ./benchmarks-launcher/build/install/benchmarks-launcher/bin/benchmarks-launcher \
-            --target js wasmJs \
+            --target "$BENCHMARK_TARGET" \
             --compose-version "$COMPOSE_VERSIONS" \
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
@@ -124,7 +130,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: web-benchmarks-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ matrix.target }}-benchmarks-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/benchmark-results/
           if-no-files-found: warn
           retention-days: 30
