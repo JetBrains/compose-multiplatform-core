@@ -34,8 +34,8 @@ internal fun App(
             id = id,
             name = testName,
             reportApiUrl = benchmarkCollectorUrl,
-            warmupCount = 100,
-            frameCount = 1000,
+            warmupCount = 30,
+            frameCount = 300,
             content = benchmarkContent(testName),
         )
         BenchmarkReportType.STARTUP -> MeasureApplicationStartup(
