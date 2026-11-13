@@ -34,7 +34,7 @@ import org.jetbrains.skiko.graphicapi.OpenGLOffscreenContext
 import org.jetbrains.skiko.hostOs
 
 internal actual object Platform {
-    private val graphicsContext: GraphicsContext by lazy {
+    private val cachedGraphicsContext: GraphicsContext by lazy {
         val context = when {
             hostOs.isWindows -> DirectXGraphicsContext()
             hostOs.isMacOS -> MetalGraphicsContext()
@@ -53,7 +53,7 @@ internal actual object Platform {
         }
     }
 
-    actual fun getGraphicsContext(): GraphicsContext = graphicsContext
+    actual fun getGraphicsContext(): GraphicsContext = cachedGraphicsContext
 
     actual fun runGC() {
         System.gc()
