@@ -49,8 +49,8 @@ internal suspend fun runRenderBenchmark(
             width = 1920,
             height = 1080,
             targetFps = 120,
-            warmupCount = 100,
-            frameCount = 1000,
+            warmupCount = 30,
+            frameCount = 300,
             content = content,
         )
         else -> error("Unknown render benchmark type: $benchmarkType")
