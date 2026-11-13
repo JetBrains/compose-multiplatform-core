@@ -17,24 +17,32 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.constrain
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import kotlin.math.min
-import kotlinx.cinterop.useContents
+
+internal val LocalSceneDestinationSize = staticCompositionLocalOf<State<DpSize>?> { null }
 
 @Composable
-internal actual fun rememberPlatformConstraintsModifier(
-    usePlatformDefaultWidth: Boolean
+internal actual fun rememberComposeSceneLayerConstraintsModifier(
+    usePlatformDefaultWidth: Boolean,
+    platformInsets: PlatformInsets
 ): Density.(Constraints) -> Constraints {
     if (!usePlatformDefaultWidth) {
-        return { it }
+        return defaultPlatformConstraintsModifier(usePlatformDefaultWidth, platformInsets)
     }
     val view = LocalUIView.current
-    return remember(view) {
+    val sceneSize = LocalSceneDestinationSize.current
+    return remember(view, platformInsets) {
         { constraints ->
             // During the size transition animation (e.g. device rotation), the layer constraints
             // are interpolated between the initial and the target sizes, so their smallest
@@ -43,11 +51,13 @@ internal actual fun rememberPlatformConstraintsModifier(
             // Note: reading bounds isn't observable, but the window size changes always
             // change the layer constraints as well, which triggers a new measure pass.
             val smallestConstraintsWidth = min(constraints.maxWidth, constraints.maxHeight).toDp()
-            val smallestWidth = view.window?.bounds?.useContents {
-                min(size.width, size.height).dp
-            }?.let { min(it, smallestConstraintsWidth) } ?: smallestConstraintsWidth
+            val smallestWidth = sceneSize?.value
+                ?.let { min(it.width, it.height) }
+                ?.let { min(it, smallestConstraintsWidth) } ?: smallestConstraintsWidth
 
-            preferredDialogWidthConstraints(constraints, smallestWidth)
+            constraints
+                .withoutPlatformInsets(platformInsets)
+                .constrain(preferredDialogWidthConstraints(constraints, smallestWidth))
         }
     }
 }

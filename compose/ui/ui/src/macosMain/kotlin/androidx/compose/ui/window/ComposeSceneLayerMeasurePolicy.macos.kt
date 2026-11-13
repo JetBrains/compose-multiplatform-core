@@ -17,11 +17,13 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 
 @Composable
-internal actual fun rememberPlatformConstraintsModifier(
-    usePlatformDefaultWidth: Boolean
+internal actual fun rememberComposeSceneLayerConstraintsModifier(
+    usePlatformDefaultWidth: Boolean,
+    platformInsets: PlatformInsets
 ): Density.(Constraints) -> Constraints =
-    defaultPlatformConstraintsModifier(usePlatformDefaultWidth)
+    defaultPlatformConstraintsModifier(usePlatformDefaultWidth, platformInsets)

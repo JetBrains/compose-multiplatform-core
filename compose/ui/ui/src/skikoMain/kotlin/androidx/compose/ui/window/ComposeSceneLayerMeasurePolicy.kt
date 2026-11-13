@@ -34,21 +34,20 @@ import androidx.compose.ui.util.fastMaxOfOrDefault
 import kotlin.math.min
 
 /**
- * Returns a function that modifies the layer [Constraints] according to the platform defaults.
+ * Returns a function that modifies the layer [Constraints] according to the platform defaults
+ * and [platformInsets].
  */
 @Composable
-internal expect fun rememberPlatformConstraintsModifier(
-    usePlatformDefaultWidth: Boolean
+internal expect fun rememberComposeSceneLayerConstraintsModifier(
+    usePlatformDefaultWidth: Boolean,
+    platformInsets: PlatformInsets
 ): Density.(Constraints) -> Constraints
 
 internal fun ComposeSceneLayerMeasurePolicy(
-    platformInsets: PlatformInsets,
     constraintsModifier: Density.(Constraints) -> Constraints,
     calculatePosition: MeasureScope.(contentSize: IntSize) -> IntOffset,
 ) = MeasurePolicy { measurables, constraints ->
-    val platformConstraints = applyPlatformConstraints(
-        constraints, platformInsets, constraintsModifier
-    )
+    val platformConstraints = constraintsModifier(constraints)
     val placeables = measurables.fastMap { it.measure(platformConstraints) }
     val contentSize = IntSize(
         width = placeables.fastMaxOfOrDefault(constraints.minWidth) { it.width },
@@ -65,17 +64,6 @@ internal fun ComposeSceneLayerMeasurePolicy(
             it.place(position.x, position.y)
         }
     }
-}
-
-private fun Density.applyPlatformConstraints(
-    constraints: Constraints,
-    platformInsets: PlatformInsets,
-    constraintsModifier: Density.(Constraints) -> Constraints
-): Constraints {
-    val horizontal = platformInsets.left + platformInsets.right
-    val vertical = platformInsets.top + platformInsets.bottom
-    val platformConstraints = constraints.offset(-horizontal, -vertical)
-    return platformConstraints.constrain(constraintsModifier(constraints))
 }
 
 @Suppress("UnusedReceiverParameter")
@@ -99,20 +87,32 @@ internal fun MeasureScope.positionWithInsets(
 }
 
 /**
- * The default implementation of [rememberPlatformConstraintsModifier], which provides
- * the content width based on the smallest dimension of the layer constraints.
+ * The default implementation of [rememberComposeSceneLayerConstraintsModifier], which subtracts
+ * [platformInsets] from the constraints and provides the content width based on the smallest
+ * dimension of the layer constraints.
  */
 internal fun defaultPlatformConstraintsModifier(
-    usePlatformDefaultWidth: Boolean
+    usePlatformDefaultWidth: Boolean,
+    platformInsets: PlatformInsets
 ): Density.(Constraints) -> Constraints = if (usePlatformDefaultWidth) {
     { constraints ->
-        preferredDialogWidthConstraints(
-            constraints = constraints,
-            smallestWidth = min(constraints.maxWidth, constraints.maxHeight).toDp()
-        )
+        constraints
+            .withoutPlatformInsets(platformInsets)
+            .constrain(
+                preferredDialogWidthConstraints(
+                    constraints = constraints,
+                    smallestWidth = min(constraints.maxWidth, constraints.maxHeight).toDp()
+                )
+            )
     }
 } else {
-    { it }
+    { constraints -> constraints.withoutPlatformInsets(platformInsets) }
+}
+
+internal fun Constraints.withoutPlatformInsets(platformInsets: PlatformInsets): Constraints {
+    val horizontal = platformInsets.left + platformInsets.right
+    val vertical = platformInsets.top + platformInsets.bottom
+    return offset(-horizontal, -vertical)
 }
 
 internal fun Density.preferredDialogWidthConstraints(

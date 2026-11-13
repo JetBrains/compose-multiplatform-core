@@ -573,7 +573,10 @@ private fun rememberPopupMeasurePolicy(
     layoutDirection: LayoutDirection,
     parentBoundsInWindow: MutableState<IntRect?>,
 ): MeasurePolicy {
-    val constraintsModifier = rememberPlatformConstraintsModifier(properties.usePlatformDefaultWidth)
+    val constraintsModifier = rememberComposeSceneLayerConstraintsModifier(
+        usePlatformDefaultWidth = properties.usePlatformDefaultWidth,
+        platformInsets = platformInsets
+    )
     return remember(
         layer,
         popupPositionProvider,
@@ -585,7 +588,6 @@ private fun rememberPopupMeasurePolicy(
         constraintsModifier
     ) {
         ComposeSceneLayerMeasurePolicy(
-            platformInsets = platformInsets,
             constraintsModifier = constraintsModifier
         ) { contentSize ->
             val parentRectInWindow = parentBoundsInWindow.value
