@@ -1,5 +1,5 @@
 name: Resolve benchmark versions
-description: Resolve the latest stable and prerelease Compose and Kotlin versions from Maven Central.
+description: Resolve stable and prerelease Compose and Kotlin versions from Maven Central, plus the latest dev Compose from JetBrains.
 runs:
   using: composite
   steps:

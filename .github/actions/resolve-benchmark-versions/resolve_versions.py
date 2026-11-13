@@ -32,21 +32,37 @@ def latest_versions(group, artifact):
         raise RuntimeError(f"Missing stable or prerelease version for {artifact}")
     return max(stable)[1], max(unstable)[1]
 
+def latest_dev_compose_version():
+    url = (
+        "https://packages.jetbrains.team/maven/p/cmp/dev/"
+        "org/jetbrains/compose/compose-gradle-plugin/maven-metadata.xml"
+    )
+    with urllib.request.urlopen(url, timeout=60) as response:
+        metadata = ET.parse(response)
+    version = metadata.findtext("./versioning/latest")
+    available = {node.text for node in metadata.findall("./versioning/versions/version")}
+    if not version or version not in available:
+        raise RuntimeError("Missing latest Compose version in the dev repository metadata")
+    return version
+
+
 compose = latest_versions("org.jetbrains.compose", "compose-gradle-plugin")
+dev_compose = latest_dev_compose_version()
+selected_compose = tuple(dict.fromkeys((*compose, dev_compose, "local")))
 kotlin = latest_versions("org.jetbrains.kotlin", "kotlin-gradle-plugin")
 versions = {
-    "compose": {"stable": compose[0], "unstable": compose[1], "local": "local"},
+    "compose": {"stable": compose[0], "unstable": compose[1], "dev": dev_compose, "local": "local"},
     "kotlin": {"stable": kotlin[0], "unstable": kotlin[1]},
 }
 results = Path(os.environ["RUNNER_TEMP"]) / "benchmark-results"
 results.mkdir(parents=True, exist_ok=True)
 (results / "versions.json").write_text(json.dumps(versions, indent=2) + "\n")
 with open(os.environ["GITHUB_ENV"], "a") as env:
-    env.write(f"COMPOSE_VERSIONS={','.join((*compose, 'local'))}\n")
+    env.write(f"COMPOSE_VERSIONS={','.join(selected_compose)}\n")
     env.write(f"KOTLIN_VERSIONS={','.join(kotlin)}\n")
 with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
     summary.write("## Benchmark versions\n\n")
-    summary.write(f"- Compose: {', '.join((*compose, 'local'))}\n")
+    summary.write(f"- Compose: {', '.join(selected_compose)}\n")
     summary.write(f"- Kotlin: {', '.join(kotlin)}\n")
     summary.write("- Local Compose uses the core checkout's own Kotlin version.\n")
 print(json.dumps(versions, indent=2))

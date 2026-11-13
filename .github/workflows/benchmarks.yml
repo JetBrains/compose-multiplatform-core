@@ -33,7 +33,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Resolve latest versions from Maven Central
+      - name: Resolve latest benchmark versions
         uses: ./.github/actions/resolve-benchmark-versions
 
       - name: Build launcher
@@ -48,7 +48,7 @@ jobs:
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
             --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
-            --repeat 1 \
+            --repeat 3 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
       # GitHub packages the whole session, including index.html, as one ZIP artifact.
@@ -91,7 +91,7 @@ jobs:
       - name: Check Chrome
         run: '"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version'
 
-      - name: Resolve latest versions from Maven Central
+      - name: Resolve latest benchmark versions
         uses: ./.github/actions/resolve-benchmark-versions
 
       - name: Build launcher
@@ -110,7 +110,7 @@ jobs:
             --compose-core-path "$GITHUB_WORKSPACE" \
             --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
             --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
-            --repeat 1 \
+            --repeat 3 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
       # GitHub packages the whole session, including index.html, as one ZIP artifact.
@@ -146,7 +146,7 @@ jobs:
           simulator-device: iPhone 17
           simulator-os: '26.5'
 
-      - name: Resolve latest versions from Maven Central
+      - name: Resolve latest benchmark versions
         uses: ./.github/actions/resolve-benchmark-versions
 
       - name: Build launcher
@@ -163,7 +163,7 @@ jobs:
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
             --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
-            --repeat 1 \
+            --repeat 3 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
       # GitHub packages the whole session, including index.html, as one ZIP artifact.
