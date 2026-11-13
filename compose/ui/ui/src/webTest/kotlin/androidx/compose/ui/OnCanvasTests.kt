@@ -25,6 +25,7 @@ import androidx.compose.ui.window.ComposeViewport
 import androidx.compose.ui.window.ComposeViewportConfiguration
 import androidx.compose.ui.window.ComposeWindow
 import androidx.compose.ui.window.LocalComposeWindow
+import androidx.compose.ui.window.WebAccessibilityActivation
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsReference
 import kotlin.js.get
@@ -141,8 +142,8 @@ internal interface OnCanvasTests {
     private fun getPositioningContainer() = getContainer().children[0] ?: error("failed to get positioning container")
     fun getShadowRoot() = (getPositioningContainer().children[0]?.shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
     private fun getAppRoot() = getShadowRoot().children[1] as? HTMLElement ?: error("failed to get app root")
-    fun getCanvas() = getAppRoot().children[0] as? HTMLCanvasElement ?: error("failed to get canvas")
-    fun getA11YContainer() = getAppRoot().children[1] as? HTMLDivElement
+    fun getCanvas() = getAppRoot().querySelector("canvas") as? HTMLCanvasElement ?: error("failed to get canvas")
+    fun getA11YContainer() = getShadowRoot().getElementById("cmp_a11y_root") as? HTMLDivElement
 
     suspend fun createComposeWindow(
         configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -250,6 +251,14 @@ internal interface OnCanvasTests {
             }
         }
     }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+internal suspend fun OnCanvasTests.createEagerAccessibilityWindow(content: @Composable () -> Unit) {
+    createComposeWindow(
+        configure = { accessibilityActivation = WebAccessibilityActivation.Eager },
+        content = content,
+    )
 }
 
 internal fun <T> Channel<T>.sendFromScope(value: T, scope: CoroutineScope = MainScope()) {

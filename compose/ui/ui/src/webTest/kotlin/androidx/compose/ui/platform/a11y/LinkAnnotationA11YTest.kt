@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.buildAnnotatedString
@@ -58,7 +59,7 @@ class LinkAnnotationA11YTest : OnCanvasTests {
 
     @Test
     fun a11yLinkAnnotation() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text(
                 buildAnnotatedString {
                     append("Text before the ")
@@ -87,7 +88,7 @@ class LinkAnnotationA11YTest : OnCanvasTests {
         var linkText by mutableStateOf("link")
         var suffix by mutableStateOf(" after")
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text(
                 buildAnnotatedString {
                     append(prefix)
@@ -144,7 +145,7 @@ class LinkAnnotationA11YTest : OnCanvasTests {
     fun a11yLinkAnnotationClickable() = runApplicationTest {
         val clickedTags = mutableListOf<String>()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text(
                 buildAnnotatedString {
                     append("Text before the ")
@@ -183,7 +184,7 @@ class LinkAnnotationA11YTest : OnCanvasTests {
     fun a11yLinkAnnotationUrlWithCustomClickHandler() = runApplicationTest {
         val clickedUrls = mutableListOf<String>()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text(
                 buildAnnotatedString {
                     append("Text before the ")
@@ -221,7 +222,7 @@ class LinkAnnotationA11YTest : OnCanvasTests {
     fun a11yMultipleLinkAnnotations() = runApplicationTest {
         val clicks = mutableListOf<String>()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text(
                 buildAnnotatedString {
                     append("Start ")

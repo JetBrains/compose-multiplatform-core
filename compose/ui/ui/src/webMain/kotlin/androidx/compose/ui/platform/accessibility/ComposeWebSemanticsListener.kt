@@ -20,9 +20,13 @@ import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableScatterMap
 import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectListOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -32,6 +36,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
+import androidx.compose.ui.window.findFirstEligibleA11YElementToFocus
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +55,7 @@ import org.w3c.dom.events.KeyboardEvent
 
 internal class ComposeWebSemanticsListener(
     val webSemanticsRoot: HTMLElement,
+    initiallyActive: Boolean,
 ) : PlatformContext.SemanticsOwnerListener {
 
     private val invalidationChannel =
@@ -66,13 +72,28 @@ internal class ComposeWebSemanticsListener(
     private var hasStopped = false
     private val startJob = Job()
 
+    var isActive by mutableStateOf(initiallyActive)
+        private set
+
+    internal fun activate(coroutineScope: CoroutineScope) {
+        check(!isActive && !hasStopped)
+        try {
+            syncSemanticsWithWebA11Y()
+        } catch (failure: Throwable) {
+            clearTree()
+            throw failure
+        }
+        isActive = true
+        start(coroutineScope)
+    }
+
     /**
      * @param coroutineScope The [CoroutineScope] used to run this listener,
      * typically the composition scope so the listener follows the composition lifecycle.
      */
     internal fun start(coroutineScope: CoroutineScope) {
         check(!hasStopped) { "ComposeWebSemanticsListener can't be started after it was stopped" }
-        if (hasStarted) return
+        if (!isActive || hasStarted) return
         hasStarted = true
 
         // Here we do the following:
@@ -118,6 +139,7 @@ internal class ComposeWebSemanticsListener(
                         lastDebouncedTime = 0L
                         lastSyncTime = currentTime
                         syncSemanticsWithWebA11Y()
+                        webSemanticsRoot.setAttribute("data-cmp-a11y-state", "active")
                     } else {
                         syncTriggerChannel.trySend(currentTime)
                     }
@@ -136,6 +158,7 @@ internal class ComposeWebSemanticsListener(
                         lastDebouncedTime = 0L
                         lastSyncTime = currentTime
                         syncSemanticsWithWebA11Y()
+                        webSemanticsRoot.setAttribute("data-cmp-a11y-state", "active")
                     }
                 }
             }
@@ -151,23 +174,42 @@ internal class ComposeWebSemanticsListener(
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
         if (semanticsOwners.contains(semanticsOwner)) return
         semanticsOwners.add(semanticsOwner)
-        invalidationChannel.trySend(Unit)
+        invalidate()
     }
 
     override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
         if (semanticsOwners.remove(semanticsOwner)) {
-            invalidationChannel.trySend(Unit)
+            invalidate()
         }
     }
 
     override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {
-        invalidationChannel.trySend(Unit)
+        invalidate()
     }
 
     override fun onLayoutChange(
         semanticsOwner: SemanticsOwner, semanticsNodeId: Int
     ) {
-        invalidationChannel.trySend(Unit)
+        invalidate()
+    }
+
+    private fun invalidate() {
+        if (isActive) invalidationChannel.trySend(Unit)
+    }
+
+    /**
+     * Moves the DOM focus into the activated tree. See [findFirstEligibleA11YElementToFocus] for the
+     * entry-point policy; the implementation lives in the activation module to keep the
+     * semantics-to-DOM mapping private. Does nothing when the tree has no eligible element.
+     */
+    internal fun requestActivationFocus() {
+        val element = findFirstEligibleA11YElementToFocus(
+            webSemanticsRoot = webSemanticsRoot,
+            a11yNodeToSemanticsNode = a11yNodeToSemanticsNode
+        ) ?: return
+
+        if (!element.hasAttribute("tabindex")) element.tabIndex = -1
+        focusExt(element, true)
     }
 
     // Three array deques for dfs traversal / tree sync:
@@ -525,7 +567,7 @@ internal class ComposeWebSemanticsListener(
             config.contains(SemanticsActions.SetProgress)
         ) {
             htmlNode.setAttribute("tabindex", "0")
-        } else {
+        } else if (htmlNode.getAttribute("tabindex") != "-1") {
             htmlNode.removeAttribute("tabindex")
         }
 
@@ -735,12 +777,21 @@ internal class ComposeWebSemanticsListener(
     }
 
     internal fun stop() {
-        if (!hasStarted || hasStopped) return
+        if (hasStopped) return
+        hasStopped = true
+        isActive = false
 
         webSemanticsRoot.removeEventListener("click", onClick)
         webSemanticsRoot.removeEventListener("keydown", onKeyDown)
-        a11YScrollController.clear()
+        semanticsOwners.clear()
+        invalidationChannel.close()
+        syncTriggerChannel.close()
+        startJob.cancel()
+        clearTree()
+    }
 
+    private fun clearTree() {
+        a11YScrollController.clear()
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
         dfsA11YReachabilities.clear()
@@ -748,13 +799,7 @@ internal class ComposeWebSemanticsListener(
         a11yNodeToSemanticsNode.clear()
         targetParentToChildren.clear()
         targetChildToParent.clear()
-
-        invalidationChannel.close()
-        syncTriggerChannel.close()
-        startJob.cancel()
-
         removeAllChildrenOf(webSemanticsRoot)
-        hasStopped = true
     }
 }
 

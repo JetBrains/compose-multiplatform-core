@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.editableText
 import androidx.compose.ui.semantics.password
@@ -45,7 +46,7 @@ class A11YTextFieldTest : OnCanvasTests {
     fun textFieldWithLabelUpdatesEditableText() = runApplicationTest {
         var text by mutableStateOf("")
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             TextField(
                 value = text,
                 onValueChange = { text = it },
@@ -71,7 +72,7 @@ class A11YTextFieldTest : OnCanvasTests {
     fun textFieldWithPlaceholderUpdatesEditableText() = runApplicationTest {
         var text by mutableStateOf("")
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             TextField(
                 value = text,
                 onValueChange = { text = it },
@@ -96,7 +97,7 @@ class A11YTextFieldTest : OnCanvasTests {
         var text by mutableStateOf("")
         var trailingIconClicks = 0
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             TextField(
                 value = text,
                 onValueChange = { text = it },
@@ -134,7 +135,7 @@ class A11YTextFieldTest : OnCanvasTests {
         val password = "secret"
         var revealPassword by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(
                 modifier = Modifier
                     .size(100.dp)

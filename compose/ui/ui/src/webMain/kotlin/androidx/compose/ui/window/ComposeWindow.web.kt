@@ -18,6 +18,8 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.events.EventTargetListener
 import kotlin.js.js
 import kotlinx.browser.document
 import org.w3c.dom.DocumentReadyState
@@ -65,6 +67,7 @@ fun ComposeViewport(
  *     <shadow_container.shadow>
  *       <style/>
  *       <app_container>
+ *         <button id="cmp_a11y_activation_button"/> (when activation is on user request)
  *         <canvas/>
  *         <a11y_container/>
  *       </app_container>
@@ -75,6 +78,7 @@ fun ComposeViewport(
  *
  * Note: The viewportContainer will be cleared on composition creation.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 fun ComposeViewport(
     viewportContainer: Element,
     configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -155,6 +159,8 @@ fun ComposeViewport(
             white-space: pre;
             z-index: -1;
        }
+
+       $a11yActivationButtonCss
     """.trimIndent()
     shadowRoot.appendChild(shadowRootStyle)
 
@@ -166,6 +172,12 @@ fun ComposeViewport(
         height = "100%"
     }
     shadowRoot.appendChild(appContainer)
+
+    val configuration = ComposeViewportConfiguration().apply(configure)
+    val a11yActivationButton = createA11yActivationButton(configuration.accessibilityActivation)
+    if (a11yActivationButton != null) {
+        appContainer.appendChild(a11yActivationButton)
+    }
 
     //canvas
     val canvas = document.createElement("canvas") as HTMLCanvasElement
@@ -195,7 +207,6 @@ fun ComposeViewport(
     appContainer.appendChild(canvas)
 
     //a11y container
-    val configuration = ComposeViewportConfiguration().apply(configure)
     val a11yContainerElement = if (configuration.isA11YEnabled) {
         (document.createElement("div") as HTMLDivElement).also { a11yContainer ->
             a11yContainer.style.apply {
@@ -235,7 +246,18 @@ fun ComposeViewport(
         state = DefaultWindowState(viewportContainer)
     )
 
+    val a11yActivationEvents = a11yActivationButton?.let { button ->
+        EventTargetListener(button).also { events ->
+            events.addDisposableEvent("click") {
+                composeWindow.activateAccessibility()
+                events.dispose()
+                button.remove()
+            }
+        }
+    }
+
     ComposeWindowCustomElement.onDispose(positioningContainer) {
+        a11yActivationEvents?.dispose()
         composeWindow.dispose()
     }
 }

@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.platform.testTag
@@ -51,7 +52,7 @@ class LazyListA11yOrderTest : OnCanvasTests {
         val state = LazyListState()
         var marker by mutableStateOf("initial")
         var listNode: SemanticsNode? = null
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LazyColumn(
                 state = state,
                 horizontalAlignment = Alignment.CenterHorizontally,

@@ -17,22 +17,57 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.platform.FONT_FALLBACK_BASE_URL
+
+/** Controls when a Compose viewport exposes its accessibility tree. */
+@ExperimentalComposeUiApi
+sealed interface WebAccessibilityActivation {
+    /** Disables both the accessibility tree and the activation button. */
+    data object Disabled : WebAccessibilityActivation
+
+    /**
+     * Builds the accessibility tree when the user activates it.
+     *
+     * @property activationLabel The localized button text and accessible name.
+     */
+    data class OnUserRequest(
+        val activationLabel: String = "Enable accessibility",
+    ) : WebAccessibilityActivation
+
+    /** Builds the accessibility tree at startup. */
+    data object Eager : WebAccessibilityActivation
+}
 
 /**
  * Configuration of [ComposeViewport] behavior.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 class ComposeViewportConfiguration internal constructor() {
 
     /**
-     * Indicates whether accessibility (a11y) is enabled for the associated Compose viewport.
-     * When it's enabled, the Compose Viewport will maintain a DOM tree mirroring the Compose semantics nodes.
-     * That DOM tree is visibly hidden, but reachable by the accessibility tools.
-     * It can be disabled to avoid the overhead of maintaining the DOM tree.
-     * By default, it is set to `true`.
+     * Whether the viewport supports accessibility. Defaults to `true`.
+     * Setting this to `false` selects [WebAccessibilityActivation.Disabled]. Setting it to `true` selects
+     * [WebAccessibilityActivation.OnUserRequest] with its default label if disabled and otherwise preserves
+     * the current configuration. Use [accessibilityActivation] to configure activation explicitly.
      */
-    var isA11YEnabled: Boolean = true
+    var isA11YEnabled: Boolean
+        get() = accessibilityActivation != WebAccessibilityActivation.Disabled
+        set(value) {
+            if (!value) {
+                accessibilityActivation = WebAccessibilityActivation.Disabled
+            } else if (accessibilityActivation == WebAccessibilityActivation.Disabled) {
+                accessibilityActivation = WebAccessibilityActivation.OnUserRequest()
+            }
+        }
+
+    /**
+     * Configures when the viewport builds its accessibility tree.
+     * Defaults to [WebAccessibilityActivation.OnUserRequest].
+     */
+    @ExperimentalComposeUiApi
+    var accessibilityActivation: WebAccessibilityActivation = WebAccessibilityActivation.OnUserRequest()
 
     /**
      * Base URL used to download Noto fallback fonts for unresolved glyphs.
