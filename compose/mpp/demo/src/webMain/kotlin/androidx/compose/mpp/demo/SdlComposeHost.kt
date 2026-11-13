@@ -56,14 +56,18 @@ private fun getCanvasHeight(canvasId: String): Int =
 private fun registerPointerCallback(callback: (Int, Double, Double, Int, Double, Double) -> Unit) {
     js("""
         globalThis.__dispatchPointerEvent = function(eventTypeId, x, y, buttonId, scrollDeltaX, scrollDeltaY) {
-            callback(
-                eventTypeId | 0,
-                Number(x) || 0.0,
-                Number(y) || 0.0,
-                (buttonId !== undefined) ? (buttonId | 0) : 1,
-                (scrollDeltaX !== undefined) ? Number(scrollDeltaX) : 0.0,
-                (scrollDeltaY !== undefined) ? Number(scrollDeltaY) : 0.0
-            );
+            try {
+                callback(
+                    eventTypeId | 0,
+                    Number(x) || 0.0,
+                    Number(y) || 0.0,
+                    (buttonId !== undefined) ? (buttonId | 0) : 1,
+                    (scrollDeltaX !== undefined) ? Number(scrollDeltaX) : 0.0,
+                    (scrollDeltaY !== undefined) ? Number(scrollDeltaY) : 0.0
+                );
+            } catch (e) {
+                // Ignore transient cancellation or dispatch errors
+            }
         };
     """)
 }
@@ -121,34 +125,7 @@ class SdlComposeHost(
 
         composeScene.setContent {
             val app = remember { App() }
-            val fontFamilyResolver = LocalFontFamilyResolver.current
-            val fontsLoaded = remember { mutableStateOf(false) }
-
-            if (fontsLoaded.value) {
-                app.Content()
-            }
-
-            LaunchedEffect(Unit) {
-                try {
-                    val manifestBytes = async { loadResource("./fonts-manifest.json") }.await()
-                    if (manifestBytes != null) {
-                        val manifestString = manifestBytes.decodeToString()
-                        val manifest = Json.decodeFromString<FontsManifest>(manifestString)
-                        awaitAll(*manifest.fonts.map { fontName ->
-                            async { loadResource("./$fontName.ttf") }
-                        }.toTypedArray()).forEachIndexed { index, fontBytes ->
-                            if (fontBytes != null) {
-                                val fontFamily = FontFamily(listOf(Font(manifest.fonts[index], fontBytes)))
-                                fontFamilyResolver.preload(fontFamily)
-                            }
-                        }
-                    }
-                } catch (e: Throwable) {
-                    println("Could not preload fonts in SDL runner: $e")
-                } finally {
-                    fontsLoaded.value = true
-                }
-            }
+            app.Content()
         }
 
         val renderDelegate = object : SkikoRenderDelegate {
@@ -210,14 +187,19 @@ class SdlComposeHost(
             )
         }
 
-        scene?.sendPointerEvent(
-            eventType = eventType,
-            position = Offset(x, y),
-            scrollDelta = Offset(scrollDeltaX, scrollDeltaY),
-            type = PointerType.Mouse,
-            buttons = buttons,
-            button = if (eventTypeId == 1 || eventTypeId == 2) pointerButton else null
-        )
+        try {
+            scene?.sendPointerEvent(
+                eventType = eventType,
+                position = Offset(x, y),
+                scrollDelta = Offset(scrollDeltaX, scrollDeltaY),
+                type = PointerType.Mouse,
+                buttons = buttons,
+                button = if (eventTypeId == 1 || eventTypeId == 2) pointerButton else null
+            )
+        } catch (_: Throwable) {
+            // CancellationException or detached node lifecycle exceptions are normal during UI state transitions
+        }
+        skiaLayer?.needRender()
     }
 
     fun resize(newWidth: Int, newHeight: Int) {

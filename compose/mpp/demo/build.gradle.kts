@@ -257,12 +257,75 @@ tasks.register("runDesktop", JavaExec::class.java) {
             compilation.runtimeDependencyFiles
 }
 
-tasks.register("wasmJsSdlRun", Exec::class.java) {
+val buildWasmtimeRunner = tasks.register("buildWasmtimeSdlRunner", Exec::class.java) {
+    group = "build"
+    description = "Builds the native wasmtime-sdl-runner executable using CMake."
+    val runtimeDir = file("runtimes/wasmtime")
+    val runnerBuildDir = layout.buildDirectory.dir("wasmtime-sdl-runner").get().asFile
+    workingDir = runtimeDir
+    commandLine(
+        "bash",
+        "-c",
+        "DEVELOPER_DIR=\${DEVELOPER_DIR:-/Library/Developer/CommandLineTools} cmake -B '${runnerBuildDir.absolutePath}' -S '${runtimeDir.absolutePath}' && DEVELOPER_DIR=\${DEVELOPER_DIR:-/Library/Developer/CommandLineTools} cmake --build '${runnerBuildDir.absolutePath}' --config Release"
+    )
+}
+
+val wasmJsSdlWasmtimeRun = tasks.register("wasmJsSdlWasmtimeRun", Exec::class.java) {
+    group = "application"
+    description = "Runs the Compose WASM Demo using the native Wasmtime C++ SDL host."
+    dependsOn("wasmJsDevelopmentExecutableCompileSync")
+    dependsOn(buildWasmtimeRunner)
+    val runnerExe = layout.buildDirectory.file("wasmtime-sdl-runner/wasmtime-sdl-runner").get().asFile
+    val compileSyncDir = layout.buildDirectory.dir("compileSync/wasmJs/main/developmentExecutable/kotlin").get().asFile
+    val skikoRuntimeFile = layout.buildDirectory.file("compose/skiko-wasmJs-runtime/skiko.wasm").get().asFile
+    val processedResourcesFile = layout.buildDirectory.file("processedResources/wasmJs/main/skiko.wasm").get().asFile
+
+    workingDir = rootDir
+    executable(runnerExe.absolutePath)
+    argumentProviders.add(object : org.gradle.process.CommandLineArgumentProvider {
+        override fun asArguments(): Iterable<String> {
+            val appWasm = File(compileSyncDir, "mpp-demo.wasm")
+            val externalSkiko = File("/Users/dustin.feucht/projects/skiko/samples/SkiaNonWebSample/build/compose/skiko-wasmJs-runtime/skiko.wasm")
+            val skikoWasm = externalSkiko.takeIf { it.exists() }
+                ?: File(compileSyncDir, "skiko.wasm").takeIf { it.exists() }
+                ?: skikoRuntimeFile.takeIf { it.exists() }
+                ?: processedResourcesFile
+
+            val args = mutableListOf<String>()
+            if (skikoWasm.exists()) {
+                args.add("--skiko")
+                args.add(skikoWasm.absolutePath)
+            }
+            if (appWasm.exists()) {
+                args.add("--wasm")
+                args.add(appWasm.absolutePath)
+            }
+            return args
+        }
+    })
+}
+
+val wasmJsSdlNodeRun = tasks.register("wasmJsSdlNodeRun", Exec::class.java) {
     group = "application"
     description = "Runs the Compose WASM Demo in a native SDL2 window using Node.js and native-skiko."
     dependsOn("wasmJsDevelopmentExecutableCompileSync")
     workingDir = projectDir
-    commandLine("node", "run-sdl.mjs")
+    commandLine("node", "runtimes/node/run-sdl.mjs")
+}
+
+tasks.register("wasmJsSdlRun") {
+    group = "application"
+    description = "Runs the Compose WASM Demo using the selected runtime (-PwasmSdlRuntime=node|wasmtime)."
+    val selectedRuntime = project.findProperty("wasmSdlRuntime")?.toString()?.lowercase() ?: "node"
+    when (selectedRuntime) {
+        "node", "nodejs" -> dependsOn(wasmJsSdlNodeRun)
+        "wasmtime" -> dependsOn(wasmJsSdlWasmtimeRun)
+        else -> {
+            doFirst {
+                throw GradleException("Unknown wasm-sdl runtime: '$selectedRuntime'. Supported runtimes: 'node', 'wasmtime'.")
+            }
+        }
+    }
 }
 
 
