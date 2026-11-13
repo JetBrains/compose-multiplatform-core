@@ -30,6 +30,7 @@ import org.jetbrains.skia.Surface
 import org.jetbrains.skia.SurfaceColorFormat
 import org.jetbrains.skia.SurfaceOrigin
 import org.jetbrains.skia.SurfaceProps
+import org.jetbrains.skia.impl.use
 import platform.Metal.MTLCreateSystemDefaultDevice
 import platform.Metal.MTLPixelFormatBGRA8Unorm
 import platform.Metal.MTLTextureDescriptor
@@ -53,7 +54,10 @@ private class AppleGraphicsContext : GraphicsContext {
     private val commandQueue = device.newCommandQueue() ?: throw IllegalStateException("Can't create MTLCommandQueue")
     private val directContext = DirectContext.makeMetal(device.objcPtr(), commandQueue.objcPtr())
 
-    override fun createSurface(width: Int, height: Int): Surface {
+    override suspend fun <T> withSurface(width: Int, height: Int, action: suspend (Surface) -> T): T =
+        createSurface(width, height).use { action(it) }
+
+    private fun createSurface(width: Int, height: Int): Surface {
         val descriptor = MTLTextureDescriptor()
         descriptor.width = width.toULong()
         descriptor.height = height.toULong()

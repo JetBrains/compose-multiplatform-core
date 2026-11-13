@@ -34,6 +34,7 @@ data class TargetEnvironment(
     val simulator: Boolean? = null,
     val simulatorModel: String? = null,
     val gpuName: String? = null,
+    val graphicsBackend: String? = null,
     val jvmName: String? = null,
     val jvmVersion: String? = null,
     val jvmVendor: String? = null,

@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.jetbrains.compose.benchmarks
 
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.use
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.skia.BackendRenderTarget
 import org.jetbrains.skia.ColorSpace
+import org.jetbrains.skia.DirectContext
 import org.jetbrains.skia.PixelGeometry
 import org.jetbrains.skia.Surface
 import org.jetbrains.skia.SurfaceColorFormat
@@ -24,18 +29,31 @@ import org.jetbrains.skia.SurfaceOrigin
 import org.jetbrains.skia.SurfaceProps
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.graphicapi.DirectXOffscreenContext
+import org.jetbrains.skiko.graphicapi.MetalOffscreenContext
+import org.jetbrains.skiko.graphicapi.OpenGLOffscreenContext
 import org.jetbrains.skiko.hostOs
 
 internal actual object Platform {
-    actual fun getGraphicsContext(): GraphicsContext = when {
-        hostOs.isWindows -> {
-            DirectXGraphicsContext()
+    private val graphicsContext: GraphicsContext by lazy {
+        val context = when {
+            hostOs.isWindows -> DirectXGraphicsContext()
+            hostOs.isMacOS -> MetalGraphicsContext()
+            hostOs.isLinux -> OpenGLGraphicsContext()
+            else -> EmptyGraphicsContext
         }
-        else -> {
-            println("Unsupported desktop host OS: $hostOs. Using non-GPU graphic context")
-            EmptyGraphicsContext
+        try {
+            // A device can be created successfully while texture or surface allocation still fails.
+            runBlocking { context.withSurface(1, 1) {} }
+            context
+        } catch (e: Exception) {
+            error("Cannot initialize ${context::class.simpleName}: $e")
+        } catch (e: LinkageError) {
+            // Older Skiko versions don't provide all offscreen contexts.
+            error("Cannot initialize ${context::class.simpleName}: $e")
         }
     }
+
+    actual fun getGraphicsContext(): GraphicsContext = graphicsContext
 
     actual fun runGC() {
         System.gc()
@@ -44,25 +62,72 @@ internal actual object Platform {
 
 @OptIn(ExperimentalSkikoApi::class)
 private class DirectXGraphicsContext : GraphicsContext {
-    // Note: we don't close `context` and `texture` after using,
-    // because it is created once in the main function
     private val context = DirectXOffscreenContext()
     private var texture: DirectXOffscreenContext.Texture? = null
 
-    override fun createSurface(width: Int, height: Int): Surface {
-        texture?.close()
-        texture = context.Texture(width, height)
-        return Surface.makeFromBackendRenderTarget(
-            context.directContext,
-            texture!!.backendRenderTarget,
-            SurfaceOrigin.TOP_LEFT,
-            SurfaceColorFormat.BGRA_8888,
-            ColorSpace.sRGB,
-            SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
-        ) ?: throw IllegalStateException("Can't create Surface")
-    }
+    override suspend fun <T> withSurface(width: Int, height: Int, action: suspend (Surface) -> T): T =
+        context.Texture(width, height).use { texture ->
+            this.texture = texture
+            try {
+                context.directContext
+                    .makeSurface(texture.backendRenderTarget, SurfaceOrigin.TOP_LEFT, SurfaceColorFormat.BGRA_8888)
+                    .use { action(it) }
+            } finally {
+                this.texture = null
+            }
+        }
 
     override suspend fun awaitGPUCompletion() {
         texture?.waitForCompletion()
     }
 }
+
+@OptIn(ExperimentalSkikoApi::class)
+private class MetalGraphicsContext : GraphicsContext {
+    private val context = MetalOffscreenContext()
+
+    override suspend fun <T> withSurface(width: Int, height: Int, action: suspend (Surface) -> T): T =
+        context.Texture(width, height).use { texture ->
+            context.directContext
+                .makeSurface(texture.backendRenderTarget, SurfaceOrigin.TOP_LEFT, SurfaceColorFormat.BGRA_8888)
+                .use { action(it) }
+        }
+
+    override suspend fun awaitGPUCompletion() {
+        context.directContext.submit(syncCpu = true)
+    }
+}
+
+@OptIn(ExperimentalSkikoApi::class)
+private class OpenGLGraphicsContext : GraphicsContext {
+    private val context = OpenGLOffscreenContext()
+
+    override suspend fun <T> withSurface(width: Int, height: Int, action: suspend (Surface) -> T): T {
+        // Skiko keeps the GL context current only inside the synchronous `withTexture` callback, so the
+        // action has to complete on this thread. The dispatcher is dropped so that continuations
+        // aren't dispatched to the caller's thread, which is blocked here.
+        val callerContext = currentCoroutineContext().minusKey(ContinuationInterceptor)
+        return context.withTexture(width, height) { texture ->
+            context.directContext
+                .makeSurface(texture.backendRenderTarget, SurfaceOrigin.BOTTOM_LEFT, SurfaceColorFormat.RGBA_8888)
+                .use { surface -> runBlocking(callerContext) { action(surface) } }
+        }
+    }
+
+    override suspend fun awaitGPUCompletion() {
+        context.directContext.submit(syncCpu = true)
+    }
+}
+
+private fun DirectContext.makeSurface(
+    renderTarget: BackendRenderTarget,
+    origin: SurfaceOrigin,
+    format: SurfaceColorFormat,
+): Surface = Surface.makeFromBackendRenderTarget(
+    context = this,
+    rt = renderTarget,
+    origin = origin,
+    colorFormat = format,
+    colorSpace = ColorSpace.sRGB,
+    surfaceProps = SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
+) ?: error("Can't create Surface")
