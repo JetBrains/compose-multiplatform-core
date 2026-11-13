@@ -85,6 +85,7 @@ import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -105,6 +106,7 @@ import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.IosPrefetchScheduler
 import androidx.compose.ui.window.KeyboardInsetsManager
+import androidx.compose.ui.window.LocalSceneDestinationSize
 import androidx.compose.ui.window.OverlayInputView
 import androidx.compose.ui.window.TouchesEventKind
 import kotlin.coroutines.CoroutineContext
@@ -222,6 +224,7 @@ internal class ComposeSceneMediator(
     private val coroutineScope = CoroutineScope(coroutineContext)
 
     private val isActive get() = coroutineContext.isActive
+    private val targetSize = mutableStateOf(DpSize.Zero)
 
     private val prefetchScheduler = IosPrefetchScheduler(
         onPrefetchVoteChanged = { isVoteActive ->
@@ -796,6 +799,7 @@ internal class ComposeSceneMediator(
             LocalInteropContainer provides interopContainer,
             LocalUIView provides _overlayView,
             LocalTextInputContainer provides textInputService.textInputContainer,
+            LocalSceneDestinationSize provides targetSize,
             content = content
         )
 
@@ -847,6 +851,8 @@ internal class ComposeSceneMediator(
      * Updates the [ComposeScene] with the properties derived from the [_overlayView].
      */
     private fun updateLayout() {
+        targetSize.value = _overlayView.frame.useContents { size.toDpSize() }
+
         if (isLayoutTransitionAnimating) {
             return
         }

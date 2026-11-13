@@ -395,10 +395,13 @@ private fun rememberDialogMeasurePolicy(
     containerSize: IntSize
 ): MeasurePolicy {
     val platformInsets = properties.platformInsets
-    return remember(layer, properties, containerSize, platformInsets) {
+    val constraintsModifier = rememberComposeSceneLayerConstraintsModifier(
+        usePlatformDefaultWidth = properties.usePlatformDefaultWidth,
+        platformInsets = platformInsets
+    )
+    return remember(layer, properties, containerSize, platformInsets, constraintsModifier) {
         ComposeSceneLayerMeasurePolicy(
-            platformInsets = platformInsets,
-            usePlatformDefaultWidth = properties.usePlatformDefaultWidth
+            constraintsModifier = constraintsModifier
         ) { contentSize ->
             val positionWithInsets =
                 positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->

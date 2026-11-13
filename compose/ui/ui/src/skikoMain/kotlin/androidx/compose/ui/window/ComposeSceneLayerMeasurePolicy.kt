@@ -16,11 +16,13 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.constrain
@@ -31,14 +33,21 @@ import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import kotlin.math.min
 
-internal fun ComposeSceneLayerMeasurePolicy(
-    platformInsets: PlatformInsets,
+/**
+ * Returns a function that modifies the layer [Constraints] according to the platform defaults
+ * and [platformInsets].
+ */
+@Composable
+internal expect fun rememberComposeSceneLayerConstraintsModifier(
     usePlatformDefaultWidth: Boolean,
+    platformInsets: PlatformInsets
+): Density.(Constraints) -> Constraints
+
+internal fun ComposeSceneLayerMeasurePolicy(
+    constraintsModifier: Density.(Constraints) -> Constraints,
     calculatePosition: MeasureScope.(contentSize: IntSize) -> IntOffset,
 ) = MeasurePolicy { measurables, constraints ->
-    val platformConstraints = applyPlatformConstraints(
-        constraints, platformInsets, usePlatformDefaultWidth
-    )
+    val platformConstraints = constraintsModifier(constraints)
     val placeables = measurables.fastMap { it.measure(platformConstraints) }
     val contentSize = IntSize(
         width = placeables.fastMaxOfOrDefault(constraints.minWidth) { it.width },
@@ -54,23 +63,6 @@ internal fun ComposeSceneLayerMeasurePolicy(
         placeables.fastForEach {
             it.place(position.x, position.y)
         }
-    }
-}
-
-private fun Density.applyPlatformConstraints(
-    constraints: Constraints,
-    platformInsets: PlatformInsets,
-    usePlatformDefaultWidth: Boolean
-): Constraints {
-    val horizontal = platformInsets.left + platformInsets.right
-    val vertical = platformInsets.top + platformInsets.bottom
-    val platformConstraints = constraints.offset(-horizontal, -vertical)
-    return if (usePlatformDefaultWidth) {
-        platformConstraints.constrain(
-            platformDefaultConstrains(constraints)
-        )
-    } else {
-        platformConstraints
     }
 }
 
@@ -94,15 +86,44 @@ internal fun MeasureScope.positionWithInsets(
     return position + offset
 }
 
-private fun Density.platformDefaultConstrains(
-    constraints: Constraints
+/**
+ * The default implementation of [rememberComposeSceneLayerConstraintsModifier], which subtracts
+ * [platformInsets] from the constraints and provides the content width based on the smallest
+ * dimension of the layer constraints.
+ */
+internal fun defaultPlatformConstraintsModifier(
+    usePlatformDefaultWidth: Boolean,
+    platformInsets: PlatformInsets
+): Density.(Constraints) -> Constraints = if (usePlatformDefaultWidth) {
+    { constraints ->
+        constraints
+            .withoutPlatformInsets(platformInsets)
+            .constrain(
+                preferredDialogWidthConstraints(
+                    constraints = constraints,
+                    smallestWidth = min(constraints.maxWidth, constraints.maxHeight).toDp()
+                )
+            )
+    }
+} else {
+    { constraints -> constraints.withoutPlatformInsets(platformInsets) }
+}
+
+internal fun Constraints.withoutPlatformInsets(platformInsets: PlatformInsets): Constraints {
+    val horizontal = platformInsets.left + platformInsets.right
+    val vertical = platformInsets.top + platformInsets.bottom
+    return offset(-horizontal, -vertical)
+}
+
+internal fun Density.preferredDialogWidthConstraints(
+    constraints: Constraints,
+    smallestWidth: Dp
 ): Constraints = constraints.copy(
-    maxWidth = min(preferredDialogWidth(constraints), constraints.maxWidth)
+    maxWidth = min(preferredDialogWidth(smallestWidth), constraints.maxWidth)
 )
 
 // Ported from Android. See https://cs.android.com/search?q=abc_config_prefDialogWidth
-private fun Density.preferredDialogWidth(constraints: Constraints): Int {
-    val smallestWidth = min(constraints.maxWidth, constraints.maxHeight).toDp()
+private fun Density.preferredDialogWidth(smallestWidth: Dp): Int {
     return when {
         smallestWidth >= 600.dp -> 580.dp
         smallestWidth >= 480.dp -> 440.dp
