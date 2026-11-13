@@ -19,7 +19,6 @@ package androidx.compose.ui.window
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.max
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
@@ -27,20 +26,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectGetMaxY
-import platform.CoreGraphics.CGRectGetMinY
-import platform.CoreGraphics.CGRectIsEmpty
+import platform.CoreGraphics.CGRectGetHeight
+import platform.CoreGraphics.CGRectGetMinX
+import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectMake
-import platform.UIKit.UIScreen
 import platform.UIKit.UIView
-import platform.UIKit.UIViewAnimationOptionCurveEaseInOut
 import platform.UIKit.UIViewAnimationOptions
 
 internal class KeyboardInsetsManager(
     private val view: UIView,
     private val frameChoreographer: FrameChoreographer,
-    private val onKeyboardOverlapHeightChanged: (Dp) -> Unit
+    private val onKeyboardOverlapHeightChanged: (Dp) -> Unit,
+    private val keyboardOverlapHeightSource: () -> Dp = { keyboardOverlapHeightFromKeyboardLayoutGuide(view) },
+    private val shouldDeferZeroKeyboardOverlapHeight: () -> Boolean = { isDockedKeyboardTransitionInProgress(view) },
 ) : KeyboardVisibilitySubscriber, FrameChoreographer.Listener {
     private var isDisposed: Boolean = false
     private var isStarted = false
@@ -48,13 +47,21 @@ internal class KeyboardInsetsManager(
     private val coroutineScope = CoroutineScope(frameChoreographer.coroutineContext)
     private var awaitingKeyboardFrameJob: Job? = null
     private var activeAnimation: KeyboardAnimation? = null
+    private var lastKeyboardOverlapHeight = 0.0
     val hasPendingWork get() = activeAnimation != null || awaitingKeyboardFrameJob != null
-    private data class KeyboardAnimation(
-        val view: UIView,
-        val previousKeyboardTop: Double,
-        val targetKeyboardTop: Double,
-        val viewBounds: CValue<CGRect>,
-    )
+
+    private class KeyboardAnimation(
+        val animationView: UIView,
+        val startHeight: Double,
+        val targetHeight: Double,
+    ) {
+        fun progress(): Double {
+            val layer = animationView.layer.presentationLayer() ?: return 0.0
+            return layer.frame.useContents { size.height / ANIMATION_TARGET_SIZE }
+        }
+
+        fun currentHeight(): Double = startHeight + (targetHeight - startHeight) * progress()
+    }
 
     fun start() {
         if (isStarted) return
@@ -63,13 +70,7 @@ internal class KeyboardInsetsManager(
         KeyboardVisibilityListener.initialize()
         KeyboardVisibilityListener.addSubscriber(this)
         frameChoreographer.addListener(this)
-
-        adjustViewBounds(
-            KeyboardVisibilityListener.keyboardFrame,
-            KeyboardVisibilityListener.keyboardFrame,
-            0.0,
-            UIViewAnimationOptionCurveEaseInOut
-        )
+        updateOverlapForCurrentGeometry()
     }
 
     fun stop() {
@@ -89,16 +90,16 @@ internal class KeyboardInsetsManager(
     }
 
     /**
-     * Wait for the first keyboard frame reported after input startup.
-     * Without this, test's `waitForIdle` can return before the keyboard frame starts changing.
+     * Wait for the first keyboard layout-guide update after input startup.
+     * Without this, test's `waitForIdle` can return before the keyboard starts moving.
      * The wait is bounded because hardware keyboards and zero-sized custom input views never
-     * report a visible keyboard frame, and the wait would be indefinite.
+     * produce a visible layout-guide inset, and the wait would be indefinite.
      */
     fun awaitKeyboardFrameIfNeeded() {
         cancelAwaitingKeyboardFrame()
-        if (keyboardHeight(KeyboardVisibilityListener.keyboardFrame) == 0.0) {
+        if (keyboardOverlapHeightSource() == 0.dp) {
             awaitingKeyboardFrameJob = coroutineScope.launch {
-                delay(KEYBOARD_FRAME_AWAIT_TIMEOUT_MILLIS)
+                delay(KEYBOARD_INSET_AWAIT_TIMEOUT_MILLIS)
                 if (awaitingKeyboardFrameJob === coroutineContext[Job]) {
                     awaitingKeyboardFrameJob = null
                 }
@@ -112,30 +113,18 @@ internal class KeyboardInsetsManager(
     }
 
     override fun onDisplayLinkTick() {
-        activeAnimation?.let { animation ->
-            onKeyboardOverlapHeightChanged(animation.keyboardOverlapHeight())
-        }
+        val animation = activeAnimation ?: return
+        publishKeyboardOverlapHeight(animation.currentHeight())
     }
 
+    // Notification frames do not reliably represent custom input and accessory views, so they
+    // provide timing only.
     override fun keyboardWillShow(
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
-    ) = Unit
-
-    override fun keyboardWillChangeFrame(
-        currentFrame: CValue<CGRect>,
-        targetFrame: CValue<CGRect>,
-        duration: Double,
-        animationOptions: UIViewAnimationOptions
     ) {
-        cancelAwaitingKeyboardFrame()
-        adjustViewBounds(
-            currentFrame = currentFrame,
-            targetFrame = targetFrame,
-            duration = duration,
-            animationOptions = animationOptions
-        )
+        animateToKeyboardLayoutGuide(duration, animationOptions)
     }
 
     override fun keyboardWillHide(
@@ -145,104 +134,58 @@ internal class KeyboardInsetsManager(
         animationOptions: UIViewAnimationOptions
     ) {
         cancelAwaitingKeyboardFrame()
-        // A preceding willChangeFrame may already have animated to the empty target frame.
-        if (!CGRectIsEmpty(currentFrame)) {
-            adjustViewBounds(currentFrame, targetFrame, duration, animationOptions)
-        }
+        animateToKeyboardLayoutGuide(duration, animationOptions)
     }
 
-    private fun adjustViewBounds(
+    override fun keyboardWillChangeFrame(
         currentFrame: CValue<CGRect>,
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
     ) {
-        val screen = view.window?.screen ?: return
-
-        animateKeyboard(
-            previousKeyboardTop = keyboardTop(currentFrame, screen),
-            targetKeyboardTop = keyboardTop(targetFrame, screen),
-            duration = duration,
-            animationOptions = animationOptions
-        )
+        cancelAwaitingKeyboardFrame()
+        animateToKeyboardLayoutGuide(duration, animationOptions)
     }
 
-    /** Recomputes overlap after geometry changes, unless a keyboard animation is running. */
+    /** Publishes the current keyboard overlap from UIKit's rendered keyboard layout guide. */
     fun updateOverlapForCurrentGeometry() {
         // Recomputing would cancel the running animation and snap to the target overlap.
         if (!isStarted || activeAnimation != null) return
 
-        val frame = KeyboardVisibilityListener.keyboardFrame
-        adjustViewBounds(
-            currentFrame = frame,
-            targetFrame = frame,
-            duration = 0.0,
-            animationOptions = UIViewAnimationOptionCurveEaseInOut,
-        )
-    }
-
-    private fun keyboardTop(frame: CValue<CGRect>, screen: UIScreen): Double {
-        // For an empty or undocked frame, animate from the screen's bottom edge
-        // rather than y = 0 at the top.
-        val keyboardFrame = if (CGRectIsEmpty(frame) || isUndockedKeyboard(frame, screen)) {
-            screen.bounds.useContents {
-                CGRectMake(origin.x, origin.y + size.height, size.width, 0.0)
-            }
-        } else {
-            frame
+        val keyboardOverlapHeight = keyboardOverlapHeightSource()
+        val deferZeroKeyboardOverlapHeight = keyboardOverlapHeight == 0.dp && lastKeyboardOverlapHeight > 0.0 && shouldDeferZeroKeyboardOverlapHeight()
+        if (deferZeroKeyboardOverlapHeight) {
+            return
         }
-
-        val frameInView =
-            view.coordinateSpace.convertRect(
-                rect = keyboardFrame,
-                fromCoordinateSpace = screen.coordinateSpace,
-            )
-        return CGRectGetMinY(frameInView)
-    }
-
-    private fun keyboardHeight(frame: CValue<CGRect>): Double {
-        val screen = view.window?.screen ?: return 0.0
-        return if (CGRectIsEmpty(frame) || isUndockedKeyboard(frame, screen)) {
-            0.0
-        } else {
-            max(0.0, screen.bounds.useContents { size.height } - CGRectGetMinY(frame))
+        if (keyboardOverlapHeight > 0.dp) {
+            cancelAwaitingKeyboardFrame()
         }
+        publishKeyboardOverlapHeight(keyboardOverlapHeight.value.toDouble())
     }
 
-    private fun isUndockedKeyboard(frame: CValue<CGRect>, screen: UIScreen): Boolean =
-        CGRectGetMaxY(frame) < CGRectGetMaxY(screen.bounds) - KEYBOARD_BOTTOM_EDGE_TOLERANCE
+    private fun animateToKeyboardLayoutGuide(duration: Double, animationOptions: UIViewAnimationOptions) {
+        // UIKit may deliver the keyboard notification before it lays out the guide's new target.
+        view.layoutIfNeeded()
 
-    private fun animateKeyboard(
-        previousKeyboardTop: Double,
-        targetKeyboardTop: Double,
-        duration: Double,
-        animationOptions: UIViewAnimationOptions
-    ) {
-        // A willHide notification can interrupt an animation to the docked keyboard shortcut bar.
-        // Continue from the visible animation position instead of its previous target.
-        val currentKeyboardTop = activeAnimation?.keyboardTop() ?: previousKeyboardTop
+        val targetHeight = keyboardOverlapHeightSource().value.toDouble()
+        val currentAnimation = activeAnimation
+        if (currentAnimation?.targetHeight == targetHeight) return
+
+        val startHeight = currentAnimation?.currentHeight() ?: lastKeyboardOverlapHeight
         cancelActiveAnimation()
 
-        val viewBounds = view.bounds
-        if (currentKeyboardTop == targetKeyboardTop) {
-            val overlap =
-                (CGRectGetMaxY(viewBounds) - targetKeyboardTop).coerceIn(
-                    0.0,
-                    viewBounds.useContents { size.height },
-                )
-            onKeyboardOverlapHeightChanged(overlap.dp)
+        if (duration <= 0.0 || startHeight == targetHeight) {
+            publishKeyboardOverlapHeight(targetHeight)
             return
         }
 
         val animationView = UIView()
         view.addSubview(animationView)
-        val animation =
-            KeyboardAnimation(
-                view = animationView,
-                previousKeyboardTop = currentKeyboardTop,
-                targetKeyboardTop = targetKeyboardTop,
-                viewBounds = viewBounds,
-            )
+        val animation = KeyboardAnimation(
+            animationView = animationView,
+            startHeight = startHeight,
+            targetHeight = targetHeight,
+        )
         activeAnimation = animation
         activitiesHandler.onActivitiesStarted()
 
@@ -261,48 +204,77 @@ internal class KeyboardInsetsManager(
         )
     }
 
-    private fun KeyboardAnimation.progress(): Double {
-        val layer = view.layer.presentationLayer() ?: return 0.0
-        return layer.frame.useContents { size.height / ANIMATION_TARGET_SIZE }
-    }
-
-    private fun KeyboardAnimation.keyboardOverlapHeight(progress: Double = progress()): Dp {
-        val keyboardTop = keyboardTop(progress)
-        // Clamp after interpolation so the inset stays zero until the keyboard reaches the view.
-        return (CGRectGetMaxY(viewBounds) - keyboardTop)
-            .coerceIn(0.0, viewBounds.useContents { size.height })
-            .dp
-    }
-
-    private fun KeyboardAnimation.keyboardTop(progress: Double = progress()): Double =
-        previousKeyboardTop + (targetKeyboardTop - previousKeyboardTop) * progress
-
-    private fun finishAnimation(animation: KeyboardAnimation) {
-        if (activeAnimation !== animation) {
-            animation.view.removeFromSuperview()
-            return
-        }
-
-        val finalOverlapHeight = animation.keyboardOverlapHeight(progress = 1.0)
-        onKeyboardOverlapHeightChanged(finalOverlapHeight)
-        activeAnimation = null
-        activitiesHandler.onActivitiesEnded()
-        animation.view.removeFromSuperview()
+    private fun publishKeyboardOverlapHeight(overlapHeight: Double) {
+        lastKeyboardOverlapHeight = overlapHeight
+        onKeyboardOverlapHeightChanged(overlapHeight.dp)
     }
 
     private fun cancelActiveAnimation() {
-        val animation = activeAnimation ?: return
+        if (activeAnimation == null) return
+        val animation = activeAnimation!!
         activeAnimation = null
         activitiesHandler.onActivitiesEnded()
         UIView.performWithoutAnimation {
-            animation.view.layer.removeAllAnimations()
-            animation.view.removeFromSuperview()
+            animation.animationView.layer.removeAllAnimations()
+            animation.animationView.removeFromSuperview()
         }
+    }
+
+    private fun finishAnimation(animation: KeyboardAnimation) {
+        if (activeAnimation !== animation) {
+            animation.animationView.removeFromSuperview()
+            return
+        }
+        publishKeyboardOverlapHeight(animation.targetHeight)
+        activeAnimation = null
+        activitiesHandler.onActivitiesEnded()
+        animation.animationView.removeFromSuperview()
     }
 
     private companion object {
         const val ANIMATION_TARGET_SIZE = 1000.0
-        const val KEYBOARD_BOTTOM_EDGE_TOLERANCE = 0.5
-        val KEYBOARD_FRAME_AWAIT_TIMEOUT_MILLIS = 500.milliseconds
+        val KEYBOARD_INSET_AWAIT_TIMEOUT_MILLIS = 500.milliseconds
     }
 }
+
+private fun keyboardOverlapHeightFromKeyboardLayoutGuide(view: UIView): Dp {
+    val layoutFrame = view.keyboardLayoutGuide.layoutFrame
+    return keyboardOverlapHeightForKeyboardLayoutGuide(
+        viewBottom = CGRectGetMaxY(view.bounds),
+        layoutGuideBottom = CGRectGetMaxY(layoutFrame),
+        layoutGuideHeight = CGRectGetHeight(layoutFrame),
+        safeAreaBottom = view.safeAreaInsets.useContents { bottom },
+    )
+}
+
+internal fun keyboardOverlapHeightForKeyboardLayoutGuide(
+    viewBottom: Double,
+    layoutGuideBottom: Double,
+    layoutGuideHeight: Double,
+    safeAreaBottom: Double,
+): Dp {
+    if (viewBottom == 0.0) return 0.dp
+
+    if (layoutGuideBottom < viewBottom - KEYBOARD_BOTTOM_EDGE_TOLERANCE) return 0.dp
+
+    // When the keyboard is hidden, UIKit ties the guide to the safe-area bottom.
+    return if (layoutGuideHeight <= safeAreaBottom) 0.dp else layoutGuideHeight.dp
+}
+
+private fun isDockedKeyboardTransitionInProgress(view: UIView): Boolean =
+    keyboardLayoutGuideIsAheadOfViewLayout(view) || keyboardFrameIsAttachedToLeadingScreenEdge()
+
+private fun keyboardLayoutGuideIsAheadOfViewLayout(view: UIView): Boolean {
+    val layoutFrame = view.keyboardLayoutGuide.layoutFrame
+    val safeAreaBottom = view.safeAreaInsets.useContents { bottom }
+    return CGRectGetHeight(layoutFrame) > safeAreaBottom &&
+        CGRectGetMaxY(layoutFrame) < CGRectGetMaxY(view.bounds) - KEYBOARD_BOTTOM_EDGE_TOLERANCE
+}
+
+private fun keyboardFrameIsAttachedToLeadingScreenEdge(): Boolean {
+    val keyboardFrame = KeyboardVisibilityListener.keyboardFrame
+    return CGRectGetHeight(keyboardFrame) > 0.0 &&
+        CGRectGetMinX(keyboardFrame) <= KEYBOARD_BOTTOM_EDGE_TOLERANCE
+}
+
+private const val KEYBOARD_BOTTOM_EDGE_TOLERANCE = 0.5

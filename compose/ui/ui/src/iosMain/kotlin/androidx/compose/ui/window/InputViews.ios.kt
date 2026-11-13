@@ -61,12 +61,14 @@ import platform.UIKit.UIGestureRecognizerStatePossible
 import platform.UIKit.UIPanGestureRecognizer
 import platform.UIKit.UIPinchGestureRecognizer
 import platform.UIKit.UIPressesEvent
+import platform.UIKit.UILayoutGuide
 import platform.UIKit.UIScreenEdgePanGestureRecognizer
 import platform.UIKit.UIScrollTypeMaskAll
 import platform.UIKit.UIScrollView
 import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.endEditing
+import platform.UIKit.keyboardLayoutGuide
 import platform.UIKit.setAccessibilityElements
 import platform.UIKit.setState
 import platform.darwin.NSObject
@@ -940,7 +942,16 @@ internal class BackgroundInputView(
         isHigherPriorityGestureTrackingTouches = isHigherPriorityGestureTrackingTouches
     )
 
+    // Keep this view's layout cycle in sync with UIKit's keyboard layout guide. The guide itself
+    // has no rendering cost; it only makes [layoutSubviews] the single geometry-update path.
+    private val keyboardLayoutGuideObserver = UILayoutGuide()
+
     init {
+        addLayoutGuide(keyboardLayoutGuideObserver)
+        addConstraint(
+            keyboardLayoutGuideObserver.topAnchor.constraintEqualToAnchor(keyboardLayoutGuide.topAnchor)
+        )
+
         multipleTouchEnabled = true
 
         addGestureRecognizer(touchesGestureRecognizer)
