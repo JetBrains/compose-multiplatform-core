@@ -1,0 +1,174 @@
+name: Benchmarks
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - benchmarks
+
+permissions:
+  contents: read
+
+jobs:
+  jvm:
+    name: JVM benchmarks
+    runs-on: macos-26-xlarge
+    timeout-minutes: 360
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: compose/mpp/benchmarks
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve latest benchmark versions
+        uses: ./.github/actions/resolve-benchmark-versions
+
+      - name: Build launcher
+        run: ./gradlew :benchmarks-launcher:installDist --console=plain
+
+      - name: Run JVM benchmarks
+        run: |
+          mkdir -p "$RUNNER_TEMP/benchmark-results"
+          ./benchmarks-launcher/build/install/benchmarks-launcher/bin/benchmarks-launcher \
+            --target jvm \
+            --compose-version "$COMPOSE_VERSIONS" \
+            --kotlin-version "$KOTLIN_VERSIONS" \
+            --compose-core-path "$GITHUB_WORKSPACE" \
+            --repeat 3 \
+            --output-dir "$RUNNER_TEMP/benchmark-results"
+
+      # GitHub packages the whole session, including index.html, as one ZIP artifact.
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-benchmarks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/benchmark-results/
+          if-no-files-found: warn
+          retention-days: 30
+
+  web:
+    name: Web benchmarks (${{ matrix.target }})
+    runs-on: macos-26-xlarge
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [js, wasmJs]
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: compose/mpp/benchmarks
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Check Chrome
+        run: '"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version'
+
+      - name: Resolve latest benchmark versions
+        uses: ./.github/actions/resolve-benchmark-versions
+
+      - name: Build launcher
+        run: ./gradlew :benchmarks-launcher:installDist --console=plain
+
+      - name: Run benchmarks in Chrome
+        env:
+          BENCHMARK_TARGET: ${{ matrix.target }}
+          # Use the runner's GPU through ANGLE's Metal backend instead of SwiftShader.
+          BENCHMARK_CHROME_ARGUMENTS: '["--use-gl=angle", "--use-angle=metal"]'
+        run: |
+          ./benchmarks-launcher/build/install/benchmarks-launcher/bin/benchmarks-launcher \
+            --target "$BENCHMARK_TARGET" \
+            --compose-version "$COMPOSE_VERSIONS" \
+            --kotlin-version "$KOTLIN_VERSIONS" \
+            --compose-core-path "$GITHUB_WORKSPACE" \
+            --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+            --repeat 3 \
+            --output-dir "$RUNNER_TEMP/benchmark-results"
+
+      # GitHub packages the whole session, including index.html, as one ZIP artifact.
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-benchmarks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/benchmark-results/
+          if-no-files-found: warn
+          retention-days: 30
+
+  ios:
+    name: iOS benchmarks
+    runs-on: macos-26-xlarge
+    timeout-minutes: 360
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: compose/mpp/benchmarks
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup iOS benchmark environment
+        id: ios
+        uses: ./.github/actions/setup-ios-instrumented-test-environment
+        with:
+          xcode-path: /Applications/Xcode_26.5.app
+          xcode-cache-key-suffix: '26.5'
+          simulator-device: iPhone 17
+          simulator-os: '26.5'
+
+      - name: Resolve latest benchmark versions
+        uses: ./.github/actions/resolve-benchmark-versions
+
+      - name: Build launcher
+        run: ./gradlew :benchmarks-launcher:installDist --console=plain
+
+      - name: Run iOS benchmarks
+        env:
+          SIMULATOR_ID: ${{ steps.ios.outputs.simulator-id }}
+        run: |
+          ./benchmarks-launcher/build/install/benchmarks-launcher/bin/benchmarks-launcher \
+            --target ios \
+            --simulator "$SIMULATOR_ID" \
+            --compose-version "$COMPOSE_VERSIONS" \
+            --kotlin-version "$KOTLIN_VERSIONS" \
+            --compose-core-path "$GITHUB_WORKSPACE" \
+            --repeat 3 \
+            --output-dir "$RUNNER_TEMP/benchmark-results"
+
+      # GitHub packages the whole session, including index.html, as one ZIP artifact.
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-benchmarks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/benchmark-results/
+          if-no-files-found: warn
+          retention-days: 30

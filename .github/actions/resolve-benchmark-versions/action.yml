@@ -1,0 +1,10 @@
+name: Resolve benchmark versions
+description: Resolve stable and prerelease Compose and Kotlin versions from Maven Central, plus the latest dev Compose from JetBrains.
+runs:
+  using: composite
+  steps:
+    - name: Resolve versions
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+      run: python3 "$ACTION_PATH/resolve_versions.py"
