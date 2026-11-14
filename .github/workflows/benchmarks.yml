@@ -47,7 +47,6 @@ jobs:
             --compose-version "$COMPOSE_VERSIONS" \
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
-            --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
             --repeat 3 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
@@ -109,7 +108,6 @@ jobs:
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
             --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-            --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
             --repeat 3 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
@@ -162,7 +160,6 @@ jobs:
             --compose-version "$COMPOSE_VERSIONS" \
             --kotlin-version "$KOTLIN_VERSIONS" \
             --compose-core-path "$GITHUB_WORKSPACE" \
-            --tests AnimatedVisibility LazyGrid MultipleComponents TextLayout CanvasDrawing \
             --repeat 3 \
             --output-dir "$RUNNER_TEMP/benchmark-results"
 
