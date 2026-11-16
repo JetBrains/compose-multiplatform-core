@@ -17,7 +17,6 @@
 package androidx.compose.desktop.examples.popupexample
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.window.FrameWindowScope
@@ -28,7 +27,6 @@ import androidx.compose.ui.window.TrayState
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FrameWindowScope.MainMenuBar(
     windowState: WindowState,
@@ -55,7 +53,6 @@ fun FrameWindowScope.MainMenuBar(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MenuScope.ActionItems(
     trayState: TrayState,

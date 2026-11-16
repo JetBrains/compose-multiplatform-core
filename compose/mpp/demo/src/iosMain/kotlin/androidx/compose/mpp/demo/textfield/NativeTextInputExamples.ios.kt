@@ -68,9 +68,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.cinterop.BetaInteropApi
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.UIKit.UITextContentTypeUsername
 
 @OptIn(ExperimentalComposeUiApi::class)
 private val enabledNativeTextInputOptions = PlatformImeOptions {
@@ -538,7 +535,7 @@ private fun SecureInput() {
     }
 }
 
-@OptIn(BetaInteropApi::class, ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun NativeTextInputHotSwitchExample() {
     var usingNative by remember { mutableStateOf(false) }

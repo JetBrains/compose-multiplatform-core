@@ -72,7 +72,6 @@ import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Test
 
-@OptIn(ExperimentalMaterialApi::class)
 class ApplicationAccessibilityTest {
     @Test
     fun `single component accessibility`() = runApplicationTest {

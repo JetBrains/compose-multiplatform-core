@@ -846,7 +846,6 @@ class ScrollbarTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     private inline fun TextFieldScrollState.assertChangeInOffset(
         expectedChange: Float,
         action: () -> Unit
@@ -860,7 +859,6 @@ class ScrollbarTest {
     }
 
     @Test
-    @OptIn(ExperimentalFoundationApi::class)
     fun `basic text field with vertical scrolling test`() {
         val scrollState = TextFieldScrollState(Orientation.Vertical)
         rule.setContent {
@@ -973,7 +971,6 @@ class ScrollbarTest {
     }
 
     @Test
-    @OptIn(ExperimentalFoundationApi::class)
     fun `basic text field with horizontal scrolling test`() {
         val scrollState = TextFieldScrollState(Orientation.Horizontal)
         rule.setContent {

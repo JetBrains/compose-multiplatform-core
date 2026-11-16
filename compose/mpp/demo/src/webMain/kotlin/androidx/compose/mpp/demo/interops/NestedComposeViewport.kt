@@ -27,26 +27,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.HtmlElementView
+import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.dom.createElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLIFrameElement
-import androidx.compose.ui.window.ComposeViewport
 
 private val ttGoogleMaps =
     "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1361.8421810316931!2d4.894047523068853!3d52.338403908686736!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2snl!4v1749117010713!5m2!1sen!2snl"
 private val ttOSM =
     "https://www.openstreetmap.org/export/embed.html?bbox=4.890965223312379%2C52.33722052818563%2C4.893990755081177%2C52.33860862450587&amp;layer=mapnik"
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun NestedComposeViewportDemo() {
 
@@ -81,7 +78,6 @@ fun NestedComposeViewportDemo() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun NestedComposeViewPort(
     id: String = "nested-compose-viewport",
