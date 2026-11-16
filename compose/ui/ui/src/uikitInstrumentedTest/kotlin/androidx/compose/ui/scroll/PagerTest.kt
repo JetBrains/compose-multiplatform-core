@@ -179,7 +179,10 @@ internal class PagerTest {
         val horizontalState = PagerState { PageCount }
         setContent { PagerExample(horizontalState, PagerState { PageCount }) }
 
-        findNodeWithTag(HorizontalPagerTag).touchDown()
+        // Start close to the right edge to leave enough room for a drag beyond half of the page
+        touchDown(findNodeWithTag(HorizontalPagerTag).frame!!.let {
+            it.center().copy(x = it.right - 16.dp)
+        })
             .dragBy(dx = -(screenSize.width * 0.3f), duration = 0.5.seconds)
             .dragBy(dx = -(screenSize.width * 0.3f), duration = 0.5.seconds)
             .wait(200.milliseconds)
