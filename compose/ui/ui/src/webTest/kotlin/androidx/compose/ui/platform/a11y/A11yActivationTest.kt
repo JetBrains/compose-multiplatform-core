@@ -61,6 +61,7 @@ class A11yActivationTest : OnCanvasTests {
 
         activationButton.focus()
         activationButton.click()
+        awaitA11YChanges()
 
         val a11yRoot = assertNotNull(shadowRoot.getElementById("cmp_a11y_root"))
         assertEquals("auto", window.getComputedStyle(a11yRoot).getPropertyValue("pointer-events"))

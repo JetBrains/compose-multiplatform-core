@@ -27,12 +27,11 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.Text
 import org.w3c.dom.get
 
-/** The stable DOM id of the accessibility activation button, targeted by its CSS rules. */
 internal const val A11Y_ACTIVATION_BUTTON_ID = "cmp_a11y_activation_button"
 
 /**
  * CSS rules for the accessibility activation button. The button is visually hidden until focused
- * so it doesn't clutter the page, but remains discoverable via keyboard navigation and screen readers.
+ * but remains discoverable via keyboard navigation and screen readers.
  */
 internal val a11yActivationButtonCss = """
     #$A11Y_ACTIVATION_BUTTON_ID {
@@ -52,34 +51,24 @@ internal val a11yActivationButtonCss = """
     }
 """.trimIndent()
 
-/**
- * Creates the accessibility activation button for [WebAccessibilityActivation.OnUserRequest]
- * activation, or returns `null` for other activation modes.
- *
- * The returned button must be attached to the DOM by the caller.
- */
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun createA11yActivationButton(activation: WebAccessibilityActivation): HTMLButtonElement? {
     if (activation !is WebAccessibilityActivation.OnUserRequest) return null
     return (document.createElement("button") as HTMLButtonElement).apply {
         id = A11Y_ACTIVATION_BUTTON_ID
         type = "button"
-        textContent = activation.activationLabel.ifBlank { DEFAULT_A11Y_ACTIVATION_LABEL }
+        textContent = activation.activationLabel
     }
 }
 
 /**
  * Finds the element the user should start interacting with after activating accessibility.
  *
- * The entry point is the Compose-focused node, if any; otherwise the first exposed element
- * (with a role, an aria-label or a text content). Editable and inert elements are skipped:
- * focusing an editable node invokes its click handler and can open the keyboard.
- *
  * Returns `null` when the tree contains no eligible element.
  *
  * @param webSemanticsRoot The root of the activated a11y DOM tree.
- * @param a11yNodeToSemanticsNode The listener's mapping from the a11y DOM elements to the
- * Compose semantics nodes they mirror, used to detect the focused node.
+ * @param a11yNodeToSemanticsNode The mapping from the a11y DOM elements to the Compose semantics
+ * nodes they mirror
  */
 internal fun findFirstEligibleA11YElementToFocus(
     webSemanticsRoot: HTMLElement,

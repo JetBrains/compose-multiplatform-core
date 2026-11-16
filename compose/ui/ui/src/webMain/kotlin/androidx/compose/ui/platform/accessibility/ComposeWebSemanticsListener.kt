@@ -72,38 +72,22 @@ internal class ComposeWebSemanticsListener(
     private var hasStopped = false
     private val startJob = Job()
 
-    var isActive by mutableStateOf(false)
-        private set
+    // The focus request is processed in syncSemanticsWithWebA11Y();
+    // Also see applyActivationFocus()
+    private var hasPendingActivationFocusRequest = false
 
-    /**
-     * Activate the listener, synchronously build the a11y tree and start accepting
-     * invalidations. See [invalidate].
-     */
-    internal fun activate() {
-        check(!isActive && !hasStopped)
-        try {
-            syncSemanticsWithWebA11Y()
-        } catch (failure: Throwable) {
-            clearTree()
-            throw failure
-        }
-        isActive = true
+    internal fun onUserActivationRequested() {
+        hasPendingActivationFocusRequest = true
+        webSemanticsRoot.style.removeProperty("pointer-events")
     }
 
     /**
      * Starts the sync loop, which keeps the a11y tree in sync with the Compose semantics.
      *
-     * When [activateEagerly] is true, the listener becomes active right away;
-     * Otherwise, the listener stays idle until [activate] is called on user request.
-     *
      * @param coroutineScope The [CoroutineScope] used to run this listener,
      * typically the composition scope so the listener follows the composition lifecycle.
-     * @param activateEagerly Whether to activate the listener immediately (eager activation).
      */
-    internal fun start(
-        coroutineScope: CoroutineScope,
-        activateEagerly: Boolean = false
-    ) {
+    internal fun start(coroutineScope: CoroutineScope) {
         check(!hasStopped) { "ComposeWebSemanticsListener can't be started after it was stopped" }
         if (hasStarted) return
         hasStarted = true
@@ -176,11 +160,6 @@ internal class ComposeWebSemanticsListener(
 
         // Slider key events are delegated to the accessibility root.
         webSemanticsRoot.addEventListener("keydown", onKeyDown)
-
-        if (activateEagerly) {
-            // Accept invalidations
-            isActive = true
-        }
     }
 
     private val semanticsOwners = mutableObjectListOf<SemanticsOwner>()
@@ -188,34 +167,30 @@ internal class ComposeWebSemanticsListener(
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
         if (semanticsOwners.contains(semanticsOwner)) return
         semanticsOwners.add(semanticsOwner)
-        invalidate()
+        invalidationChannel.trySend(Unit)
     }
 
     override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
         if (semanticsOwners.remove(semanticsOwner)) {
-            invalidate()
+            invalidationChannel.trySend(Unit)
         }
     }
 
     override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {
-        invalidate()
+        invalidationChannel.trySend(Unit)
     }
 
     override fun onLayoutChange(
         semanticsOwner: SemanticsOwner, semanticsNodeId: Int
     ) {
-        invalidate()
-    }
-
-    private fun invalidate() {
-        if (isActive) invalidationChannel.trySend(Unit)
+        invalidationChannel.trySend(Unit)
     }
 
     /**
-     * Once the A11Y gets activated, the activation button is removed and users expect to start
-     * interacting with the app. We have to focus on the appropriate a11y node.
+     * Once the A11Y is activated, the activation button is removed and users expect to start
+     * interacting with the app. We have to focus the appropriate a11y node.
      */
-    internal fun requestActivationFocus() {
+    private fun applyActivationFocus() {
         val element = findFirstEligibleA11YElementToFocus(
             webSemanticsRoot = webSemanticsRoot,
             a11yNodeToSemanticsNode = a11yNodeToSemanticsNode
@@ -324,6 +299,11 @@ internal class ComposeWebSemanticsListener(
 
         // Once the sync completes, restore the focus if necessary:
         a11YFocusRecovery.onSyncFinished()
+
+        if (hasPendingActivationFocusRequest) {
+            applyActivationFocus()
+            hasPendingActivationFocusRequest = false
+        }
     }
 
     // The last (top) root is never inert.
@@ -817,7 +797,6 @@ internal class ComposeWebSemanticsListener(
     internal fun stop() {
         if (hasStopped) return
         hasStopped = true
-        isActive = false
 
         webSemanticsRoot.removeEventListener("keydown", onKeyDown)
         semanticsOwners.clear()

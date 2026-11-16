@@ -21,25 +21,30 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.platform.FONT_FALLBACK_BASE_URL
 
-/** The default text of the accessibility activation button. */
-internal const val DEFAULT_A11Y_ACTIVATION_LABEL = "Enable accessibility"
-
 /** Controls when a Compose viewport exposes its accessibility tree. */
 @ExperimentalComposeUiApi
 sealed interface WebAccessibilityActivation {
+
     /** Disables both the accessibility tree and the activation button. */
     data object Disabled : WebAccessibilityActivation
 
     /**
-     * Builds the accessibility tree when the user activates it.
-     *
+     * Builds the accessibility tree when the user activates it by clicking the activation button.
+     * This option defers the cost of building the accessibility tree until it is needed.
      * @property activationLabel The localized button text and accessible name.
      */
     data class OnUserRequest(
-        val activationLabel: String = DEFAULT_A11Y_ACTIVATION_LABEL,
-    ) : WebAccessibilityActivation
+        val activationLabel: String = "Enable accessibility",
+    ) : WebAccessibilityActivation {
+        init {
+            require(activationLabel.isNotBlank()) { "The activation label cannot be blank." }
+        }
+    }
 
-    /** Builds the accessibility tree at startup. */
+    /**
+     * Builds the accessibility tree at startup.
+     * Use for e2e tests.
+     */
     data object Eager : WebAccessibilityActivation
 }
 
@@ -114,11 +119,4 @@ class ComposeViewportConfiguration internal constructor() {
      * manage padding manually.
      */
     var enableBrowserWindowInsets: Boolean = false
-
-    /**
-     * Whether accessibility is activated eagerly: the tree is built at startup rather than on
-     * user request.
-     */
-    internal val isA11YActivatedEagerly: Boolean
-        get() = accessibilityActivation == WebAccessibilityActivation.Eager
 }

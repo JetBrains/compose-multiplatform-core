@@ -73,14 +73,6 @@ internal abstract class WebWindowPlatformContext(
     @ExperimentalMediaQueryApi
     override val mediaScope: WebMediaScope = WebMediaScope(windowInfo)
 
-    override val screenReader: PlatformScreenReader = object : PlatformScreenReader {
-        // Eagerly activated accessibility is "on" from the moment the window exists — before the
-        // listener's loop is started at composition time — so that semantics composed in the
-        // initial composition already observe it.
-        override val isActive: Boolean
-            get() = configuration.isA11YActivatedEagerly || webSemanticsListener?.isActive == true
-    }
-
     override val outOfFrameExecutor: WebOutOfFrameExecutor? by lazy(LazyThreadSafetyMode.NONE) {
         if (isPostingTasksSupported) WebOutOfFrameExecutor() else null
     }

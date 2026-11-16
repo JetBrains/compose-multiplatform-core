@@ -250,7 +250,7 @@ fun ComposeViewport(
     val a11yActivationEvents = a11yActivationButton?.let { button ->
         EventTargetListener(button).also { events ->
             events.addDisposableEvent("click") {
-                composeWindow.activateAccessibility()
+                composeWindow.requestA11YActivation()
                 events.dispose()
                 button.remove()
             }
