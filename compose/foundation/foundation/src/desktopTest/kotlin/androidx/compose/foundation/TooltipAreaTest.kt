@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.assertFalse
 import org.junit.Test
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 internal class TooltipAreaTest {
 
     // https://youtrack.jetbrains.com/issue/CMP-2821

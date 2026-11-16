@@ -18,10 +18,13 @@ package androidx.compose.ui.text
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.clearSkikoComposeImplementation
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextIndent
@@ -37,7 +40,8 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertNotEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
@@ -579,7 +583,31 @@ class SkikoParagraphTest {
 
         assertEquals(emptyCursor.height, nonEmptyCursor.height)
     }
-    
+
+    // https://youtrack.jetbrains.com/issue/CMP-11086
+    @Test
+    fun setDrawStyle_fillOrNull_doesNotRequireRelayout() {
+        val layouter = simpleLayouter()
+
+        // The default draw style is null, while painters pass Fill; both are painted the same
+        layouter.setDrawStyle(Fill)
+        assertFalse(layouter.updateForeground)
+        layouter.setDrawStyle(null)
+        assertFalse(layouter.updateForeground)
+    }
+
+    @Test
+    fun setDrawStyle_stroke_requiresRelayout() {
+        val layouter = simpleLayouter()
+
+        layouter.setDrawStyle(Stroke(width = 2f))
+        assertTrue(layouter.updateForeground)
+    }
+
+    private fun simpleLayouter() =
+        (simpleIntrinsics("Lorem ipsum", TextStyle()) as SkikoParagraphIntrinsics).layouter()
+            .apply { layoutParagraph(maxWidthConstraint.toFloat()) }
+
     private fun simpleIntrinsics(text: String, textStyle: TextStyle) = ParagraphIntrinsics(
         text = text,
         style = textStyle,

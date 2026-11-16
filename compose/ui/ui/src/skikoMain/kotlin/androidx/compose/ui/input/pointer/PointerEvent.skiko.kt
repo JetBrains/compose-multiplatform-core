@@ -72,7 +72,6 @@ fun PointerKeyboardModifiers(
 /**
  * Describes a pointer input change event that has occurred at a particular point in time.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 actual class PointerEvent internal constructor(
     /**
      * The changes.

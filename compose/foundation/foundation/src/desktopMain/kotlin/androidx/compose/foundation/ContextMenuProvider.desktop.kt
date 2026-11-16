@@ -161,7 +161,6 @@ fun Modifier.contextMenuOpenDetector(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private fun Modifier.contextMenuOpenDetector(
     state: ContextMenuState,
     enabled: Boolean = true
@@ -308,7 +307,7 @@ interface ContextMenuRepresentation {
     @Composable
     @Deprecated(
         "Use another overload that loads items only when they are needed",
-        replaceWith = ReplaceWith("Representation(state, { items }")
+        replaceWith = ReplaceWith("Representation(state, { items })")
     )
     fun Representation(state: ContextMenuState, items: List<ContextMenuItem>) = Representation(state) { items }
 

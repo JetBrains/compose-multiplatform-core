@@ -26,7 +26,6 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.TextInputContainer
 import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.IntVar
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.nativeHeap
@@ -56,7 +55,6 @@ internal var SelectionManager.holder: TextInputContainer.Holder?
         textInputHolder = value
     }
 
-@OptIn(ExperimentalForeignApi::class)
 private val TextInputHolderAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
 
 /** Associated object storage, since the common text field states can't declare an iOS-only field. */
@@ -68,7 +66,7 @@ private var Any.textInputHolder: TextInputContainer.Holder?
     }
 
 @Suppress("UNCHECKED_CAST")
-@OptIn(ExperimentalForeignApi::class, InternalComposeUiApi::class)
+@OptIn(InternalComposeUiApi::class)
 private val Any.textInputHolderState: MutableState<TextInputContainer.Holder?>
     get() {
         val existingState =

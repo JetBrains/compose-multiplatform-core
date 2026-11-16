@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.navigationevent
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
@@ -151,7 +150,7 @@ internal class IosBackNavigationEventInput(
         endEdgePanGestureRecognizer.activitiesHandler = null
     }
 
-    @OptIn(BetaInteropApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(BetaInteropApi::class)
     inner class ScreenEdgePanGestureHandler : NSObject() {
         private val UIScreenEdgePanGestureRecognizer.isBackEdge: Boolean
             get() = this === startEdgePanGestureRecognizer ||

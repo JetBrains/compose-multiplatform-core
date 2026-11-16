@@ -19,7 +19,6 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.foundation.ComposeFoundationFlags
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItemWithComposableLeadingIcon
@@ -149,7 +148,6 @@ internal actual fun ContextMenuArea(
 /**
  * Context menu area for [SelectionContainer].
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal actual fun ContextMenuArea(
     manager: SelectionManager,

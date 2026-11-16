@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.platform.LocalDensity
@@ -35,7 +34,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.w3c.dom.HTMLElement
 
-@OptIn(InternalComposeUiApi::class)
 class WebWindowInsetsTest : OnCanvasTests {
     @Test
     fun safeAreaIsProvidedToComposition() = runApplicationTest {

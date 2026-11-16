@@ -92,7 +92,6 @@ import javax.swing.JFrame
  * @param update The callback to be invoked to update window properties.
  * @param content Composable content of the window.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 @ComposableOpenTarget(-1)
 fun SwingWindow(

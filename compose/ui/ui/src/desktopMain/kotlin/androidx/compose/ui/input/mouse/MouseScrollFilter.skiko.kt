@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
 @file:Suppress("DEPRECATION") // https://youtrack.jetbrains.com/issue/CMP-6181
 
 package androidx.compose.ui.input.mouse
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
