@@ -470,7 +470,10 @@ class A11yFocusTest : OnCanvasTests {
         var page by mutableStateOf(1)
         createComposeWindow {
             Column {
-                Column(Modifier.testTag("hidden").semantics { hideFromAccessibility() }) {
+                Column(Modifier.testTag("hidden").semantics {
+                    isTraversalGroup = true
+                    hideFromAccessibility()
+                }) {
                     // The nearest surviving container isn't hidden itself, but its ancestor is.
                     Column(Modifier.testTag("navigation").semantics { isTraversalGroup = true }) {
                         NavigationPages(page, onNavigate = { page = it })
