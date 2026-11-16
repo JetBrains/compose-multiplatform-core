@@ -130,7 +130,7 @@ internal interface TextEditingDelegate {
      * @param selectedRange A range within markedText that indicates the current selection.
      * This range is always relative to markedText.
      */
-    fun setMarkedText(markedText: String?, selectedRange: TextRange)
+    fun setMarkedText(markedText: String, selectedRange: TextRange)
 
     /**
      * The range of currently marked text in a document.
@@ -264,7 +264,7 @@ internal class DetachedTextEditingDelegate(
 
     override fun replaceRange(range: TextRange, text: String) = Unit
 
-    override fun setMarkedText(markedText: String?, selectedRange: TextRange) = Unit
+    override fun setMarkedText(markedText: String, selectedRange: TextRange) = Unit
 
     override fun markedTextRange(): TextRange? = null
 

@@ -267,7 +267,7 @@ internal class ComposeTextInputView(
             TextRange(loc, loc + length.toInt())
         }
 
-        input.setMarkedText(markedText, relativeTextRange)
+        input.setMarkedText(markedText ?: "", relativeTextRange)
     }
 
     /**
