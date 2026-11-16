@@ -26,7 +26,6 @@ import androidx.compose.ui.window.ComposeUIView
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
-@OptIn(ExperimentalComposeUiApi::class)
 internal fun swiftUIIntrinsicSizingExamples(
     makeSizingDemoController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
 ) = Screen.Selection(

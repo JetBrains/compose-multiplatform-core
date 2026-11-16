@@ -24,7 +24,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.WebApplicationScope
@@ -37,7 +36,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.w3c.dom.HTMLElement
 
-@OptIn(InternalComposeUiApi::class)
 class WebTextToolbarTest : OnCanvasTests {
 
     @Test

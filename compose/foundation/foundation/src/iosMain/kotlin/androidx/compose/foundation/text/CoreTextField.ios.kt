@@ -79,7 +79,6 @@ internal actual fun Modifier.textFieldCursor(
     }
 }
 
-@OptIn(InternalComposeUiApi::class)
 internal actual fun Modifier.textFieldDraw(
     state: LegacyTextFieldState,
     value: TextFieldValue,

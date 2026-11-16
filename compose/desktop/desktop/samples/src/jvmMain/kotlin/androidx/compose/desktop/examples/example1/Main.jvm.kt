@@ -112,7 +112,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.useResource
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
@@ -648,7 +647,6 @@ fun Animations(isCircularEnabled: Boolean) = Row {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RightColumn(modifier: Modifier) = Box {
     val state = rememberLazyListState()
@@ -671,7 +669,6 @@ private fun RightColumn(modifier: Modifier) = Box {
     )
 }
 
-@OptIn(ExperimentalTextApi::class)
 @Composable
 fun BrushTextGradient(text: String) {
     Text(
@@ -686,7 +683,6 @@ fun BrushTextGradient(text: String) {
     )
 }
 
-@OptIn(ExperimentalTextApi::class)
 @Composable
 fun BrushTextImage(text: String) {
     val image = remember {

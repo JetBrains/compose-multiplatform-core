@@ -27,7 +27,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.layout
@@ -158,7 +157,6 @@ class MouseInputTest {
 
     // Verify that a click (press and release without moving) does not trigger a drag event.
     // See https://youtrack.jetbrains.com/issue/CMP-10994
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun clickDoesNotTriggerDrag() = runComposeUiTest {
         var dragDetected = false

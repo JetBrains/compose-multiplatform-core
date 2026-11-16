@@ -17,14 +17,12 @@
 package androidx.compose.mpp.demo
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIView
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
-@OptIn(ExperimentalComposeUiApi::class)
 internal fun swiftUISizeThatFitsSizingExamples(
     makeSizingDemoController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,
 ) = Screen.Selection(

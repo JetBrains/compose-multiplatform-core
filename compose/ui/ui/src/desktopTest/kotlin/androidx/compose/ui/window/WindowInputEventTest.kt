@@ -25,7 +25,6 @@ import androidx.compose.material.Slider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.focus.FocusRequester
@@ -73,7 +72,6 @@ sealed class SliderValueEvent {
     object ChangeFinished: SliderValueEvent()
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 class WindowInputEventTest {
     @Test
     fun `key strokes call onValueChangeFinished on Slider`()

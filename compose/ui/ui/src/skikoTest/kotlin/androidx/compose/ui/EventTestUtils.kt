@@ -61,7 +61,6 @@ fun Events.assertReceivedLast(type: PointerEventType, offset: Offset) =
  * relayout) is received, if such events are delivered, see
  * [ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled]
  */
-@OptIn(ExperimentalComposeUiApi::class)
 fun Events.assertReceivedMoveWithoutPositionChange(offset: Offset) {
     if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) {
         assertReceived(PointerEventType.Move, offset)
@@ -150,7 +149,6 @@ class PopupState(
 
     @Composable
     fun Content() {
-        @OptIn(ExperimentalComposeUiApi::class)
         Popup(
             popupPositionProvider = object : PopupPositionProvider {
                 override fun calculatePosition(
@@ -217,7 +215,6 @@ fun Modifier.collectEvents(events: Events) = pointerInput(Unit) {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 fun ImageComposeScene.sendPointerEvent(
     type: PointerEventType,
     vararg pointers: ComposeScenePointer
