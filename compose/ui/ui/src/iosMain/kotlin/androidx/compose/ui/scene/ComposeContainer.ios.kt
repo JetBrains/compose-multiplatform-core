@@ -140,8 +140,6 @@ internal class ComposeContainer(
     )
     val hasInteropViews: Boolean get() = mediator?.hasInteropViews ?: false
 
-    private var measureAndLayoutMutex = 0
-
     private val focusedViewsList = FocusedViewsList()
 
     private val canvasHolder = SkiaCanvasHolder()
@@ -182,24 +180,20 @@ internal class ComposeContainer(
             isAppearanceTransitionInProgress == true
     }
 
-    // Used to filter out unexpected layout calls that may happen outside the standard layout-draw paths.
-    private fun skippingMeasureAndLayout(actions: () -> Unit = {}) {
-        measureAndLayoutMutex++
-        actions()
-        measureAndLayoutMutex--
-    }
-
     private fun onLayoutSubviews(frameChoreographer: FrameChoreographer) {
-        if (measureAndLayoutMutex > 0) {
-            frameChoreographer.requestFrame()
-            return
-        }
-        windowContext.updateWindowContainerSize()
+        frameChoreographer.runNonReentrantOrDispatch(
+            task = {
+                windowContext.updateWindowContainerSize()
 
-        mediator?.updateKeyboardOverlap()
-        mediator?.requestMeasureAndLayout {
-            sceneSizing.onLayout()
-        }
+                mediator?.updateKeyboardOverlap()
+                mediator?.requestMeasureAndLayout {
+                    sceneSizing.onLayout()
+                }
+            },
+            dispatchedTask = {
+                frameChoreographer.requestFrame()
+            }
+        )
     }
 
     private fun onTraitCollectionDidChange() {
@@ -405,8 +399,10 @@ internal class ComposeContainer(
                 val layer = IosComposeSceneLayer(
                     frameChoreographer = frameChoreographer,
                     onClosed = {
-                        layersHolder.getLayersViewController().detach(it)
-                        onFocusConditionsChanged()
+                        frameChoreographer.runNonReentrantOrDispatch {
+                            layersHolder.getLayersViewController().detach(it)
+                            onFocusConditionsChanged()
+                        }
                     },
                     createComposeSceneContext = {
                         createComposeSceneContext(
@@ -434,13 +430,13 @@ internal class ComposeContainer(
                 )
 
                 layer.rootForTestListener = rootForTestListener
-                skippingMeasureAndLayout {
+                frameChoreographer.runNonReentrantOrDispatch {
                     // Attaching a new layer may cause unwanted layout call for ComposeContainerView
                     // beside the default layout and rendering path.
                     layersHolder.getLayersViewController().attach(layer)
+                    onFontScaleChanged(fontScaleProvider.fontScale)
+                    onFocusConditionsChanged()
                 }
-                onFontScaleChanged(fontScaleProvider.fontScale)
-                onFocusConditionsChanged()
 
                 return layer
             }

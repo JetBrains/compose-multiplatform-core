@@ -29,7 +29,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.IntVar
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.alloc
@@ -224,31 +223,58 @@ internal class FrameChoreographer private constructor(
         displayLinkFrameRate.voteFrameRate(frameRate, frameRateCategory)
     }
 
-    fun performOutsideRecomposerFrame(action: () -> Unit) {
-        if (isPerformingRecomposerFrame) {
-            pendingOutsideRecomposerFrameActions.add(action)
-        } else {
-            action()
-        }
-    }
+    private var reentrancyDepth = 0
 
-    private var pendingOutsideRecomposerFrameActions = mutableListOf<() -> Unit>()
+    private val dispatchedTasks = mutableListOf<() -> Unit>()
 
-    private var isPerformingRecomposerFrame = false
-    fun performRecomposerFrameIfNeeded() {
-        if (isPerformingRecomposerFrame) return
-        isPerformingRecomposerFrame = true
-        try {
-            frameRecomposer.performFrame(displayLink.targetTimestamp.toNanoSeconds())
-        } finally {
-            isPerformingRecomposerFrame = false
-            if (pendingOutsideRecomposerFrameActions.isNotEmpty()) {
-                val actions = pendingOutsideRecomposerFrameActions.toList()
-                pendingOutsideRecomposerFrameActions.clear()
-                actions.forEach { it() }
+    fun runNonReentrantOrDispatch(task: () -> Unit) =
+        runNonReentrantOrDispatch(task, dispatchedTask = task)
+
+    fun runNonReentrantOrDispatch(task: () -> Unit, dispatchedTask: (() -> Unit)?) {
+        if (reentrancyDepth == 0) {
+            reentrancyDepth++
+            try {
+                task()
+            } finally {
+                reentrancyDepth--
+            }
+            runDispatchedReentrantTasks()
+        } else if (dispatchedTask != null) {
+            dispatchedTasks.add {
+                reentrancyDepth++
+                try {
+                    dispatchedTask()
+                } finally {
+                    reentrancyDepth--
+                }
+                runDispatchedReentrantTasks()
             }
         }
     }
+
+    fun <T> runWithReentrantGuard(task: () -> T): T {
+        var result: T
+        reentrancyDepth++
+        try {
+            result = task()
+        } finally {
+            reentrancyDepth--
+        }
+        runDispatchedReentrantTasks()
+        return result
+    }
+
+    private fun runDispatchedReentrantTasks() {
+        if (reentrancyDepth == 0 && dispatchedTasks.isNotEmpty()) {
+            val calls = dispatchedTasks.toList()
+            dispatchedTasks.clear()
+            calls.forEach { it() }
+        }
+    }
+
+    fun performRecomposerFrameIfNeeded() = runNonReentrantOrDispatch(task = {
+        frameRecomposer.performFrame(displayLink.targetTimestamp.toNanoSeconds())
+    }, dispatchedTask = null)
 
     @VisibleForTesting
     internal var ongoingActivitiesCount: Int = 0
@@ -346,10 +372,8 @@ internal class FrameChoreographer private constructor(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private val frameChoreographerAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
 
-@OptIn(ExperimentalForeignApi::class)
 private var UIWindow.frameChoreographer: FrameChoreographer?
     get() = objc_getAssociatedObject(this, frameChoreographerAssociationKey) as? FrameChoreographer
     set(value) {

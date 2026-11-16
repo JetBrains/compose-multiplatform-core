@@ -201,7 +201,7 @@ class FrameChoreographerTest {
 
         val log = mutableListOf<String>()
         log += "before"
-        choreographer.performOutsideRecomposerFrame { log += "action" }
+        choreographer.runNonReentrantOrDispatch { log += "action" }
         log += "after"
 
         assertEquals(listOf("before", "action", "after"), log)
@@ -217,7 +217,7 @@ class FrameChoreographerTest {
                 // Side effects are applied by the recomposer inside the frame
                 SideEffect {
                     log += "effectStart"
-                    frameChoreographer?.performOutsideRecomposerFrame { log += "action" }
+                    frameChoreographer?.runNonReentrantOrDispatch { log += "action" }
                     log += "effectEnd"
                 }
             }
