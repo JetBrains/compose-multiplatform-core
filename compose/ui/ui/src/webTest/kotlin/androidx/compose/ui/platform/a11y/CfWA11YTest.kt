@@ -1215,7 +1215,7 @@ class CfWA11YTest : OnCanvasTests {
     @Test
     fun clickableNodeHandlesActivationWithoutEventBubbling() = runApplicationTest {
         var clickCounter = 0
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Box(
                 Modifier.size(24.dp).testTag("clickable")
                     .clickable { clickCounter++ }
