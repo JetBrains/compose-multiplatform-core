@@ -54,7 +54,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import platform.CoreGraphics.CGRectMake
@@ -376,8 +375,12 @@ class MemoryLeaksTest {
             }
 
             val layersViewController = appDelegate.findLayersViewController()
+            val layersView = layersViewController.view
+            // ComposeLayersView is private and Kotlin/Native exports it under a mangled ObjC
+            // class name, so track the root view explicitly before traversing its children.
+            subviewsReferences.add(WeakReference(layersView))
             collectComposeSubviewsRecursively(
-                layersViewController.view,
+                layersView,
                 subviewsReferences
             )
 
@@ -431,7 +434,7 @@ class MemoryLeaksTest {
         view: UIView,
         result: MutableList<WeakReference<UIView>>
     ) {
-        if (view::class != UIView::class) {
+        if (view.isComposeOwned) {
             result.add(WeakReference(view))
         }
         if (view is NativeTextInputView) {
@@ -443,6 +446,26 @@ class MemoryLeaksTest {
         }
     }
 
+    // Kotlin/Native ObjC classes do not expose a useful qualifiedName, and UIKit may add private
+    // implementation views, such as ScrollEdgeEffectView, to the hierarchy. Track only the
+    // Compose-owned views these tests are responsible for deallocating.
+    private val UIView.isComposeOwned: Boolean
+        get() {
+            val composeOwnedViewSimpleNamePrefixes = setOf(
+                "BackgroundInputView",
+                "ComposeContainerView",
+                "ComposeHostingView",
+                "ComposeLayersView",
+                "ComposeSceneLayerView",
+                "ComposeTextInputView",
+                "OverlayInputView",
+                "SurfaceMetalView",
+            )
+            val simpleName = this::class.simpleName
+            return simpleName != null &&
+                composeOwnedViewSimpleNamePrefixes.any(simpleName::startsWith)
+        }
+
     private suspend fun runApplicationLoop(duration: Duration) {
         NSRunLoop.currentRunLoop().runUntilDate(
             limitDate = NSDate.dateWithTimeIntervalSinceNow(
@@ -452,7 +475,6 @@ class MemoryLeaksTest {
         delay(duration)
     }
 
-    @OptIn(ExperimentalForeignApi::class)
     private fun startFakeTextInputSession() {
         val input = UITextField()
         UIApplication.sharedApplication.keyWindow?.rootViewController?.view?.addSubview(input)
