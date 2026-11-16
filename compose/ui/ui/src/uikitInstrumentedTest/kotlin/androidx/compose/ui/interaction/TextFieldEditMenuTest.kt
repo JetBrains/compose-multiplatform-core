@@ -18,14 +18,18 @@ package androidx.compose.ui.interaction
 
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.selection.SelectionState
 import androidx.compose.foundation.text.selection.rememberSelectionState
@@ -38,6 +42,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
@@ -60,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import platform.UIKit.UIPasteboard
@@ -348,6 +358,142 @@ class TextFieldEditMenuTest {
         openToolbar("TextField")
         verifyContextMenuItemsVisible(labels = listOf("Copy", "Select All"))
         verifyContextMenuItemsHidden(labels = listOf("Cut", "Paste", "Select"))
+    }
+
+    @Test
+    fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTest {
+        var touchesDown = 0
+        var touchesUp = 0
+
+        setContent {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .size(250.dp)
+                        .testTag("Box 1")
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                while (true) {
+                                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                                    event.changes.forEach { change ->
+                                        if (change.changedToDown()) {
+                                            touchesDown++
+                                        } else if (change.changedToUp()) {
+                                            touchesUp++
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                )
+                Box(
+                    modifier = Modifier
+                        .size(250.dp)
+                        .testTag("Box 2")
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                while (true) {
+                                    awaitPointerEvent(pass = PointerEventPass.Initial)
+                                }
+                            }
+                        }
+                )
+            }
+        }
+
+        val tap1 = findNodeWithTag("Box 1").touchDown()
+        val tap2 = findNodeWithTag("Box 2").touchDown()
+
+        assertEquals(1, touchesDown)
+        assertEquals(0, touchesUp)
+
+        tap1.dragBy(dx = 20.dp)
+        tap2.dragBy(dx = 20.dp)
+
+        tap1.up()
+        tap2.up()
+        waitForIdle()
+
+        assertEquals(1, touchesDown)
+        assertEquals(1, touchesUp)
+    }
+
+    @Test
+    fun testComposePanelClearFocusOnMouseDownEnabledFlag() = runUIKitInstrumentedTest {
+        val focusRequester = FocusRequester()
+        var textFieldIsFocused = false
+
+        setContent(
+            configure = {
+                isClearFocusOnMouseDownEnabled = true
+            }
+        ) {
+            Column {
+                BasicTextField(
+                    state = rememberTextFieldState(),
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .onFocusChanged {
+                            textFieldIsFocused = it.isFocused
+                        }
+                )
+                Box(Modifier.size(100.dp).testTag("box"))
+            }
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        assertTrue(textFieldIsFocused)
+
+        // No focus changes after tap
+        findNodeWithTag("box").tap()
+        waitForIdle()
+        assertTrue(textFieldIsFocused)
+
+        // Clear focus on a click
+        findNodeWithTag("box").click()
+        waitForIdle()
+        assertFalse(textFieldIsFocused)
+    }
+
+    @Test
+    fun testComposePanelClearFocusOnMouseDownDisabledFlag() = runUIKitInstrumentedTest {
+        val focusRequester = FocusRequester()
+        var textFieldIsFocused = false
+
+        setContent(
+            configure = {
+                isClearFocusOnMouseDownEnabled = false
+            }
+        ) {
+            Column {
+                BasicTextField(
+                    state = rememberTextFieldState(),
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .onFocusChanged {
+                            textFieldIsFocused = it.isFocused
+                        }
+                )
+                Box(Modifier.size(100.dp).testTag("box"))
+            }
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        assertTrue(textFieldIsFocused)
+
+        // No focus changes after tap
+        findNodeWithTag("box").tap()
+        waitForIdle()
+        assertTrue(textFieldIsFocused)
+
+        // No focus changes after click
+        findNodeWithTag("box").click()
+        waitForIdle()
+        assertTrue(textFieldIsFocused)
     }
 
     @OptIn(ExperimentalFoundationApi::class)
