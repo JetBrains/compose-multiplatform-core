@@ -191,6 +191,7 @@ internal class ComposeContainer(
                 }
             },
             dispatchedTask = {
+                layoutInvalidationHandler?.invalidateLayoutIfNeeded()
                 frameChoreographer.requestFrame()
             }
         )
