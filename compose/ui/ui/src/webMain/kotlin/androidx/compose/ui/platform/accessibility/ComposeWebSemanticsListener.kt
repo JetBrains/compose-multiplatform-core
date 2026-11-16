@@ -78,6 +78,11 @@ internal class ComposeWebSemanticsListener(
 
     internal fun onUserActivationRequested() {
         hasPendingActivationFocusRequest = true
+        // Before a11y is activated, `pointer-events: none` lets pointer events
+        // pass through the a11y tree to the canvas below.
+        // TalkBack (Android) touch exploration (moving a finger over the UI) requires the a11y
+        // elements to participate in hit testing so it can announce their descriptions.
+        // Remove the override to let the browser target those elements:
         webSemanticsRoot.style.removeProperty("pointer-events")
     }
 
