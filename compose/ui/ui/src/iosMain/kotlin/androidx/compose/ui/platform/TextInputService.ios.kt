@@ -25,6 +25,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.scene.ComposeSceneFocusManager
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.IosComposeUiTextFlags
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ComposeTextInputConnection
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.NativeTextInputConnection
+import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.SelectionContainerConnection
 import androidx.compose.ui.text.input.TextEditingScope
 import androidx.compose.ui.text.input.TextEditorState
@@ -239,7 +242,8 @@ internal class TextInputService(
             override fun createTextInput(
                 delegate: TextInputContainer.Delegate
             ): TextInputContainer.Holder {
-                val connection = if (delegate.imeOptions.platformImeOptions?.usingNativeTextInput == true) {
+                val usingNativeTextInput = delegate.imeOptions.platformImeOptions.usingNativeTextInputOrDefault
+                val connection = if (usingNativeTextInput) {
                     NativeTextInputConnection(
                         inactiveTextInputDelegate = InactiveTextInputAdapter(delegate),
                         updateView = updateView,
@@ -384,6 +388,10 @@ private class TextInputHolder(
     }
 
     override fun usingNativeTextInput(): Boolean {
-        return delegate.imeOptions.platformImeOptions?.usingNativeTextInput ?: false
+        return connection is NativeTextInputConnection
     }
 }
+
+@OptIn(ExperimentalTextApi::class)
+private val PlatformImeOptions?.usingNativeTextInputOrDefault: Boolean get() =
+    this?.usingNativeTextInput ?: IosComposeUiTextFlags.isNativeTextInputEnabled

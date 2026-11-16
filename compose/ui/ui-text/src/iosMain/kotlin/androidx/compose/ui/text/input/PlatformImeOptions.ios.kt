@@ -18,6 +18,7 @@ package androidx.compose.ui.text.input
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.text.IosComposeUiTextFlags
 import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardAppearanceDefault
 import platform.UIKit.UIKeyboardType
@@ -66,7 +67,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
     private var inputView: UIView? = null
     private var inputAccessoryView: UIView? = null
     private var writingToolsBehavior: UIWritingToolsBehavior = UIWritingToolsBehaviorDefault
-    private var usingNativeTextInput: Boolean = false
+    private var usingNativeTextInput: Boolean = IosComposeUiTextFlags.isNativeTextInputEnabled
     /**
      * Sets the keyboard type to be used for the text input field.
      * If not set, the value will be derived from [ImeOptions].
@@ -198,7 +199,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
 
     /**
      * Enables or disables native input handling in Compose iOS text input pipeline.
-     * Default is false.
+     * Default is [IosComposeUiTextFlags.isNativeTextInputEnabled].
      */
     @ExperimentalComposeUiApi
     fun usingNativeTextInput(value: Boolean): PlatformImeOptionsConfiguration = apply {
@@ -296,4 +297,5 @@ val PlatformImeOptions.writingToolsBehavior: UIWritingToolsBehavior
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.usingNativeTextInput: Boolean
-    get() = (this as? IosImeOptions)?.usingNativeTextInput ?: false
+    get() = (this as? IosImeOptions)?.usingNativeTextInput
+        ?: IosComposeUiTextFlags.isNativeTextInputEnabled
