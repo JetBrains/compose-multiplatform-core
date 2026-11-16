@@ -59,16 +59,14 @@ internal val a11yActivationButtonCss = """
  * The returned button must be attached to the DOM by the caller.
  */
 @OptIn(ExperimentalComposeUiApi::class)
-internal fun createA11yActivationButton(activation: WebAccessibilityActivation): HTMLButtonElement? =
-    if (activation is WebAccessibilityActivation.OnUserRequest) {
-        (document.createElement("button") as HTMLButtonElement).apply {
-            id = A11Y_ACTIVATION_BUTTON_ID
-            type = "button"
-            textContent = activation.activationLabel.ifBlank { DEFAULT_A11Y_ACTIVATION_LABEL }
-        }
-    } else {
-        null
+internal fun createA11yActivationButton(activation: WebAccessibilityActivation): HTMLButtonElement? {
+    if (activation !is WebAccessibilityActivation.OnUserRequest) return null
+    return (document.createElement("button") as HTMLButtonElement).apply {
+        id = A11Y_ACTIVATION_BUTTON_ID
+        type = "button"
+        textContent = activation.activationLabel.ifBlank { DEFAULT_A11Y_ACTIVATION_LABEL }
     }
+}
 
 /**
  * Finds the element the user should start interacting with after activating accessibility.

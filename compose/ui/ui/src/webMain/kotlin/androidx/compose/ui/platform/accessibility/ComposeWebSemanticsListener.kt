@@ -76,9 +76,8 @@ internal class ComposeWebSemanticsListener(
         private set
 
     /**
-     * Activates the listener: synchronously builds the a11y tree and starts accepting
-     * invalidations. The sync loop itself is started by [start] at composition time; it stays
-     * idle until activation because [invalidate] drops events while the listener is inactive.
+     * Activate the listener, synchronously build the a11y tree and start accepting
+     * invalidations. See [invalidate].
      */
     internal fun activate() {
         check(!isActive && !hasStopped)
@@ -94,10 +93,8 @@ internal class ComposeWebSemanticsListener(
     /**
      * Starts the sync loop, which keeps the a11y tree in sync with the Compose semantics.
      *
-     * The loop is started at composition time in all activation modes. When [activateEagerly] is
-     * true, the listener becomes active right away; the tree is built later, from the layout
-     * change invalidations of the initial layout. Otherwise, the listener stays idle until
-     * [activate] is called on user request.
+     * When [activateEagerly] is true, the listener becomes active right away;
+     * Otherwise, the listener stays idle until [activate] is called on user request.
      *
      * @param coroutineScope The [CoroutineScope] used to run this listener,
      * typically the composition scope so the listener follows the composition lifecycle.
@@ -181,7 +178,7 @@ internal class ComposeWebSemanticsListener(
         webSemanticsRoot.addEventListener("keydown", onKeyDown)
 
         if (activateEagerly) {
-            // The tree is built from the initial layout's invalidations, not synchronously here.
+            // Accept invalidations
             isActive = true
         }
     }
@@ -215,9 +212,8 @@ internal class ComposeWebSemanticsListener(
     }
 
     /**
-     * Moves the DOM focus into the activated tree. See [findFirstEligibleA11YElementToFocus] for the
-     * entry-point policy; the implementation lives in the activation module to keep the
-     * semantics-to-DOM mapping private. Does nothing when the tree has no eligible element.
+     * Once the A11Y gets activated, the activation button is removed and users expect to start
+     * interacting with the app. We have to focus on the appropriate a11y node.
      */
     internal fun requestActivationFocus() {
         val element = findFirstEligibleA11YElementToFocus(

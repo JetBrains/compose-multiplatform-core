@@ -207,7 +207,8 @@ fun ComposeViewport(
     appContainer.appendChild(canvas)
 
     //a11y container
-    val a11yContainerElement = if (configuration.isA11YEnabled) {
+    val requiresA11YContainer = configuration.accessibilityActivation != WebAccessibilityActivation.Disabled
+    val a11yContainerElement = if (requiresA11YContainer) {
         (document.createElement("div") as HTMLDivElement).also { a11yContainer ->
             a11yContainer.style.apply {
                 position = "absolute"

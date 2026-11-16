@@ -55,6 +55,7 @@ class ComposeViewportConfiguration internal constructor() {
      * [WebAccessibilityActivation.OnUserRequest] with its default label if disabled and otherwise preserves
      * the current configuration. Use [accessibilityActivation] to configure activation explicitly.
      */
+    @Deprecated("Use accessibilityActivation property")
     var isA11YEnabled: Boolean
         get() = accessibilityActivation != WebAccessibilityActivation.Disabled
         set(value) {
