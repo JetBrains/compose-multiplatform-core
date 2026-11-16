@@ -493,7 +493,8 @@ internal class ComposeSceneMediator(
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
             textInputService.hasInvalidations ||
-            interopContainer.hasPendingUpdates
+            interopContainer.hasPendingUpdates ||
+            setContent != null
     }
 
     init {
@@ -832,6 +833,7 @@ internal class ComposeSceneMediator(
     private fun dispose() {
         onPreviewKeyEvent = { false }
         onKeyEvent = { false }
+        setContent = null
 
         frameChoreographer.removeListener(frameChoreographerListener)
         prefetchScheduler.dispose()

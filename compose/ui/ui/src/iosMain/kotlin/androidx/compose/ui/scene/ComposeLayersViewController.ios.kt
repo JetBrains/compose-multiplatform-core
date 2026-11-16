@@ -274,6 +274,8 @@ internal class ComposeLayersViewController(
         if (hasViewAppeared) {
             layer.sceneDidAppear()
         }
+
+        invalidateLayout()
         invalidateLayerStackDraw()
     }
 
