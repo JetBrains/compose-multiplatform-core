@@ -30,6 +30,8 @@ NS_ASSUME_NONNULL_END
 
 - (void)deactivateTextInputInteractionIfNeeded;
 
+- (void)activateSelectionDisplayIfNeeded;
+
 - (void)reloadVisibleEditMenu;
 
 - (nullable UIView *)inputView;
