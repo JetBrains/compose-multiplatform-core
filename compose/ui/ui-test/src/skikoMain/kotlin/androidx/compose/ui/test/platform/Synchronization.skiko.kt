@@ -19,6 +19,7 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+@PublishedApi
 internal actual class SynchronizedObject : kotlinx.atomicfu.locks.SynchronizedObject()
 
 internal actual inline fun makeSynchronizedObject(ref: Any?) = SynchronizedObject()

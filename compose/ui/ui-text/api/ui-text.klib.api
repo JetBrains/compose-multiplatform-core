@@ -2054,6 +2054,11 @@ final inline fun <#A: kotlin/Any?> androidx.compose.ui.text.platform/synchronize
 final inline fun androidx.compose.ui.text/buildAnnotatedString(kotlin/Function1<androidx.compose.ui.text/AnnotatedString.Builder, kotlin/Unit>): androidx.compose.ui.text/AnnotatedString // androidx.compose.ui.text/buildAnnotatedString|buildAnnotatedString(kotlin.Function1<androidx.compose.ui.text.AnnotatedString.Builder,kotlin.Unit>){}[0]
 
 // Targets: [apple]
+final class androidx.compose.ui.text.platform/SynchronizedObject : kotlinx.atomicfu.locks/SynchronizedObject { // androidx.compose.ui.text.platform/SynchronizedObject|null[0]
+    constructor <init>() // androidx.compose.ui.text.platform/SynchronizedObject.<init>|<init>(){}[0]
+}
+
+// Targets: [apple]
 final fun (platform.Foundation/NSLocale).androidx.compose.ui.text.intl/toComposeLocale(): androidx.compose.ui.text.intl/Locale // androidx.compose.ui.text.intl/toComposeLocale|toComposeLocale@platform.Foundation.NSLocale(){}[0]
 
 // Targets: [ios]
@@ -2061,3 +2066,8 @@ final val androidx.compose.ui.text.input/androidx_compose_ui_text_input_Platform
 
 // Targets: [ios]
 final fun androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter|androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final class androidx.compose.ui.text.platform/SynchronizedObject { // androidx.compose.ui.text.platform/SynchronizedObject|null[0]
+    constructor <init>() // androidx.compose.ui.text.platform/SynchronizedObject.<init>|<init>(){}[0]
+}
