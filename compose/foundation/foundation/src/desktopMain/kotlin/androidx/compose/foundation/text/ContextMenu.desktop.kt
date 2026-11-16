@@ -241,7 +241,6 @@ private fun TextFieldSelectionState.textManager(coroutineScope: CoroutineScope):
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private val SelectionManager.textManager: TextManager get() = object : TextManager {
     override val selectedText get() = getSelectedText() ?: AnnotatedString("")
     override val cut = null
@@ -251,7 +250,11 @@ private val SelectionManager.textManager: TextManager get() = object : TextManag
             execute = { copy()}
         )
     override val paste = null
-    override val selectAll = null
+    override val selectAll get() =
+        TextContextMenu.Action(
+            enabled = !isEntireContainerSelected(),
+            execute = { selectAll() }
+        )
     override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {
         this@textManager.selectWordAtPositionIfNotAlreadySelected(offset)
     }
