@@ -74,6 +74,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.Event
 import org.w3c.dom.get
 
 /**
@@ -1195,6 +1196,31 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
         assertTrue(a11yContainer.innerHTML.contains("Sibling"))
     }
+
+    /**
+     * This test guards the direct click handlers on the clickable a11y nodes.
+     * Previously, we had one root-level click listener which determined the descendant
+     * SemanticsNode which would handle the event.
+     * Often, the SemanticsNode's with a clickable action  might have a different role than "button".
+     * In this case the browser treats the node as a11y-action-targets only when it has a direct
+     * click handler. That's why we need to set the click listener on the nodes rather than a root.
+     */
+    @Test
+    fun clickableNodeHandlesActivationWithoutEventBubbling() = runApplicationTest {
+        var clickCounter = 0
+        createComposeWindow {
+            Box(
+                Modifier.size(24.dp).testTag("clickable")
+                    .clickable { clickCounter++ }
+            )
+        }
+        awaitA11YChanges()
+        val element = assertNotNull(getShadowRoot().getElementById("clickable") as? HTMLElement)
+
+        element.dispatchEvent(Event("click")) // not bubbling event will not reach the root listener
+        assertEquals(1, clickCounter, "The node must handle activation without event bubbling")
+    }
+
 }
 
 internal external interface TestMutationObserver : JsAny
