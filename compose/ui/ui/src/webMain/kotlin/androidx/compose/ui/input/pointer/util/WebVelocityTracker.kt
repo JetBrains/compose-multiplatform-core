@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.input.pointer.util
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
@@ -52,7 +51,6 @@ internal class WebVelocityTracker : PlatformVelocityTracker {
         return Velocity(velocityX, velocityY)
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun addPointerInputChange(event: PointerInputChange, offset: Offset) {
         // If this is ACTION_DOWN: Reset the tracking.
         if (event.changedToDownIgnoreConsumed()) {

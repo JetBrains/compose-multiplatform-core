@@ -62,7 +62,6 @@ import kotlinx.coroutines.launch
  * @param tooltipPlacement Defines position of the tooltip.
  * @param content Composable content that the current tooltip is set to.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 @Deprecated(
     "Use TooltipArea",
@@ -94,7 +93,6 @@ fun BoxWithTooltip(
  * @param tooltipPlacement Defines position of the tooltip.
  * @param content Composable content that the current tooltip is set to.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TooltipArea(
     tooltip: @Composable () -> Unit,
@@ -181,7 +179,6 @@ fun TooltipArea(
     ) {
         content()
         if (isVisible) {
-            @OptIn(ExperimentalFoundationApi::class)
             Popup(
                 popupPositionProvider = tooltipPlacement.positionProvider(cursorPosition),
                 onDismissRequest = { isVisible = false }

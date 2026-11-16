@@ -515,7 +515,7 @@ class A11yScrollTest : OnCanvasTests {
                 state = state,
             ) {
                 items(100) { index ->
-                    Box(Modifier.testTag("item$index").size(100.dp)) {
+                    Box(Modifier.testTagWithTraversalGroup("item$index").size(100.dp)) {
                         Text(
                             "$index",
                             Modifier.testTag("label$index").align(Alignment.Center),
@@ -586,7 +586,7 @@ class A11yScrollTest : OnCanvasTests {
                 state = state,
             ) {
                 items(100) { index ->
-                    Box(Modifier.testTag("item$index").size(100.dp)) {
+                    Box(Modifier.testTagWithTraversalGroup("item$index").size(100.dp)) {
                         Text(
                             "$index",
                             Modifier.testTag("label$index").align(Alignment.Center),
@@ -734,7 +734,8 @@ class A11yScrollTest : OnCanvasTests {
         createComposeWindow {
             Column(
                 modifier = Modifier
-                    .testTag("scrollable")
+                    // Keeps the node exposed after verticalScroll (which is a traversal group) is removed.
+                    .testTagWithTraversalGroup("scrollable")
                     .size(100.dp)
                     .then(if (scrollable) Modifier.verticalScroll(scrollState) else Modifier)
             ) {

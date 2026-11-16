@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList
 import androidx.compose.ui.isMacOs
@@ -823,7 +822,6 @@ class WindowTypeTest : BaseWindowTextFieldTest() {
     // The behavior of `SecureTextField` with `TextObfuscationMode.RevealLastTyped` depends on this,
     // but since we don't have direct access to `visualText`, we're checking the correctness of the
     // changes, which `TextObfuscationMode.RevealLastTyped` depends on.
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     internal fun changesVisibleInInputTransformation() = runTextFieldTest(
         textFieldKind = TextField2,

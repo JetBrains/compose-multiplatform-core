@@ -20,7 +20,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.snapshots.Snapshot
@@ -88,7 +87,7 @@ internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> =
         null
     }
 
-@OptIn(InternalComposeApi::class, ExperimentalMediaQueryApi::class)
+@OptIn(ExperimentalMediaQueryApi::class)
 internal class ComposeWindow(
     internal val htmlCanvas: HTMLCanvasElement,
     private val rootNode: Node,

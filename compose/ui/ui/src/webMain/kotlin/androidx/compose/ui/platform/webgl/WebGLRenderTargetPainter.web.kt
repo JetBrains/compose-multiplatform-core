@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.platform.webgl
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -33,7 +32,6 @@ import org.jetbrains.skia.Rect
  * itself. Scaling and alignment then come from the caller - `Image`, `Modifier.paint` - which
  * derive them from [intrinsicSize].
  */
-@OptIn(ExperimentalComposeUiApi::class)
 internal class WebGLRenderTargetPainter(
     private val renderTarget: WebGLRenderTarget,
 ) : Painter() {

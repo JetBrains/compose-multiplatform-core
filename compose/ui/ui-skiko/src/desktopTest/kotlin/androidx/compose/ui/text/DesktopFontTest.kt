@@ -17,7 +17,10 @@
 package androidx.compose.ui.text
 
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.text.platform.FontCache
+import androidx.compose.ui.text.platform.PlatformFont
 import androidx.compose.ui.text.platform.Typeface
 import androidx.compose.ui.text.platform.aliases
 import com.google.common.truth.Truth
@@ -56,5 +59,19 @@ class DesktopFontTest {
 
         Truth.assertThat(fontCache.loadPlatformTypes(loadedFontFamily).aliases)
             .isEqualTo(listOf("Sample Font"))
+    }
+
+    @Test
+    fun fontsDifferingOnlyInVariationSettingsAreCachedSeparately() {
+        fun font(weight: Int) = Font(
+            resource = "font_desktop/sample_font.ttf",
+            variationSettings = FontVariation.Settings(FontVariation.weight(weight))
+        ) as PlatformFont
+
+        val light = fontCache.load(font(300))
+        val bold = fontCache.load(font(700))
+
+        Truth.assertThat(light.aliases).isNotEqualTo(bold.aliases)
+        Truth.assertThat(light.typeface).isNotSameInstanceAs(bold.typeface)
     }
 }

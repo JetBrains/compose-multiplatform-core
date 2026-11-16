@@ -57,6 +57,18 @@ import platform.UIKit.UIAccessibilityTraits
 internal val CMPAccessibilityTraitTextView: UIAccessibilityTraits = (1UL shl 18) or (1UL shl 47)
 internal val CMPAccessibilityTraitIsEditing: UIAccessibilityTraits = 1UL shl 21
 internal val CMPAccessibilityTraitToggle: UIAccessibilityTraits = 1UL shl 53
+internal val CMPAccessibilityTraitSecureTextField: UIAccessibilityTraits = 1UL shl 24
+
+// The character used by the native secure UITextField to obfuscate its accessibility value
+private const val SecureTextObfuscationChar = '\u2022'
+
+// Private attributed string key used by the native secure UITextField in its accessibility value.
+// It makes VoiceOver announce the number of characters instead of reading the obfuscation chars.
+private const val CMPAccessibilityTokenSecure = "UIAccessibilityTokenSecure"
+
+private val SemanticsConfiguration.isObfuscatedPassword: Boolean
+    get() = contains(SemanticsProperties.Password) &&
+        getOrNull(SemanticsProperties.IsPasswordObfuscated) != false
 
 internal fun SemanticsConfiguration.accessibilityTraits(): UIAccessibilityTraits {
     var result = UIAccessibilityTraitNone
@@ -95,6 +107,9 @@ internal fun SemanticsConfiguration.accessibilityTraits(): UIAccessibilityTraits
 
     if (contains(SemanticsProperties.EditableText)) {
         result = result or CMPAccessibilityTraitTextView
+        if (isObfuscatedPassword) {
+            result = result or CMPAccessibilityTraitSecureTextField
+        }
         if (getOrNull(SemanticsProperties.Focused) == true) {
             result = result or CMPAccessibilityTraitIsEditing
         }
@@ -143,7 +158,13 @@ internal fun SemanticsConfiguration.accessibilityAttributedValue(): NSAttributed
     if (contains(SemanticsProperties.EditableText)) {
         getOrNull(SemanticsProperties.EditableText)
             ?.takeIf { it.isNotBlank() }
-            ?.let { return it.toAccessibilityNSAttributedString() }
+            ?.let {
+                return if (isObfuscatedPassword) {
+                    it.text.toSecureAccessibilityNSAttributedString()
+                } else {
+                    it.toAccessibilityNSAttributedString()
+                }
+            }
 
         getOrNull(SemanticsProperties.Text)
             ?.joinToString("\n")
@@ -170,6 +191,38 @@ internal fun SemanticsConfiguration.accessibilityAttributedValue(): NSAttributed
     }
 
     return null
+}
+
+/**
+ * Creates an accessibility value matching the native secure UITextField: every code point is
+ * replaced with [SecureTextObfuscationChar] and the string is marked with
+ * [CMPAccessibilityTokenSecure].
+ */
+@OptIn(BetaInteropApi::class)
+private fun String.toSecureAccessibilityNSAttributedString(): NSAttributedString {
+    val obfuscated = obfuscated()
+    val result = NSMutableAttributedString.create(string = obfuscated)
+    result.addAttribute(
+        CMPAccessibilityTokenSecure,
+        NSNumber(bool = true),
+        nsRange(0, obfuscated.length)
+    )
+    return result
+}
+
+/**
+ * Replaces every code point with [SecureTextObfuscationChar].
+ */
+private fun String.obfuscated(): String {
+    var codePointCount = 0
+    var index = 0
+    while (index < length) {
+        val isSurrogatePair = this[index].isHighSurrogate() &&
+            getOrNull(index + 1)?.isLowSurrogate() == true
+        index += if (isSurrogatePair) 2 else 1
+        codePointCount++
+    }
+    return SecureTextObfuscationChar.toString().repeat(codePointCount)
 }
 
 @OptIn(BetaInteropApi::class)

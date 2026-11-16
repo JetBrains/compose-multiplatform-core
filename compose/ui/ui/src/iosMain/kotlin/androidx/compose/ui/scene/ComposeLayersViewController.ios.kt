@@ -213,14 +213,27 @@ internal class ComposeLayersViewController(
     private fun show() {
         hide()
 
-        val transitionView = layersContainerView() ?: return
-        transitionView.embedSubview(view)
-        transitionView.layoutIfNeeded()
+        fun attachView() {
+            val transitionView = layersContainerView() ?: return
+            if (view.superview != transitionView) {
+                transitionView.embedSubview(view)
+                transitionView.layoutIfNeeded()
+            }
+        }
+        // When a view controller is presented from this view controller, UIKit moves its view
+        // out of the transition view during the presentation and doesn't put it back after
+        // the dismissal. Re-attach the view each time it's moved while the layers are shown.
+        (view as ComposeLayersView).onParentLayoutChanged = ::attachView
+
+        attachView()
     }
 
     private fun hide() {
-        needsLayerStackDraw = false
-        view.removeFromSuperview()
+        (view as ComposeLayersView).onParentLayoutChanged = {}
+        if (view.superview != null) {
+            needsLayerStackDraw = false
+            view.removeFromSuperview()
+        }
     }
 
     private fun dispose() {
@@ -364,7 +377,7 @@ internal class ComposeLayersViewController(
     private fun draw(canvas: Canvas) {
         needsLayerStackDraw = false
         layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-        canvasHolder.drawInto(canvas) { 
+        canvasHolder.drawInto(canvas) {
             // Some layers may be removed during rendering, because recomposition will happen in the
             // process, so we need to make a temporary copy of the list
             layersCache.withCopy { layers ->
@@ -380,5 +393,19 @@ internal class ComposeLayersViewController(
 private class ComposeLayersView: UIView(frame = CGRectZero.readValue()) {
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
         return super.hitTest(point, withEvent).takeUnless { it == this }
+    }
+
+    var onParentLayoutChanged = {}
+
+    override fun didMoveToSuperview() {
+        super.didMoveToSuperview()
+
+        onParentLayoutChanged()
+    }
+
+    override fun didMoveToWindow() {
+        super.didMoveToWindow()
+
+        onParentLayoutChanged()
     }
 }

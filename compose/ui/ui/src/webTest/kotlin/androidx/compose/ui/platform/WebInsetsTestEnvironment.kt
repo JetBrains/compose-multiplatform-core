@@ -56,7 +56,6 @@ internal class WebInsetsTestEnvironment {
     }
 
     /** Only this detached element has synthetic geometry; the browser viewport is unchanged. */
-    @OptIn(ExperimentalWasmJsInterop::class)
     fun canvas(
         left: Float = 0f,
         top: Float = 0f,

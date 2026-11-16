@@ -19,7 +19,6 @@ package androidx.compose.ui.platform
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
@@ -31,7 +30,6 @@ import kotlin.test.assertEquals
 
 private val LocalTestValue = staticCompositionLocalOf { "default" }
 
-@OptIn(ExperimentalComposeUiApi::class)
 class CompositionContextTest {
 
     @Test

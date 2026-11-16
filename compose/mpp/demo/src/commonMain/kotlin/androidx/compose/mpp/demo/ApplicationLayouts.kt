@@ -45,7 +45,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -95,7 +94,6 @@ fun ApplicationLayouts(back: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WithScaffold(back: () -> Unit) {
     val isScaffoldPaddingState = rememberSaveable { mutableStateOf(false) }
@@ -224,7 +222,6 @@ fun ContentScaffoldPadding(innerPadding: PaddingValues) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContentChat(innerPadding: PaddingValues) {
     val messagesState = remember {
@@ -281,7 +278,6 @@ fun ContentChat(innerPadding: PaddingValues) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContentBigTextField(innerPadding: PaddingValues) {
     val textState = remember {
@@ -302,7 +298,6 @@ fun ContentBigTextField(innerPadding: PaddingValues) {
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ContentInsets() = Box(Modifier.fillMaxSize()) {
     val insetsState = rememberSaveable { mutableStateOf(Insets.ime) }
@@ -364,7 +359,6 @@ fun <T> SwitchEnumState(values: Array<T>, state: MutableState<T>, modifier: Modi
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBarBasic() {
     val accentColor = topBarAccentColor()
@@ -381,7 +375,6 @@ fun TopBarBasic() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBarWithGradient() {
     val bgColor = MaterialTheme.colorScheme.background

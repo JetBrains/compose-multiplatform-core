@@ -39,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ComposeFeatureFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
@@ -163,7 +162,7 @@ class ComposePanelTest {
         }
     }
 
-    @OptIn(ExperimentalSkikoApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalSkikoApi::class)
     @Test
     fun SkiaLayerAnalytics() {
         assumeFalse(GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance)
@@ -245,7 +244,6 @@ class ComposePanelTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun `compose state should not reset on panel remove and add with isDisposeOnRemove = false`() {
         assumeFalse(GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance)

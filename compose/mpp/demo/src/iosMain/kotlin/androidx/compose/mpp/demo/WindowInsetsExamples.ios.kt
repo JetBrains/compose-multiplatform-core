@@ -58,7 +58,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Placeable.PlacementScope
@@ -79,7 +78,6 @@ val WindowInsetsDemos = Screen.Selection(
     Screen.Fullscreen("Display Cutouts") { DisplayCutoutsDemo(it) },
 )
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun WindowInsetsPaddingDemo(back: () -> Unit) {
     InsetOverlayDemo(
@@ -166,7 +164,6 @@ private fun <T : InsetOverlay> InsetOverlayDemo(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun InsetOverlayControls(
     title: String,
@@ -221,7 +218,6 @@ private fun InsetOverlayControls(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun DisplayCutoutsControls(back: () -> Unit, cutoutCount: Int) {
     Column(
@@ -324,7 +320,6 @@ private val WindowInsetsRulerOverlays = insetOverlayDefinitions { label, color, 
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 private fun <T> insetOverlayDefinitions(
     create: (String, Color, @Composable () -> WindowInsets) -> T,
 ): List<T> = listOf(
