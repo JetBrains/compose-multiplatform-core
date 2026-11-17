@@ -24,6 +24,7 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalMediaQueryApi
@@ -402,12 +403,10 @@ internal class ComposeWindow(
         // Extracted in a separate Composable function to define a separate recomposable scope
         if (isA11YActivated.value) {
             val webSemanticsListener = webSemanticsListener ?: error("WebSemanticsListener is not set")
-            LaunchedEffect(Unit) {
-                // The composition's coroutine scope ties the listener's lifetime to the composition.
-                webSemanticsListener.start(this)
-            }
+            val coroutineScope = rememberCoroutineScope()
 
             DisposableEffect(Unit) {
+                webSemanticsListener.start(coroutineScope)
                 onDispose { webSemanticsListener.stop() }
             }
         }
