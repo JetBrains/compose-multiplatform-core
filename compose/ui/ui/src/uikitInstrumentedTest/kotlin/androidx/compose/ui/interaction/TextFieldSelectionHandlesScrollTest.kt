@@ -104,6 +104,7 @@ class TextFieldSelectionHandlesScrollTest {
                 waitForIdle()
             }
             .dragBy(dy = LazyColumnScrollDistance / 2)
+            .wait(50.milliseconds)
             .up()
         waitForIdle()
 
