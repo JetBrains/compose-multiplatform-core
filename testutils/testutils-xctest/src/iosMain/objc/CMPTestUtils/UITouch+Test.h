@@ -28,6 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (UIEvent *)getTouchesEvent;
 + (void)endAllTouches;
++ (NSArray<UITouch *> *)activeTouches;
 
 @property (assign) UITouchPhase phase;
 @property (assign) CGPoint locationInWindow;

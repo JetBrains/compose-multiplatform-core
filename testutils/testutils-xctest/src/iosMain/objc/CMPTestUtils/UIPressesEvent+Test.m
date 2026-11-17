@@ -41,6 +41,37 @@
 - (void)insertText:(NSString *)text;
 @end
 
+#pragma mark - Active presses holder
+
+@interface CMPActivePressesHolder : NSObject
+
+@property (strong, nonatomic) NSMutableArray<UIPressesEvent *> *presses;
+
++ (instancetype)shared;
+
+@end
+
+@implementation CMPActivePressesHolder
+
++ (instancetype)shared {
+    static CMPActivePressesHolder *sharedInstance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedInstance = [[self alloc] init];
+    });
+    return sharedInstance;
+}
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _presses = [NSMutableArray new];
+    }
+    return self;
+}
+
+@end
+
 #pragma mark - Responder lookup
 
 static UIResponder *CMPFindFirstResponder(UIView *view) {
@@ -314,6 +345,7 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
     if (event == nil) { return nil; }
 
     CMPDispatchPresses(event, press, UIPressPhaseBegan);
+    [CMPActivePressesHolder.shared.presses addObject:event];
     return event;
 }
 
@@ -357,6 +389,7 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
                                  (UIKeyModifierFlags)modifierFlags);
     }
 
+    [CMPActivePressesHolder.shared.presses addObject:event];
     return event;
 }
 
@@ -374,6 +407,7 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
     if (event == nil) { return nil; }
 
     CMPDispatchPresses(event, press, UIPressPhaseBegan);
+    [CMPActivePressesHolder.shared.presses addObject:event];
     return event;
 }
 
@@ -384,15 +418,29 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
 }
 
 - (void)endPress {
+    [CMPActivePressesHolder.shared.presses removeObject:self];
     UIPress *press = ((UIPressesEvent *)self).allPresses.anyObject;
     if (press == nil) { return; }
     CMPDispatchPresses(self, press, UIPressPhaseEnded);
 }
 
 - (void)cancelPress {
+    [CMPActivePressesHolder.shared.presses removeObject:self];
     UIPress *press = ((UIPressesEvent *)self).allPresses.anyObject;
     if (press == nil) { return; }
     CMPDispatchPresses(self, press, UIPressPhaseCancelled);
+}
+
+@end
+
+@implementation UIPressesEvent (CMPActivePresses)
+
++ (NSArray<UIPressesEvent *> *)activePresses {
+    return [CMPActivePressesHolder.shared.presses copy];
+}
+
++ (void)endAllPresses {
+    [CMPActivePressesHolder.shared.presses removeAllObjects];
 }
 
 @end

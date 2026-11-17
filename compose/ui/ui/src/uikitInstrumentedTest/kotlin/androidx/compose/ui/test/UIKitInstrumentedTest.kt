@@ -32,6 +32,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.utils.TestHandle
+import androidx.compose.ui.test.utils.activeHoverEvents
+import androidx.compose.ui.test.utils.activePinchEvents
+import androidx.compose.ui.test.utils.activePresses
+import androidx.compose.ui.test.utils.activeScrollEvents
+import androidx.compose.ui.test.utils.activeTouches
 import androidx.compose.ui.test.utils.beginKeyPress
 import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
@@ -50,7 +55,7 @@ import androidx.compose.ui.test.utils.pinchBy
 import androidx.compose.ui.test.utils.pinchEventAt
 import androidx.compose.ui.test.utils.offsetBy
 import androidx.compose.ui.test.utils.release
-import androidx.compose.ui.test.utils.resetTouches
+import androidx.compose.ui.test.utils.resetAllGestures
 import androidx.compose.ui.test.utils.scrollBy
 import androidx.compose.ui.test.utils.scrollEventAt
 import androidx.compose.ui.test.utils.rightCenter
@@ -105,6 +110,7 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
 import platform.UIKit.UIContentSizeCategory
+import platform.UIKit.UIEvent
 import platform.UIKit.UIDevice
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
@@ -262,7 +268,7 @@ internal class UIKitInstrumentedTest(
         /**
          * The default duration of edge gestures in instrumented tests.
          */
-        internal val DefaultEdgeGestureDuration = 0.1.seconds
+        internal val DefaultEdgeGestureDuration = 0.05.seconds
 
         /**
          * The maximum distance a touch moves within a single touch event during drag gestures.
@@ -476,6 +482,17 @@ internal class UIKitInstrumentedTest(
     fun tearDown() {
         clearComposeContainerReferencesIfDetached()
 
+        // A test must finish every artificial gesture it started: a session that is never
+        // completed is only dropped from the holders by the cleanup below, without the
+        // gesture end ever being delivered. Capture the unfinished sessions before the
+        // cleanup drops them, and fail the test only after the cleanup restored the
+        // environment for the next one — a failure must not leak sessions further.
+        val unfinishedTouches = UITouch.activeTouches()
+        val unfinishedScrollEvents = UIEvent.activeScrollEvents()
+        val unfinishedPinchEvents = UIEvent.activePinchEvents()
+        val unfinishedHoverEvents = UIEvent.activeHoverEvents()
+        val unfinishedPresses = UIPressesEvent.activePresses()
+
         // Stop text editing and hide keyboard if any
         attachedViewController?.view?.endEditing(force = true)
         try {
@@ -490,6 +507,17 @@ internal class UIKitInstrumentedTest(
         } finally {
             AccessibilityNotification.onNotificationPostedForTests = null
             appDelegate.cleanUp()
+        }
+
+        val unfinishedGestures = buildList {
+            if (unfinishedTouches.isNotEmpty()) add("${unfinishedTouches.size} touch(es)")
+            if (unfinishedScrollEvents.isNotEmpty()) add("${unfinishedScrollEvents.size} scroll/pan session(s)")
+            if (unfinishedPinchEvents.isNotEmpty()) add("${unfinishedPinchEvents.size} pinch/zoom session(s)")
+            if (unfinishedHoverEvents.isNotEmpty()) add("${unfinishedHoverEvents.size} hover session(s)")
+            if (unfinishedPresses.isNotEmpty()) add("${unfinishedPresses.size} key press(es)")
+        }
+        if (unfinishedGestures.isNotEmpty()) {
+            fail("Test finished with unfinished artificial gesture(s): " + unfinishedGestures.joinToString())
         }
     }
 
@@ -1009,7 +1037,6 @@ internal class UIKitInstrumentedTest(
     }
 
     fun AccessibilityTestNode.swipeRight(
-        fromEdge: Boolean = false,
         duration: Duration = DefaultSwipeDuration
     ) = swipe(
         fromPosition = { leftCenter().offsetBy(dx = 16.dp) },
@@ -1018,7 +1045,6 @@ internal class UIKitInstrumentedTest(
     )
 
     fun AccessibilityTestNode.swipeLeft(
-        fromEdge: Boolean = false,
         duration: Duration = DefaultSwipeDuration
     ) = swipe(
         fromPosition = { rightCenter().offsetBy(dx = (-16).dp) },
@@ -1100,7 +1126,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             window.resignKeyWindow()
         }
 
-        _window?.resetTouches()
+        _window?.resetAllGestures()
         _window?.resignKeyWindow()
         _window?.windowScene = null
         _window?.rootViewController = UIViewController()
