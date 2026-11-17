@@ -23,7 +23,9 @@ import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.output.MordantHelpFormatter
+import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.double
@@ -33,6 +35,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.compose.benchmarks.report.generateHtmlReport
+import java.io.File
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -83,6 +86,8 @@ private fun browserArguments(args: Array<String>): List<String> = buildList {
 private class Launcher(private val invocationArguments: List<String>) : CliktCommand(name = "benchmarks-launcher") {
     init {
         context {
+            // Mordant's Windows FFM terminal size detection fails on some JDK versions.
+            if (isWindows) terminal = Terminal(width = 79, height = 24)
             helpFormatter = {
                 MordantHelpFormatter(it, showDefaultValues = true, showRequiredTag = true)
             }
@@ -94,7 +99,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         and target. Each selected browser runs on every web target; non-web targets ignore browsers.
         Each configuration runs the selected cases and modes with the requested repetitions.
         Results, logs, and an HTML report are saved in a timestamped directory.
-        Requires macOS or Linux; Apple targets require macOS.
+        Runs on macOS, Linux, and Windows; Apple targets require macOS.
     """.trimIndent()
 
     override fun helpEpilog(context: Context) = """
@@ -183,9 +188,6 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
 
     override fun run() {
         try {
-            require(
-                !System.getProperty("os.name").startsWith("Windows")
-            ) { "this launcher requires macOS or Linux" }
             val selectedTargets = select(targets, availableTargets)
             val selectedBrowsers = browsers.flatMap { it.split(",") }.distinct()
             launchSeries(selectedTargets, selectedBrowsers)
@@ -355,10 +357,13 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                 )
             }
             ensureFreePort(port)
-            val collectorCommand = listOf(
-                root.resolve(
-                    "benchmarks-collector/build/install/benchmarks-collector/bin/benchmarks-collector"
-                ).toString(), port.toString(), reports.toString()
+            val collectorCommand = if (isWindows) listOf(
+                javaExecutable(), "-cp",
+                root.resolve("benchmarks-collector/build/install/benchmarks-collector/lib").toString() + File.separator + "*",
+                "org.jetbrains.compose.benchmarks.collector.MainKt", port.toString(), reports.toString()
+            ) else listOf(
+                root.resolve("benchmarks-collector/build/install/benchmarks-collector/bin/benchmarks-collector").toString(),
+                port.toString(), reports.toString()
             )
             processes.start(collectorCommand, logs.resolve("collector.log")).use { collector ->
                 waitForCollector(collector.process, port)
@@ -481,8 +486,12 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             else -> null
         }
         // A separate project cache avoids locking the outer build when launched through Gradle run.
-        val command = listOf(
-            root.resolve("gradlew").toString(), "--project-cache-dir",
+        val wrapper = if (isWindows) listOf(
+            javaExecutable(), "-Xmx64m", "-Xms64m", "-Dorg.gradle.appname=gradlew",
+            "-jar", root.resolve("gradle/wrapper/gradle-wrapper.jar").toString()
+        ) else listOf(root.resolve("gradlew").toString())
+        val command = wrapper + listOf(
+            "--project-cache-dir",
             root.resolve(".gradle/launcher").toString(), ":benchmarks-collector:installDist"
         ) +
                 listOfNotNull(appTask?.let { ":benchmarks-app:$it" }) +

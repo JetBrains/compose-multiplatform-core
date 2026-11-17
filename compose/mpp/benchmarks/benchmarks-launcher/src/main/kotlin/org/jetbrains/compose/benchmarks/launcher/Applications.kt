@@ -18,6 +18,7 @@ package org.jetbrains.compose.benchmarks.launcher
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -25,6 +26,11 @@ import kotlin.io.path.name
 
 internal const val bundleId = "org.jetbrains.compose.benchmarks.app.BenchmarksIosApp"
 internal val isMac = System.getProperty("os.name").startsWith("Mac")
+internal val isWindows = System.getProperty("os.name").startsWith("Windows")
+
+internal fun javaExecutable(): String = Path.of(
+    System.getProperty("java.home"), "bin", if (isWindows) "java.exe" else "java"
+).toString()
 
 internal fun path(value: String): Path = Path.of(
     when {
@@ -45,10 +51,11 @@ internal fun executable(value: String, processes: Processes): Path {
         ).trim()
         candidate = candidate.resolve("Contents/MacOS/$name")
     }
-    val found = if (Files.isRegularFile(candidate)) candidate else {
-        System.getenv("PATH").orEmpty().split(":").map { Path.of(it).resolve(value) }
+    val names = if (isWindows && !value.endsWith(".exe", ignoreCase = true)) listOf(value, "$value.exe") else listOf(value)
+    val found = names.asSequence().map { path(it) }.firstOrNull { Files.isRegularFile(it) && Files.isExecutable(it) }
+        ?: System.getenv("PATH").orEmpty().split(File.pathSeparator).asSequence()
+            .flatMap { directory -> names.asSequence().map { Path.of(directory).resolve(it) } }
             .firstOrNull { Files.isRegularFile(it) && Files.isExecutable(it) }
-    }
     check(found != null && Files.isExecutable(found)) { "executable not found: $value" }
     return found.toRealPath()
 }
@@ -202,9 +209,7 @@ internal fun runApplication(
         return
     }
     val command = if (target == "jvm") {
-        val java = System.getenv("JAVA_HOME")?.let { path(it).resolve("bin/java").toString() }
-            ?: "java"
-        listOf(executable(java, processes).toString(), "-jar", app.toString()) + parameters
+        listOf(javaExecutable(), "-jar", app.toString()) + parameters
     } else listOf(app.toString()) + parameters
     processes.start(command, log).use { waitForReport(it.process) }
 }
