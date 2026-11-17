@@ -46,6 +46,22 @@ internal actual fun collectTargetEnvironment(id: String): TargetEnvironment {
                 it.startsWith("model name") || it.startsWith("Hardware")
             }?.substringAfter(':')?.trim()
         }
+        osName?.startsWith("Windows") == true -> probe.read("cpuModel") {
+            val process = ProcessBuilder(
+                "reg", "query", "HKLM\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                "/v", "ProcessorNameString"
+            ).start()
+            try {
+                check(process.waitFor(2, TimeUnit.SECONDS)) { "reg query timeout" }
+                check(process.exitValue() == 0) { "reg query failed" }
+                process.inputStream.bufferedReader().useLines { lines ->
+                    lines.firstOrNull { it.contains("ProcessorNameString") }
+                        ?.substringAfter("REG_SZ", "")?.trim()?.takeIf(String::isNotEmpty)
+                }
+            } finally {
+                process.destroyForcibly()
+            }
+        }
         else -> probe.read("cpuModel") { System.getenv("PROCESSOR_IDENTIFIER") }
     }
     return TargetEnvironment(

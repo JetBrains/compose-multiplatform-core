@@ -23,7 +23,9 @@ import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.output.MordantHelpFormatter
+import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.double
@@ -83,6 +85,12 @@ private fun browserArguments(args: Array<String>): List<String> = buildList {
 private class Launcher(private val invocationArguments: List<String>) : CliktCommand(name = "benchmarks-launcher") {
     init {
         context {
+            // Mordant 3.0.2 can fail when detecting the Windows terminal size through FFM.
+            // A reproducer from the repo root:
+            // ./run-benchmarks.sh --target=jvm --compose-version=local --benchmarks=TextLayout
+            // It crashes with "Cannot cast java.lang.Integer to java.lang.foreign.MemorySegment"
+            // instead of "Error: no such option --benchmarks"
+            if (isWindows) terminal = Terminal(width = 79, height = 24)
             helpFormatter = {
                 MordantHelpFormatter(it, showDefaultValues = true, showRequiredTag = true)
             }
@@ -94,7 +102,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         and target. Each selected browser runs on every web target; non-web targets ignore browsers.
         Each configuration runs the selected cases and modes with the requested repetitions.
         Results, logs, and an HTML report are saved in a timestamped directory.
-        Requires macOS or Linux; Apple targets require macOS.
+        Runs on macOS, Linux, and Windows; Apple targets require macOS.
     """.trimIndent()
 
     override fun helpEpilog(context: Context) = """
@@ -183,9 +191,6 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
 
     override fun run() {
         try {
-            require(
-                !System.getProperty("os.name").startsWith("Windows")
-            ) { "this launcher requires macOS or Linux" }
             val selectedTargets = select(targets, availableTargets)
             val selectedBrowsers = browsers.flatMap { it.split(",") }.distinct()
             launchSeries(selectedTargets, selectedBrowsers)
@@ -355,10 +360,10 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                 )
             }
             ensureFreePort(port)
+            val collectorScript = if (isWindows) "benchmarks-collector.bat" else "benchmarks-collector"
             val collectorCommand = listOf(
-                root.resolve(
-                    "benchmarks-collector/build/install/benchmarks-collector/bin/benchmarks-collector"
-                ).toString(), port.toString(), reports.toString()
+                root.resolve("benchmarks-collector/build/install/benchmarks-collector/bin/$collectorScript").toString(),
+                port.toString(), reports.toString()
             )
             processes.start(collectorCommand, logs.resolve("collector.log")).use { collector ->
                 waitForCollector(collector.process, port)
@@ -481,8 +486,10 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             else -> null
         }
         // A separate project cache avoids locking the outer build when launched through Gradle run.
+        val wrapper = root.resolve(if (isWindows) "gradlew.bat" else "gradlew")
         val command = listOf(
-            root.resolve("gradlew").toString(), "--project-cache-dir",
+            wrapper.toString(),
+            "--project-cache-dir",
             root.resolve(".gradle/launcher").toString(), ":benchmarks-collector:installDist"
         ) +
                 listOfNotNull(appTask?.let { ":benchmarks-app:$it" }) +
