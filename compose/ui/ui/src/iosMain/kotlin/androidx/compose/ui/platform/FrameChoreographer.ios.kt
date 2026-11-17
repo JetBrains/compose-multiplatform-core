@@ -227,9 +227,25 @@ internal class FrameChoreographer private constructor(
 
     private val dispatchedTasks = mutableListOf<() -> Unit>()
 
+    /**
+     * Runs [task] non-reentrantly; if a guarded call is already in progress, runs
+     * [dispatchedTask] instead once the outermost guarded call finishes.
+     * Pass `null` as [dispatchedTask] to drop the nested call.
+     *
+     * Use it for platform callbacks that may be re-entered by the platform itself while Compose
+     * is executing a guarded call.
+     */
     fun runNonReentrantOrDispatch(task: () -> Unit) =
         runNonReentrantOrDispatch(task, dispatchedTask = task)
 
+    /**
+     * Runs [task] non-reentrantly; if a guarded call is already in progress, runs
+     * [dispatchedTask] instead once the outermost guarded call finishes.
+     * Pass `null` as [dispatchedTask] to drop the nested call.
+     *
+     * Use it for platform callbacks that may be re-entered by the platform itself while Compose
+     * is executing a guarded call.
+     */
     fun runNonReentrantOrDispatch(task: () -> Unit, dispatchedTask: (() -> Unit)?) {
         if (reentrancyDepth == 0) {
             reentrancyDepth++
@@ -252,8 +268,16 @@ internal class FrameChoreographer private constructor(
         }
     }
 
+    /**
+     * Marks a re-entrancy section unconditionally and runs [task], then runs the tasks
+     * dispatched by nested [runNonReentrantOrDispatch] calls.
+     *
+     * Use it only for platform entry points that are guaranteed to never be called from inside
+     * a guarded Compose call - such a call would be a bug, asserted by `reentrancyDepth == 0`.
+     */
     fun <T> runWithReentrantGuard(task: () -> T): T {
         var result: T
+        assert(reentrancyDepth == 0)
         reentrancyDepth++
         try {
             result = task()
