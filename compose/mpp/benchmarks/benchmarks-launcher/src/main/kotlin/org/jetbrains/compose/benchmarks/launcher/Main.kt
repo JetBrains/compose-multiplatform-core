@@ -107,7 +107,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         benchmarks-launcher --target jvm --compose-version local --compose-core-path /path/to/core
 
         Lists accept spaces or commas. Use all alone to select all targets, cases, or modes.
-        Web targets require --browser. With no --simulator, iOS requires exactly one booted simulator.
+        Web targets require --browser. With no --simulator, iOS uses the single booted simulator, or boots the first available one.
         Compose defaults to local when a core checkout is configured, otherwise to the version catalog.
     """.trimIndent()
 
@@ -179,7 +179,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         "--web-port",
         help = "Static file port, 0 selects a free port"
     ).int().restrictTo(0..65535).default(0)
-    private val simulator by option(help = "iOS Simulator UUID or unique name; default: one booted device")
+    private val simulator by option(help = "iOS Simulator UUID or unique name; default: single booted device, or first available")
 
     override fun run() {
         try {

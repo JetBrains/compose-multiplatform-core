@@ -89,8 +89,11 @@ WebDriver does not wait for the page's `load` event; the collector report determ
 After an error or timeout, the current run is failed without a retry, and the next run starts a new
 browser session.
 
-For iOS, select a simulator with `--simulator UUID`. Without this option, exactly one available
-simulator must already be booted.
+For iOS, select an available iOS simulator with `--simulator UUID` (or a unique name). Without
+this option, the launcher uses the single booted iOS simulator. If none are booted, it selects
+the first available iOS simulator in `simctl list devices available --json` order and boots it
+automatically. Multiple booted iOS simulators require an explicit selection. The launcher waits
+for the selected simulator to finish booting before installing the app.
 
 ### Example: JVM
 

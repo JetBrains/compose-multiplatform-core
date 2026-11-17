@@ -89,16 +89,25 @@ internal fun selectSimulator(selection: String?, processes: Processes): Simulato
             )
         )
     ).jsonObject.getValue("devices").jsonObject
-    val devices = data.flatMap { (runtime, devices) ->
-        devices.jsonArray.map { JsonObject(it.jsonObject + ("runtimeIdentifier" to JsonPrimitive(runtime))) }
-    }
+    return selectSimulator(selection, data)
+}
+
+internal fun selectSimulator(selection: String?, data: JsonObject): Simulator {
+    val devices = data.filterKeys { it.startsWith("com.apple.CoreSimulator.SimRuntime.iOS-") }
+        .flatMap { (runtime, devices) ->
+            devices.jsonArray.map { JsonObject(it.jsonObject + ("runtimeIdentifier" to JsonPrimitive(runtime))) }
+        }
         .filter { it["isAvailable"]?.jsonPrimitive?.booleanOrNull == true }
-    val matches = devices.filter {
-        if (selection == null) it.text("state") == "Booted"
-        else selection in listOf(it.text("udid"), it.text("name"))
+    val device = if (selection == null) {
+        val booted = devices.filter { it.text("state") == "Booted" }
+        check(booted.size <= 1) { "specify --simulator UUID, or boot exactly one iOS simulator before running" }
+        booted.singleOrNull() ?: devices.firstOrNull()
+            ?: error("no available iOS simulators; install an iOS runtime and create a simulator in Xcode")
+    } else {
+        val matches = devices.filter { selection in listOf(it.text("udid"), it.text("name")) }
+        check(matches.size == 1) { "specify --simulator UUID or a unique available iOS simulator name" }
+        matches.single()
     }
-    check(matches.size == 1) { "specify --simulator UUID, or boot exactly one simulator before running" }
-    val device = matches.single()
     return Simulator(
         device.text("udid"), device.text("state"), device.text("name"),
         device["deviceTypeIdentifier"]?.jsonPrimitive?.contentOrNull, device.text("runtimeIdentifier"),
