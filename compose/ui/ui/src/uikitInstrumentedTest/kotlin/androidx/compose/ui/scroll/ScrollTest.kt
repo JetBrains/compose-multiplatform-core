@@ -123,12 +123,14 @@ internal class ScrollTest {
         val initialBoxRect = boxRect.copy()
         val dyExact = CUPERTINO_TOUCH_SLOP.dp
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = dyExact)
 
         waitForIdle()
 
         assertEquals(initialBoxRect, boxRect)
+
+        touch.up()
     }
 
     @Test
@@ -170,12 +172,14 @@ internal class ScrollTest {
         val initialBoxRect = boxRect.copy()
         val dyExact = CUPERTINO_TOUCH_SLOP.dp
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = dyExact)
 
         waitForIdle()
 
         assertEquals(initialBoxRect, boxRect)
+
+        touch.up()
     }
 
     /**
@@ -205,7 +209,7 @@ internal class ScrollTest {
 
         val dyJustOver = CUPERTINO_TOUCH_SLOP.dp + 1.dp
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = dyJustOver)
 
         waitForIdle()
@@ -213,6 +217,8 @@ internal class ScrollTest {
         assertTrue(boxRect.top > 0.dp)
         // Scroll state remains at 0 despite visual overscroll
         assertEquals(0 * density.density, state.value.toFloat())
+
+        touch.up()
     }
 
     @Test
@@ -253,7 +259,7 @@ internal class ScrollTest {
 
         val dyJustOver = CUPERTINO_TOUCH_SLOP.dp + 1.dp
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = dyJustOver)
 
         waitForIdle()
@@ -261,6 +267,8 @@ internal class ScrollTest {
         assertTrue(boxRect.top > 0.dp)
         // Scroll state remains at 0 despite visual overscroll
         assertEquals(0 * density.density, state.value.toFloat())
+
+        touch.up()
     }
 
     @Test
@@ -458,7 +466,7 @@ internal class ScrollTest {
         assertTrue(dySmall.value < CUPERTINO_TOUCH_SLOP)
 
         // downward drag - overscroll
-        touchDown(screenSize.center)
+        val downwardTouch = touchDown(screenSize.center)
             .dragBy(dy = dySmall)
         waitForIdle()
 
@@ -469,13 +477,16 @@ internal class ScrollTest {
         assertEquals(initialBoxRect, boxRect)
 
         // upward drag - scroll
-        touchDown(screenSize.center)
+        val upwardTouch = touchDown(screenSize.center)
             .dragBy(dy = -dySmall)
         waitForIdle()
 
         // expect no changes
         assertEquals(0 * density.density, state.value.toFloat())
         assertEquals(initialBoxRect, boxRect)
+
+        downwardTouch.up()
+        upwardTouch.up()
     }
 
     @Test
@@ -503,11 +514,13 @@ internal class ScrollTest {
 
         assertEquals(initialBoxRect, boxRect)
 
-        touchDown(DpOffset(screenSize.center.x, 50.dp))
+        val touch = touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dy = 50.dp)
 
         waitForIdle()
         assertEquals(initialBoxRect, boxRect)
+
+        touch.up()
     }
 
     @Test
@@ -530,11 +543,13 @@ internal class ScrollTest {
 
         assertEquals(initialBoxRect, boxRect)
 
-        touchDown(DpOffset(screenSize.center.x, 50.dp))
+        val touch = touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dy = 50.dp)
 
         waitForIdle()
         assertEquals(initialBoxRect, boxRect)
+
+        touch.up()
     }
 
     @Test

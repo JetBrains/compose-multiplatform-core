@@ -248,11 +248,13 @@ internal class SwipeBackTest {
             )
         }
 
-        swipeFromRightEdge().hold()
+        val swipe = swipeFromRightEdge().hold()
 
         waitForIdle()
 
         assertTrue(dragDistance < 0f, message = "right edge swipe should dispatch horizontal drag deltas to Compose")
+
+        swipe.up()
     }
 
     @Test
@@ -265,11 +267,13 @@ internal class SwipeBackTest {
             )
         }
 
-        swipeFromLeftEdge().hold()
+        val swipe = swipeFromLeftEdge().hold()
 
         waitForIdle()
 
         assertTrue(dragDistance > 0f, message = "left edge swipe should dispatch horizontal drag deltas to Compose")
+
+        swipe.up()
     }
 
     @Test
