@@ -257,7 +257,12 @@ internal class UIKitInstrumentedTest(
         /**
          * The default duration of swipe gestures in instrumented tests.
          */
-        internal val DefaultSwipeDuration = 0.1.seconds
+        internal val DefaultSwipeDuration = 0.05.seconds
+
+        /**
+         * The default duration of edge gestures in instrumented tests.
+         */
+        internal val DefaultEdgeGestureDuration = 0.1.seconds
 
         /**
          * The maximum distance a touch moves within a single touch event during drag gestures.
@@ -553,10 +558,8 @@ internal class UIKitInstrumentedTest(
         return getTargetWindow(position, window).touchDown(position, fromEdge)
     }
 
-    private val EdgeSwipeDuration = 0.1.seconds
-
-    fun swipeFromLeftEdge(
-        duration: Duration = EdgeSwipeDuration,
+    fun dragFromLeftEdge(
+        duration: Duration = DefaultEdgeGestureDuration,
     ): UITouch {
         val fromPosition = screenBounds.leftCenter()
         val toPosition = screenBounds.rightCenter().offsetBy(dx = (-16).dp)
@@ -565,8 +568,8 @@ internal class UIKitInstrumentedTest(
             .dragTo(toPosition, duration = duration)
     }
 
-    fun swipeFromRightEdge(
-        duration: Duration = EdgeSwipeDuration,
+    fun dragFromRightEdge(
+        duration: Duration = DefaultEdgeGestureDuration,
     ): UITouch {
         val fromPosition = screenBounds.rightCenter().offsetBy(dx = (-1).dp)
         val toPosition = screenBounds.leftCenter().offsetBy(dx = 16.dp)
@@ -574,6 +577,10 @@ internal class UIKitInstrumentedTest(
         return touchDown(fromPosition, fromEdge = true)
             .dragTo(toPosition, duration = duration)
     }
+
+    fun swipeFromLeftEdge() = dragFromLeftEdge().up()
+
+    fun swipeFromRightEdge() = dragFromRightEdge().up()
 
     /**
      * Simulates a mouse-down event at the specified position on the screen.
@@ -964,15 +971,15 @@ internal class UIKitInstrumentedTest(
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
     }
 
-     private fun AccessibilityTestNode.drag(
-         fromPosition: DpRect.() -> DpOffset = { center() },
-         toPosition: DpRect.() -> DpOffset = { center() },
-         duration: Duration
-     ): UITouch {
-         val frame = frame ?: fail("frame is null")
-         return touchDown(position = frame.fromPosition())
-             .dragTo(frame.toPosition(), duration = duration)
-     }
+    private fun AccessibilityTestNode.drag(
+        fromPosition: DpRect.() -> DpOffset = { center() },
+        toPosition: DpRect.() -> DpOffset = { center() },
+        duration: Duration
+    ): UITouch {
+        val frame = frame ?: fail("frame is null")
+        return touchDown(position = frame.fromPosition())
+            .dragTo(frame.toPosition(), duration = duration)
+    }
 
     fun AccessibilityTestNode.dragRight(
         duration: Duration = DefaultDragDuration
@@ -993,11 +1000,10 @@ internal class UIKitInstrumentedTest(
     fun AccessibilityTestNode.swipe(
         fromPosition: DpRect.() -> DpOffset = { center() },
         toPosition: DpRect.() -> DpOffset = { center() },
-        fromEdge: Boolean = false,
         duration: Duration = DefaultSwipeDuration
     ) {
         val frame = frame ?: error("Internal error. Frame is missing.")
-        return touchDown(frame.fromPosition(), fromEdge = fromEdge)
+        return touchDown(frame.fromPosition())
             .dragTo(frame.toPosition(), duration)
             .up()
     }
@@ -1008,7 +1014,6 @@ internal class UIKitInstrumentedTest(
     ) = swipe(
         fromPosition = { leftCenter().offsetBy(dx = 16.dp) },
         toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
-        fromEdge = fromEdge,
         duration = duration
     )
 
@@ -1018,7 +1023,6 @@ internal class UIKitInstrumentedTest(
     ) = swipe(
         fromPosition = { rightCenter().offsetBy(dx = (-16).dp) },
         toPosition = { leftCenter().offsetBy(dx = 16.dp) },
-        fromEdge = fromEdge,
         duration = duration
     )
 }
