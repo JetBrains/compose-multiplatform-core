@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.test
 
-@OptIn(ExperimentalTestApi::class)
 internal actual fun SemanticsNodeInteraction.performClickImpl(): SemanticsNodeInteraction {
     return performMouseInput {
         click()

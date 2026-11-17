@@ -238,7 +238,6 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         super.setMinimumSize(size)
     }
 
-    @OptIn(ExperimentalUnitApi::class)
     @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
     override fun getMinimumSize(): Dimension? {
         return super.getMinimumSize().actualize()
@@ -275,7 +274,6 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         super.setMaximumSize(size)
     }
 
-    @OptIn(ExperimentalUnitApi::class)
     @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
     override fun getMaximumSize(): Dimension? {
         return super.getMaximumSize().actualize()

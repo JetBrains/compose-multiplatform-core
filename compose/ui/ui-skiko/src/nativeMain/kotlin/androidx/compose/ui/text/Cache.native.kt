@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.text
 
-import kotlin.experimental.ExperimentalNativeApi
 import kotlin.native.ref.WeakReference
 
 internal actual class WeakKeysCache<K : Any, V: Any> {
@@ -28,7 +27,6 @@ internal actual class WeakKeysCache<K : Any, V: Any> {
         return cache.getOrPut(Key(key)) { loader(key) }
     }
 
-    @OptIn(ExperimentalNativeApi::class)
     internal class Key<K : Any>(key: K) {
         private val ref = WeakReference(key)
         private val hash: Int = key.hashCode()

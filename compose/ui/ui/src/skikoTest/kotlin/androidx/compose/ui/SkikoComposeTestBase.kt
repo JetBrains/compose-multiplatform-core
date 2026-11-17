@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.registerSkikoComposeImplementation
  * The implementation is registered at construction time (rather than in a per-test setup method)
  * so that it is already available to subclass field initializers. Registration is idempotent.
  */
-@OptIn(InternalComposeUiApi::class)
 abstract class SkikoComposeTestBase {
     init {
         registerSkikoComposeImplementation()

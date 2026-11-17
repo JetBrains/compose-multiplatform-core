@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.draganddrop
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toPainter
 import androidx.compose.ui.util.fastMap
@@ -27,7 +26,6 @@ import java.awt.datatransfer.Transferable
 import java.awt.image.BufferedImage
 import java.io.File
 
-@OptIn(ExperimentalComposeUiApi::class)
 internal fun Transferable.dragData(): DragData {
     val bestTextFlavor = selectBestTextFlavor(transferDataFlavors)
 
@@ -43,11 +41,9 @@ internal fun Transferable.dragData(): DragData {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 private object UnknownDragData : DragData
 
 @Suppress("DEPRECATION_ERROR")
-@OptIn(ExperimentalComposeUiApi::class)
 private class DragDataFilesListImpl(
     private val transferable: Transferable
 ) : DragData.FilesList {
@@ -58,7 +54,6 @@ private class DragDataFilesListImpl(
 }
 
 @Suppress("DEPRECATION_ERROR")
-@OptIn(ExperimentalComposeUiApi::class)
 private class DragDataImageImpl(
     private val transferable: Transferable
 ) : DragData.Image {
@@ -85,7 +80,6 @@ private class DragDataImageImpl(
 }
 
 @Suppress("DEPRECATION_ERROR")
-@OptIn(ExperimentalComposeUiApi::class)
 private class DragDataTextImpl(
     private val bestTextFlavor: DataFlavor,
     private val transferable: Transferable

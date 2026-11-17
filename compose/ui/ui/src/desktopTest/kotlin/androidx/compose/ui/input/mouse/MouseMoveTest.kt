@@ -38,7 +38,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -75,7 +74,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.junit.Test
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 class MouseMoveTest {
     @Test
     fun `inside window`() = ImageComposeScene(
@@ -249,7 +248,6 @@ class MouseMoveTest {
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class)
     fun `shouldn't send a move events with same position`() = withTriggerMoveEventsWhenLocationHasNotChanged(
         enabled = false
     ) {
@@ -306,7 +304,6 @@ class MouseMoveTest {
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class)
     fun `should send a synthetic move when component moves`() = ImageComposeScene(
         width = 100,
         height = 100
@@ -456,7 +453,6 @@ class MouseMoveTest {
     }
 
     // bug https://youtrack.jetbrains.com/issue/CMP-2147
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun `move between two components with an intermediate render`() {
         @Composable
@@ -814,11 +810,9 @@ class MouseMoveTest {
  * Expected number of Move events without position change.
  * They are delivered only if [ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled]
  */
-@OptIn(ExperimentalComposeUiApi::class)
 private fun movesWithSamePosition(count: Int) =
     if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) count else 0
 
-@OptIn(ExperimentalComposeUiApi::class)
 private fun withTriggerMoveEventsWhenLocationHasNotChanged(enabled: Boolean, block: () -> Unit) {
     val previousValue = ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
     try {

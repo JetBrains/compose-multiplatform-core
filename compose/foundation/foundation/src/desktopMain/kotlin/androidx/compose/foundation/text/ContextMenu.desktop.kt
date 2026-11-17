@@ -52,7 +52,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalLocalization
 import androidx.compose.ui.platform.PlatformLocalization
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.getSelectedText
 import java.awt.Component
@@ -64,7 +63,6 @@ import kotlinx.coroutines.launch
 /**
  * Context menu area for [BasicTextField] (with [TextFieldValue] argument).
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal actual fun ContextMenuArea(
     manager: TextFieldSelectionManager,
@@ -116,7 +114,6 @@ internal actual fun ContextMenuArea(
 /**
  * Context menu area for [SelectionContainer].
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal actual fun ContextMenuArea(
     manager: SelectionManager,
@@ -131,11 +128,12 @@ internal actual fun ContextMenuArea(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@Suppress("DEPRECATION")
 private val TextFieldSelectionManager.textManager: TextManager get() = object : TextManager {
     override val selectedText get() = value.getSelectedText()
 
-    val isPassword get() = visualTransformation is PasswordVisualTransformation
+    val isPassword
+        get() = visualTransformation is androidx.compose.ui.text.input.PasswordVisualTransformation
 
     override val cut: TextContextMenu.Action get() =
         TextContextMenu.Action(

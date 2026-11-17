@@ -78,6 +78,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.ceil
 import kotlin.math.hypot
 import kotlin.test.assertNotNull
+import kotlin.test.fail
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -252,6 +253,11 @@ internal class UIKitInstrumentedTest(
          * The default duration of drag gestures in instrumented tests.
          */
         internal val DefaultDragDuration = 0.05.seconds
+
+        /**
+         * The default duration of swipe gestures in instrumented tests.
+         */
+        internal val DefaultSwipeDuration = 0.1.seconds
 
         /**
          * The maximum distance a touch moves within a single touch event during drag gestures.
@@ -958,26 +964,63 @@ internal class UIKitInstrumentedTest(
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
     }
 
-    private val SwipeDuration = 0.1.seconds
+     private fun AccessibilityTestNode.drag(
+         fromPosition: DpRect.() -> DpOffset = { center() },
+         toPosition: DpRect.() -> DpOffset = { center() },
+         duration: Duration
+     ): UITouch {
+         val frame = frame ?: fail("frame is null")
+         return touchDown(position = frame.fromPosition())
+             .dragTo(frame.toPosition(), duration = duration)
+     }
+
+    fun AccessibilityTestNode.dragRight(
+        duration: Duration = DefaultDragDuration
+    ) = drag(
+        fromPosition = { leftCenter().offsetBy(dx = 16.dp) },
+        toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
+        duration = duration
+    )
+
+    fun AccessibilityTestNode.dragLeft(
+        duration: Duration = DefaultDragDuration
+    ) = drag(
+        fromPosition = { rightCenter().offsetBy(dx = (-16).dp) },
+        toPosition = { leftCenter().offsetBy(dx = 16.dp) },
+        duration = duration
+    )
 
     fun AccessibilityTestNode.swipe(
         fromPosition: DpRect.() -> DpOffset = { center() },
         toPosition: DpRect.() -> DpOffset = { center() },
         fromEdge: Boolean = false,
-        duration: Duration = SwipeDuration
-    ): UITouch {
+        duration: Duration = DefaultSwipeDuration
+    ) {
         val frame = frame ?: error("Internal error. Frame is missing.")
         return touchDown(frame.fromPosition(), fromEdge = fromEdge)
             .dragTo(frame.toPosition(), duration)
+            .up()
     }
 
-    fun AccessibilityTestNode.swipeRight(fromEdge: Boolean = false, duration: Duration = SwipeDuration): UITouch {
-        return swipe(fromPosition = { leftCenter().offsetBy(dx = 16.dp) }, toPosition = { rightCenter().offsetBy(dx = (-16).dp) }, fromEdge = fromEdge, duration = duration)
-    }
+    fun AccessibilityTestNode.swipeRight(
+        fromEdge: Boolean = false,
+        duration: Duration = DefaultSwipeDuration
+    ) = swipe(
+        fromPosition = { leftCenter().offsetBy(dx = 16.dp) },
+        toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
+        fromEdge = fromEdge,
+        duration = duration
+    )
 
-    fun AccessibilityTestNode.swipeLeft(fromEdge: Boolean = false, duration: Duration = SwipeDuration): UITouch {
-        return swipe(fromPosition = { rightCenter().offsetBy(dx = (-16).dp) }, toPosition = { leftCenter().offsetBy(dx = 16.dp) }, fromEdge = fromEdge, duration = duration)
-    }
+    fun AccessibilityTestNode.swipeLeft(
+        fromEdge: Boolean = false,
+        duration: Duration = DefaultSwipeDuration
+    ) = swipe(
+        fromPosition = { rightCenter().offsetBy(dx = (-16).dp) },
+        toPosition = { leftCenter().offsetBy(dx = 16.dp) },
+        fromEdge = fromEdge,
+        duration = duration
+    )
 }
 
 @OptIn(ExperimentalForeignApi::class)

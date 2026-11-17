@@ -41,6 +41,8 @@ import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.TextInputContainer
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.IosComposeUiTextFlags
 import androidx.compose.ui.text.TextPainter
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.CommitTextCommand
@@ -79,7 +81,6 @@ internal actual fun Modifier.textFieldCursor(
     }
 }
 
-@OptIn(InternalComposeUiApi::class)
 internal actual fun Modifier.textFieldDraw(
     state: LegacyTextFieldState,
     value: TextFieldValue,
@@ -249,7 +250,7 @@ private class CoreTextFieldImeOverlayNode(
         density = null
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTextApi::class)
     fun update(state: LegacyTextFieldState, imeOptions: ImeOptions, interactionSource: InteractionSource?) {
         if (this.state !== state) {
             this.state.holder = null
@@ -257,8 +258,10 @@ private class CoreTextFieldImeOverlayNode(
             state.holder = holder
             delegate.state = state
         }
-        val nativeTextInputChanged = delegate.imeOptions.platformImeOptions?.usingNativeTextInput !=
-            imeOptions.platformImeOptions?.usingNativeTextInput
+        val nativeDefault = IosComposeUiTextFlags.isNativeTextInputEnabled
+        val nativeTextInputChanged =
+            (delegate.imeOptions.platformImeOptions?.usingNativeTextInput ?: nativeDefault) !=
+                (imeOptions.platformImeOptions?.usingNativeTextInput ?: nativeDefault)
         delegate.imeOptions = imeOptions
         delegate.interactionSource = interactionSource
 

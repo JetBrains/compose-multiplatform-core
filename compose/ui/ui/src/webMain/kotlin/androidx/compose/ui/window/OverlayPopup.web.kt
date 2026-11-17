@@ -19,7 +19,6 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.LocalDensity
@@ -36,7 +35,6 @@ import androidx.compose.ui.scene.requireCurrent
  * otherwise follow [Popup] and [PopupProperties]. Only [CanvasLayersComposeScene] is supported.
  */
 @InternalComposeUiApi
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun OverlayPopup(
     popupPositionProvider: PopupPositionProvider,

@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
@@ -167,7 +166,6 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
     }
 }
 
-@OptIn(InternalComposeApi::class)
 @Composable
 actual fun Dialog(
     onDismissRequest: () -> Unit,

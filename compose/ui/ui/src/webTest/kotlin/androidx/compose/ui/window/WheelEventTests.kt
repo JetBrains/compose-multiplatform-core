@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.geometry.Offset
@@ -46,7 +45,6 @@ import org.w3c.dom.events.WheelEventInit
 @OptIn(InternalFoundationApi::class)
 class WheelEventTests : OnCanvasTests {
 
-    @OptIn(InternalComposeApi::class)
     @BeforeTest
     fun resetWheelTracking() {
         // JsConfig keeps wheel-event state in a page-global singleton; clear it so a previous

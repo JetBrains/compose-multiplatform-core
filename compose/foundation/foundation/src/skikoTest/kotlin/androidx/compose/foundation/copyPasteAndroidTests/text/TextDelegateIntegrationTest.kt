@@ -20,7 +20,6 @@ import androidx.compose.foundation.SkikoComposeTestBase
 import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.isEqualTo
 import androidx.compose.foundation.isTrue
-import androidx.compose.foundation.text.InternalFoundationTextApi
 import androidx.compose.foundation.text.TextDelegate
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -37,7 +36,6 @@ import kotlin.math.roundToInt
 import kotlin.test.Ignore
 import kotlin.test.Test
 
-@OptIn(InternalFoundationTextApi::class)
 class TextDelegateIntegrationTest : SkikoComposeTestBase() {
 
     @Test
