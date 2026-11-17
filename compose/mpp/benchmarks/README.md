@@ -3,8 +3,8 @@
 A project with Compose Multiplatform benchmarks for measuring application startup and rendering
 performance. This is a standalone Gradle build, separate from the core build.
 
-Run all commands below from `compose/mpp/benchmarks`. The launcher runs on macOS and Linux
-and requires JDK 17 or newer. Apple targets require macOS with Xcode.
+Run all commands below from `compose/mpp/benchmarks`. The launcher
+requires JDK 17 or newer. Apple targets require macOS with Xcode.
 
 ## Modules
 
