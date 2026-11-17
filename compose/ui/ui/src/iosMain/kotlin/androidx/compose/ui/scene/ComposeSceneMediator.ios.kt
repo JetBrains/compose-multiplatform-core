@@ -73,14 +73,6 @@ import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.semantics.SemanticsOwner
-import androidx.compose.ui.uikit.LocalTextInputContainer
-import androidx.compose.ui.uikit.LocalUIView
-import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.platform.Clipboard
-import androidx.compose.ui.platform.SharedOwnerContext
-import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.WindowInsetsManager
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformUriHandler
