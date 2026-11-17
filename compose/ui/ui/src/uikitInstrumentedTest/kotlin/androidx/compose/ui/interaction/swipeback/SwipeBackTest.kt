@@ -294,7 +294,7 @@ internal abstract class SwipeBackTest(
             )
         }
 
-        findNodeWithTag(DRAG_SURFACE).swipeLeft().up()
+        findNodeWithTag(DRAG_SURFACE).swipeLeft()
 
         waitForIdle()
 
@@ -311,7 +311,7 @@ internal abstract class SwipeBackTest(
             )
         }
 
-        findNodeWithTag(DRAG_SURFACE).swipeRight().up()
+        findNodeWithTag(DRAG_SURFACE).swipeRight()
 
         waitForIdle()
 
@@ -328,7 +328,7 @@ internal abstract class SwipeBackTest(
             )
         }
 
-        findNodeWithTag(DRAG_SURFACE).swipeLeft().up()
+        findNodeWithTag(DRAG_SURFACE).swipeLeft()
 
         waitForIdle()
 
@@ -345,7 +345,7 @@ internal abstract class SwipeBackTest(
             )
         }
 
-        findNodeWithTag(DRAG_SURFACE).swipeRight().up()
+        findNodeWithTag(DRAG_SURFACE).swipeRight()
 
         waitForIdle()
 
@@ -364,7 +364,7 @@ internal abstract class SwipeBackTest(
             )
         }
 
-        val swipeRight = findNodeWithTag(DRAG_SURFACE).swipeRight().hold()
+        val swipeRight = findNodeWithTag(DRAG_SURFACE).dragRight().hold()
 
         assertFalse(transitionState is InProgress, message = "swipe right should not be in progress in LTR")
 
@@ -387,7 +387,7 @@ internal abstract class SwipeBackTest(
             )
         }
 
-        val swipeRight = findNodeWithTag(DRAG_SURFACE).swipeRight().hold()
+        val swipeRight = findNodeWithTag(DRAG_SURFACE).dragRight().hold()
 
         assertFalse(transitionState is InProgress, message = "swipe right should not be in progress in RTL")
 
@@ -410,7 +410,7 @@ internal abstract class SwipeBackTest(
             )
         }
 
-        val swipeRight = findNodeWithTag(DRAG_SURFACE).swipeLeft().hold()
+        val swipeRight = findNodeWithTag(DRAG_SURFACE).dragLeft().hold()
 
         assertFalse(transitionState is InProgress, message = "swipe left should not be in progress in LTR")
 
@@ -433,7 +433,7 @@ internal abstract class SwipeBackTest(
             )
         }
 
-        val swipeRight = findNodeWithTag(DRAG_SURFACE).swipeLeft().hold()
+        val swipeRight = findNodeWithTag(DRAG_SURFACE).dragLeft().hold()
 
         assertFalse(transitionState is InProgress, message = "swipe left should not be in progress in RTL")
 
@@ -533,7 +533,7 @@ internal abstract class SwipeBackTest(
         waitForIdle()
 
         assertEquals(
-             2, backCompletedCount,
+            2, backCompletedCount,
             message = "left edge swipe back should complete in LTR with EndEdgePanGestureBehavior.Back"
         )
     }
@@ -596,7 +596,7 @@ internal abstract class SwipeBackTest(
         waitForIdle()
 
         assertEquals(
-             1, backCompletedCount,
+            1, backCompletedCount,
             message = "left edge swipe back should complete in LTR"
         )
 
