@@ -18,6 +18,9 @@ package androidx.compose.ui.text
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.clearSkikoComposeImplementation
@@ -601,6 +604,31 @@ class SkikoParagraphTest {
         val layouter = simpleLayouter()
 
         layouter.setDrawStyle(Stroke(width = 2f))
+        assertTrue(layouter.updateForeground)
+    }
+
+    @Test
+    fun setBrush_sameBrushAndNaNAlpha_doesNotRequireRelayout() {
+        val layouter = simpleLayouter()
+        val brush = Brush.verticalGradient(listOf(Color.Blue, Color.Red))
+        val size = Size(100f, 100f)
+
+        // NaN is the default alpha, e.g. of TextStyle(brush = ...)
+        layouter.setBrush(brush, size, alpha = Float.NaN)
+        layouter.layoutParagraph(maxWidthConstraint.toFloat())
+        layouter.setBrush(brush, size, alpha = Float.NaN)
+        assertFalse(layouter.updateForeground)
+    }
+
+    @Test
+    fun setBrush_alphaChangedFromNaN_requiresRelayout() {
+        val layouter = simpleLayouter()
+        val brush = Brush.verticalGradient(listOf(Color.Blue, Color.Red))
+        val size = Size(100f, 100f)
+
+        layouter.setBrush(brush, size, alpha = Float.NaN)
+        layouter.layoutParagraph(maxWidthConstraint.toFloat())
+        layouter.setBrush(brush, size, alpha = 0.5f)
         assertTrue(layouter.updateForeground)
     }
 
