@@ -18,15 +18,11 @@ package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.CompositeKeyHashCode
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
-import kotlin.js.js
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlinx.browser.document
@@ -77,14 +73,6 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
         }
     }
 
-    private fun Rect.round(density: Density): IntRect {
-        val left = floor(left / density.density).toInt()
-        val top = floor(top / density.density).toInt()
-        val right = ceil(right / density.density).toInt()
-        val bottom = ceil(bottom / density.density).toInt()
-
-        return IntRect(left, top, right, bottom)
-    }
 
     override fun layoutAccordingTo(layoutCoordinates: LayoutCoordinates) {
         val oldPosition = lastPosition
@@ -93,39 +81,44 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
         lastPosition = newPosition
 
         val rootCoordinates = layoutCoordinates.findRootCoordinates()
+        val densityFactor = density.density
 
-        val unclippedRect = rootCoordinates
-            .localBoundingBoxOf(layoutCoordinates, clipBounds = false)
-            .round(density)
-        lastSize = unclippedRect.size
+        val unclipped = rootCoordinates.localBoundingBoxOf(layoutCoordinates, clipBounds = false)
+        val unclippedLeft = floor(unclipped.left / densityFactor).toInt()
+        val unclippedTop = floor(unclipped.top / densityFactor).toInt()
+        val unclippedRight = ceil(unclipped.right / densityFactor).toInt()
+        val unclippedBottom = ceil(unclipped.bottom / densityFactor).toInt()
+        lastSize = IntSize(unclippedRight - unclippedLeft, unclippedBottom - unclippedTop)
 
-        val clippedRect = rootCoordinates
-            .localBoundingBoxOf(layoutCoordinates, clipBounds = true)
-            .round(density)
+        val clipped = rootCoordinates.localBoundingBoxOf(layoutCoordinates, clipBounds = true)
+        val clippedLeft = floor(clipped.left / densityFactor).toInt()
+        val clippedTop = floor(clipped.top / densityFactor).toInt()
+        val clippedRight = ceil(clipped.right / densityFactor).toInt()
+        val clippedBottom = ceil(clipped.bottom / densityFactor).toInt()
 
         //Force change if it's the first time we're positioning
         val positionChanged = oldPosition != newPosition || !isPositioned
-        val unclippedRectChanged = unclippedRect.size != oldSize || !isPositioned
+        val unclippedRectChanged = lastSize != oldSize || !isPositioned
         val changeFlags = packBooleans(positionChanged, unclippedRectChanged)
         val returnFlags = packBooleans(isHidden, isPositioned)
 
         // update the css properties only for visible interop views
-        if (!clippedRect.isEmpty) {
+        if (clippedLeft < clippedRight && clippedTop < clippedBottom) {
             val returned = updateCssElementProperties(
-                wrpEl = interopWrapper,
-                retrnFlgs = returnFlags,
-                dens = density.density,
-                chngFlgs = changeFlags,
-                nwPosX = newPosition.x,
-                nwPosY = newPosition.y,
-                cRectTop = clippedRect.top,
-                cRectLeft = clippedRect.left,
-                cRectBottom = clippedRect.bottom,
-                cRectRight = clippedRect.right,
-                ucRectTop = unclippedRect.top,
-                ucRectLeft = unclippedRect.left,
-                ucRectBottom = unclippedRect.bottom,
-                ucRectRight = unclippedRect.right
+                wrapperElement = interopWrapper,
+                returnFlags = returnFlags,
+                density = densityFactor,
+                changeFlags = changeFlags,
+                newPositionX = newPosition.x,
+                newPositionY = newPosition.y,
+                clippedRectTop = clippedTop,
+                clippedRectLeft = clippedLeft,
+                clippedRectBottom = clippedBottom,
+                clippedRectRight = clippedRight,
+                unclippedRectTop = unclippedTop,
+                unclippedRectLeft = unclippedLeft,
+                unclippedRectBottom = unclippedBottom,
+                unclippedRectRight = unclippedRight
             )
 
             this.isHidden = returned and 1 != 0
@@ -153,57 +146,57 @@ private fun toggleVisibility(element: HTMLElement, isHidden: Boolean) {
 }
 
 private fun updateCssElementProperties(
-    wrpEl: HTMLElement,
-    retrnFlgs: Int,
-    dens: Float,
-    chngFlgs: Int,
-    nwPosX: Float,
-    nwPosY: Float,
-    cRectTop: Int,
-    cRectLeft: Int,
-    cRectBottom: Int,
-    cRectRight: Int,
-    ucRectTop: Int,
-    ucRectLeft: Int,
-    ucRectBottom: Int,
-    ucRectRight: Int
+    wrapperElement: HTMLElement,
+    returnFlags: Int,
+    density: Float,
+    changeFlags: Int,
+    newPositionX: Float,
+    newPositionY: Float,
+    clippedRectTop: Int,
+    clippedRectLeft: Int,
+    clippedRectBottom: Int,
+    clippedRectRight: Int,
+    unclippedRectTop: Int,
+    unclippedRectLeft: Int,
+    unclippedRectBottom: Int,
+    unclippedRectRight: Int
 ): Int = js(
         //language=javascript
-        """
+    """
         {
-        const posChng = (chngFlgs & 1) !== 0;
-        const ucRectChng = (chngFlgs & 2) !== 0;
-        const oldHid = (retrnFlgs & 1) !== 0;
-        let hid = oldHid;
-        let pos = (retrnFlgs & 2) !== 0;
-        if (posChng) {
-            const left = nwPosX / dens;
-            const top = nwPosY / dens;
-            wrpEl.style.transform = "matrix(1, 0, 0, 1, " + left + ", " + top + ")";
+        const positionChanged = (changeFlags & 1) !== 0;
+        const unclippedRectChanged = (changeFlags & 2) !== 0;
+        const oldHidden = (returnFlags & 1) !== 0;
+        let hidden = oldHidden;
+        let position = (returnFlags & 2) !== 0;
+        if (positionChanged) {
+            const left = newPositionX / density;
+            const top = newPositionY / density;
+            wrapperElement.style.transform = "matrix(1, 0, 0, 1, " + left + ", " + top + ")";
         }
-        if (ucRectChng) {
-            wrpEl.style.width = "" + (ucRectRight - ucRectLeft) + "px";
-            wrpEl.style.height = "" + (ucRectBottom - ucRectTop) + "px";
+        if (unclippedRectChanged) {
+            wrapperElement.style.width = "" + (unclippedRectRight - unclippedRectLeft) + "px";
+            wrapperElement.style.height = "" + (unclippedRectBottom - unclippedRectTop) + "px";
         }
-        const intOffWidth = wrpEl.offsetWidth;
-        const intOfftHeight = wrpEl.offsetHeight;
+        const intOffWidth = wrapperElement.offsetWidth;
+        const intOfftHeight = wrapperElement.offsetHeight;
         if (intOffWidth <= 0 || intOfftHeight <= 0) {
         } else {
-            const topClp = Math.max(cRectTop - ucRectTop, 0);
-            const leftClp = Math.max(cRectLeft - ucRectLeft, 0);
-            const bottomClp = Math.max(ucRectBottom - cRectBottom, 0);
-            const rightClp = Math.max(ucRectRight - cRectRight, 0);
-            hid = topClp >= intOfftHeight || leftClp >= intOffWidth;
-            if (oldHid !== hid) {
-                wrpEl.style.visibility = hid ? "hidden" : "visible";
+            const topClp = Math.max(clippedRectTop - unclippedRectTop, 0);
+            const leftClp = Math.max(clippedRectLeft - unclippedRectLeft, 0);
+            const bottomClp = Math.max(unclippedRectBottom - clippedRectBottom, 0);
+            const rightClp = Math.max(unclippedRectRight - clippedRectRight, 0);
+            hidden = topClp >= intOfftHeight || leftClp >= intOffWidth;
+            if (oldHidden !== hidden) {
+                wrapperElement.style.visibility = hidden ? "hidden" : "visible";
             }
-            wrpEl.style.setProperty("clip-path", "inset(" + topClp + "px " + rightClp + "px " + bottomClp + "px " + leftClp + "px)");
+            wrapperElement.style.setProperty("clip-path", "inset(" + topClp + "px " + rightClp + "px " + bottomClp + "px " + leftClp + "px)");
         }
-        if (!pos) {
-            pos = true;
-            wrpEl.style.visibility = "visible";
+        if (!position) {
+            position = true;
+            wrapperElement.style.visibility = "visible";
         }
-        return (hid ? 1 : 0) | (pos ? 2 : 0);
+        return (hidden ? 1 : 0) | (position ? 2 : 0);
         }
     """
     )

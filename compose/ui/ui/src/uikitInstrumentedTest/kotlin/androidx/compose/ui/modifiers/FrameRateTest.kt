@@ -57,9 +57,10 @@ internal class FrameRateTest {
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")
 
+        val buttons = frameRates.associateWith { findNodeWithTag("${it}fps") }
         for (frameRate in frameRates) {
             val expectedFrameDuration = 1.0 / frameRate
-            findNodeWithTag("${frameRate}fps").tap()
+            buttons.getValue(frameRate).tap()
             waitUntil {
                 checkEqual(expectedFrameDuration, choreographer.currentTargetFrameDuration, 1e-5)
             }
@@ -83,8 +84,9 @@ internal class FrameRateTest {
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")
 
+        val buttons = frameRates.associateWith { findNodeWithTag("${it}fps") }
         for (frameRate in frameRates) {
-            findNodeWithTag("${frameRate}fps").tap()
+            buttons.getValue(frameRate).tap()
             waitUntil {
                 choreographer.preferredFramesPerSecond == frameRate.toLong()
             }

@@ -262,7 +262,6 @@ class DesktopMenuTest {
         assertClicksCount(2, 2, 2)
     }
 
-    @OptIn(ExperimentalMaterialApi::class)
     @Suppress("DEPRECATION")
     @Test
     fun `right click opens DropdownMenuState`() = runComposeUiTest {
@@ -285,7 +284,6 @@ class DesktopMenuTest {
         assertThat(state.status == DropdownMenuState.Status.Open(Offset(10f, 10f)))
     }
 
-    @OptIn(ExperimentalMaterialApi::class)
     @Suppress("DEPRECATION")
     @Test
     fun `right doesn't open DropdownMenuState when disabled`() = runComposeUiTest {

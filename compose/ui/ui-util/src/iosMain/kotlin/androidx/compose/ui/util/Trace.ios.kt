@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalForeignApi::class)
-
 package androidx.compose.ui.util
 
 import androidx.compose.ui.uikit.utils.CMPOSAppTraceLogger
 import androidx.compose.ui.uikit.utils.CMPOSInitializeAppTraceLogger
-import kotlinx.cinterop.ExperimentalForeignApi
 
 // TODO: Move it to darwinMain (requires re-organization of obj-c integration)
 

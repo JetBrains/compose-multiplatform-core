@@ -61,11 +61,8 @@ internal class NSPasteboardPlatformClipboard : Clipboard {
     }
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
-        if (clipEntry?.plainText == null) {
-            nativeClipboard.clearContents()
-            return
-        }
-        val plainText = clipEntry.plainText ?: return
+        nativeClipboard.clearContents()
+        val plainText = clipEntry?.plainText ?: return
         nativeClipboard.setString(plainText, NSPasteboardTypeString)
     }
 

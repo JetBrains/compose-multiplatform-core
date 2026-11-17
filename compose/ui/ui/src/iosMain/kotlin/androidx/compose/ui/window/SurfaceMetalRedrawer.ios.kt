@@ -20,7 +20,6 @@ import androidx.collection.IntIntPair
 import androidx.compose.ui.uikit.utils.CMPDrawable
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.util.trace
-import androidx.compose.ui.viewinterop.InteropSyncAction
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.BetaInteropApi
@@ -70,7 +69,8 @@ internal class SurfaceMetalRedrawer(
     private val device = metalLayer.device as? MTLDeviceProtocol
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
     private val queue = getCachedCommandQueue(device)
-    private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
+    // Created for the first frame, and again after releaseRenderingResources closed it.
+    private var context: DirectContext? = null
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
 
@@ -153,6 +153,16 @@ internal class SurfaceMetalRedrawer(
         disposeDrawableAssociatedResources(metalLayer.drawablesGeneration.toInt())
     }
 
+    /**
+     * Drains the drawables and closes the Skia context, which keeps GPU memory (offscreen layer
+     * textures, glyph atlases) for as long as it lives. The next frame creates a new context.
+     */
+    fun releaseRenderingResources() {
+        drainSkiaSurfaces()
+        context?.close()
+        context = null
+    }
+
     override fun dispose() {
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
@@ -166,7 +176,8 @@ internal class SurfaceMetalRedrawer(
         awaitRenderingQueueTasksCompletion()
         disposeDrawableAssociatedResources(null)
         pictureRecorder.close()
-        context.close()
+        context?.close()
+        context = null
     }
 
     private fun awaitRenderingQueueTasksCompletion() {
@@ -193,7 +204,6 @@ internal class SurfaceMetalRedrawer(
      * @param waitUntilCompletion if `true`, the method will block the thread until the frame is
      * presented on the screen. If false, the method will just dispatch GPU workload and return.
      */
-    @OptIn(BetaInteropApi::class)
     override fun render(waitUntilCompletion: Boolean) =
         trace("SurfaceMetalRedrawer:draw") {
             check(NSThread.isMainThread) { "MetalRedrawer.draw() must be called on main thread" }
@@ -335,6 +345,9 @@ internal class SurfaceMetalRedrawer(
             height = IOSurfaceGetHeight(drawable.surface).toInt(),
             texturePtr = drawable.drawableTexture().rawValue,
         )
+
+        val context = context
+            ?: DirectContext.makeMetal(device.objcPtr(), queue.objcPtr()).also { this.context = it }
 
         val surface = Surface.makeFromBackendRenderTarget(
             context,

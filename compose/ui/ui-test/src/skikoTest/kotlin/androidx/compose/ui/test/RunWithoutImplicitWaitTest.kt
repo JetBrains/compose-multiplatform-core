@@ -89,7 +89,6 @@ class RunWithoutImplicitWaitTest {
             .inOrder()
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun runWithoutImplicitWait_doesNotTriggerWaitForIdle() = runComposeUiTest {
         var isNodeVisible by mutableStateOf(true)
@@ -123,7 +122,6 @@ class RunWithoutImplicitWaitTest {
      *
      * Motion tests do exactly that, just with more syntactic sugar 🍬.
      */
-    @OptIn(ExperimentalTestApi::class)
     private fun ComposeUiTest.captureMotionTestValues(fooSizeTimeSeries: MutableList<IntSize>) {
         // Capture a value and add to the time series.
         fooSizeTimeSeries.add(onNodeWithTag("foo").fetchSemanticsNode().size)

@@ -30,7 +30,6 @@ import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.milliseconds
 
 private val DragDistance = 20.dp
-private val DragDuration = 10.milliseconds
 
 class MultiTouchTrackingTest {
     @Test
@@ -83,11 +82,11 @@ class MultiTouchTrackingTest {
         assertTouchesDown(5, "both groups of touches are down")
 
         // Drag all the touches.
-        touch1.dragBy(dy = -DragDistance, duration = DragDuration)
-        touch2.dragBy(dy = -DragDistance, duration = DragDuration)
-        touch3.dragBy(dy = -DragDistance, duration = DragDuration)
-        touch4.dragBy(dy = -DragDistance, duration = DragDuration)
-        touch5.dragBy(dy = -DragDistance, duration = DragDuration)
+        touch1.dragBy(dy = -DragDistance)
+        touch2.dragBy(dy = -DragDistance)
+        touch3.dragBy(dy = -DragDistance)
+        touch4.dragBy(dy = -DragDistance)
+        touch5.dragBy(dy = -DragDistance)
 
         waitForIdle()
         assertTouchesDown(5, "all the touches are dragged")
@@ -100,8 +99,8 @@ class MultiTouchTrackingTest {
         assertTouchesDown(2, "touch1, touch3 and touch4 are released")
 
         // The touches that are still down keep being tracked and can still be dragged.
-        touch2.dragBy(dy = DragDistance, duration = DragDuration)
-        touch5.dragBy(dy = DragDistance, duration = DragDuration)
+        touch2.dragBy(dy = DragDistance)
+        touch5.dragBy(dy = DragDistance)
 
         waitForIdle()
         assertTouchesDown(2, "the touches left after the release are dragged")

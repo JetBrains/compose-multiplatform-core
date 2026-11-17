@@ -44,7 +44,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import platform.UIKit.endEditing
 
 class TextFieldSelectionHandlesTest {
 
@@ -102,12 +101,6 @@ private fun String.rangeOf(word: String, from: Int = 0): TextRange {
 }
 
 private val TextRange.middle: Int get() = (min + max) / 2
-
-private fun UIKitInstrumentedTest.dropNativeSelection() {
-    viewController.view.endEditing(force = true)
-    // TODO: CMP-10641
-    delay(500)
-}
 
 private fun UIKitInstrumentedTest.setUpField(
     text: String,
@@ -177,7 +170,6 @@ private fun UIKitInstrumentedTest.checkSelectionHandlesLtr(btf: BasicTextFieldTy
         listOf(handles.start.info.anchor, handles.end.info.anchor),
         "the start handle should be drawn on the left of the selection and the end handle on its right",
     )
-    if (nativeInput) dropNativeSelection()
 }
 
 private fun UIKitInstrumentedTest.checkNoSelectionHandlesForCaretLtr(btf: BasicTextFieldType, nativeInput: Boolean) {
@@ -207,7 +199,6 @@ private fun UIKitInstrumentedTest.checkDragEndSelectionHandleLtr(btf: BasicTextF
     val after = selection()
     assertEquals(fox.max, after.max, "end handle drag should extend selection to the end of 'fox': $before -> $after")
     assertEquals(before.min, after.min, "start should not move: $before -> $after")
-    if (nativeInput) dropNativeSelection()
 }
 
 private fun UIKitInstrumentedTest.checkDragStartSelectionHandleLtr(btf: BasicTextFieldType, nativeInput: Boolean) {
@@ -226,7 +217,6 @@ private fun UIKitInstrumentedTest.checkDragStartSelectionHandleLtr(btf: BasicTex
     val after = selection()
     assertEquals(quick.min, after.min, "start handle drag should extend selection to the start of 'quick': $before -> $after")
     assertEquals(before.max, after.max, "end should not move: $before -> $after")
-    if (nativeInput) dropNativeSelection()
 }
 
 private fun UIKitInstrumentedTest.checkDragEndSelectionHandleAcrossLinesLtr(btf: BasicTextFieldType, nativeInput: Boolean) {
@@ -256,7 +246,6 @@ private fun UIKitInstrumentedTest.checkDragEndSelectionHandleAcrossLinesLtr(btf:
         handles.end.grabPoint.y > getActiveTextFieldNode().characterPosition(offset = theOnLastLine.max).y,
         "end handle should sit below the third line, was ${handles.end.grabPoint}",
     )
-    if (nativeInput) dropNativeSelection()
 }
 
 private fun UIKitInstrumentedTest.checkDragStartSelectionHandleAcrossLinesLtr(btf: BasicTextFieldType, nativeInput: Boolean) {
@@ -276,7 +265,6 @@ private fun UIKitInstrumentedTest.checkDragStartSelectionHandleAcrossLinesLtr(bt
     val after = selection()
     assertEquals(quick.min, after.min, "start handle should cross both line breaks and land on the start of 'quick': $before -> $after")
     assertEquals(before.max, after.max, "end should not move: $before -> $after")
-    if (nativeInput) dropNativeSelection()
 }
 
 private fun UIKitInstrumentedTest.checkCrossSelectionHandlesLtr(btf: BasicTextFieldType, nativeInput: Boolean) {
@@ -302,5 +290,4 @@ private fun UIKitInstrumentedTest.checkCrossSelectionHandlesLtr(btf: BasicTextFi
         setOf(handles.start.info.anchor, handles.end.info.anchor),
         "a crossed selection should still be drawn with a leading and a trailing handle",
     )
-    if (nativeInput) dropNativeSelection()
 }

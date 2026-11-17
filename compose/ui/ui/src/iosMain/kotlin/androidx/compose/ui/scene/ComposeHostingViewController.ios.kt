@@ -18,7 +18,6 @@ package androidx.compose.ui.scene
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowContext
@@ -28,15 +27,12 @@ import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.lifecycle.Lifecycle
-import kotlin.coroutines.CoroutineContext
-import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import platform.CoreGraphics.CGSize
 import platform.UIKit.UIStatusBarAnimation
@@ -60,7 +56,6 @@ internal class ComposeHostingViewController(
     fun hasInvalidations(): Boolean = container.hasInvalidations()
 
     @VisibleForTesting
-    @OptIn(InternalComposeUiApi::class)
     var rootForTestListener: PlatformContext.RootForTestListener?
         get() = container.rootForTestListener
         set(value) { container.rootForTestListener = value }
@@ -145,7 +140,6 @@ internal class ComposeHostingViewController(
     }
 
     @Suppress("DEPRECATION")
-    @OptIn(NativeRuntimeApi::class)
     override fun viewDidDisappear(animated: Boolean) {
         super.viewDidDisappear(animated)
 

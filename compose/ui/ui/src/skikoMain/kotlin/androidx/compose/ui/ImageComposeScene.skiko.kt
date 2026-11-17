@@ -31,12 +31,12 @@ import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.hasInvalidations
@@ -128,7 +128,6 @@ inline fun <R> ImageComposeScene.use(
  * [rememberCoroutineScope]) and run recompositions.
  * @param content Composable content which needed to be rendered.
  */
-@OptIn(InternalComposeUiApi::class)
 class ImageComposeScene @ExperimentalComposeUiApi constructor(
     width: Int,
     height: Int,

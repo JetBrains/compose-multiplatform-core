@@ -16,14 +16,12 @@
 
 package androidx.compose.mpp.demo
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeUIViewController
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
 // TODO This module is just a proxy to run the demo from mpp:demo. Figure out how to get rid of it.
 //  If it is removed, there is no available configuration in IDE
-@OptIn(ExperimentalComposeUiApi::class)
 internal fun getViewControllerWithCompose(
     makeHostingViewController: (Int) -> UIViewController,
     makeSwiftUISizeThatFitsSizingDemoViewController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,

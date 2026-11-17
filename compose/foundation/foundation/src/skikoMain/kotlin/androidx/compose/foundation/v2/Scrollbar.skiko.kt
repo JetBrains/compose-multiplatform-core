@@ -17,7 +17,6 @@
 
 package androidx.compose.foundation.v2
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
@@ -33,8 +32,8 @@ import kotlin.jvm.JvmName
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -394,7 +393,6 @@ internal class LazyGridScrollbarAdapter(
 
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 internal class TextFieldScrollbarAdapter(
     private val scrollState: TextFieldScrollState
 ): ScrollbarAdapter {

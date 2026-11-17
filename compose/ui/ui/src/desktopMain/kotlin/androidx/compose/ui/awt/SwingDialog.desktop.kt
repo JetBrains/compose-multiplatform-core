@@ -100,7 +100,6 @@ import javax.swing.JDialog
  * @param update The callback to be invoked to update dialog properties.
  * @param content Composable content of the dialog.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 @ComposableOpenTarget(-1)
 fun SwingDialog(

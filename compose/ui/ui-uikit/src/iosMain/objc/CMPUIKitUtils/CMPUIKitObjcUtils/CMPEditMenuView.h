@@ -22,6 +22,8 @@
 
 @property (readonly) BOOL isEditMenuShown;
 
+@property (readonly) BOOL isEditMenuTransitioning;
+
 - (void)showEditMenuAtRect:(CGRect)targetRect
                       copy:(void (^)(void))copyBlock
                        cut:(void (^)(void))cutBlock
