@@ -71,6 +71,16 @@ internal class SurfaceMetalView(
             updateCanvasBackgroundColor()
         }
 
+    // Out of the window, the Skia context keeps its GPU memory until the view is disposed;
+    // release it when the system runs low on memory.
+    private val memoryWarningListener = MemoryWarningListener(
+        onMemoryWarning = {
+            if (window == null) {
+                redrawer.releaseRenderingResources()
+            }
+        }
+    )
+
     init {
         userInteractionEnabled = false
 
@@ -97,6 +107,7 @@ internal class SurfaceMetalView(
     }
 
     fun dispose() {
+        memoryWarningListener.dispose()
         cancelPendingDrawableDrain()
         redrawer.dispose()
     }

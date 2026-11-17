@@ -64,7 +64,7 @@ internal class NativeTextInputConnection(
 
     override val isEditable: Boolean = true
 
-    private val scrollView by lazy { NativeTextInputScrollView() }
+    private val scrollView = NativeTextInputScrollView()
 
     override val textInputView = NativeTextInputView(initialInput = inactiveTextInputDelegate).also {
         scrollView.textView = it
@@ -73,12 +73,10 @@ internal class NativeTextInputConnection(
     override val rootView: UIView get() = scrollView
 
     override fun start(request: PlatformTextInputMethodRequest) {
-        super.start(request)
-
         textInputView.input = this
 
-        textInputView.resignFirstResponder()
-        textInputView.becomeFirstResponder()
+        super.start(request)
+
         setupTintColor()
         onViewGeometryUpdated()
     }

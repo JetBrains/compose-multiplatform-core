@@ -28,6 +28,8 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.flow.Flow
 
+// Keep this API binary compatible: it is used by published Material3 versions.
+// (see https://youtrack.jetbrains.com/issue/CMP-10388)
 @OptIn(InternalComposeUiApi::class)
 @Deprecated("Use NavigationEventHandler instead")
 @ExperimentalComposeUiApi
@@ -53,6 +55,8 @@ actual fun PredictiveBackHandler(
     }
 }
 
+// Keep this API binary compatible: it is used by published Material3 versions.
+// (see https://youtrack.jetbrains.com/issue/CMP-10388)
 @OptIn(InternalComposeUiApi::class)
 @Deprecated("Use NavigationEventHandler instead")
 @ExperimentalComposeUiApi

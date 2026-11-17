@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.platform
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isUnspecified
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
@@ -85,8 +87,10 @@ internal class ParagraphLayouter(
         fontResolutions = fontResolutions,
     )
     private var paragraphCache: SkParagraph? = null
-    private var updateForeground = false
     private var width: Float = Float.NaN
+    @VisibleForTesting
+    var updateForeground = false
+        private set
 
     private val unresolvedSymbolsRegistry = getUnresolvedSymbolsRegistry()
     private var unresolvedCodepoints = IntArray(0)
@@ -213,7 +217,7 @@ internal class ParagraphLayouter(
     }
 
     fun setDrawStyle(drawStyle: DrawStyle?) {
-        if (builder.drawStyle != drawStyle) {
+        if (!builder.drawStyle.sameValueAs(drawStyle)) {
             builder.drawStyle = drawStyle
             invalidateParagraph(onlyForeground = true)
         }
@@ -260,6 +264,10 @@ internal class ParagraphLayouter(
 
 private fun Shadow?.sameValueAs(other: Shadow?) =
     (this ?: Shadow.None) == (other ?: Shadow.None)
+
+// null is painted the same as Fill, see ParagraphTextPaint.setDrawStyle
+private fun DrawStyle?.sameValueAs(other: DrawStyle?) =
+    (this ?: Fill) == (other ?: Fill)
 
 private fun TextDecoration?.sameValueAs(other: TextDecoration?) =
     (this ?: TextDecoration.None) == (other ?: TextDecoration.None)

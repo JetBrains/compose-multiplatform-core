@@ -20,7 +20,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.snapshots.Snapshot
@@ -33,9 +32,11 @@ import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.toComposeEvent
+import androidx.compose.ui.input.key.toKey
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
@@ -86,7 +87,7 @@ internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> =
         null
     }
 
-@OptIn(InternalComposeApi::class, ExperimentalMediaQueryApi::class)
+@OptIn(ExperimentalMediaQueryApi::class)
 internal class ComposeWindow(
     internal val htmlCanvas: HTMLCanvasElement,
     private val rootNode: Node,
@@ -119,6 +120,7 @@ internal class ComposeWindow(
     private val navigationEventInput = BackNavigationEventInput()
 
     private val canvasEvents = EventTargetListener(htmlCanvas)
+    private val viewportEvents = EventTargetListener(viewportContainer)
 
     private var insetsManager: WebWindowInsetsManager? = null
 
@@ -270,6 +272,12 @@ internal class ComposeWindow(
 
     private fun initEvents(canvas: HTMLCanvasElement) {
         pointerInputHandler.initEvents(canvasEvents, state.globalEvents)
+
+        viewportEvents.addDisposableCaptureEvent("keydown") { event ->
+            if ((event as KeyboardEvent).toKey() != Key.Unknown) {
+                platformContext.inputModeManager.requestInputMode(InputMode.Keyboard)
+            }
+        }
 
         canvas.addEventListener("contextmenu", { event ->
             event.preventDefault()
@@ -466,6 +474,7 @@ internal class ComposeWindow(
         // modern browsers supposed to garbage collect all events on the element disposed
         // but actually we never can be sure dom element was collected in first place
         canvasEvents.dispose()
+        viewportEvents.dispose()
 
         isDisposed = true
     }

@@ -136,7 +136,6 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
      *
      * @param content Composable content of the ComposeWindow.
      */
-    @OptIn(ExperimentalComposeUiApi::class)
     fun setContent(
         content: @Composable FrameWindowScope.() -> Unit
     ) = setContent(

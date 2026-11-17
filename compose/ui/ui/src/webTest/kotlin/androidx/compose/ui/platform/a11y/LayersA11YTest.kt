@@ -20,7 +20,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.window.Dialog
@@ -75,7 +74,6 @@ class LayersA11YTest : OnCanvasTests {
      * Dialogs animate by default ([androidx.compose.ui.ComposeUiFlags.isDialogAnimationEnabled]),
      * which keeps invalidating layout and makes the a11y tree settle at an unpredictable time.
      */
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun noAnimation() = DialogProperties(animateTransition = false)
 
     @Test

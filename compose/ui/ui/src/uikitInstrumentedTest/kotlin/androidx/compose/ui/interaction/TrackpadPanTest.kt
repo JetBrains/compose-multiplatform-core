@@ -79,6 +79,7 @@ internal class TrackpadPanTest {
         }
 
         trackpadPan(screenSize.center, 120.dp, dy = 75.dp)
+        waitForIdle()
 
         assertEquals(1, panStartCount)
         assertTrue(

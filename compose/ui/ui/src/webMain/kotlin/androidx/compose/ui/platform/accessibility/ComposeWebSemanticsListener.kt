@@ -22,6 +22,7 @@ import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -140,8 +141,7 @@ internal class ComposeWebSemanticsListener(
             }
         }
 
-        // Event delegation: all nodes delegate to global accessibility action listeners.
-        webSemanticsRoot.addEventListener("click", onClick)
+        // Slider key events are delegated to the accessibility root.
         webSemanticsRoot.addEventListener("keydown", onKeyDown)
     }
 
@@ -185,15 +185,20 @@ internal class ComposeWebSemanticsListener(
     // Responsible for scroll synchronization between Compose and Dom tree
     private val a11YScrollController = A11YScrollController(idToA11YNode, a11yNodeToSemanticsNode)
 
+    private val a11YFocusRecovery = A11YFocusRecovery(webSemanticsRoot, a11yNodeToSemanticsNode)
+
     /**
-     * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
+     * Shared click handler attached directly to nodes with SemanticsActions.OnClick so browsers
+     * expose each clickable node as an accessibility action target.
      * It's expected to be triggered by A11Y tools and tests (element.click()), not by pointer input.
      */
     private val onClick: (Event) -> Unit = onClick@ { event ->
-        val semanticsNode = (event.target as? HTMLElement)
+        val semanticsNode = (event.currentTarget as? HTMLElement)
             ?.let { a11yNodeToSemanticsNode[it] }
             ?: return@onClick
 
+        // A nested control handles its own activation without also activating its ancestors.
+        event.stopPropagation()
         val config = semanticsNode.config
 
         if (!config.contains(SemanticsProperties.Disabled) &&
@@ -227,6 +232,9 @@ internal class ComposeWebSemanticsListener(
         targetParentToChildren.clear()
         targetChildToParent.clear()
 
+        // Property updates and structural changes can cause the browser to drop DOM focus. Ensure focus recovery:
+        a11YFocusRecovery.onSyncStarted()
+
         semanticsOwners.forEach {
             syncSemanticsWithWebA11Y(it)
         }
@@ -249,6 +257,7 @@ internal class ComposeWebSemanticsListener(
         removedIds.forEach { id ->
             val htmlNode = idToA11YNode.remove(id)
             if (htmlNode != null) {
+                htmlNode.removeEventListener("click", onClick)
                 a11yNodeToSemanticsNode.remove(htmlNode)
             }
             a11YScrollController.onNodeRemoved(id, htmlNode)
@@ -256,6 +265,9 @@ internal class ComposeWebSemanticsListener(
 
         a11YScrollController.applyScrollOffsets()
         updateInertRoots()
+
+        // Once the sync completes, restore the focus if necessary:
+        a11YFocusRecovery.onSyncFinished()
     }
 
     // The last (top) root is never inert.
@@ -302,7 +314,7 @@ internal class ComposeWebSemanticsListener(
 
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
-            val children = node.replacedChildren
+            val children = node.placedA11YChildren()
             val nodeReachability = node.a11yReachability(parentReachability)
             val isA11YReachable = nodeReachability.isReachable()
 
@@ -321,7 +333,7 @@ internal class ComposeWebSemanticsListener(
                 // It handles its link children itself:
                 syncTextContentAndChildren(node, config, children, htmlNode, rootPosition, nodeReachability)
             } else {
-                pushNodesForTraversal(children, htmlNode, nodeReachability)
+                pushNodesForTraversal(node, children, htmlNode, nodeReachability)
             }
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
             targetParentToChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
@@ -334,15 +346,40 @@ internal class ComposeWebSemanticsListener(
      * @param htmlParent - the a11y (dom) parent element to contain the children a11y elements
      */
     private fun pushNodesForTraversal(
+        parent: SemanticsNode,
         children: List<SemanticsNode>,
         htmlParent: HTMLElement,
         parentA11YExposure: A11YReachability,
     ) {
-        val reversedChildren = children.asReversed()
+        // The reachability inherited by the children hoisted from the flattened wrappers.
+        // The other children inherit parentA11YExposure.
+        val hoistedReachabilities = MutableIntObjectMap<A11YReachability>()
+        val flattenedChildren = children.flattenA11YWrappers(parentA11YExposure, hoistedReachabilities)
+        if (flattenedChildren.isEmpty()) return
+
+        // Prepare the children bounds to avoid recomputing them during grouping and comparison.
+        val bounds = MutableIntObjectMap<Rect>(flattenedChildren.size)
+        flattenedChildren.fastForEach { child ->
+            // Scroll-reachable children remain accessible offscreen, where clipped bounds may be empty,
+            // so use unclipped bounds.
+            bounds[child.id] = if (parentA11YExposure == A11YReachability.ReachableByScroll) {
+                child.unclippedBoundsInWindowForWeb()
+            } else {
+                child.boundsInWindow
+            }
+        }
+
+        val reversedChildren = parent.sortByGeometryGroupingsForWeb(
+            parentListToSort = flattenedChildren,
+            boundsOf = { checkNotNull(bounds[it.id]) }
+        ).asReversed()
+
         dfsSemanticsNodes.addAll(reversedChildren)
-        repeat(reversedChildren.size) {
+        reversedChildren.fastForEach { child ->
             dfsA11YParents.addLast(htmlParent)
-            dfsA11YReachabilities.addLast(parentA11YExposure)
+            dfsA11YReachabilities.addLast(
+                hoistedReachabilities.getOrDefault(child.id, parentA11YExposure)
+            )
         }
     }
 
@@ -444,6 +481,12 @@ internal class ComposeWebSemanticsListener(
 
         val disabled = SemanticsProperties.Disabled in config
 
+        if (config.contains(SemanticsActions.OnClick)) {
+            htmlNode.addEventListener("click", onClick)
+        } else {
+            htmlNode.removeEventListener("click", onClick)
+        }
+
         if (config.contains(SemanticsProperties.EditableText)) {
             val editableText = config[SemanticsProperties.EditableText].text
            
@@ -505,7 +548,8 @@ internal class ComposeWebSemanticsListener(
             config.contains(SemanticsActions.SetProgress)
         ) {
             htmlNode.setAttribute("tabindex", "0")
-        } else {
+        } else if (htmlNode.getAttribute("tabindex") != "-1") {
+            // Remove obsolete tab stops without clearing programmatic focusability (tabindex="-1").
             htmlNode.removeAttribute("tabindex")
         }
 
@@ -639,7 +683,7 @@ internal class ComposeWebSemanticsListener(
                 targetTextAndLinks.add(textParts[linkIndex])
             }
 
-            val linkChildren = child.replacedChildren
+            val linkChildren = child.placedA11YChildren()
             val linkHtmlNode = syncNode(
                 semanticsNode = child,
                 config = childConfig,
@@ -651,7 +695,7 @@ internal class ComposeWebSemanticsListener(
             targetParentToChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
             targetChildToParent[linkHtmlNode] = htmlNode
             // A link node is expected to be a leaf, but don't rely on it.
-            pushNodesForTraversal(linkChildren, linkHtmlNode, a11YReachability)
+            pushNodesForTraversal(child, linkChildren, linkHtmlNode, a11YReachability)
 
             linkIndex++
         }
@@ -661,7 +705,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         updateTextAndLinks(htmlNode, targetTextAndLinks, a11YScrollController.getScrollSizer(node))
-        deferredChildren?.let { pushNodesForTraversal(it, htmlNode, a11YReachability) }
+        deferredChildren?.let { pushNodesForTraversal(node, it, htmlNode, a11YReachability) }
     }
 
     /** Updates the text fragments and semantic link elements after the optional scroll sizer. */
@@ -717,13 +761,13 @@ internal class ComposeWebSemanticsListener(
     internal fun stop() {
         if (!hasStarted || hasStopped) return
 
-        webSemanticsRoot.removeEventListener("click", onClick)
         webSemanticsRoot.removeEventListener("keydown", onKeyDown)
         a11YScrollController.clear()
 
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
         dfsA11YReachabilities.clear()
+        idToA11YNode.forEach { _, htmlNode -> htmlNode.removeEventListener("click", onClick) }
         idToA11YNode.clear()
         a11yNodeToSemanticsNode.clear()
         targetParentToChildren.clear()

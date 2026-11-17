@@ -21,7 +21,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.test.ComposeUiTest
-import androidx.compose.ui.test.ExperimentalTestApi
 
 /**
  * This is needed to pass a WindowInfo CompositionLocal with isWindowFocused == true to nearly all
@@ -30,7 +29,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
  * arrives (b/303841592), this interface should be removed and all "rule.setTextFieldTestContent"
  * calls replaced with "rule.setContent".
  */
-@OptIn(ExperimentalTestApi::class)
 interface FocusedWindowTest {
     fun ComposeUiTest.setTextFieldTestContent(content: @Composable () -> Unit) {
         val focusedWindowInfo =

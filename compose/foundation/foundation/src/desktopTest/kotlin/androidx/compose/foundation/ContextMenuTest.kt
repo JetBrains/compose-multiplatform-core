@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.TextContextMenu
 import androidx.compose.foundation.text.TextContextMenuArea
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.selection.SelectionState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -51,6 +52,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.isPopup
@@ -69,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import java.awt.datatransfer.StringSelection
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import org.junit.Test
 
@@ -293,6 +296,41 @@ class ContextMenuTest {
             waitForIdle()
             onNodeWithTag("box").performMouseInput { rightClick() }
             onNodeWithText(localization.copy).assertDoesNotExist()
+        }
+
+    // https://youtrack.jetbrains.com/issue/CMP-10785
+    @Test
+    fun `contextMenuArea has select all action for SelectionContainer`() =
+        runContextMenuTest {
+            val localization = object : PlatformLocalization {
+                override val copy = "copy"
+                override val cut = "cut"
+                override val paste = "paste"
+                override val selectAll = "selectAll"
+            }
+
+            val selectionState = SelectionState()
+            setContent {
+                CompositionLocalProvider(LocalLocalization provides localization) {
+                    SelectionContainer(state = selectionState) {
+                        BasicText("Hello, row 1")
+                        Box(Modifier.testTag("box").size(16.dp))
+                        BasicText("Hello, row 2")
+                    }
+                }
+            }
+
+            // Nothing is selected: "Select All" is enabled, "Copy" is not
+            onNodeWithTag("box").performMouseInput { rightClick() }
+            onNodeWithText(localization.copy).assertIsNotEnabled()
+            onNodeWithText(localization.selectAll).assertIsEnabled().performClick()
+            onNode(ContextMenuMatcher).assertDoesNotExist()
+            assertContentEquals(selectionState.getSelectableTexts(), selectionState.selectedTexts)
+
+            // Everything is selected: "Select All" is disabled, "Copy" is enabled
+            onNodeWithTag("box").performMouseInput { rightClick() }
+            onNodeWithText(localization.copy).assertIsEnabled()
+            onNodeWithText(localization.selectAll).assertIsNotEnabled()
         }
 
     // https://youtrack.jetbrains.com/issue/CMP-9342

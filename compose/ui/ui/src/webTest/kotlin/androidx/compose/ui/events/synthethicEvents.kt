@@ -59,6 +59,7 @@ internal fun keyEvent(
     repeat: Boolean = false,
     isComposing: Boolean = false,
     bubbles: Boolean = true,
+    composed: Boolean = false,
 ): KeyboardEvent {
     val keyboardEventInit = KeyboardEventInit(
         key = key,
@@ -74,9 +75,15 @@ internal fun keyEvent(
     ) as KeyboardEventInitExtended
 
     keyboardEventInit.keyCode = keyCode
+    setComposed(keyboardEventInit, composed)
 
     return keyboardEventInit
         .keyEvent(type)
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun setComposed(init: KeyboardEventInit, composed: Boolean) {
+    js("init.composed = composed")
 }
 
 internal fun compositionStart(data: String = "") =

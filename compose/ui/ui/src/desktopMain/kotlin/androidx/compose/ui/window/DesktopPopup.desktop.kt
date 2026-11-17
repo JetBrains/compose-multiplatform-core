@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.scene.BaseComposeScene
 import androidx.compose.ui.scene.LocalComposeScene
 import androidx.compose.ui.scene.lastKnownPointerPosition
 import androidx.compose.ui.unit.Dp
@@ -52,7 +51,6 @@ private fun rememberCursorPosition(): Offset? {
  * @param alignment The alignment of the popup relative to the current cursor position.
  * @param windowMargin Defines the area within the window that limits the placement of the popup.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun rememberCursorPositionProvider(
     offset: DpOffset = DpOffset.Zero,

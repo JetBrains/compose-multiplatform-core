@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
@@ -46,6 +47,9 @@ import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -70,6 +74,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.Event
 import org.w3c.dom.get
 
 /**
@@ -306,7 +311,7 @@ class CfWA11YTest : OnCanvasTests {
         var order by mutableStateOf(listOf(1, 2, 3))
 
         createComposeWindow {
-            Column(modifier = Modifier.testTag("parent")) {
+            Column(modifier = Modifier.testTagWithTraversalGroup("parent")) {
                 order.forEach { item ->
                     key(item) {
                         Button(modifier = Modifier.testTag("button$item"), onClick = {}) {
@@ -354,25 +359,29 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test // [A, C, B], and C moves to another parent, leaving [A, B].
     fun reparentedNodeRetainsItsElement() = runApplicationTest {
+        val parentCoordinates = mutableMapOf<String, LayoutCoordinates>()
+        fun Modifier.recordCoordinates(tag: String) = onGloballyPositioned {
+            parentCoordinates[tag] = it
+        }
         var moveToSecondParent by mutableStateOf(false)
         val buttonInMovableContent = movableContentOf {
-            Button(modifier = Modifier.testTag("movableButton"), onClick = {}) {
+            Button(modifier = Modifier.height(30.dp).testTag("movableButton"), onClick = {}) {
                 Text("Movable")
             }
         }
 
         createComposeWindow {
             Column {
-                Box(modifier = Modifier.testTag("parent1")) {
-                    Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                Column(modifier = Modifier.size(100.dp).testTagWithTraversalGroup("parent1").recordCoordinates("parent1")) {
+                    Button(modifier = Modifier.height(30.dp).testTag("button1"), onClick = {}) {
                         Text("Button1")
                     }
                     if (!moveToSecondParent) buttonInMovableContent()
-                    Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                    Button(modifier = Modifier.height(30.dp).testTag("button2"), onClick = {}) {
                         Text("Button2")
                     }
                 }
-                Box(modifier = Modifier.testTag("parent2")) {
+                Box(modifier = Modifier.size(100.dp).testTagWithTraversalGroup("parent2").recordCoordinates("parent2")) {
                     if (moveToSecondParent) buttonInMovableContent()
                 }
             }
@@ -385,6 +394,16 @@ class CfWA11YTest : OnCanvasTests {
         val movableButton = assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
         val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
         val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+
+        fun parentBounds() = listOf("parent1", "parent2").map { tag ->
+            val coordinates = parentCoordinates.getValue(tag)
+            coordinates.boundsInWindow().also { bounds ->
+                assertFalse(bounds.isEmpty, "$tag must have nonempty bounds")
+                assertEquals(coordinates.boundsInWindow(clipBounds = false), bounds, "$tag must not be clipped")
+            }
+        }
+        val initialBounds = parentBounds()
+        assertTrue(initialBounds[0].bottom <= initialBounds[1].top, "The second parent must be below the first")
 
         var unaffectedNodeWasRemoved = false
         val observer = createMutationObserver { removedNode ->
@@ -414,6 +433,7 @@ class CfWA11YTest : OnCanvasTests {
                 listOf("button1", "button2"),
                 (0 until parent1.children.length).map { parent1.children[it]?.id },
             )
+            assertEquals(initialBounds, parentBounds(), "Reparenting must not move or resize the parents")
             assertFalse(unaffectedNodeWasRemoved, "Unaffected nodes must not be removed")
         } finally {
             disconnectMutationObserver(observer)
@@ -799,9 +819,10 @@ class CfWA11YTest : OnCanvasTests {
 
         awaitA11YChanges()
 
-        val rangeSlider = getShadowRoot().getElementById("rangeSlider") as? HTMLElement
-        assertNotNull(rangeSlider)
-        val sliders = rangeSlider.querySelectorAll("[role=slider]")
+        // The RangeSlider node itself exposes nothing to accessibility (only a testTag), so it has
+        // no a11y element of its own; the thumbs are hoisted to its parent.
+        assertNull(getShadowRoot().getElementById("rangeSlider"))
+        val sliders = getA11YContainer()!!.querySelectorAll("[role=slider]")
         assertEquals(2, sliders.length)
         assertEquals(0.25f, (sliders[0] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
         assertEquals(0.75f, (sliders[1] as HTMLElement).getAttribute("aria-valuenow")!!.toFloat())
@@ -933,7 +954,11 @@ class CfWA11YTest : OnCanvasTests {
 
         createComposeWindow {
             Column(
-                modifier = if (addSemantics) Modifier.testTag("myColumn") else Modifier
+                modifier = if (addSemantics) {
+                    Modifier.testTagWithTraversalGroup("myColumn")
+                } else {
+                    Modifier
+                }
             ) {
                 Text("ChildText")
             }
@@ -1176,6 +1201,31 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
         assertTrue(a11yContainer.innerHTML.contains("Sibling"))
     }
+
+    /**
+     * This test guards the direct click handlers on the clickable a11y nodes.
+     * Previously, we had one root-level click listener which determined the descendant
+     * SemanticsNode which would handle the event.
+     * Often, the SemanticsNode's with a clickable action  might have a different role than "button".
+     * In this case the browser treats the node as a11y-action-targets only when it has a direct
+     * click handler. That's why we need to set the click listener on the nodes rather than a root.
+     */
+    @Test
+    fun clickableNodeHandlesActivationWithoutEventBubbling() = runApplicationTest {
+        var clickCounter = 0
+        createComposeWindow {
+            Box(
+                Modifier.size(24.dp).testTag("clickable")
+                    .clickable { clickCounter++ }
+            )
+        }
+        awaitA11YChanges()
+        val element = assertNotNull(getShadowRoot().getElementById("clickable") as? HTMLElement)
+
+        element.dispatchEvent(Event("click")) // not bubbling event will not reach the root listener
+        assertEquals(1, clickCounter, "The node must handle activation without event bubbling")
+    }
+
 }
 
 internal external interface TestMutationObserver : JsAny

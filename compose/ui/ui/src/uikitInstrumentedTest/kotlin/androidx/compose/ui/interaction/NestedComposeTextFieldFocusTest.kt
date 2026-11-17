@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -43,7 +42,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import platform.UIKit.UITextInputProtocol
 
-@OptIn(ExperimentalComposeUiApi::class)
 class NestedComposeTextFieldFocusTest {
     @Test
     fun focusMovesToTextFieldInNestedComposeUIView() = runUIKitInstrumentedTest {

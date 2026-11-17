@@ -190,7 +190,11 @@ internal class SkikoParagraph(
 
         // workaround for https://bugs.chromium.org/p/skia/issues/detail?id=11321 :(
         // Otherwise it shows a big cursor on a new empty line https://youtrack.jetbrains.com/issue/CMP-1895
-        val isNewEmptyLine = offset - 1 == line.startIndex && offset == text.length
+        // workaround oversized cursor metrics on the trailing empty line after '\n'
+        // Skia includes the final newline in this line's text range
+        val isNewEmptyLine = offset == text.length &&
+            line.startIndex == offset - 1 &&
+            text[line.startIndex] == '\n'
         val metrics = defaultFont.metrics
 
         val asc = line.ascent.let {
