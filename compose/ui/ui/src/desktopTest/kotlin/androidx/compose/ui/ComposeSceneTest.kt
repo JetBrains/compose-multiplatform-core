@@ -112,7 +112,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.Timeout
 
-@OptIn(InternalTestApi::class, ExperimentalComposeUiApi::class)
+@OptIn(InternalTestApi::class)
 class ComposeSceneTest {
     @get:Rule
     val screenshotRule = DesktopScreenshotTestRule("compose/ui/ui-desktop")

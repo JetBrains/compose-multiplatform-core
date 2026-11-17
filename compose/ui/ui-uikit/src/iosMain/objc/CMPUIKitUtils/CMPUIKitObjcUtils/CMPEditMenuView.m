@@ -104,6 +104,9 @@ typedef enum : NSUInteger {
 @implementation CMPEditMenuView {
     UITextField *_textField;
     BOOL _isDeallocating;
+    /// Identifies the latest presentation or dismissal animation, which is running while it is not 0.
+    NSUInteger _editMenuAnimationId;
+    NSUInteger _lastEditMenuAnimationId;
 }
 
 id _editInteraction;
@@ -295,6 +298,14 @@ id _editInteraction;
     } else {
         return _editMenuState == CMPEditMenuStatePresenting ||
         (_editMenuState == CMPEditMenuStatePresented && [UIMenuController sharedMenuController].menuVisible);
+    }
+}
+
+- (BOOL)isEditMenuTransitioning {
+    if (@available(iOS 16, *)) {
+        return self.presentInteractionBlock != nil || _editMenuAnimationId != 0;
+    } else {
+        return self.showContextMenuBlock != nil;
     }
 }
 
@@ -609,6 +620,7 @@ const NSInteger customActionsMaxCount = 10;
 - (void)editMenuInteraction:(UIEditMenuInteraction *)interaction
 willDismissMenuForConfiguration:(UIEditMenuConfiguration *)configuration
                    animator:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    [self trackEditMenuAnimation:animator];
     if (self.editInteraction != interaction) {
         return;
     }
@@ -626,11 +638,27 @@ willDismissMenuForConfiguration:(UIEditMenuConfiguration *)configuration
 - (void)editMenuInteraction:(UIEditMenuInteraction *)interaction
 willPresentMenuForConfiguration:(UIEditMenuConfiguration *)configuration
                    animator:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    [self trackEditMenuAnimation:animator];
     __weak __auto_type weak_self = self;
     [animator addCompletion:^{
         __auto_type self = weak_self;
         if (self.editInteraction == interaction) {
             self.editMenuState = CMPEditMenuStatePresented;
+        }
+    }];
+}
+
+- (void)trackEditMenuAnimation:(id<UIEditMenuInteractionAnimating>)animator API_AVAILABLE(ios(16.0)) {
+    // UIKit drops the completion of an animation interrupted by the next one, so only the latest one
+    // is tracked.
+    _lastEditMenuAnimationId++;
+    NSUInteger animationId = _lastEditMenuAnimationId;
+    _editMenuAnimationId = animationId;
+    __weak __auto_type weak_self = self;
+    [animator addCompletion:^{
+        __auto_type self = weak_self;
+        if (self != nil && self->_editMenuAnimationId == animationId) {
+            self->_editMenuAnimationId = 0;
         }
     }];
 }

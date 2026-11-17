@@ -35,10 +35,6 @@ import androidx.compose.ui.node.visitLocalDescendants
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.window.LocalComposeWindow
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsAny
-import kotlin.js.JsString
-import kotlin.js.js
 import kotlinx.browser.window
 import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.HTMLElement
@@ -72,7 +68,6 @@ private object FocusTargetInteropElement : ModifierNodeElement<FocusTargetNode>(
 }
 
 private class FocusTargetPropertiesNode : Modifier.Node(), FocusPropertiesModifierNode {
-    @OptIn(ExperimentalWasmJsInterop::class)
     override fun applyFocusProperties(focusProperties: FocusProperties) {
         focusProperties.canFocus = node.isAttached
             // find at least one focusable element inside the interop container
@@ -86,7 +81,6 @@ private class FocusGroupPropertiesNode :
     private var lastTabKeyDown: KeyboardEvent? = null
     private var htmlElement: HTMLElement? = null
 
-    @OptIn(ExperimentalWasmJsInterop::class)
     private val onEnter: FocusEnterExitScope.() -> Unit = {
         val focusTarget = when (requestedFocusDirection) {
             FocusDirection.Previous,

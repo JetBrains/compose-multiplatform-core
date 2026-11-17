@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import kotlin.test.Test
@@ -43,7 +42,6 @@ import org.w3c.dom.pointerevents.PointerEventInit
  * A tiny unit-level assertion locks the factory API surface ([BrowserCursor] is `internal`, so
  * it is only reachable from the same module).
  */
-@OptIn(ExperimentalComposeUiApi::class)
 class PointerIconWebTests : OnCanvasTests {
 
     @Test

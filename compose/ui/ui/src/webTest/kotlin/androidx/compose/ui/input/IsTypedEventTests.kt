@@ -17,7 +17,6 @@
 
 package androidx.compose.ui.input
 
-import androidx.compose.foundation.InternalFoundationApi
 import androidx.compose.foundation.text.isTypedEvent
 import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.input.key.toComposeEvent
@@ -26,16 +25,15 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.w3c.dom.events.KeyboardEvent
 
-@OptIn(InternalFoundationApi::class)
 class IsTypedEventTests {
     private fun KeyboardEvent.assertIsTyped(message: String? = null) {
         val composeEvent = toComposeEvent()
-        assertTrue(composeEvent.isTypedEvent, message ?: "event ${composeEvent} supposed to be typed but actually is not")
+        assertTrue(composeEvent.isTypedEvent, message ?: "event $composeEvent supposed to be typed but actually is not")
     }
 
     private fun KeyboardEvent.assertIsNotTyped(message: String? = null) {
         val composeEvent = toComposeEvent()
-        assertFalse(composeEvent.isTypedEvent, message ?: "event ${composeEvent} not supposed to be typed but actually is")
+        assertFalse(composeEvent.isTypedEvent, message ?: "event $composeEvent not supposed to be typed but actually is")
     }
 
     @Test

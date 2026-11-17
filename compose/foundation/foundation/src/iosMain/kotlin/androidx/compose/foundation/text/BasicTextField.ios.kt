@@ -36,6 +36,8 @@ import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.TextInputContainer
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.IosComposeUiTextFlags
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.usingNativeTextInput
@@ -114,7 +116,7 @@ private class BasicTextFieldOverlayNode(
         density = null
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTextApi::class)
     fun update(
         transformedState: TransformedTextFieldState,
         keyboardOptions: KeyboardOptions,
@@ -130,8 +132,10 @@ private class BasicTextFieldOverlayNode(
             observeMirroredState()
         }
         val newImeOptions = keyboardOptions.toImeOptions()
-        val nativeTextInputChanged = delegate.imeOptions.platformImeOptions?.usingNativeTextInput !=
-            newImeOptions.platformImeOptions?.usingNativeTextInput
+        val nativeDefault = IosComposeUiTextFlags.isNativeTextInputEnabled
+        val nativeTextInputChanged =
+            (delegate.imeOptions.platformImeOptions?.usingNativeTextInput ?: nativeDefault) !=
+                (newImeOptions.platformImeOptions?.usingNativeTextInput ?: nativeDefault)
 
         delegate.imeOptions = newImeOptions
 
@@ -241,14 +245,10 @@ private class BasicTextFieldInputDelegate(
     override var selectionTextRange: TextRange = untransformedText.selection
         private set
 
-    override var markedTextRange: TextRange? = transformedState.untransformedComposition
-        private set
-
     fun refreshValue() {
         val untransformedText = untransformedText
         text = untransformedText.toString()
         selectionTextRange = untransformedText.selection
-        markedTextRange = transformedState.untransformedComposition
     }
 
     private inline fun edit(block: () -> Unit) {
@@ -282,25 +282,5 @@ private class BasicTextFieldInputDelegate(
             replace(range.min, range.max, newText)
             setSelectionCoerced(range.min + newText.length)
         }
-    }
-
-    override fun setMarkedText(markedText: String?, selectedRange: TextRange) {
-        if (markedText == null) {
-            unmarkText()
-            return
-        }
-        edit {
-            transformedState.editUntransformedTextAsUser {
-                val marked = composition ?: selection
-                replace(marked.min, marked.max, markedText)
-                setComposition(marked.min, marked.min + markedText.length)
-                val cursor = marked.min + selectedRange.min
-                setSelectionCoerced(cursor, cursor + selectedRange.length)
-            }
-        }
-    }
-
-    override fun unmarkText() = edit {
-        transformedState.editUntransformedTextAsUser { commitComposition() }
     }
 }

@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.BasicSecureTextField
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
@@ -48,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.interop.runUIKitInstrumentedTestWithInterop
+import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitSecureTextField
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitToggle
 import androidx.compose.ui.platform.testTag
@@ -64,6 +68,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertAccessibilityTree
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -71,6 +76,7 @@ import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.VerbatimTtsAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.withAnnotation
 import androidx.compose.ui.text.withLink
@@ -987,6 +993,67 @@ class ComponentsAccessibilitySemanticTest {
             value = "Text"
             isAccessibilityElement = true
             traits(CMPAccessibilityTraitTextView)
+        }
+    }
+
+    @Test
+    fun testSecureTextFieldSemantics() = runUIKitInstrumentedTest {
+        setContent {
+            BasicSecureTextField(
+                state = TextFieldState("Qwerty@1234"),
+                textObfuscationMode = TextObfuscationMode.Hidden
+            )
+        }
+
+        assertAccessibilityTree {
+            value = "\u2022".repeat(11)
+            isAccessibilityElement = true
+            traits(CMPAccessibilityTraitTextView, CMPAccessibilityTraitSecureTextField)
+        }
+
+        // Native secure UITextField marks its value with this attribute, so VoiceOver announces
+        // the number of characters instead of reading the obfuscation characters.
+        val value = assertNotNull(
+            firstNodeOrNull { it.isAccessibilityElement == true }?.accessibilityValue
+        )
+        assertEquals(
+            true,
+            (value.attributeForSubstring("UIAccessibilityTokenSecure", "\u2022") as? NSNumber)
+                ?.boolValue
+        )
+    }
+
+    @Test
+    fun testSecureTextFieldVisibleSemantics() = runUIKitInstrumentedTest {
+        setContent {
+            BasicSecureTextField(
+                state = TextFieldState("Qwerty@1234"),
+                textObfuscationMode = TextObfuscationMode.Visible
+            )
+        }
+
+        assertAccessibilityTree {
+            value = "Qwerty@1234"
+            isAccessibilityElement = true
+            traits(CMPAccessibilityTraitTextView)
+        }
+    }
+
+    @Test
+    fun testTextFieldWithPasswordVisualTransformationSemantics() = runUIKitInstrumentedTest {
+        setContent {
+            @Suppress("DEPRECATION")
+            TextField(
+                value = "Qwerty@1234",
+                onValueChange = {},
+                visualTransformation = PasswordVisualTransformation()
+            )
+        }
+
+        assertAccessibilityTree {
+            value = "\u2022".repeat(11)
+            isAccessibilityElement = true
+            traits(CMPAccessibilityTraitTextView, CMPAccessibilityTraitSecureTextField)
         }
     }
 

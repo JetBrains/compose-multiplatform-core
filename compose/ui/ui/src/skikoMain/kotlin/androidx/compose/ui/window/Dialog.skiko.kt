@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
@@ -98,6 +97,8 @@ private const val AnimatedLayerDisappearanceDuration = 0.1
  * @property animateTransition Whether to animate the appearance and disappearance of the dialog.
  */
 @Immutable
+// TODO: https://youtrack.jetbrains.com/issue/CMP-11128 Stabilize or deprecate DialogProperties.animateTransition
+// Keep this API binary compatible: it is used by published Material3 versions
 actual class DialogProperties @ExperimentalComposeUiApi constructor(
     actual val dismissOnBackPress: Boolean = true,
     actual val dismissOnClickOutside: Boolean = true,
@@ -165,7 +166,6 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
     }
 }
 
-@OptIn(InternalComposeApi::class)
 @Composable
 actual fun Dialog(
     onDismissRequest: () -> Unit,

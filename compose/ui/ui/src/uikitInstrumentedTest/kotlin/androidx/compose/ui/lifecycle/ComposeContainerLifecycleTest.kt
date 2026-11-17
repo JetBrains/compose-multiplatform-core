@@ -335,7 +335,7 @@ class ComposeContainerLifecycleTest {
     }
 
     private suspend inline fun awaitTrue(statement: () -> Boolean) {
-        val duration = 100.milliseconds
+        val duration = 50.milliseconds
         val timeout = 5.seconds
         repeat((timeout / duration).toInt()) {
             NSRunLoop.currentRunLoop().runUntilDate(

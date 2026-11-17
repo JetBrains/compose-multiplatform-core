@@ -18,7 +18,6 @@
 
 package androidx.compose.foundation.copyPasteAndroidTests.lazy.layout
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.hasSize
 import androidx.compose.foundation.isEqualTo
@@ -63,7 +62,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Ignore
 import kotlin.test.Test
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 class LazyLayoutTest {
 
     @Suppress("DEPRECATION")

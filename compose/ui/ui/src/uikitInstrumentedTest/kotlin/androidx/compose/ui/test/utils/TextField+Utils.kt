@@ -97,6 +97,9 @@ internal class TestTextFieldState(
     val selection: TextRange
         get() = if (textFieldType == BasicTextFieldType.V1) value.value.selection else state.selection
 
+    val composition: TextRange?
+        get() = if (textFieldType == BasicTextFieldType.V1) value.value.composition else state.composition
+
     /** Changes the selection from the code, bypassing the text input. */
     fun updateSelection(selection: TextRange) {
         if (textFieldType == BasicTextFieldType.V1) {

@@ -267,7 +267,7 @@ internal class ComposeTextInputView(
             TextRange(loc, loc + length.toInt())
         }
 
-        input.setMarkedText(markedText, relativeTextRange)
+        input.setMarkedText(markedText ?: "", relativeTextRange)
     }
 
     /**
@@ -509,6 +509,8 @@ internal class ComposeTextInputView(
     fun hideTextMenu() = this.hideEditMenu()
 
     fun isTextMenuShown() = isEditMenuShown
+
+    fun isTextMenuTransitioning() = isEditMenuTransitioning
 
     private val _tokenizer = TextInputStringTokenizer(textInput = this) {
         input.textInRange(TextRange(0, input.endOfDocument()))

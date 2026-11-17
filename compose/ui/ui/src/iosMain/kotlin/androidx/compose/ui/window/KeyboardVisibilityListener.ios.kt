@@ -46,12 +46,14 @@ internal interface KeyboardVisibilitySubscriber {
     )
 
     fun keyboardWillHide(
+        currentFrame: CValue<CGRect>,
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
     )
 
     fun keyboardWillChangeFrame(
+        currentFrame: CValue<CGRect>,
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
@@ -113,19 +115,28 @@ private class KeyboardVisibilityNotificationObserver : NSObject() {
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun keyboardWillHide(arg: NSNotification) {
+        val currentFrame = keyboardFrame
+        val targetFrame = CGRectZero.readValue<CGRect>()
+        keyboardFrame = targetFrame
         subscribers.forEach {
-            it.keyboardWillHide(CGRectZero.readValue(), arg.duration, arg.animationOptions)
+            it.keyboardWillHide(currentFrame, targetFrame, arg.duration, arg.animationOptions)
         }
-        keyboardFrame = CGRectZero.readValue()
     }
 
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun keyboardWillChangeFrame(arg: NSNotification) {
+        val currentFrame = keyboardFrame
+        val targetFrame = arg.endFrame
+        keyboardFrame = targetFrame
         subscribers.forEach {
-            it.keyboardWillChangeFrame(arg.endFrame, arg.duration, arg.animationOptions)
+            it.keyboardWillChangeFrame(
+                currentFrame,
+                targetFrame,
+                arg.duration,
+                arg.animationOptions,
+            )
         }
-        keyboardFrame = arg.endFrame
     }
 
     // Be aware that animation parameters may not correspond to the real visual keyboard

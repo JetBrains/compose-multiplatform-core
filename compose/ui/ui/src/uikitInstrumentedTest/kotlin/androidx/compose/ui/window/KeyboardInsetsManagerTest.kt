@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectMake
@@ -29,9 +30,10 @@ import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptionCurveLinear
 
 internal class KeyboardInsetsManagerTest {
+    @OptIn(ExperimentalForeignApi::class)
     @Test
     fun testKeyboardInsetStaysZeroUntilKeyboardReachesView() = runUIKitInstrumentedTest {
-        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
         setContent {}
         assertTrue(CGRectIsEmpty(KeyboardVisibilityListener.keyboardFrame))
 
@@ -44,6 +46,7 @@ internal class KeyboardInsetsManagerTest {
         manager.start()
         try {
             manager.keyboardWillChangeFrame(
+                currentFrame = CGRectMake(0.0, 0.0, 0.0, 0.0),
                 targetFrame = CGRectMake(0.0, height - 300.0, width, 300.0),
                 duration = 2.0,
                 animationOptions = UIViewAnimationOptionCurveLinear,

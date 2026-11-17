@@ -17,7 +17,6 @@
 package androidx.compose.mpp.demo.interops
 
 import Map
-import Directions
 import LazyDirections
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,7 +27,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.TextField
 import androidx.compose.mpp.demo.Screen
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.HtmlElementView
@@ -49,7 +47,6 @@ val HtmlInteropDemos = Screen.Selection(
 )
 
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SyncTextState() {
     Column(
@@ -88,7 +85,6 @@ fun SyncTextStateViaParameter() {
 }
 
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TextInDiv(text: String) {
     HtmlElementView(

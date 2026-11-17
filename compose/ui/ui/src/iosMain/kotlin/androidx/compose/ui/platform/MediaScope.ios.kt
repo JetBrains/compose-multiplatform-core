@@ -147,6 +147,7 @@ internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, Keybo
     }
 
     override fun keyboardWillHide(
+        currentFrame: CValue<CGRect>,
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
@@ -155,6 +156,7 @@ internal class IosUiMediaScope(val windowInfo: WindowInfo) : UiMediaScope, Keybo
     }
 
     override fun keyboardWillChangeFrame(
+        currentFrame: CValue<CGRect>,
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
