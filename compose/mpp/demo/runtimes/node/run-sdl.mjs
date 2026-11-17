@@ -59,8 +59,9 @@ if (fs.existsSync(nativeSkikoPath)) {
     console.warn(`Native Skiko addon not found at ${nativeSkikoPath}.`);
 }
 
-const windowWidth = 1024;
-const windowHeight = 768;
+let windowWidth = 1024;
+let windowHeight = 768;
+let currentDpr = 2;
 let windowTitle = "Compose MPP Demo (WASM + Native SDL)";
 
 class NodeCanvas {
@@ -73,12 +74,12 @@ class NodeCanvas {
     }
 
     get clientWidth() {
-        const dpr = globalThis.devicePixelRatio || 2;
+        const dpr = globalThis.devicePixelRatio || currentDpr || 2;
         return this.width ? Math.round(this.width / dpr) : windowWidth;
     }
 
     get clientHeight() {
-        const dpr = globalThis.devicePixelRatio || 2;
+        const dpr = globalThis.devicePixelRatio || currentDpr || 2;
         return this.height ? Math.round(this.height / dpr) : windowHeight;
     }
 
@@ -127,7 +128,7 @@ class NodeCanvas {
     }
 
     getBoundingClientRect() {
-        const dpr = globalThis.devicePixelRatio || 2;
+        const dpr = globalThis.devicePixelRatio || currentDpr || 2;
         const cssWidth = (this.width ? this.width / dpr : windowWidth);
         const cssHeight = (this.height ? this.height / dpr : windowHeight);
         return {
@@ -206,9 +207,73 @@ if (!globalThis.KeyboardEvent) {
     globalThis.KeyboardEvent = class KeyboardEvent extends (globalThis.UIEvent || Object) {};
 }
 
-globalThis.addEventListener = () => {};
-globalThis.removeEventListener = () => {};
-globalThis.dispatchEvent = () => true;
+const globalEventListeners = new Map();
+globalThis.addEventListener = (event, listener) => {
+    if (!globalEventListeners.has(event)) {
+        globalEventListeners.set(event, []);
+    }
+    globalEventListeners.get(event).push(listener);
+};
+globalThis.removeEventListener = (event, listener) => {
+    const list = globalEventListeners.get(event);
+    if (list) {
+        const idx = list.indexOf(listener);
+        if (idx >= 0) list.splice(idx, 1);
+    }
+};
+globalThis.dispatchEvent = (event) => {
+    const list = globalEventListeners.get(event.type);
+    if (list) {
+        for (const listener of [...list]) {
+            try {
+                if (typeof listener === "function") {
+                    listener.call(globalThis, event);
+                } else if (listener && typeof listener.handleEvent === "function") {
+                    listener.handleEvent(event);
+                }
+            } catch (e) {
+                console.error("Error in global event listener:", e);
+            }
+        }
+    }
+    return true;
+};
+
+const visualViewportListeners = new Map();
+const visualViewportObj = {
+    get width() { return windowWidth; },
+    get height() { return windowHeight; },
+    offsetLeft: 0,
+    offsetTop: 0,
+    pageLeft: 0,
+    pageTop: 0,
+    scale: 1,
+    addEventListener(event, listener) {
+        if (!visualViewportListeners.has(event)) visualViewportListeners.set(event, []);
+        visualViewportListeners.get(event).push(listener);
+    },
+    removeEventListener(event, listener) {
+        const list = visualViewportListeners.get(event);
+        if (list) {
+            const idx = list.indexOf(listener);
+            if (idx >= 0) list.splice(idx, 1);
+        }
+    },
+    dispatchEvent(event) {
+        const list = visualViewportListeners.get(event.type);
+        if (list) {
+            for (const listener of [...list]) {
+                try {
+                    if (typeof listener === "function") listener.call(visualViewportObj, event);
+                    else if (listener?.handleEvent) listener.handleEvent(event);
+                } catch (e) {
+                    console.error("Error in visualViewport listener:", e);
+                }
+            }
+        }
+        return true;
+    }
+};
 
 const mockNavigator = {
     language: "en-US",
@@ -238,23 +303,10 @@ try {
 }
 
 const mockWindow = {
-    get devicePixelRatio() { return 2; },
+    get devicePixelRatio() { return currentDpr; },
     get innerWidth() { return windowWidth; },
     get innerHeight() { return windowHeight; },
-    get visualViewport() {
-        return {
-            width: windowWidth,
-            height: windowHeight,
-            offsetLeft: 0,
-            offsetTop: 0,
-            pageLeft: 0,
-            pageTop: 0,
-            scale: 1,
-            addEventListener: () => {},
-            removeEventListener: () => {},
-            dispatchEvent: () => true
-        };
-    },
+    get visualViewport() { return visualViewportObj; },
     matchMedia: (query) => ({
         matches: false,
         media: query,
@@ -265,9 +317,9 @@ const mockWindow = {
         removeEventListener: () => {},
         dispatchEvent: () => true
     }),
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => true,
+    addEventListener: (event, listener) => globalThis.addEventListener(event, listener),
+    removeEventListener: (event, listener) => globalThis.removeEventListener(event, listener),
+    dispatchEvent: (event) => globalThis.dispatchEvent(event),
     navigator: mockNavigator,
     performance: performance,
     getComputedStyle: () => ({
@@ -282,14 +334,20 @@ const mockWindow = {
         pathname: "/"
     },
     screen: {
-        width: windowWidth * 2,
-        height: windowHeight * 2,
-        availWidth: windowWidth * 2,
-        availHeight: windowHeight * 2,
+        get width() { return Math.round(windowWidth * currentDpr); },
+        get height() { return Math.round(windowHeight * currentDpr); },
+        get availWidth() { return Math.round(windowWidth * currentDpr); },
+        get availHeight() { return Math.round(windowHeight * currentDpr); },
         colorDepth: 24,
         pixelDepth: 24
     }
 };
+
+Object.defineProperty(globalThis, "innerWidth", { get: () => windowWidth, configurable: true });
+Object.defineProperty(globalThis, "innerHeight", { get: () => windowHeight, configurable: true });
+Object.defineProperty(globalThis, "visualViewport", { get: () => visualViewportObj, configurable: true });
+Object.defineProperty(globalThis, "location", { value: mockWindow.location, configurable: true, writable: true });
+Object.defineProperty(globalThis, "screen", { value: mockWindow.screen, configurable: true, writable: true });
 
 globalThis.getComputedStyle = mockWindow.getComputedStyle;
 globalThis.matchMedia = mockWindow.matchMedia;
@@ -759,6 +817,18 @@ globalThis.fetch = async (url) => {
 // Create the native SDL2 window if addon is present
 if (nativeGL?.createWindow) {
     nativeGL.createWindow(windowWidth, windowHeight, windowTitle);
+    if (nativeGL.getDrawableSize && nativeGL.getWindowSize) {
+        const drawSize = nativeGL.getDrawableSize();
+        const winSize = nativeGL.getWindowSize();
+        if (drawSize && winSize && winSize.width > 0 && winSize.height > 0) {
+            windowWidth = winSize.width;
+            windowHeight = winSize.height;
+            currentDpr = (drawSize.width && winSize.width) ? (drawSize.width / winSize.width) : 2.0;
+            globalThis.devicePixelRatio = currentDpr;
+            rootCanvas.width = drawSize.width;
+            rootCanvas.height = drawSize.height;
+        }
+    }
 }
 
 let running = true;
@@ -802,9 +872,8 @@ function handleNativePointerEvent(type, x, y, button, scrollDeltaX, scrollDeltaY
                 type === 6 ? "wheel" : null;
 
             if (mouseEventType && rootCanvas) {
-                const dpr = globalThis.devicePixelRatio || 2;
-                const cssX = x / dpr;
-                const cssY = y / dpr;
+                const cssX = x;
+                const cssY = y;
                 const domButton = button === 1 ? 0 : button === 3 ? 2 : button === 2 ? 1 : 0;
                 const domButtons = type === 1 ? (button === 2 ? 4 : button === 3 ? 2 : 1) :
                                    type === 2 ? 0 :
@@ -852,8 +921,53 @@ function handleNativePointerEvent(type, x, y, button, scrollDeltaX, scrollDeltaY
     }
 }
 
+function handleNativeResizeEvent(width, height, dpr, pixelWidth, pixelHeight) {
+    windowWidth = width;
+    windowHeight = height;
+    currentDpr = (dpr !== undefined && dpr > 0) ? dpr : ((pixelWidth && width) ? (pixelWidth / width) : 2.0);
+    globalThis.devicePixelRatio = currentDpr;
+
+    const actualPixelW = pixelWidth || Math.round(width * currentDpr);
+    const actualPixelH = pixelHeight || Math.round(height * currentDpr);
+
+    if (rootCanvas) {
+        rootCanvas.width = actualPixelW;
+        rootCanvas.height = actualPixelH;
+        if (rootCanvas.__skikoNativeContext && nativeGL?.resizeContext) {
+            nativeGL.resizeContext(rootCanvas.__skikoNativeContext, actualPixelW, actualPixelH);
+        }
+    }
+
+    for (const canvas of canvases.values()) {
+        canvas.width = actualPixelW;
+        canvas.height = actualPixelH;
+        if (canvas.__skikoNativeContext && nativeGL?.resizeContext) {
+            nativeGL.resizeContext(canvas.__skikoNativeContext, actualPixelW, actualPixelH);
+        }
+    }
+
+    if (globalThis.__dispatchResizeEvent) {
+        try {
+            globalThis.__dispatchResizeEvent(actualPixelW, actualPixelH, currentDpr);
+        } catch (err) {
+            console.error("Error dispatching resize event:", err);
+        }
+    }
+
+    try {
+        const resizeEv = new (globalThis.UIEvent || globalThis.Event || Object)("resize");
+        globalThis.dispatchEvent(resizeEv);
+        if (visualViewportObj && visualViewportObj.dispatchEvent) {
+            visualViewportObj.dispatchEvent(resizeEv);
+        }
+        if (rootCanvas && rootCanvas.dispatchEvent) {
+            rootCanvas.dispatchEvent(resizeEv);
+        }
+    } catch (_) {}
+}
+
 function pollEvents() {
-    if (running && nativeGL?.pollEvents && !nativeGL.pollEvents(handleNativePointerEvent)) {
+    if (running && nativeGL?.pollEvents && !nativeGL.pollEvents(handleNativePointerEvent, handleNativeResizeEvent)) {
         stop();
     }
 }

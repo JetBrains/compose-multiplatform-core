@@ -151,6 +151,14 @@ void SkikoSdlWindow::GetDrawableSize(int* width, int* height) const {
 }
 
 void SkikoSdlWindow::PollEvents(HostPointerEventCallback callback, void* user_data) {
+    PollEvents(callback, nullptr, user_data);
+}
+
+void SkikoSdlWindow::PollEvents(
+    HostPointerEventCallback pointer_callback,
+    HostResizeEventCallback resize_callback,
+    void* user_data
+) {
     int pixel_width = impl_->width;
     int pixel_height = impl_->height;
     if (impl_->window != nullptr) {
@@ -161,8 +169,8 @@ void SkikoSdlWindow::PollEvents(HostPointerEventCallback callback, void* user_da
     if (impl_->window != nullptr) {
         SDL_GetWindowSize(impl_->window, &window_width, &window_height);
     }
-    const double scale_x = (window_width > 0) ? static_cast<double>(pixel_width) / window_width : 1.0;
-    const double scale_y = (window_height > 0) ? static_cast<double>(pixel_height) / window_height : 1.0;
+    double scale_x = (window_width > 0) ? static_cast<double>(pixel_width) / window_width : 1.0;
+    double scale_y = (window_height > 0) ? static_cast<double>(pixel_height) / window_height : 1.0;
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -176,12 +184,18 @@ void SkikoSdlWindow::PollEvents(HostPointerEventCallback callback, void* user_da
                            event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                     impl_->width = event.window.data1;
                     impl_->height = event.window.data2;
+                    SDL_GL_GetDrawableSize(impl_->window, &pixel_width, &pixel_height);
+                    scale_x = (impl_->width > 0) ? static_cast<double>(pixel_width) / impl_->width : 1.0;
+                    scale_y = (impl_->height > 0) ? static_cast<double>(pixel_height) / impl_->height : 1.0;
+                    if (resize_callback != nullptr) {
+                        resize_callback(event.window.data1, event.window.data2, user_data);
+                    }
                 }
             }
-        } else if (callback != nullptr) {
+        } else if (pointer_callback != nullptr) {
             switch (event.type) {
                 case SDL_MOUSEBUTTONDOWN:
-                    callback(
+                    pointer_callback(
                         HOST_POINTER_EVENT_PRESS,
                         event.button.x * scale_x,
                         event.button.y * scale_y,
@@ -192,7 +206,7 @@ void SkikoSdlWindow::PollEvents(HostPointerEventCallback callback, void* user_da
                     );
                     break;
                 case SDL_MOUSEBUTTONUP:
-                    callback(
+                    pointer_callback(
                         HOST_POINTER_EVENT_RELEASE,
                         event.button.x * scale_x,
                         event.button.y * scale_y,
@@ -203,7 +217,7 @@ void SkikoSdlWindow::PollEvents(HostPointerEventCallback callback, void* user_da
                     );
                     break;
                 case SDL_MOUSEMOTION:
-                    callback(
+                    pointer_callback(
                         HOST_POINTER_EVENT_MOVE,
                         event.motion.x * scale_x,
                         event.motion.y * scale_y,
@@ -217,7 +231,7 @@ void SkikoSdlWindow::PollEvents(HostPointerEventCallback callback, void* user_da
                     int mouse_x = 0;
                     int mouse_y = 0;
                     SDL_GetMouseState(&mouse_x, &mouse_y);
-                    callback(
+                    pointer_callback(
                         HOST_POINTER_EVENT_SCROLL,
                         mouse_x * scale_x,
                         mouse_y * scale_y,

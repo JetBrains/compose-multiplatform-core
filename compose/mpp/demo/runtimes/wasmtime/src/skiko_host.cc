@@ -196,6 +196,44 @@ bool SkikoHost::MakeContextCurrent(int context_id, std::string& error) {
     return true;
 }
 
+bool SkikoHost::ResizeContext(int context_id, int width, int height, std::string& error) {
+    if (context_id <= 0 ||
+        static_cast<size_t>(context_id) > contexts_.size()) {
+        error = "Invalid GL context id " + std::to_string(context_id);
+        return false;
+    }
+    OffscreenContext* item = contexts_[static_cast<size_t>(context_id - 1)].get();
+    if (item->width == width && item->height == height) {
+        return true;
+    }
+    item->width = width;
+    item->height = height;
+
+    if (CGLSetCurrentContext(item->context) != kCGLNoError) {
+        error = "CGLSetCurrentContext failed";
+        return false;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, item->color);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0,
+        GL_RGBA, GL_UNSIGNED_BYTE, nullptr
+    );
+
+    glBindRenderbuffer(GL_RENDERBUFFER, item->depth_stencil);
+    glRenderbufferStorage(
+        GL_RENDERBUFFER,
+        GL_DEPTH24_STENCIL8,
+        width,
+        height
+    );
+
+    glBindFramebuffer(GL_FRAMEBUFFER, item->framebuffer);
+    glViewport(0, 0, item->width, item->height);
+
+    return true;
+}
+
 int SkikoHost::CurrentContextId() const {
     for (size_t index = 0; index < contexts_.size(); ++index) {
         if (contexts_[index].get() == current_) {

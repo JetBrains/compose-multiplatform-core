@@ -555,6 +555,71 @@ void KotlinAppHost::DispatchPointerEvent(
     DrainReadyCallbacks();
 }
 
+void KotlinAppHost::DispatchResizeEvent(
+    double width,
+    double height,
+    double dpr
+) {
+    canvas_width_ = static_cast<int>(width);
+    canvas_height_ = static_cast<int>(height);
+    device_pixel_ratio_ = (dpr > 0.0) ? dpr : 2.0;
+    window_width_ = static_cast<int>(std::round(width / device_pixel_ratio_));
+    window_height_ = static_cast<int>(std::round(height / device_pixel_ratio_));
+
+    if (resize_callback_) {
+        wasmtime_func_t target_func{};
+        if (resize_callback_->has_trampoline) {
+            target_func = resize_callback_->trampoline;
+        } else {
+            const char* export_name = "__callFunction_((Double,Double,Double)->Unit)";
+            wasmtime_extern_t item;
+            if (!wasmtime_instance_export_get(
+                    context_, &instance_, export_name, std::strlen(export_name), &item) ||
+                item.kind != WASMTIME_EXTERN_FUNC) {
+                std::cerr << "[KotlinAppHost] Missing callback export " << export_name << std::endl;
+                return;
+            }
+            target_func = item.of.func;
+        }
+
+        wasm_functype_t* func_type = wasmtime_func_type(context_, &target_func);
+        const wasm_valtype_vec_t* params_types = wasm_functype_params(func_type);
+        const size_t param_count = params_types != nullptr ? params_types->size : 0;
+        wasm_functype_delete(func_type);
+
+        wasmtime_val_t args[4]{};
+        args[0].kind = WASMTIME_ANYREF;
+        wasmtime_anyref_clone(&resize_callback_->function, &args[0].of.anyref);
+        args[1].kind = WASMTIME_F64;
+        args[1].of.f64 = width;
+        args[2].kind = WASMTIME_F64;
+        args[2].of.f64 = height;
+        args[3].kind = WASMTIME_F64;
+        args[3].of.f64 = dpr;
+
+        wasm_trap_t* trap = nullptr;
+        wasmtime_error_t* error = wasmtime_func_call(
+            context_, &target_func, args, std::min<size_t>(param_count, 4),
+            nullptr, 0, &trap
+        );
+        wasmtime_val_unroot(&args[0]);
+        if (error != nullptr) {
+            std::cerr << "[KotlinAppHost] Resize dispatch error: " << ErrorMessage(error) << std::endl;
+        }
+        if (trap != nullptr) {
+            std::cerr << "[KotlinAppHost] Resize dispatch trap: " << TrapMessage(trap) << std::endl;
+        }
+    }
+
+    for (const auto& listener : resize_event_listeners_) {
+        Invoke(listener, 0.0);
+    }
+
+    DrainReadyCallbacks();
+    RunExpiredTimers(std::chrono::steady_clock::now());
+    DrainReadyCallbacks();
+}
+
 const std::string& KotlinAppHost::Title() const {
     return title_;
 }
@@ -779,14 +844,19 @@ wasm_trap_t* KotlinAppHost::CallHost(
         results[0].of.i32 = 1;
     } else if (name.find("getCanvasWidth") != std::string::npos) {
         results[0].kind = WASMTIME_I32;
-        results[0].of.i32 = 2048;
+        results[0].of.i32 = canvas_width_;
     } else if (name.find("getCanvasHeight") != std::string::npos) {
         results[0].kind = WASMTIME_I32;
-        results[0].of.i32 = 1536;
+        results[0].of.i32 = canvas_height_;
     } else if (name.find("registerPointerCallback") != std::string::npos) {
         HostValue* callback_val = nargs > 0 ? GetHostValue(args[0]) : nullptr;
         if (callback_val && callback_val->callback) {
             pointer_callback_ = callback_val->callback;
+        }
+    } else if (name.find("registerResizeCallback") != std::string::npos) {
+        HostValue* callback_val = nargs > 0 ? GetHostValue(args[0]) : nullptr;
+        if (callback_val && callback_val->callback) {
+            resize_callback_ = callback_val->callback;
         }
     } else if (name == "org.w3c.performance.performance_$external_prop_getter" ||
                name == "performance_$external_prop_getter" ||
@@ -938,8 +1008,58 @@ wasm_trap_t* KotlinAppHost::CallHost(
         HostValue* canvas = GetHostValue(args[0]);
         const bool width = name.find("width_") != std::string::npos;
         results[0].kind = WASMTIME_I32;
-        if (!canvas || canvas->object != ObjectKind::Canvas) results[0].of.i32 = 0;
-        else results[0].of.i32 = width ? 2048 : 1536;
+        if (!canvas || canvas->object != ObjectKind::Canvas) results[0].of.i32 = width ? window_width_ : window_height_;
+        else results[0].of.i32 = width ? canvas_width_ : canvas_height_;
+    } else if (name == "org.w3c.dom.width_$external_prop_setter" ||
+               name == "org.w3c.dom.height_$external_prop_setter") {
+        if (nargs > 1 && args[1].kind == WASMTIME_I32) {
+            if (name.find("width_") != std::string::npos) {
+                canvas_width_ = args[1].of.i32;
+            } else {
+                canvas_height_ = args[1].of.i32;
+            }
+        }
+    } else if (name == "org.w3c.dom.innerWidth_$external_prop_getter" ||
+               name.find("innerWidth") != std::string::npos ||
+               name == "org.w3c.dom.clientWidth_$external_prop_getter" ||
+               name.find("clientWidth") != std::string::npos) {
+        if (nresults > 0) {
+            results[0].kind = WASMTIME_I32;
+            results[0].of.i32 = window_width_;
+        }
+    } else if (name == "org.w3c.dom.innerHeight_$external_prop_getter" ||
+               name.find("innerHeight") != std::string::npos ||
+               name == "org.w3c.dom.clientHeight_$external_prop_getter" ||
+               name.find("clientHeight") != std::string::npos) {
+        if (nresults > 0) {
+            results[0].kind = WASMTIME_I32;
+            results[0].of.i32 = window_height_;
+        }
+    } else if (name == "org.w3c.dom.visualViewport_$external_prop_getter" ||
+               name.find("visualViewport") != std::string::npos) {
+        object_result(ObjectKind::Generic);
+    } else if (name.find("getBoundingClientRect") != std::string::npos) {
+        object_result(ObjectKind::Generic);
+    } else if (name == "org.w3c.dom.left_$external_prop_getter" ||
+               name == "org.w3c.dom.top_$external_prop_getter" ||
+               name == "org.w3c.dom.x_$external_prop_getter" ||
+               name == "org.w3c.dom.y_$external_prop_getter") {
+        if (nresults > 0) {
+            results[0].kind = WASMTIME_F64;
+            results[0].of.f64 = 0.0;
+        }
+    } else if (name == "org.w3c.dom.right_$external_prop_getter" ||
+               name.find("right_$external_prop_getter") != std::string::npos) {
+        if (nresults > 0) {
+            results[0].kind = WASMTIME_F64;
+            results[0].of.f64 = static_cast<double>(window_width_);
+        }
+    } else if (name == "org.w3c.dom.bottom_$external_prop_getter" ||
+               name.find("bottom_$external_prop_getter") != std::string::npos) {
+        if (nresults > 0) {
+            results[0].kind = WASMTIME_F64;
+            results[0].of.f64 = static_cast<double>(window_height_);
+        }
     } else if (name == "org.w3c.dom.HTMLCanvasElement_$external_class_instanceof") {
         HostValue* value = GetHostValue(args[0]);
         results[0].kind = WASMTIME_I32;
@@ -962,8 +1082,8 @@ wasm_trap_t* KotlinAppHost::CallHost(
         if (!canvas || canvas->object != ObjectKind::Canvas) {
             return SkikoHost::Trap("createContext expected a canvas");
         }
-        const int width = 2048;
-        const int height = 1536;
+        const int width = canvas_width_;
+        const int height = canvas_height_;
         std::string error;
         const int id = skiko_->CreateCanvasContext(width, height, error);
         if (id == 0) return SkikoHost::Trap(error);
@@ -1243,13 +1363,32 @@ wasm_trap_t* KotlinAppHost::CallHost(
     } else if (name == "org.jetbrains.skiko.wasm.patchWebGlContext" ||
                name.find("register_$external_fun") != std::string::npos ||
                name.find("unregister_$external_fun") != std::string::npos ||
-               name == "org.w3c.dom.addEventListener_$external_fun" ||
-               name == "org.w3c.dom.removeEventListener_$external_fun" ||
                name == "org.w3c.dom.setAttribute_$external_fun" ||
                name == "org.w3c.dom.focus_$external_fun" ||
                name == "org.w3c.dom.blur_$external_fun" ||
                name == "kotlin.js.name_$external_prop_setter") {
         // Deliberate no-op host shims.
+    } else if (name == "org.w3c.dom.addEventListener_$external_fun" ||
+               name.find("addEventListener_$external_fun") != std::string::npos) {
+        if (nargs >= 2) {
+            std::string type = GetString(args[1]);
+            HostValue* listener = nargs > 2 ? GetHostValue(args[2]) : nullptr;
+            if (type == "resize" && listener && listener->callback) {
+                resize_event_listeners_.push_back(listener->callback);
+            }
+        }
+    } else if (name == "org.w3c.dom.removeEventListener_$external_fun" ||
+               name.find("removeEventListener_$external_fun") != std::string::npos) {
+        if (nargs >= 2) {
+            std::string type = GetString(args[1]);
+            HostValue* listener = nargs > 2 ? GetHostValue(args[2]) : nullptr;
+            if (type == "resize" && listener && listener->callback) {
+                resize_event_listeners_.erase(
+                    std::remove(resize_event_listeners_.begin(), resize_event_listeners_.end(), listener->callback),
+                    resize_event_listeners_.end()
+                );
+            }
+        }
     } else {
         if (nresults > 0) {
             if (name.find("instanceof") != std::string::npos ||

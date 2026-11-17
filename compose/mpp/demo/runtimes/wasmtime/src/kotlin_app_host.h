@@ -38,6 +38,11 @@ public:
         double scroll_delta_x,
         double scroll_delta_y
     );
+    void DispatchResizeEvent(
+        double width,
+        double height,
+        double dpr
+    );
     const std::string& Title() const;
 
 private:
@@ -92,9 +97,16 @@ private:
     std::deque<std::shared_ptr<Callback>> ready_callbacks_;
     std::deque<std::shared_ptr<Callback>> animation_callbacks_;
     std::shared_ptr<Callback> pointer_callback_;
+    std::shared_ptr<Callback> resize_callback_;
     std::shared_ptr<Callback> coroutine_window_process_;
+    std::vector<std::shared_ptr<Callback>> resize_event_listeners_;
     std::vector<Timer> timers_;
     uint32_t next_timer_id_ = 1;
     int next_animation_id_ = 1;
+    int canvas_width_ = 2048;
+    int canvas_height_ = 1536;
+    int window_width_ = 1024;
+    int window_height_ = 768;
+    double device_pixel_ratio_ = 2.0;
     std::string title_ = "Compose MPP Demo (WASM + Wasmtime Native SDL)";
 };

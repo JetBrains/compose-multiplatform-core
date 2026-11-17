@@ -41,6 +41,7 @@ public:
     void GetDrawableSize(int* width, int* height) const;
 
     void PollEvents(HostPointerEventCallback callback, void* user_data);
+    void PollEvents(HostPointerEventCallback pointer_callback, HostResizeEventCallback resize_callback, void* user_data);
     void Present(const std::vector<HostCanvasTexture>& canvases);
     void* NativeGLContext() const;
 

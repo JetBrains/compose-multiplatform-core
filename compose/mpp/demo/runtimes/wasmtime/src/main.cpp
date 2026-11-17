@@ -523,10 +523,19 @@ int main(int argc, char** argv) {
 
             std::cout << "Attaching application instance..." << std::endl;
             application.AttachInstance(application_instance);
+
             std::cout << "Starting application..." << std::endl;
             application.Start();
 
             std::cout << "Compose Wasmtime Native SDL host running. Close the window to exit." << std::endl;
+
+            struct AppEventContext {
+                KotlinAppHost* app = nullptr;
+                SkikoHost* host = nullptr;
+                skiko::core::SkikoSdlWindow* window = nullptr;
+            };
+
+            AppEventContext event_context{&application, &host, &window};
 
             auto on_pointer_event = [](
                 int32_t event_type,
@@ -537,9 +546,31 @@ int main(int argc, char** argv) {
                 double scroll_delta_y,
                 void* user_data
             ) {
-                auto* app = static_cast<KotlinAppHost*>(user_data);
-                if (app != nullptr) {
-                    app->DispatchPointerEvent(event_type, x, y, button, scroll_delta_x, scroll_delta_y);
+                auto* ctx = static_cast<AppEventContext*>(user_data);
+                if (ctx != nullptr && ctx->app != nullptr) {
+                    ctx->app->DispatchPointerEvent(event_type, x, y, button, scroll_delta_x, scroll_delta_y);
+                }
+            };
+
+            auto on_resize_event = [](int32_t width, int32_t height, void* user_data) {
+                auto* ctx = static_cast<AppEventContext*>(user_data);
+                if (ctx != nullptr) {
+                    int draw_w = width * 2;
+                    int draw_h = height * 2;
+                    if (ctx->window != nullptr) {
+                        ctx->window->GetDrawableSize(&draw_w, &draw_h);
+                    }
+                    double dpr = (width > 0) ? (static_cast<double>(draw_w) / width) : 2.0;
+
+                    if (ctx->host != nullptr) {
+                        std::string err;
+                        const int target_id = ctx->host->CurrentContextId() > 0 ? ctx->host->CurrentContextId() : 1;
+                        ctx->host->ResizeContext(target_id, draw_w, draw_h, err);
+                    }
+
+                    if (ctx->app != nullptr) {
+                        ctx->app->DispatchResizeEvent(draw_w, draw_h, dpr);
+                    }
                 }
             };
 
@@ -548,7 +579,7 @@ int main(int argc, char** argv) {
             uint64_t frame_index = 0;
 
             while (window.IsOpen()) {
-                window.PollEvents(on_pointer_event, &application);
+                window.PollEvents(on_pointer_event, on_resize_event, &event_context);
                 if (!window.IsOpen()) break;
 
                 const auto now = std::chrono::steady_clock::now();
@@ -579,9 +610,12 @@ int main(int argc, char** argv) {
                     int draw_w = window_width * 2;
                     int draw_h = window_height * 2;
                     window.GetDrawableSize(&draw_w, &draw_h);
+                    int cur_w = window_width;
+                    int cur_h = window_height;
+                    window.GetWindowSize(&cur_w, &cur_h);
                     const int target_id = host.CurrentContextId() > 0 ? host.CurrentContextId() : 1;
                     const std::vector<HostCanvasTexture> canvases = {
-                        {host.ContextTexture(target_id), window_width * 2, window_height * 2, 0, 0, window_width, window_height}
+                        {host.ContextTexture(target_id), draw_w, draw_h, 0, 0, cur_w, cur_h}
                     };
                     window.Present(canvases);
                     ++frame_index;

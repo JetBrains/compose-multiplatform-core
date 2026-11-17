@@ -72,6 +72,22 @@ private fun registerPointerCallback(callback: (Int, Double, Double, Int, Double,
     """)
 }
 
+private fun registerResizeCallback(callback: (Double, Double, Double) -> Unit) {
+    js("""
+        globalThis.__dispatchResizeEvent = function(width, height, dpr) {
+            try {
+                callback(
+                    Number(width) || 0.0,
+                    Number(height) || 0.0,
+                    (dpr !== undefined) ? Number(dpr) : 2.0
+                );
+            } catch (e) {
+                // Ignore transient cancellation or dispatch errors
+            }
+        };
+    """)
+}
+
 /**
  * A standalone, DOM-less host that wires Compose directly to Skiko and native SDL / OpenGL.
  * Avoids any browser DOM emulation or ComposeViewport layers.
@@ -82,12 +98,14 @@ class SdlComposeHost(
     private var height: Int = 1536,
     private val densityValue: Float = 2f,
 ) {
+    private var canvasId: String = "ComposeTarget"
     private var skiaLayer: SkiaLayer? = null
     private var frameRecomposer: FrameRecomposer? = null
     private var scene: ComposeScene? = null
     private var renderingScope: SingleComposeSceneRenderingScope? = null
 
     fun start(canvasId: String = "ComposeTarget") {
+        this.canvasId = canvasId
         registerSkikoComposeImplementation()
 
         val recomposer = FrameRecomposer(Dispatchers.Main) {
@@ -121,6 +139,10 @@ class SdlComposeHost(
                 scrollDeltaX = scrollDeltaX.toFloat(),
                 scrollDeltaY = scrollDeltaY.toFloat()
             )
+        }
+
+        registerResizeCallback { width, height, dpr ->
+            this.resize(width.toInt(), height.toInt(), dpr.toFloat())
         }
 
         composeScene.setContent {
@@ -202,10 +224,12 @@ class SdlComposeHost(
         skiaLayer?.needRender()
     }
 
-    fun resize(newWidth: Int, newHeight: Int) {
+    fun resize(newWidth: Int, newHeight: Int, newDensity: Float = densityValue) {
         this.width = newWidth
         this.height = newHeight
+        scene?.density = Density(newDensity)
         scene?.size = IntSize(newWidth, newHeight)
+        skiaLayer?.resize(newWidth, newHeight)
         skiaLayer?.needRender()
     }
 
