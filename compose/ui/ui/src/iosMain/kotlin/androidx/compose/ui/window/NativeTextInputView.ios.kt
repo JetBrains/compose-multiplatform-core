@@ -114,6 +114,7 @@ internal class NativeTextInputView(
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
         addGestureRecognizer(it)
+        it.isTrackingTouches
     }
 
     var input: NativeTextEditingDelegate = initialInput
@@ -155,6 +156,9 @@ internal class NativeTextInputView(
     /** Temporary flag to check whether the edit menu is visible */
     private var isEditMenuRequested = false
 
+    /** Indicates if user currently changes selection */
+    private var isAdjustingSelection = false
+
     override fun didMoveToWindow() {
         super.didMoveToWindow()
         if (window != null && !selectionInteractionAttached) {
@@ -192,6 +196,9 @@ internal class NativeTextInputView(
             this.attachSelectionInteractionIfNeeded()
             this.activateTextInputInteractionIfNeeded()
         }
+        touchesTrackerGestureRecognizer.onTouchesTrackingChanged = { hasTrackedTouches ->
+            completeAdjustingSelectionIfNeeded()
+        }
 
         return result
     }
@@ -204,6 +211,7 @@ internal class NativeTextInputView(
 
     override fun resignFirstResponder(): Boolean {
         input.onResignFocus()
+        touchesTrackerGestureRecognizer.onTouchesTrackingChanged = {}
         return super.resignFirstResponder()
     }
 
@@ -303,11 +311,21 @@ internal class NativeTextInputView(
         // Posting an extra notification solves this issue
         val notifySelectionChanges = !available(OS.Ios to OSVersion(major = 17)) &&
             !touchesTrackerGestureRecognizer.isTrackingTouches
-        if (notifySelectionChanges) {
+        if (!isAdjustingSelection && touchesTrackerGestureRecognizer.isTrackingTouches) {
+            isAdjustingSelection = true
+            selectionWillChange()
+        } else if (notifySelectionChanges) {
             selectionWillChange()
         }
         input.setSelectedTextRange(range)
         if (notifySelectionChanges) {
+            selectionDidChange()
+        }
+    }
+
+    private fun completeAdjustingSelectionIfNeeded() {
+        if (isAdjustingSelection && !touchesTrackerGestureRecognizer.isTrackingTouches) {
+            isAdjustingSelection = false
             selectionDidChange()
         }
     }
@@ -926,35 +944,53 @@ private class TouchTrackingGestureRecognizer : CMPGestureRecognizer(target = nul
 
     val isTrackingTouches: Boolean get() = trackedTouches.isNotEmpty()
 
+    var onTouchesTrackingChanged: (Boolean) -> Unit = {}
+
     init {
         cancelsTouchesInView = true
         delaysTouchesBegan = false
     }
 
+    private fun updateTouches(update: () -> Unit) {
+        val touchesBefore = trackedTouches.size
+        update()
+        if (touchesBefore == 0 && trackedTouches.isNotEmpty()) {
+            onTouchesTrackingChanged(true)
+        } else if (touchesBefore != 0 && trackedTouches.isEmpty()) {
+            onTouchesTrackingChanged(false)
+        }
+    }
+
     override fun touchesBegan(touches: Set<*>, withEvent: UIEvent) {
         super.touchesBegan(touches, withEvent)
 
-        touches.forEach {
-            it as UITouch
-            trackedTouches.add(it)
+        updateTouches {
+            touches.forEach {
+                it as UITouch
+                trackedTouches.add(it)
+            }
         }
     }
 
     override fun touchesEnded(touches: Set<*>, withEvent: UIEvent) {
         super.touchesEnded(touches, withEvent)
 
-        touches.forEach {
-            it as UITouch
-            trackedTouches.remove(it)
+        updateTouches {
+            touches.forEach {
+                it as UITouch
+                trackedTouches.remove(it)
+            }
         }
     }
 
     override fun touchesCancelled(touches: Set<*>, withEvent: UIEvent) {
         super.touchesCancelled(touches, withEvent)
 
-        touches.forEach {
-            it as UITouch
-            trackedTouches.remove(it)
+        updateTouches {
+            touches.forEach {
+                it as UITouch
+                trackedTouches.remove(it)
+            }
         }
     }
 
