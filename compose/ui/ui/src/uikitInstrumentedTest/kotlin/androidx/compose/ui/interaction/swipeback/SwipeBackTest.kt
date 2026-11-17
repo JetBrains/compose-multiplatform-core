@@ -59,19 +59,7 @@ import platform.Foundation.NSTimeInterval
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 
-@Suppress("unused")
-internal class SwipeBackInHostingViewTest : SwipeBackTest(
-    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
-)
-
-@Suppress("unused")
-internal class SwipeBackInHostingViewControllerTest : SwipeBackTest(
-    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
-)
-
-internal abstract class SwipeBackTest(
-    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
-) {
+internal class SwipeBackTest {
     @Test
     fun testSwipeBackDoesNotDispatchHorizontalDragToComposeLtr() = runUIKitInstrumentedTest {
         var dragDistance = Float.NaN

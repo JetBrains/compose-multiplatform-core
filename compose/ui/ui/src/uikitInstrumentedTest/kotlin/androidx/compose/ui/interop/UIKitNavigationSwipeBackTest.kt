@@ -53,9 +53,7 @@ import org.jetbrains.skiko.available
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
-internal abstract class UIKitNavigationSwipeBackTest(
-    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
-) {
+internal class UIKitNavigationSwipeBackTest {
     /**
      * A fast flick-like drag starting at the screen center is sometimes not recognized on iOS 26+.
      */
@@ -276,13 +274,3 @@ private fun TestHorizontalPager(
         )
     }
 }
-
-@Suppress("unused")
-internal class UIKitNavigationSwipeBackInHostingViewTest : UIKitNavigationSwipeBackTest(
-    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
-)
-
-@Suppress("unused")
-internal class UIKitNavigationSwipeBackInHostingViewControllerTest : UIKitNavigationSwipeBackTest(
-   runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
-)
