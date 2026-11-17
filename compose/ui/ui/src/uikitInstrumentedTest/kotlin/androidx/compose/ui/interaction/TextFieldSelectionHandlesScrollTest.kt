@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,22 +55,15 @@ class TextFieldSelectionHandlesScrollTest {
     fun selectionHandlesPositionsAfterLazyColumnScroll() = runUIKitInstrumentedTest {
         val focusRequester = FocusRequester()
         setContent {
-            LaunchedEffect(Unit) { focusRequester.requestFocus() }
             LazyColumn(Modifier.fillMaxSize()) {
                 items(100) { index ->
-                    var text by remember { mutableStateOf("${index}1234") }
                     Row(Modifier.height(IntrinsicSize.Min)) {
-                        @Suppress("DEPRECATION")
                         BasicTextField(
-                            value = text,
-                            onValueChange = { text = it },
-                            singleLine = true,
-                            textStyle = TextStyle(fontSize = 22.sp),
+                            state = rememberTextFieldState("${index}1234"),
                             keyboardOptions = KeyboardOptions(
-                                autoCorrectEnabled = false,
                                 platformImeOptions = PlatformImeOptions { usingNativeTextInput(false) }
                             ),
-                            modifier = if (index == 3) {
+                            modifier = if (index == 5) {
                                 Modifier
                                     .alignByBaseline()
                                     .focusRequester(focusRequester)
@@ -78,6 +72,9 @@ class TextFieldSelectionHandlesScrollTest {
                                 Modifier.alignByBaseline()
                             },
                         )
+                    }
+                    if (index == 5) {
+                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
                     }
                 }
             }
@@ -100,8 +97,13 @@ class TextFieldSelectionHandlesScrollTest {
             .up()
         waitForIdle()
         touchDown(DpOffset(screenSize.center.x, 100.dp))
-            .dragBy(dy = LazyColumnScrollDistance)
-            .wait(50.milliseconds)
+            .dragBy(dy = LazyColumnScrollDistance / 2)
+            .also {
+                // Drag gesture speed is too fast. The test requires at least two frames.
+                // Add wait for idle to have at least 1 frame in between the drag gesture.
+                waitForIdle()
+            }
+            .dragBy(dy = LazyColumnScrollDistance / 2)
             .up()
         waitForIdle()
 
