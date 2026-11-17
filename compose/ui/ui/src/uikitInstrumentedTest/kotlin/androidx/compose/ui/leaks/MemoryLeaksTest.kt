@@ -374,13 +374,8 @@ class MemoryLeaksTest {
                 controller.waitForIdle()
             }
 
-            val layersViewController = appDelegate.findLayersViewController()
-            val layersView = layersViewController.view
-            // ComposeLayersView is private and Kotlin/Native exports it under a mangled ObjC
-            // class name, so track the root view explicitly before traversing its children.
-            subviewsReferences.add(WeakReference(layersView))
             collectComposeSubviewsRecursively(
-                layersView,
+                appDelegate.findLayersViewController().view,
                 subviewsReferences
             )
 
@@ -434,7 +429,9 @@ class MemoryLeaksTest {
         view: UIView,
         result: MutableList<WeakReference<UIView>>
     ) {
-        if (view.isComposeOwned) {
+        if (view.isExcludedSystemView) return
+
+        if (view::class != UIView::class) {
             result.add(WeakReference(view))
         }
         if (view is NativeTextInputView) {
@@ -446,24 +443,16 @@ class MemoryLeaksTest {
         }
     }
 
-    // Kotlin/Native ObjC classes do not expose a useful qualifiedName, and UIKit may add private
-    // implementation views, such as ScrollEdgeEffectView, to the hierarchy. Track only the
-    // Compose-owned views these tests are responsible for deallocating.
-    private val UIView.isComposeOwned: Boolean
+    // UIKit may add private implementation views to the hierarchy. Ignore only the known
+    // system-managed subtrees, so unexpected custom views are still collected.
+    private val UIView.isExcludedSystemView: Boolean
         get() {
-            val composeOwnedViewSimpleNamePrefixes = setOf(
-                "BackgroundInputView",
-                "ComposeContainerView",
-                "ComposeHostingView",
-                "ComposeLayersView",
-                "ComposeSceneLayerView",
-                "ComposeTextInputView",
-                "OverlayInputView",
-                "SurfaceMetalView",
+            val excludedSystemViewSimpleNames = setOf(
+                "ScrollEdgeEffectView",
+                "_UITouchPassthroughView",
             )
             val simpleName = this::class.simpleName
-            return simpleName != null &&
-                composeOwnedViewSimpleNamePrefixes.any(simpleName::startsWith)
+            return simpleName != null && simpleName in excludedSystemViewSimpleNames
         }
 
     private suspend fun runApplicationLoop(duration: Duration) {
