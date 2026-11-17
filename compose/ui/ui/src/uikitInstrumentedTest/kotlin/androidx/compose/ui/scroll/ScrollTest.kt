@@ -476,6 +476,9 @@ internal class ScrollTest {
         assertEquals(0 * density.density, state.value.toFloat())
         assertEquals(initialBoxRect, boxRect)
 
+        downwardTouch.up()
+        waitForIdle()
+
         // upward drag - scroll
         val upwardTouch = touchDown(screenSize.center)
             .dragBy(dy = -dySmall)
@@ -485,7 +488,6 @@ internal class ScrollTest {
         assertEquals(0 * density.density, state.value.toFloat())
         assertEquals(initialBoxRect, boxRect)
 
-        downwardTouch.up()
         upwardTouch.up()
     }
 
