@@ -35,7 +35,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.compose.benchmarks.report.generateHtmlReport
-import java.io.File
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -357,12 +356,9 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                 )
             }
             ensureFreePort(port)
-            val collectorCommand = if (isWindows) listOf(
-                javaExecutable(), "-cp",
-                root.resolve("benchmarks-collector/build/install/benchmarks-collector/lib").toString() + File.separator + "*",
-                "org.jetbrains.compose.benchmarks.collector.MainKt", port.toString(), reports.toString()
-            ) else listOf(
-                root.resolve("benchmarks-collector/build/install/benchmarks-collector/bin/benchmarks-collector").toString(),
+            val collectorScript = if (isWindows) "benchmarks-collector.bat" else "benchmarks-collector"
+            val collectorCommand = listOf(
+                root.resolve("benchmarks-collector/build/install/benchmarks-collector/bin/$collectorScript").toString(),
                 port.toString(), reports.toString()
             )
             processes.start(collectorCommand, logs.resolve("collector.log")).use { collector ->
@@ -486,11 +482,9 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             else -> null
         }
         // A separate project cache avoids locking the outer build when launched through Gradle run.
-        val wrapper = if (isWindows) listOf(
-            javaExecutable(), "-Xmx64m", "-Xms64m", "-Dorg.gradle.appname=gradlew",
-            "-jar", root.resolve("gradle/wrapper/gradle-wrapper.jar").toString()
-        ) else listOf(root.resolve("gradlew").toString())
-        val command = wrapper + listOf(
+        val wrapper = root.resolve(if (isWindows) "gradlew.bat" else "gradlew")
+        val command = listOf(
+            wrapper.toString(),
             "--project-cache-dir",
             root.resolve(".gradle/launcher").toString(), ":benchmarks-collector:installDist"
         ) +
