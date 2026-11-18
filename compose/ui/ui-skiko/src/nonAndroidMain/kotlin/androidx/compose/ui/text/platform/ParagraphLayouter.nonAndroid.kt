@@ -168,9 +168,9 @@ internal class ParagraphLayouter(
         val actualSize = builder.brushSize
         if (builder.textStyle.brush != brush ||
             actualSize.isUnspecified ||
-            !actualSize.width.sameValueAs(brushSize.width) ||
-            !actualSize.height.sameValueAs(brushSize.height) ||
-            !builder.textStyle.alpha.sameValueAs(alpha)
+            !actualSize.width.sameSizeAs(brushSize.width) ||
+            !actualSize.height.sameSizeAs(brushSize.height) ||
+            !builder.textStyle.alpha.sameAlphaAs(alpha)
         ) {
             builder.textStyle = builder.textStyle.copy(
                 brush = brush,
@@ -243,7 +243,7 @@ internal class ParagraphLayouter(
                 paragraph.markDirty()
                 layoutRequired = true
             }
-            if (!this.width.sameValueAs(width)) {
+            if (!this.width.sameSizeAs(width)) {
                 this.width = width
                 layoutRequired = true
             }
@@ -272,5 +272,9 @@ private fun DrawStyle?.sameValueAs(other: DrawStyle?) =
 private fun TextDecoration?.sameValueAs(other: TextDecoration?) =
     (this ?: TextDecoration.None) == (other ?: TextDecoration.None)
 
-private fun Float.sameValueAs(other: Float) =
+private fun Float.sameSizeAs(other: Float) =
     abs(this - other) < 0.00001f
+
+// NaN is used as "unspecified" in several places, for example in TextStyle constructor.
+private fun Float.sameAlphaAs(other: Float) =
+    (isNaN() && other.isNaN()) || abs(this - other) < 0.00001f
