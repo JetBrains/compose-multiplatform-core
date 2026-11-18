@@ -17,19 +17,14 @@
 package androidx.compose.ui.window
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -49,6 +44,8 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.isEqualTo
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
@@ -67,11 +64,8 @@ import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runComposeUiTest
-import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.touch
@@ -880,7 +874,7 @@ class PopupTest : SkikoComposeTestBase() {
 
     @Suppress("DEPRECATION")
     @Test
-    fun popupFollowsAnchorWhenLazyColumnIsScrolled() = runSkikoComposeUiTest {
+    fun popupFollowsAnchorWhenAncestorQueryingAlignmentLineIsMoved() = runSkikoComposeUiTest {
         val positionProvider = object : PopupPositionProvider {
             override fun calculatePosition(
                 anchorBounds: IntRect,
@@ -892,45 +886,38 @@ class PopupTest : SkikoComposeTestBase() {
             }
         }
 
+        var offsetY by mutableIntStateOf(0)
         setContent {
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(40) { index ->
-                    Row(Modifier.padding(16.dp).height(IntrinsicSize.Min)) {
-                        if (index == AnchorItemIndex) {
-                            // The queried child (like a text field aligned by baseline).
-                            Box(Modifier.alignByBaseline()) {
-                                // The popup anchor, nested inside the queried child.
-                                Box(Modifier.size(20.dp).testTag(AnchorTag)) {
-                                    Popup(popupPositionProvider = positionProvider) {
-                                        Box(Modifier.size(10.dp).testTag(PopupContentTag))
-                                    }
-                                }
+            Layout(
+                content = {
+                    // The child queried for an alignment line.
+                    Box {
+                        // The popup anchor, nested inside the queried child.
+                        Box(Modifier.size(20.dp)) {
+                            Popup(popupPositionProvider = positionProvider) {
+                                Box(Modifier.size(10.dp).testTag(PopupContentTag))
                             }
-                        } else {
-                            Text("Item $index", Modifier.alignByBaseline())
                         }
                     }
-                }
+                },
+                modifier = Modifier.offset { IntOffset(0, offsetY) },
+            ) { measurables, constraints ->
+                val placeable = measurables[0].measure(constraints)
+                // Querying an alignment line (like Row.alignByBaseline does) is the trigger.
+                placeable[FirstBaseline]
+                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
             }
         }
 
-        fun popupOffsetFromAnchor(): Offset =
-            onNodeWithTag(PopupContentTag).fetchSemanticsNode().boundsInWindow.topLeft -
-                onNodeWithTag(AnchorTag).fetchSemanticsNode().boundsInWindow.topLeft
+        fun popupPosition(): Offset =
+            onNodeWithTag(PopupContentTag).fetchSemanticsNode().boundsInWindow.topLeft
 
-        // The popup is placed at the anchor's top left corner.
-        assertThat(popupOffsetFromAnchor()).isEqualTo(Offset.Zero)
+        assertThat(popupPosition()).isEqualTo(Offset.Zero)
 
-        // Scroll the anchor item out of the viewport and back.
-        val list = onNode(hasScrollAction())
-        list.performTouchInput {
-            swipe(Offset(centerX, bottom - 10f), Offset(centerX, bottom - 210f), durationMillis = 30)
-        }
-        list.performTouchInput {
-            swipe(Offset(centerX, top + 10f), Offset(centerX, top + 210f), durationMillis = 30)
-        }
-
-        assertThat(popupOffsetFromAnchor()).isEqualTo(Offset.Zero)
+        // Move the ancestor; the popup must follow the anchor.
+        offsetY = 100
+        waitForIdle()
+        assertThat(popupPosition()).isEqualTo(Offset(0f, 100f))
     }
 
     @Suppress("DEPRECATION")
@@ -968,14 +955,12 @@ class PopupTest : SkikoComposeTestBase() {
         }
 
         showPopup = true
-        waitForIdle()
+        mainClock.advanceTimeByFrame()
         assertThat(popupPositions).containsExactly(Offset(100f, 100f))
     }
 
     private companion object {
         const val PopupContentTag = "popupContent"
-        const val AnchorTag = "popupAnchor"
-        const val AnchorItemIndex = 2
     }
 }
 
