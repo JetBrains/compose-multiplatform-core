@@ -436,6 +436,79 @@ final class CMPMetalLayerTests: XCTestCase {
         XCTAssertFalse(drawable1CompletionCalled, "Frame scheduled before a newer presented frame must be dropped")
     }
 
+    // MARK: - Disabled Drawable Acquisition Retries
+
+    func testNextDrawableReturnsDrawableWhenRetriesDisabled() {
+        layer.drawableSize = CGSize(width: 100, height: 100)
+        layer.disableDrawableAcquisitionRetries = true
+
+        let drawable = layer.nextDrawable()
+
+        XCTAssertNotNil(drawable, "Should get a drawable while the pool has one")
+    }
+
+    func testNextDrawableDoesNotWaitWhenRetriesDisabled() {
+        layer.drawableSize = CGSize(width: 100, height: 100)
+
+        let drawables = (0..<3).map { _ in layer.nextDrawable()! }
+        layer.disableDrawableAcquisitionRetries = true
+
+        let start = Date()
+        let drawable = layer.nextDrawable()
+        let elapsed = Date().timeIntervalSince(start)
+
+        XCTAssertNil(drawable, "Should return nil when the pool is exhausted")
+        XCTAssertLessThan(elapsed, 0.1, "Should not wait for the acquisition timeout")
+
+        drawables.forEach { layer.release($0) }
+    }
+
+    func testDisablingRetriesStopsWaitingOnBackgroundThread() {
+        layer.drawableSize = CGSize(width: 100, height: 100)
+
+        let drawables = (0..<3).map { _ in layer.nextDrawable()! }
+
+        let acquired = DispatchSemaphore(value: 0)
+        var backgroundDrawable: CMPDrawable? = nil
+        DispatchQueue.global().async {
+            backgroundDrawable = self.layer.nextDrawable()
+            acquired.signal()
+        }
+
+        // Let the background thread start waiting for a drawable.
+        Thread.sleep(forTimeInterval: 0.05)
+        layer.disableDrawableAcquisitionRetries = true
+
+        XCTAssertEqual(acquired.wait(timeout: .now() + 0.5), .success, "Waiting should stop right away")
+        XCTAssertNil(backgroundDrawable, "Waiting for a drawable should be cancelled")
+
+        drawables.forEach { layer.release($0) }
+    }
+
+    func testNextDrawableWaitsAgainWhenRetriesReenabled() {
+        layer.drawableSize = CGSize(width: 100, height: 100)
+
+        let drawables = (0..<3).map { _ in layer.nextDrawable()! }
+        layer.disableDrawableAcquisitionRetries = true
+        layer.disableDrawableAcquisitionRetries = false
+
+        let acquired = DispatchSemaphore(value: 0)
+        var backgroundDrawable: CMPDrawable? = nil
+        DispatchQueue.global().async {
+            backgroundDrawable = self.layer.nextDrawable()
+            acquired.signal()
+        }
+
+        // Return a drawable while the background thread is waiting for one.
+        Thread.sleep(forTimeInterval: 0.05)
+        layer.release(drawables[0])
+
+        XCTAssertEqual(acquired.wait(timeout: .now() + 0.5), .success, "Should get the returned drawable")
+        XCTAssertTrue(backgroundDrawable === drawables[0], "Should wait for and reuse the returned drawable")
+
+        drawables.dropFirst().forEach { layer.release($0) }
+    }
+
     // MARK: - Stress Test
 
     func testConcurrentAcquireReturnAcquirePattern() {

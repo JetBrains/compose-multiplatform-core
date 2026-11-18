@@ -40,6 +40,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSInteger drawablesGeneration;
 
 /**
+ * Prevents awaiting for the next drawable if the next acquisition fails. In this case the
+ * nextDrawable will return nil.
+ */
+@property (atomic, assign) BOOL disableDrawableAcquisitionRetries;
+
+/**
  * Acquires next drawable, blocking up to 1 second if pool is exhausted.
  * Returns nil on timeout or if last presented drawable is still in use by GPU.
  */
