@@ -35,6 +35,7 @@ import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Surface
 import org.jetbrains.skia.gpu.GpuContext
 import org.jetbrains.skia.gpu.makeMetalContext
+import org.jetbrains.skia.gpu.makeMetalTexture
 import platform.Foundation.NSLock
 import platform.Foundation.NSThread
 import platform.IOSurface.IOSurfaceGetHeight
@@ -351,20 +352,26 @@ internal class SurfaceMetalRedrawer(
             context
                 ?: makeMetalContext(device.objcPtr(), queue.objcPtr()).also { this.context = it }
 
-        val surface =
-            context.makeSurface(
+        val texture =
+            makeMetalTexture(
                 width = IOSurfaceGetWidth(drawable.surface).toInt(),
                 height = IOSurfaceGetHeight(drawable.surface).toInt(),
                 texturePtr = drawable.drawableTexture().rawValue,
             )
 
+        val surface = context.makeSurface(texture)
+
         if (surface == null) {
+            texture.close()
             return null
         }
 
         drawable.associatedSkiaSurface = surface
 
-        activeDrawableAssociatedResourcesDisposes.add { surface.close() }
+        activeDrawableAssociatedResourcesDisposes.add {
+            surface.close()
+            texture.close()
+        }
 
         return surface
     }
