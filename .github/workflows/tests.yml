@@ -157,6 +157,7 @@ jobs:
             simulator_os: '18.6'
             xcode_path: '/Applications/Xcode_26.3.app'
             xcode_cache_key_suffix: '26.3'
+            xcode_version: '26.3'
             device_type: 'phone'
             device: 'iPhone 16'
 
@@ -166,6 +167,7 @@ jobs:
             simulator_os: '26.5'
             xcode_path: '/Applications/Xcode_26.5.app'
             xcode_cache_key_suffix: '26.5'
+            xcode_version: '26.5'
             device_type: 'phone'
             device: 'iPhone 17'
 
@@ -175,6 +177,7 @@ jobs:
             simulator_os: '27.2'
             xcode_path: '/Applications/Xcode_27.2.app'
             xcode_cache_key_suffix: '27.2'
+            xcode_version: '27.2'
             device_type: 'phone-18-pro'
             device: 'iPhone 18 Pro'
           - runtime: 'ios27'
@@ -183,6 +186,7 @@ jobs:
             simulator_os: '27.2'
             xcode_path: '/Applications/Xcode_27.2.app'
             xcode_cache_key_suffix: '27.2'
+            xcode_version: '27.2'
             device_type: 'tablet-11-inch-m5'
             device: 'iPad Pro 11-inch (M5)'
     name: iOS Instrumented ${{ matrix.runtime_name }} / ${{ matrix.device }}
@@ -198,6 +202,7 @@ jobs:
         with:
           xcode-path: ${{ matrix.xcode_path }}
           xcode-cache-key-suffix: ${{ matrix.xcode_cache_key_suffix }}
+          xcode-version: ${{ matrix.xcode_version }}
           simulator-device: ${{ matrix.device }}
           simulator-os: ${{ matrix.simulator_os }}
 
