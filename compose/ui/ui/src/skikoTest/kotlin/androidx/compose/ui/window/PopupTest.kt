@@ -17,9 +17,15 @@
 package androidx.compose.ui.window
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -61,8 +67,11 @@ import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.touch
@@ -871,6 +880,61 @@ class PopupTest : SkikoComposeTestBase() {
 
     @Suppress("DEPRECATION")
     @Test
+    fun popupFollowsAnchorWhenLazyColumnIsScrolled() = runSkikoComposeUiTest {
+        val positionProvider = object : PopupPositionProvider {
+            override fun calculatePosition(
+                anchorBounds: IntRect,
+                windowSize: IntSize,
+                layoutDirection: LayoutDirection,
+                popupContentSize: IntSize
+            ): IntOffset {
+                return anchorBounds.topLeft
+            }
+        }
+
+        setContent {
+            LazyColumn(Modifier.fillMaxSize()) {
+                items(40) { index ->
+                    Row(Modifier.padding(16.dp).height(IntrinsicSize.Min)) {
+                        if (index == AnchorItemIndex) {
+                            // The queried child (like a text field aligned by baseline).
+                            Box(Modifier.alignByBaseline()) {
+                                // The popup anchor, nested inside the queried child.
+                                Box(Modifier.size(20.dp).testTag(AnchorTag)) {
+                                    Popup(popupPositionProvider = positionProvider) {
+                                        Box(Modifier.size(10.dp).testTag(PopupContentTag))
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("Item $index", Modifier.alignByBaseline())
+                        }
+                    }
+                }
+            }
+        }
+
+        fun popupOffsetFromAnchor(): Offset =
+            onNodeWithTag(PopupContentTag).fetchSemanticsNode().boundsInWindow.topLeft -
+                onNodeWithTag(AnchorTag).fetchSemanticsNode().boundsInWindow.topLeft
+
+        // The popup is placed at the anchor's top left corner.
+        assertThat(popupOffsetFromAnchor()).isEqualTo(Offset.Zero)
+
+        // Scroll the anchor item out of the viewport and back.
+        val list = onNode(hasScrollAction())
+        list.performTouchInput {
+            swipe(Offset(centerX, bottom - 10f), Offset(centerX, bottom - 210f), durationMillis = 30)
+        }
+        list.performTouchInput {
+            swipe(Offset(centerX, top + 10f), Offset(centerX, top + 210f), durationMillis = 30)
+        }
+
+        assertThat(popupOffsetFromAnchor()).isEqualTo(Offset.Zero)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
     fun popupShownAtCorrectCoordinatesImmediately() = runSkikoComposeUiTest {
         val positionProvider = object : PopupPositionProvider {
             override fun calculatePosition(
@@ -906,6 +970,12 @@ class PopupTest : SkikoComposeTestBase() {
         showPopup = true
         waitForIdle()
         assertThat(popupPositions).containsExactly(Offset(100f, 100f))
+    }
+
+    private companion object {
+        const val PopupContentTag = "popupContent"
+        const val AnchorTag = "popupAnchor"
+        const val AnchorItemIndex = 2
     }
 }
 
