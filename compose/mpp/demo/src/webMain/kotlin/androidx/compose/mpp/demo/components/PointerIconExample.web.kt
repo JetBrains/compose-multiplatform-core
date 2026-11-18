@@ -16,7 +16,6 @@
 
 package androidx.compose.mpp.demo.components
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.pointer.PointerIcon
 
 /**
@@ -29,7 +28,6 @@ private const val CUSTOM_CURSOR_SVG_DATA_URL =
         "<circle cx='16' cy='16' r='3' fill='white'/>" +
         "</svg>"
 
-@OptIn(ExperimentalComposeUiApi::class)
 internal actual val platformPointerIcons = listOf(
     "grab" to PointerIcon("grab"),
     "grabbing" to PointerIcon("grabbing"),

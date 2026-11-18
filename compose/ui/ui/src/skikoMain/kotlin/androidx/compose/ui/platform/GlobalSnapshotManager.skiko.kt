@@ -20,11 +20,11 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.snapshots.ObserverHandle
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.internal.getCurrentThreadId
+import androidx.compose.ui.platform.GlobalSnapshotManager.lock
 import kotlin.concurrent.Volatile
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -63,7 +63,6 @@ internal object GlobalSnapshotManager {
      * closed its handle), or `null` for an *immediate* (non-dispatching) [dispatcher] - the cases
      * where no pump is started.
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun register(dispatcher: CoroutineDispatcher): AutoCloseable? {
         // isDispatchNeeded is a per-resume, thread-dependent property, so an immediate dispatcher
         // cannot be soundly classified by this one-time registration check.

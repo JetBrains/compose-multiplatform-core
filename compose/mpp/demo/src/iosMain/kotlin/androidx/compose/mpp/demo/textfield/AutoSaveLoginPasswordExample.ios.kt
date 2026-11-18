@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.mpp.demo
+package androidx.compose.mpp.demo.textfield
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -31,6 +31,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
+import androidx.compose.mpp.demo.Screen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,7 +51,6 @@ import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.BetaInteropApi
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.readValue
 import kotlinx.coroutines.delay
@@ -76,7 +76,7 @@ val AutoSaveLoginPasswordExample = Screen.Selection(
     )
 )
 
-@OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
+@OptIn(BetaInteropApi::class)
 @Composable
 private fun UITextFieldSafePassword(back: () -> Unit) {
     var login by remember { mutableStateOf("") }

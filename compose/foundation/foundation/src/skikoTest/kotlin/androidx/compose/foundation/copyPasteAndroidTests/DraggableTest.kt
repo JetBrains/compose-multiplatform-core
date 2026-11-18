@@ -225,7 +225,6 @@ class DraggableTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun MouseInjectionScope.dragAndDropSecondary(
         start: Offset,
         end: Offset,

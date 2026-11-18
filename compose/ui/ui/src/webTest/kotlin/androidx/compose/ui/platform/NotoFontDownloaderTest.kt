@@ -19,10 +19,7 @@ package androidx.compose.ui.platform
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 
 class NotoFontDownloaderTest {
@@ -60,7 +57,6 @@ class NotoFontDownloaderTest {
         assertContentEquals(listOf(pua), downloader.getCodepointsWithNoKnownFont())
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun mixOfKnownAndUnknownCodepoints_onlyUnknownTracked() = runTest {
         val codepoints = setOf(0xF000, 0x110000)

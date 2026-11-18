@@ -68,7 +68,6 @@ interface TextInputContainer {
         val text: String
         val isFocused: Boolean
         val selectionTextRange: TextRange
-        val markedTextRange: TextRange?
         val imeOptions: ImeOptions
         val editorToken: Any?
 
@@ -76,8 +75,6 @@ interface TextInputContainer {
         fun replaceRange(range: TextRange, text: String)
         fun deleteBackward()
         fun setSelectedText(range: TextRange?)
-        fun setMarkedText(markedText: String?, selectedRange: TextRange)
-        fun unmarkText()
     }
 
     /**

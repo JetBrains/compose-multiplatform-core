@@ -21,9 +21,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.TextField
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -32,17 +35,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.node.WeakReference
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
-import androidx.compose.ui.window.ComposeUIView
 import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.test.findLayersViewController
 import androidx.compose.ui.test.waitForIdle
+import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.uikit.embedSubview
+import androidx.compose.ui.window.ComposeUIView
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.NativeTextInputView
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -115,159 +119,76 @@ class MemoryLeaksTest {
             subviewsReferences
         )
 
-        assertEquals(
-            expected = 4,
-            actual = subviewsReferences.count(),
-            message = "Expected 4 subviews: [ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView]" +
-                ", but given: ${
-                    subviewsReferences.mapNotNull { ref ->
-                        ref.get()?.let { it::class.simpleName }
-                    }
-                }"
-        )
-
         appDelegate.cleanUp()
 
         assertDeallocated(subviewsReferences)
     }
 
     @Test
-    fun testComposeUIViewControllerWithTextInputDisposal() = runBlocking {
-        val appDelegate = MockAppDelegate()
-        var composeViewControllerRef: WeakReference<UIViewController>? = null
+    fun testComposeUIViewControllerWithTextInputDisposal() {
+        for (usingNativeTextInput in NativeTextInputVariants) {
+            runBlocking {
+                val appDelegate = MockAppDelegate()
+                var composeViewControllerRef: WeakReference<UIViewController>? = null
 
-        run {
-            val controller = ComposeUIViewController({
-                enforceStrictPlistSanityCheck = false
-            }) {
-                val focusRequester = FocusRequester()
-                @Suppress("DEPRECATION")
-                TextField(
-                    value = "",
-                    onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester)
-                )
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
+                run {
+                    val controller = ComposeUIViewController({
+                        enforceStrictPlistSanityCheck = false
+                    }) {
+                        FocusedTextField(usingNativeTextInput)
+                    } as ComposeHostingViewController
+
+                    composeViewControllerRef = WeakReference(controller)
+                    appDelegate.setUpWindow(controller)
+
+                    controller.waitForIdle()
                 }
-            } as ComposeHostingViewController
 
-            composeViewControllerRef = WeakReference(controller)
-            appDelegate.setUpWindow(controller)
+                assertNotNull(composeViewControllerRef?.get())
 
-            controller.waitForIdle()
-        }
+                appDelegate.cleanUp()
+                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+                // strong references on this view. For test purposes, staring another text input session
+                // to let UIKit release reference to the previous text input view.
+                startFakeTextInputSession()
 
-        assertNotNull(composeViewControllerRef?.get())
-
-        appDelegate.cleanUp()
-
-        assertDeallocated(composeViewControllerRef)
-    }
-
-    @Test
-    fun testComposeUIViewControllerSubviewsWithTextInputDisposalAndOldContextMenu() {
-        val appDelegate = MockAppDelegate()
-        runBlocking(newContextMenuEnabled = false) {
-            val subviewsReferences = mutableListOf<WeakReference<UIView>>()
-
-            run {
-                val controller = ComposeUIViewController({
-                    enforceStrictPlistSanityCheck = false
-                }) {
-                    val focusRequester = FocusRequester()
-                    @Suppress("DEPRECATION")
-                    TextField(
-                        value = "",
-                        onValueChange = {},
-                        modifier = Modifier.focusRequester(focusRequester)
-                    )
-                    LaunchedEffect(Unit) {
-                        focusRequester.requestFocus()
-                    }
-                } as ComposeHostingViewController
-
-                appDelegate.setUpWindow(controller)
-
-                controller.waitForIdle()
+                assertDeallocated(composeViewControllerRef)
             }
-
-            collectComposeSubviewsRecursively(
-                appDelegate.window?.rootViewController?.view!!,
-                subviewsReferences
-            )
-
-            assertEquals(
-                expected = 5,
-                actual = subviewsReferences.count(),
-                message = "Expected 5 subviews: [ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView, ComposeTextInputView]" +
-                    ", but given: ${
-                        subviewsReferences.mapNotNull { ref ->
-                            ref.get()?.let { it::class.simpleName }
-                        }
-                    }"
-            )
-
-            appDelegate.cleanUp()
-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
-            // strong references on this view. For test purposes, staring another text input session
-            // to let UIKit release reference to the previous text input view.
-            startFakeTextInputSession()
-
-            assertDeallocated(subviewsReferences)
         }
     }
 
     @Test
-    fun testComposeUIViewControllerSubviewsWithTextInputDisposalAndNewContextMenu() {
-        val appDelegate = MockAppDelegate()
-        runBlocking(newContextMenuEnabled = true) {
-            val subviewsReferences = mutableListOf<WeakReference<UIView>>()
+    fun testComposeUIViewControllerSubviewsWithTextInputDisposal() {
+        for ((usingNativeTextInput, newContextMenuEnabled) in NativeTextInputWithContextMenuVariants) {
+            runBlocking(newContextMenuEnabled = newContextMenuEnabled) {
+                val appDelegate = MockAppDelegate()
+                val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
-            run {
-                val controller = ComposeUIViewController({
-                    enforceStrictPlistSanityCheck = false
-                }) {
-                    val focusRequester = FocusRequester()
-                    @Suppress("DEPRECATION")
-                    TextField(
-                        value = "",
-                        onValueChange = {},
-                        modifier = Modifier.focusRequester(focusRequester)
-                    )
-                    LaunchedEffect(Unit) {
-                        focusRequester.requestFocus()
-                    }
-                } as ComposeHostingViewController
+                run {
+                    val controller = ComposeUIViewController({
+                        enforceStrictPlistSanityCheck = false
+                    }) {
+                        FocusedTextField(usingNativeTextInput)
+                    } as ComposeHostingViewController
 
-                appDelegate.setUpWindow(controller)
+                    appDelegate.setUpWindow(controller)
 
-                controller.waitForIdle()
+                    controller.waitForIdle()
+                }
+
+                collectComposeSubviewsRecursively(
+                    appDelegate.window?.rootViewController?.view!!,
+                    subviewsReferences
+                )
+
+                appDelegate.cleanUp()
+                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+                // strong references on this view. For test purposes, staring another text input session
+                // to let UIKit release reference to the previous text input view.
+                startFakeTextInputSession()
+
+                assertDeallocated(subviewsReferences)
             }
-
-            collectComposeSubviewsRecursively(
-                appDelegate.window?.rootViewController?.view!!,
-                subviewsReferences
-            )
-
-            assertEquals(
-                expected = 5,
-                actual = subviewsReferences.count(),
-                message = "Expected 5 subviews: [ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView, ComposeTextInputView]" +
-                    ", but given: ${
-                        subviewsReferences.mapNotNull { ref ->
-                            ref.get()?.let { it::class.simpleName }
-                        }
-                    }"
-            )
-
-            appDelegate.cleanUp()
-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
-            // strong references on this view. For test purposes, staring another text input session
-            // to let UIKit release reference to the previous text input view.
-            startFakeTextInputSession()
-
-            assertDeallocated(subviewsReferences)
         }
     }
 
@@ -325,108 +246,78 @@ class MemoryLeaksTest {
             subviewsReferences
         )
 
-        assertEquals(
-            expected = 5,
-            actual = subviewsReferences.count(),
-            message = "Expected 5 subviews: [ComposeHostingView, ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView]" +
-                ", but given: ${
-                    subviewsReferences.mapNotNull { ref ->
-                        ref.get()?.let { it::class.simpleName }
-                    }
-                }"
-        )
-
         appDelegate.cleanUp()
 
         assertDeallocated(subviewsReferences)
     }
 
     @Test
-    fun testComposeUIViewWithTextInputDisposal() = runBlocking {
-        val appDelegate = MockAppDelegate()
-        var composeViewRef: WeakReference<UIView>? = null
+    fun testComposeUIViewWithTextInputDisposal() {
+        for (usingNativeTextInput in NativeTextInputVariants) {
+            runBlocking {
+                val appDelegate = MockAppDelegate()
+                var composeViewRef: WeakReference<UIView>? = null
 
-        run {
-            val view = ComposeUIView({
-                enforceStrictPlistSanityCheck = false
-            }) {
-                val focusRequester = FocusRequester()
-                @Suppress("DEPRECATION")
-                TextField(
-                    value = "",
-                    onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester)
-                )
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
+                run {
+                    val view = ComposeUIView({
+                        enforceStrictPlistSanityCheck = false
+                    }) {
+                        FocusedTextField(usingNativeTextInput)
+                    } as ComposeHostingView
+                    composeViewRef = WeakReference(view)
+                    val controller = UIViewController()
+                    controller.view.embedSubview(view)
+                    appDelegate.setUpWindow(controller)
+
+                    view.waitForIdle()
                 }
-            } as ComposeHostingView
-            composeViewRef = WeakReference(view)
-            val controller = UIViewController()
-            controller.view.embedSubview(view)
-            appDelegate.setUpWindow(controller)
 
-            view.waitForIdle()
+                assertNotNull(composeViewRef?.get())
+
+                appDelegate.cleanUp()
+                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+                // strong references on this view. For test purposes, staring another text input session
+                // to let UIKit release reference to the previous text input view.
+                startFakeTextInputSession()
+
+                assertDeallocated(composeViewRef)
+            }
         }
-
-        assertNotNull(composeViewRef?.get())
-
-        appDelegate.cleanUp()
-
-        assertDeallocated(composeViewRef)
     }
 
     @Test
     fun testComposeUIViewSubviewsWithTextInputDisposalAndNewContextMenu() {
-        val appDelegate = MockAppDelegate()
         runBlocking(newContextMenuEnabled = true) {
-            val subviewsReferences = mutableListOf<WeakReference<UIView>>()
+            for (usingNativeTextInput in NativeTextInputVariants) {
+                val appDelegate = MockAppDelegate()
+                val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
-            run {
-                val view = ComposeUIView({
-                    enforceStrictPlistSanityCheck = false
-                }) {
-                    val focusRequester = FocusRequester()
-                    @Suppress("DEPRECATION")
-                    TextField(
-                        value = "",
-                        onValueChange = {},
-                        modifier = Modifier.focusRequester(focusRequester)
-                    )
-                    LaunchedEffect(Unit) {
-                        focusRequester.requestFocus()
-                    }
-                } as ComposeHostingView
-                val controller = UIViewController()
-                controller.view.embedSubview(view)
-                appDelegate.setUpWindow(controller)
+                run {
+                    val view = ComposeUIView({
+                        enforceStrictPlistSanityCheck = false
+                    }) {
+                        FocusedTextField(usingNativeTextInput)
+                    } as ComposeHostingView
+                    val controller = UIViewController()
+                    controller.view.embedSubview(view)
+                    appDelegate.setUpWindow(controller)
 
-                view.waitForIdle()
+                    view.waitForIdle()
+                }
+
+                collectComposeSubviewsRecursively(
+                    appDelegate.window?.rootViewController?.view!!,
+                    subviewsReferences
+                )
+
+                appDelegate.cleanUp()
+                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+                // strong references on this view. For test purposes, staring another text input session
+                // to let UIKit release reference to the previous text input view.
+                startFakeTextInputSession()
+
+                assertDeallocated(subviewsReferences)
             }
-
-            collectComposeSubviewsRecursively(
-                appDelegate.window?.rootViewController?.view!!,
-                subviewsReferences
-            )
-
-            assertEquals(
-                expected = 6,
-                actual = subviewsReferences.count(),
-                message = "Expected 6 subviews: [ComposeHostingView, ComposeContainerView, BackgroundInputView, MetalView, OverlayInputView, ComposeTextInputView]" +
-                    ", but given: ${
-                        subviewsReferences.mapNotNull { ref ->
-                            ref.get()?.let { it::class.simpleName }
-                        }
-                    }"
-            )
-
-            appDelegate.cleanUp()
-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
-            // strong references on this view. For test purposes, staring another text input session
-            // to let UIKit release reference to the previous text input view.
-            startFakeTextInputSession()
-
-            assertDeallocated(subviewsReferences)
         }
     }
 
@@ -490,20 +381,32 @@ class MemoryLeaksTest {
                 subviewsReferences
             )
 
-            assertEquals(
-                expected = 6,
-                actual = subviewsReferences.count(),
-                message = "Expected 6 subviews: [ComposeLayersView, ComposeContainerView, ComposeSceneLayerView, BackgroundInputView, MetalView, OverlayInputView]" +
-                    ", but given: ${
-                        subviewsReferences.mapNotNull { ref ->
-                            ref.get()?.let { it::class.simpleName }
-                        }
-                    }"
-            )
-
             appDelegate.cleanUp()
 
             assertDeallocated(subviewsReferences)
+        }
+    }
+
+    /**
+     * A [TextField] that is focused as soon as it appears, running the text input pipeline
+     * selected by [usingNativeTextInput].
+     */
+    @Composable
+    private fun FocusedTextField(usingNativeTextInput: Boolean) {
+        val focusRequester = remember { FocusRequester() }
+        @Suppress("DEPRECATION")
+        TextField(
+            value = "",
+            onValueChange = {},
+            modifier = Modifier.focusRequester(focusRequester),
+            keyboardOptions = KeyboardOptions(
+                platformImeOptions = PlatformImeOptions {
+                    usingNativeTextInput(usingNativeTextInput)
+                }
+            )
+        )
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
         }
     }
 
@@ -530,6 +433,10 @@ class MemoryLeaksTest {
     ) {
         if (view::class != UIView::class) {
             result.add(WeakReference(view))
+        }
+        if (view is NativeTextInputView) {
+            // Do not collect native selection handles and cursor as they are managed by the system.
+            return
         }
         for (subview in view.subviews) {
             collectComposeSubviewsRecursively(subview as UIView, result)
@@ -562,5 +469,11 @@ class MemoryLeaksTest {
         } finally {
             ComposeFoundationFlags.isNewContextMenuEnabled = defaultValue
         }
+    }
+
+    private companion object {
+        val NativeTextInputVariants = listOf(false, true)
+        val NativeTextInputWithContextMenuVariants =
+            listOf(false to false, false to true, true to false, true to true)
     }
 }

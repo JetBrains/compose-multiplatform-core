@@ -19,7 +19,6 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.currentCompositeKeyHashCode
@@ -407,7 +406,6 @@ fun Popup(
  * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
  * @param content The content to be displayed inside the popup.
  */
-@OptIn(InternalComposeApi::class)
 @Composable
 fun Popup(
     popupPositionProvider: PopupPositionProvider,
