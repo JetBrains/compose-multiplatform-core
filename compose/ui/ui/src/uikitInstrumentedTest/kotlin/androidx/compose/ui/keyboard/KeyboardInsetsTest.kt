@@ -445,6 +445,22 @@ internal abstract class KeyboardInsetsTest(
         }
     }
 
+    private fun UIKitInstrumentedTest.warmUpKeyboardTransition(
+        focusRequester: FocusRequester,
+        focusManager: FocusManager
+    ) {
+        focusRequester.requestFocus()
+        waitUntil("Keyboard must be shown before measuring its animation") {
+            keyboardHeight != 0.dp
+        }
+        waitForIdle()
+        focusManager.clearFocus()
+        waitUntil("Keyboard must be hidden before measuring its animation") {
+            keyboardHeight == 0.dp
+        }
+        waitForIdle()
+    }
+
     private fun postKeyboardFrame(frame: CValue<CGRect>, duration: Double = 0.0) {
         NSNotificationCenter.defaultCenter.postNotificationName(
             aName = UIKeyboardWillChangeFrameNotification,
@@ -505,6 +521,10 @@ internal abstract class KeyboardInsetsTest(
 
         assertEquals(screenRect, contentFrames.last())
         assertTrue(contentFrames.all { it == screenRect })
+
+        // iPadOS 27.2 can present the first keyboard transition without an animation. Warm the
+        // keyboard up, then measure later transitions that UIKit reports as animated.
+        warmUpKeyboardTransition(focusRequester, requireNotNull(focusManager))
 
         // Show keyboard with animation
         focusRequester.requestFocus()
@@ -919,9 +939,11 @@ internal abstract class KeyboardInsetsTest(
 
         animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
 
+        var focusManager: FocusManager? = null
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
         }) {
+            focusManager = LocalFocusManager.current
             val imeInsets = WindowInsets.ime
             @Suppress("DEPRECATION")
             BasicTextField(
@@ -941,6 +963,8 @@ internal abstract class KeyboardInsetsTest(
                     }
             )
         }
+
+        warmUpKeyboardTransition(focusRequester, requireNotNull(focusManager))
 
         drawnTextFieldFrames.clear()
         focusRequester.requestFocus()
