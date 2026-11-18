@@ -16,9 +16,8 @@
 
 package androidx.compose.ui.uikit
 
-import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ComposeUiDefaults
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 
 /**
  * Base configuration of the Compose container.
@@ -70,8 +69,7 @@ sealed class ComposeContainerConfiguration {
     /**
      * Controls whether a mouse/trackpad clicks on an unfocusable element clear focus.
      */
-    @ExperimentalComposeUiApi
-    var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+    var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiDefaults.isClearFocusOnMouseDownEnabled
 
     /**
      * Specifies how the Compose view reports its preferred size to UIKit.

@@ -21,24 +21,12 @@ import kotlin.jvm.JvmField
 internal object SkikoComposeUiFlags {
     @Suppress("MutableBareField")
     @JvmField
-    var isClearFocusOnMouseDownEnabled: Boolean = false
-
-    @Suppress("MutableBareField")
-    @JvmField
     var isDialogAnimationEnabled: Boolean = true
 
     @Suppress("MutableBareField")
     @JvmField
     var useSnapshotCache: Boolean = true
 }
-
-/**
- * This flag enables clearing focus on mouse down by default.
- *
- * More granular control is available in the various platform-specific entry points.
- */
-@ExperimentalComposeUiApi
-var ComposeUiFlags.isClearFocusOnMouseDownEnabled by SkikoComposeUiFlags::isClearFocusOnMouseDownEnabled
 
 /**
  * When enabled the [androidx.compose.ui.window.Dialog] appear and disappear with animation.

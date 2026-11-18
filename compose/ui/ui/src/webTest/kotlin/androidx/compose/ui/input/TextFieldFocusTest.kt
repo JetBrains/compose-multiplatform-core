@@ -24,7 +24,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.TextField
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ComposeUiDefaults
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.background
@@ -34,10 +34,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.isClearFocusOnMouseDownEnabled
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
@@ -160,8 +159,8 @@ class TextFieldFocusTest : OnCanvasTests {
 
     @Test
     fun mouseClickOutsideClearsFocusWithClearFocusOnMouseDownEnabled() {
-        val prevClearFocusOnMouseDownEnabled = ComposeUiFlags.isClearFocusOnMouseDownEnabled
-        ComposeUiFlags.isClearFocusOnMouseDownEnabled = true
+        val prevClearFocusOnMouseDownEnabled = ComposeUiDefaults.isClearFocusOnMouseDownEnabled
+        ComposeUiDefaults.isClearFocusOnMouseDownEnabled = true
         try {
             runApplicationTest {
                 val focusRequester = FocusRequester()
@@ -191,13 +190,13 @@ class TextFieldFocusTest : OnCanvasTests {
                 assertFalse(focusState!!.isFocused, "Expected to lose focus after clicking outside")
             }
         } finally {
-            ComposeUiFlags.isClearFocusOnMouseDownEnabled = prevClearFocusOnMouseDownEnabled
+            ComposeUiDefaults.isClearFocusOnMouseDownEnabled = prevClearFocusOnMouseDownEnabled
         }
     }
 
     @Test
     fun mouseClickOutsideDoesntClearsFocusWhenDisabled() = runApplicationTest {
-        ComposeUiFlags.isClearFocusOnMouseDownEnabled = true // opposite of local config
+        ComposeUiDefaults.isClearFocusOnMouseDownEnabled = true // opposite of local config
         val focusRequester = FocusRequester()
         var focusState: FocusState? = null
 
@@ -231,7 +230,7 @@ class TextFieldFocusTest : OnCanvasTests {
 
     @Test
     fun mouseClickOutsideClearsFocusWhenEnabled() = runApplicationTest {
-        ComposeUiFlags.isClearFocusOnMouseDownEnabled = false // opposite of local config
+        ComposeUiDefaults.isClearFocusOnMouseDownEnabled = false // opposite of local config
         val focusRequester = FocusRequester()
         var focusState: FocusState? = null
 
