@@ -16,18 +16,30 @@
 
 package androidx.compose.ui.keyboard
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.input.PlatformImeOptions
-import androidx.compose.ui.window.KeyboardVisibilityListener
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.window.KeyboardLayoutGuideGeometrySource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -47,6 +59,62 @@ import platform.UIKit.UIView
 
 @OptIn(ExperimentalForeignApi::class)
 internal class KeyboardInsetsCustomInputViewsTest {
+
+    @Test
+    fun testImePaddingReturnsToScreenAfterCustomInputKeyboardHides() = runUIKitInstrumentedTest {
+        var isFocused = false
+        var bottomContentRect: DpRect? = null
+        var focusManager: FocusManager? = null
+        val focusRequester = FocusRequester()
+        val customInputView = customInputView(frame = CGRectMake(0.0, 0.0, 150.0, 300.0))
+        val customInputAccessoryView = customInputAccessoryView(
+            frame = CGRectMake(0.0, 0.0, 150.0, 100.0)
+        )
+
+        setContent {
+            focusManager = LocalFocusManager.current
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .imePadding()
+            ) {
+                @Suppress("DEPRECATION")
+                TextField(
+                    value = "",
+                    onValueChange = {},
+                    keyboardOptions = KeyboardOptions(
+                        platformImeOptions = PlatformImeOptions {
+                            inputView(customInputView)
+                            inputAccessoryView(customInputAccessoryView)
+                        }
+                    ),
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { isFocused = it.isFocused }
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "bottom content",
+                    modifier = Modifier.onGloballyPositioned {
+                        bottomContentRect = it.boundsInWindow().toDpRect(density)
+                    }
+                )
+            }
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        waitUntil("Custom input keyboard must be shown") {
+            isFocused && keyboardOverlapHeight() >= 400.0
+        }
+
+        focusManager?.clearFocus()
+        waitUntil("Custom input keyboard and IME padding must disappear") {
+            !isFocused && keyboardOverlapHeight() == 0.0 &&
+                bottomContentRect?.bottom == screenSize.height
+        }
+    }
 
     @Test
     fun testInputAccessoryViewHeightChangesKeyboardOverlapByItsHeight() = runUIKitInstrumentedTest {
@@ -214,15 +282,15 @@ internal class KeyboardInsetsCustomInputViewsTest {
         frame = frame
     ) {}
 
-    private fun keyboardOverlapHeight(): Double {
-        val keyboardFrame = KeyboardVisibilityListener.keyboardFrame
+    private fun UIKitInstrumentedTest.keyboardOverlapHeight(): Double {
+        val keyboardFrame = KeyboardLayoutGuideGeometrySource(viewController.view).keyboardFrame
         if (CGRectIsEmpty(keyboardFrame)) return 0.0
 
         val screenHeight = UIScreen.mainScreen.bounds.useContents { size.height }
         return (screenHeight - CGRectGetMinY(keyboardFrame)).coerceAtLeast(0.0)
     }
 
-    private fun assertKeyboardOverlapAtLeast(minimum: Double) {
+    private fun UIKitInstrumentedTest.assertKeyboardOverlapAtLeast(minimum: Double) {
         val keyboardOverlap = keyboardOverlapHeight()
         assertTrue(
             keyboardOverlap >= minimum,

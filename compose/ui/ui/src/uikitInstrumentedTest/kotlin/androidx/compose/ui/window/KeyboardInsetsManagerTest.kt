@@ -22,12 +22,19 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
-import platform.CoreGraphics.CGRectIsEmpty
+import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectMake
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSValue
+import platform.UIKit.UIKeyboardAnimationDurationUserInfoKey
+import platform.UIKit.UIKeyboardFrameEndUserInfoKey
+import platform.UIKit.UIKeyboardWillChangeFrameNotification
+import platform.UIKit.UIKeyboardWillHideNotification
 import platform.UIKit.UIView
-import platform.UIKit.UIViewAnimationOptionCurveLinear
+import platform.UIKit.valueWithCGRect
 
 internal class KeyboardInsetsManagerTest {
     @OptIn(ExperimentalForeignApi::class)
@@ -35,7 +42,7 @@ internal class KeyboardInsetsManagerTest {
     fun testKeyboardInsetStaysZeroUntilKeyboardReachesView() = runUIKitInstrumentedTest {
         animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
         setContent {}
-        assertTrue(CGRectIsEmpty(KeyboardVisibilityListener.keyboardFrame))
+        assertEquals(0.dp, keyboardHeight)
 
         val width = screenSize.width.value.toDouble()
         val height = screenSize.height.value.toDouble()
@@ -45,12 +52,7 @@ internal class KeyboardInsetsManagerTest {
         val manager = KeyboardInsetsManager(view, checkNotNull(frameChoreographer)) { overlap = it }
         manager.start()
         try {
-            manager.keyboardWillChangeFrame(
-                currentFrame = CGRectMake(0.0, 0.0, 0.0, 0.0),
-                targetFrame = CGRectMake(0.0, height - 300.0, width, 300.0),
-                duration = 2.0,
-                animationOptions = UIViewAnimationOptionCurveLinear,
-            )
+            postKeyboardFrame(CGRectMake(0.0, height - 300.0, width, 300.0), duration = 2.0)
             val animationView = view.subviews.single() as UIView
             fun progress(): Double {
                 val layer = animationView.layer.presentationLayer() ?: return 0.0
@@ -67,6 +69,26 @@ internal class KeyboardInsetsManagerTest {
         } finally {
             manager.dispose()
             view.removeFromSuperview()
+            postKeyboardWillHide()
         }
+    }
+
+    private fun postKeyboardFrame(frame: CValue<CGRect>, duration: Double) {
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            aName = UIKeyboardWillChangeFrameNotification,
+            `object` = null,
+            userInfo = mapOf(
+                UIKeyboardFrameEndUserInfoKey to NSValue.valueWithCGRect(frame),
+                UIKeyboardAnimationDurationUserInfoKey to duration,
+            )
+        )
+    }
+
+    private fun postKeyboardWillHide() {
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            aName = UIKeyboardWillHideNotification,
+            `object` = null,
+            userInfo = mapOf(UIKeyboardAnimationDurationUserInfoKey to 0.0)
+        )
     }
 }
