@@ -326,6 +326,8 @@ internal class ComposeWindow(
         if (attachSkikoToCanvas(viewportSize = state.currentSize(), getVisualViewportScale())) {
             initComposeWindow(content)
         } else {
+            // No WebGL context. Compose App won't work.
+            // The best we can do is to show a message about it.
             viewportContainer.clear()
             viewportContainer.append(document.createTextNode(WEBGL2_NOT_SUPPORTED_MSG))
         }
@@ -353,6 +355,10 @@ internal class ComposeWindow(
     }
 
 
+    /**
+     * @return true when skiko successfully created the webgl context and attached to the html canvas,
+     *  otherwise, it returns false. In such a case the Compose App won't work at all.
+     */
     @OptIn(ExperimentalWasmJsInterop::class)
     private fun attachSkikoToCanvas(
         viewportSize: IntSize,
