@@ -109,7 +109,7 @@ class TextFieldSelectionHandlesTest {
                                 Modifier
                                     .alignByBaseline()
                                     .focusRequester(focusRequester)
-                                    .testTag(TEXT_FIELD_TAG)
+                                    .testTag(FIELD_TAG)
                             } else {
                                 Modifier.alignByBaseline()
                             },
@@ -123,7 +123,7 @@ class TextFieldSelectionHandlesTest {
         }
 
         // Show selection handles
-        findNodeWithTag(TEXT_FIELD_TAG).multiTapCharacter(offset = 2, count = 2)
+        findNodeWithTag(FIELD_TAG).multiTapCharacter(offset = 2, count = 2)
         waitForIdle()
 
         val initialHandles = assertNotNull(
@@ -166,8 +166,6 @@ class TextFieldSelectionHandlesTest {
         )
     }
 }
-
-private const val TEXT_FIELD_TAG = "textField"
 
 private val LAZY_COLUMN_SCROLL_DISTANCE = 300.dp
 

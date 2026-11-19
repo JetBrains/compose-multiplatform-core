@@ -501,11 +501,7 @@ private fun PopupLayout(
     val parentBoundsInWindow: MutableState<IntRect?> = remember { mutableStateOf(null) }
     var canCalculatePosition by remember { mutableStateOf(false) }
     EmptyLayout(Modifier.onGloballyPositioned { childCoordinates ->
-        // For a layer in the same scene, this runs before its popup measure policy calculates a
-        // position, so the policy observes the parent bounds in the first frame.
         childCoordinates.parentCoordinates?.let {
-            // Nodes which read layout coordinates (including, e.g., positionInWindow) in
-            // layout/placement get invalidated when these coordinates change
             val layoutPosition = it.positionInWindow().round()
             val layoutSize = it.size
             parentBoundsInWindow.value = IntRect(layoutPosition, layoutSize)
