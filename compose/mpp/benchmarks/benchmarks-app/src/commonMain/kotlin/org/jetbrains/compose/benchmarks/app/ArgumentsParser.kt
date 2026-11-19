@@ -25,6 +25,7 @@ import org.jetbrains.compose.benchmarks.app.benchmarks.lazygrid.LazyGrid
 import org.jetbrains.compose.benchmarks.app.benchmarks.multipleComponents.MultipleComponentsExample
 import org.jetbrains.compose.benchmarks.app.benchmarks.textlayout.TextLayout
 import org.jetbrains.compose.benchmarks.app.benchmarks.visualeffects.NYContent
+import org.jetbrains.compose.benchmarks.data.BenchmarkCase
 import org.jetbrains.compose.benchmarks.data.BenchmarkReportType
 
 
@@ -59,22 +60,24 @@ internal fun parseBenchmarkArguments(args: Array<String>): BenchmarkArguments =
         id = args[1],
     )
 
-internal fun benchmarkContent(testName: String): @Composable () -> Unit = when (testName) {
-    "AnimatedVisibility" -> { { AnimatedVisibility() } }
-    "LazyGrid" -> { { LazyGrid() } }
-    "LazyGrid-ItemLaunchedEffect" -> { { LazyGrid(withLaunchedEffectInItem = true) } }
-    "LazyGrid-SmoothScroll" -> { { LazyGrid(smoothScroll = true) } }
-    "LazyGrid-SmoothScroll-ItemLaunchedEffect" -> {
+internal fun benchmarkContent(testName: String): @Composable () -> Unit = when (
+    BenchmarkCase.entries.firstOrNull { it.id == testName }
+        ?: error("Unknown benchmark case: $testName")
+) {
+    BenchmarkCase.AnimatedVisibility -> { { AnimatedVisibility() } }
+    BenchmarkCase.LazyGrid -> { { LazyGrid() } }
+    BenchmarkCase.LazyGridItemLaunchedEffect -> { { LazyGrid(withLaunchedEffectInItem = true) } }
+    BenchmarkCase.LazyGridSmoothScroll -> { { LazyGrid(smoothScroll = true) } }
+    BenchmarkCase.LazyGridSmoothScrollItemLaunchedEffect -> {
         { LazyGrid(smoothScroll = true, withLaunchedEffectInItem = true) }
     }
-    "VisualEffects" -> { { NYContent(1920, 1080) } }
-    "LazyList" -> { { MainUiNoImageUseModel() } }
-    "MultipleComponents" -> { { MultipleComponentsExample(isVectorGraphicsSupported = true) } }
-    "MultipleComponents-NoVectorGraphics" -> {
+    BenchmarkCase.VisualEffects -> { { NYContent(1920, 1080) } }
+    BenchmarkCase.LazyList -> { { MainUiNoImageUseModel() } }
+    BenchmarkCase.MultipleComponents -> { { MultipleComponentsExample(isVectorGraphicsSupported = true) } }
+    BenchmarkCase.MultipleComponentsNoVectorGraphics -> {
         { MultipleComponentsExample(isVectorGraphicsSupported = false) }
     }
-    "TextLayout" -> { { TextLayout() } }
-    "CanvasDrawing" -> { { CanvasDrawing() } }
-    "HeavyShader" -> { { HeavyShader() } }
-    else -> error("Unknown benchmark case: $testName")
+    BenchmarkCase.TextLayout -> { { TextLayout() } }
+    BenchmarkCase.CanvasDrawing -> { { CanvasDrawing() } }
+    BenchmarkCase.HeavyShader -> { { HeavyShader() } }
 }

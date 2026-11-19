@@ -11,7 +11,7 @@ requires JDK 17 or newer. Apple targets require macOS with Xcode.
 - `benchmarks-app` — an application with Compose benchmark cases.
 - `benchmarks-runtime` — runs measurements and sends results.
 - `benchmarks-compose-init-1-12` / `benchmarks-compose-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
-- `benchmarks-data` — shared report models.
+- `benchmarks-data` — shared report models and benchmark case IDs.
 - `benchmarks-report` — a JVM library that generates a static HTML report from a session directory.
 - `benchmarks-collector` — receives reports over HTTP and saves them as JSON files.
 - `benchmarks-launcher` — a console application that builds and runs benchmarks sequentially.
@@ -189,7 +189,23 @@ warmup and measurement. Keep input data and random seeds reproducible. The measu
 already handles warmup, frame counts, timing, and report submission; do not implement these in the
 UI case.
 
-### 2. Register the case in `benchmarkContent`
+### 2. Add the case ID to `BenchmarkCase`
+
+Add an entry to the enum in
+`benchmarks-data/src/commonMain/kotlin/org/jetbrains/compose/benchmarks/data/BenchmarkCase.kt`:
+
+```kotlin
+MyBenchmark("MyBenchmark"),
+```
+
+The explicit string ID is used in launch arguments, JSON reports, and the HTML report. IDs must be
+unique and are case-sensitive. Keep existing IDs stable so results remain comparable across runs.
+
+The launcher derives its case list from `BenchmarkCase.entries`: the new case automatically becomes
+available to `--tests`, is included in `--tests all`, and appears in help and validation. Do not add
+a separate registration in the launcher.
+
+### 3. Map the case to its Compose UI in `benchmarkContent`
 
 In `benchmarks-app/src/commonMain/kotlin/org/jetbrains/compose/benchmarks/app/ArgumentsParser.kt`,
 import the composable:
@@ -198,22 +214,15 @@ import the composable:
 import org.jetbrains.compose.benchmarks.app.benchmarks.mybenchmark.MyBenchmark
 ```
 
-Add a branch to the existing `when` in `benchmarkContent`, before `else`:
+Add a branch to the existing `when` in `benchmarkContent`:
 
 ```kotlin
-"MyBenchmark" -> { { MyBenchmark() } }
+BenchmarkCase.MyBenchmark -> { { MyBenchmark() } }
 ```
 
-The outer branch returns a composable lambda; it must not call the composable directly. The string
-is the case's identifier in launch arguments, JSON reports, and the HTML report. Names are
-case-sensitive.
-
-### 3. Register the case in the launcher
-
-Add `"MyBenchmark"` to the `cases` list in
-`benchmarks-launcher/src/main/kotlin/org/jetbrains/compose/benchmarks/launcher/Main.kt`.
-Use exactly the same name as in `benchmarkContent`. This makes the case available to `--tests`,
-includes it in `--tests all`, and exposes it in the launcher's help and validation.
+The outer branch returns a composable lambda; it must not call the composable directly. Keep the
+`when` exhaustive, without an `else` branch: adding an enum entry without a matching UI branch must
+cause a compilation error.
 
 No additional registration is needed in the collector or HTML report generator: they use the case
 name from the report. Adding a UI case does not require a new measurement mode or report format.

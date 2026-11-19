@@ -34,6 +34,7 @@ import com.github.ajalt.clikt.parameters.types.restrictTo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import org.jetbrains.compose.benchmarks.data.BenchmarkCase
 import org.jetbrains.compose.benchmarks.report.generateHtmlReport
 import java.net.InetSocketAddress
 import java.net.ServerSocket
@@ -49,11 +50,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.*
 import kotlin.math.round
 
-private val cases = listOf(
-    "AnimatedVisibility", "LazyGrid", "LazyGrid-ItemLaunchedEffect", "LazyGrid-SmoothScroll",
-    "LazyGrid-SmoothScroll-ItemLaunchedEffect", "VisualEffects", "LazyList", "MultipleComponents",
-    "MultipleComponents-NoVectorGraphics", "TextLayout", "CanvasDrawing", "HeavyShader",
-)
+private val cases = BenchmarkCase.entries.map { it.id }
 private val availableTargets = listOf("jvm", "macos", "js", "wasmJs", "ios")
 private val modes = listOf("averageFrame", "fps", "realFrames", "startup")
 private val json = Json { prettyPrint = true; encodeDefaults = true; explicitNulls = false }
