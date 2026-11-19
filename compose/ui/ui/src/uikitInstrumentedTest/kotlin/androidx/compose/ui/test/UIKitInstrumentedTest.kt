@@ -103,6 +103,7 @@ import platform.Foundation.NSDate
 import platform.Foundation.NSNotification
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSRunLoop
+import platform.Foundation.NSThread
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.runUntilDate
@@ -844,7 +845,11 @@ internal class UIKitInstrumentedTest(
         require(count >= 1) { "count must be >= 1, was $count" }
         val point = characterPosition(offset)
         repeat(count) { i ->
-            if (i > 0) delay(50)
+            if (i > 0) {
+                // A cold first tap can start a long UIKit task. Running the run loop here can
+                // finish after the double-tap timeout, turning the second tap into a separate tap.
+                NSThread.sleepForTimeInterval(0.05)
+            }
             tap(point)
         }
     }
