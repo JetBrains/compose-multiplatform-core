@@ -176,15 +176,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      *
      * When set to `false`, [ComposePanel] will behave like [javax.swing.JScrollPane], consuming all
      * mouse wheel events that occur over it.
-     *
-     * To configure this behavior globally, set
-     * [ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents].
-     *
-     * @see ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents
      */
-    @ExperimentalComposeUiApi
-    var redispatchUnconsumedMouseWheelEvents: Boolean =
-        ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value
+    var redispatchUnconsumedMouseWheelEvents: Boolean = true
         set(value) {
             field = value
             _composeContainer?.redispatchUnconsumedMouseWheelEvents = value

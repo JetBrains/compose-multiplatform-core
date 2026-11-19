@@ -19,7 +19,6 @@ package androidx.compose.ui
 import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
-import androidx.compose.ui.awt.ComposePanel
 
 internal enum class LayerType {
     OnSameCanvas,
@@ -88,22 +87,6 @@ internal object ComposeFeatureFlags {
      */
     val useInteropBlending = FeatureFlag {
         System.getProperty("compose.interop.blending").toBoolean()
-    }
-
-    /**
-     * Whether to redispatch unconsumed mouse wheel events to the parent heavyweight component.
-     * This allows any scrollable components beneath Compose to be scrolled.
-     *
-     * To configure this behavior per [ComposePanel], set
-     * [ComposePanel.redispatchUnconsumedMouseWheelEvents].
-     *
-     * This flag will be removed in the future, and the default behavior will correspond to a value
-     * of `true`.
-     *
-     * @see ComposePanel.redispatchUnconsumedMouseWheelEvents
-     */
-    val redispatchUnconsumedMouseWheelEvents = FeatureFlag {
-        System.getProperty("compose.swing.redispatchMouseWheelEvents", "true").toBoolean()
     }
 }
 

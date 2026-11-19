@@ -389,8 +389,7 @@ internal class ComposeSceneMediator(
             scene.showLayoutBounds = value
         }
 
-    var redispatchUnconsumedMouseWheelEvents: Boolean =
-        ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value
+    var redispatchUnconsumedMouseWheelEvents: Boolean = true
 
     /**
      * Provides the size of the scene content in infinity constraints.
