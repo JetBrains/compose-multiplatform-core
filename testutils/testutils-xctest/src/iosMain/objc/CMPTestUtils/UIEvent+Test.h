@@ -77,4 +77,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ * The artificial gesture sessions that were opened (scroll, pinch, hover) and
+ * have not been closed yet. Used by the test teardown to verify that every
+ * started gesture was completed.
+ */
+@interface UIEvent (CMPActiveGestures)
+
++ (NSArray<UIEvent *> *)activeScrollEvents;
++ (NSArray<UIEvent *> *)activePinchEvents;
++ (NSArray<UIEvent *> *)activeHoverEvents;
+
+/** Drops all unclosed scroll, pinch and hover sessions without delivering their end events. */
++ (void)endAllGestures;
+
+@end
+
 NS_ASSUME_NONNULL_END

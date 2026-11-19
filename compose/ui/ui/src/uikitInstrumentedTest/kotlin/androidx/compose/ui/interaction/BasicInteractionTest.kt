@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
@@ -95,12 +96,14 @@ class BasicInteractionTest {
             }
         }
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = -(100.dp + CupertinoTouchSlop))
 
         waitForIdle()
 
         assertEquals(100 * density.density, state.value.toFloat())
         assertEquals(DpRect(DpOffset.Zero, DpSize(screenSize.width, 100.dp)), boxRect)
+
+        touch.up()
     }
 }

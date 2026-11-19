@@ -76,7 +76,7 @@ internal abstract class DialogSwipeBackTest(
             )
         }
 
-        val backSwipe = swipeFromLeftEdge().hold()
+        val backSwipe = dragFromLeftEdge().hold()
 
         waitForIdle()
 
@@ -125,7 +125,7 @@ internal abstract class DialogSwipeBackTest(
             )
         }
 
-        val backSwipe = swipeFromRightEdge().hold()
+        val backSwipe = dragFromRightEdge().hold()
 
         waitForIdle()
 

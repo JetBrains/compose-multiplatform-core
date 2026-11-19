@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.test.utils
 
+import androidx.compose.test.utils.endAllGestures
+import androidx.compose.test.utils.endAllPresses
 import androidx.compose.test.utils.endAllTouches
 import androidx.compose.test.utils.endTouch
 import androidx.compose.test.utils.getTouchesEvent
@@ -32,6 +34,7 @@ import platform.UIKit.UITouch
 import platform.UIKit.UITouchPhase
 import platform.UIKit.UITouchTypeDirect
 import platform.UIKit.UITouchTypeIndirect
+import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIWindow
 
 @OptIn(ExperimentalForeignApi::class)
@@ -68,8 +71,10 @@ internal fun UIWindow.getTouchesEvent(): UIEvent {
 
 @OptIn(ExperimentalForeignApi::class)
 @Suppress("UnusedReceiverParameter")
-internal fun UIWindow.resetTouches() {
+internal fun UIWindow.resetAllGestures() {
     UITouch.endAllTouches()
+    UIEvent.endAllGestures()
+    UIPressesEvent.endAllPresses()
 }
 
 @OptIn(ExperimentalForeignApi::class)
