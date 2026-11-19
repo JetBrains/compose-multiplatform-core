@@ -23,45 +23,12 @@ static BOOL CMPIsForward(UITextDirection direction) {
         direction == UITextLayoutDirectionDown;
 }
 
-static BOOL CMPIsNewline(NSString *string, NSInteger index) {
-    return [NSCharacterSet.newlineCharacterSet characterIsMember:[string characterAtIndex:index]];
-}
-
-/// The offset of the newline at or after `offset`, or the end of `string`.
-static NSInteger CMPParagraphEnd(NSString *string, NSInteger offset) {
-    NSInteger length = (NSInteger)string.length;
-    NSInteger location = MIN(MAX(offset, 0), length);
-    while (location < length && !CMPIsNewline(string, location)) {
-        location++;
-    }
-    return location;
-}
-
-/// The offset after the newline at or before `offset - 1`, or the start of `string`.
-static NSInteger CMPParagraphStart(NSString *string, NSInteger offset) {
-    NSInteger location = MIN(MAX(offset, 0), (NSInteger)string.length);
-    while (location > 0 && !CMPIsNewline(string, location - 1)) {
-        location--;
-    }
-    return location;
-}
-
-static BOOL CMPIsParagraphBoundary(NSString *string, NSInteger offset) {
-    NSInteger length = (NSInteger)string.length;
-    if (offset < 0 || offset > length) {
-        return NO;
-    }
-    if (offset == 0 || offset == length) {
-        return YES;
-    }
-    return CMPIsNewline(string, offset) || CMPIsNewline(string, offset - 1);
-}
-
 static BOOL CMPIsSegmentedGranularity(UITextGranularity granularity) {
     switch (granularity) {
         case UITextGranularityCharacter:
         case UITextGranularityWord:
         case UITextGranularitySentence:
+        case UITextGranularityParagraph:
         case UITextGranularityLine:
             return YES;
         default:
@@ -71,120 +38,44 @@ static BOOL CMPIsSegmentedGranularity(UITextGranularity granularity) {
 
 #pragma mark - Select action
 
-static const NSRange CMPNoRange = {NSNotFound, 0};
-
-static BOOL CMPIsWhitespace(NSString *text, NSInteger index) {
-    return [NSCharacterSet.whitespaceAndNewlineCharacterSet characterIsMember:[text characterAtIndex:index]];
-}
-
-/// The word token of `tokenizer` containing `index`, or `CMPNoRange`.
-static NSRange CMPWordTokenAt(CFStringTokenizerRef tokenizer, NSInteger index) {
+/// The token of `tokenizer` containing `index`, or a range with `NSNotFound` location.
+static NSRange CMPWordAt(CFStringTokenizerRef tokenizer, NSInteger index) {
     if (CFStringTokenizerGoToTokenAtIndex(tokenizer, index) == kCFStringTokenizerTokenNone) {
-        return CMPNoRange;
+        return NSMakeRange(NSNotFound, 0);
     }
     CFRange token = CFStringTokenizerGetCurrentTokenRange(tokenizer);
     return NSMakeRange(token.location, token.length);
 }
 
-/// The whitespace-delimited run containing the non-whitespace character at `index`.
-static NSRange CMPRunAt(NSString *text, NSInteger length, NSInteger index) {
-    NSInteger start = index;
-    NSInteger end = index + 1;
-    while (start > 0 && !CMPIsWhitespace(text, start - 1)) {
-        start--;
-    }
-    while (end < length && !CMPIsWhitespace(text, end)) {
-        end++;
-    }
-    return NSMakeRange(start, end - start);
-}
-
-/// Whether `[start, end)` contains a word token.
-static BOOL CMPHasWordToken(CFStringTokenizerRef tokenizer, NSInteger start, NSInteger end) {
-    for (NSInteger i = start; i < end; i++) {
-        if (CMPWordTokenAt(tokenizer, i).location != NSNotFound) {
-            return YES;
-        }
-    }
-    return NO;
-}
-
-/// The word containing the character at `index`, or `CMPNoRange`.
-static NSRange CMPWordAt(CFStringTokenizerRef tokenizer, NSString *text, NSInteger length, NSInteger index) {
-    if (index >= length || CMPIsWhitespace(text, index)) {
-        return CMPNoRange;
-    }
-    NSRange token = CMPWordTokenAt(tokenizer, index);
-    if (token.location != NSNotFound) {
-        return token;
-    }
-    NSRange run = CMPRunAt(text, length, index);
-    return CMPHasWordToken(tokenizer, run.location, NSMaxRange(run)) ? CMPNoRange : run;
-}
-
-/// The last word ending at or before `offset`, or `CMPNoRange`. `offset` must not be inside a word.
-static NSRange CMPWordBefore(CFStringTokenizerRef tokenizer, NSString *text, NSInteger length, NSInteger offset) {
-    NSInteger index = offset - 1;
-    while (index >= 0) {
-        if (CMPIsWhitespace(text, index)) {
-            index--;
-            continue;
-        }
-        // Visit each character of the run once: its word tokens, or the run itself as a word.
-        NSRange run = CMPRunAt(text, length, index);
-        for (NSInteger i = index; i >= (NSInteger)run.location; i--) {
-            NSRange token = CMPWordTokenAt(tokenizer, i);
-            if (token.location != NSNotFound) {
-                return token;
-            }
-        }
-        if (!CMPHasWordToken(tokenizer, index + 1, NSMaxRange(run))) {
-            return run;
-        }
-        index = (NSInteger)run.location - 1;
-    }
-    return CMPNoRange;
-}
-
-/// The first word starting at or after `offset`, or `CMPNoRange`. No word must precede `offset`.
-static NSRange CMPWordAfter(CFStringTokenizerRef tokenizer, NSString *text, NSInteger length, NSInteger offset) {
-    NSInteger index = offset;
-    while (index < length) {
-        if (CMPIsWhitespace(text, index)) {
-            index++;
-            continue;
-        }
-        NSRange run = CMPRunAt(text, length, index);
-        for (NSInteger i = index; i < (NSInteger)NSMaxRange(run); i++) {
-            NSRange token = CMPWordTokenAt(tokenizer, i);
-            if (token.location != NSNotFound) {
-                return token;
-            }
-        }
-        // No word precedes `offset`, so the run has no word tokens.
-        return run;
-    }
-    return CMPNoRange;
-}
-
+/// `tokenizer` must be a `kCFStringTokenizerUnitWord` tokenizer of `text`.
 static NSRange CMPSelectActionRange(CFStringTokenizerRef tokenizer, NSString *text, NSInteger caret) {
     NSInteger length = (NSInteger)text.length;
 
-    NSRange word = CMPWordAt(tokenizer, text, length, caret);
-    if (word.location != NSNotFound) {
-        return word;
+    // The word containing the caret or starting at it.
+    if (caret < length) {
+        NSRange word = CMPWordAt(tokenizer, caret);
+        if (word.location != NSNotFound) {
+            return word;
+        }
     }
 
-    NSInteger paragraphStart = CMPParagraphStart(text, caret);
-    NSRange previous = CMPWordBefore(tokenizer, text, length, caret);
-    if (previous.location != NSNotFound) {
-        NSInteger start = MAX((NSInteger)previous.location, paragraphStart);
-        return NSMakeRange(start, caret - start);
+    // From the previous word to the caret, within the caret's paragraph.
+    CMPTextSegmenter *paragraphs = [[CMPTextSegmenter alloc] initWithUnit:CMPTextSegmentUnitParagraph];
+    NSInteger paragraphStart = [paragraphs precedingBoundary:caret inString:text];
+    for (NSInteger index = caret - 1; index >= 0; index--) {
+        NSRange word = CMPWordAt(tokenizer, index);
+        if (word.location != NSNotFound) {
+            NSInteger start = MAX((NSInteger)word.location, paragraphStart);
+            return NSMakeRange(start, caret - start);
+        }
     }
 
-    NSRange next = CMPWordAfter(tokenizer, text, length, caret);
-    if (next.location != NSNotFound) {
-        return NSMakeRange(caret, next.location - caret);
+    // No word before the caret: up to the next word.
+    for (NSInteger index = caret; index < length; index++) {
+        NSRange word = CMPWordAt(tokenizer, index);
+        if (word.location != NSNotFound) {
+            return NSMakeRange(caret, word.location - caret);
+        }
     }
 
     // There are no words. At the end of the text, `UITextView` selects the last paragraph.
@@ -197,17 +88,18 @@ static NSRange CMPSelectActionRange(CFStringTokenizerRef tokenizer, NSString *te
 #pragma mark - CMPTextInputStringTokenizer
 
 @implementation CMPTextInputStringTokenizer {
-    /// Segmenters for character, word, sentence and line granularities, created on first use.
-    /// Each keeps its tokenizer bound to the last text, so repeated queries are cheap.
+    /// Segmenters by granularity (see `CMPIsSegmentedGranularity`), created on first use. Each keeps
+    /// its tokenizer bound to the last text, so repeated queries are cheap.
     CMPTextSegmenter *_segmenters[UITextGranularityLine + 1];
 }
 
 + (NSRange)selectActionRangeForCaretAtOffset:(NSInteger)offset inText:(NSString *)text {
     NSInteger length = (NSInteger)text.length;
     NSInteger caret = MIN(MAX(offset, 0), length);
-    // A one-off user action, so the tokenizer isn't cached. Unlike `kCFStringTokenizerUnitWordBoundary`,
-    // `kCFStringTokenizerUnitWord` yields only words and splits them at punctuation the way
-    // `UITextView` does ("foo.bar" is two words).
+    // A one-off user action, so the tokenizer isn't cached. Unlike `kCFStringTokenizerUnitWordBoundary`
+    // (`CMPTextSegmenter`), `kCFStringTokenizerUnitWord` tokens are the words `UITextView` selects:
+    // they split at punctuation ("example.com" is two words), and a token is found at an index of
+    // whitespace-delimited punctuation too ("--", ":)").
     CFStringTokenizerRef tokenizer = CFStringTokenizerCreate(kCFAllocatorDefault, (__bridge CFStringRef)text,
                                                              CFRangeMake(0, length), kCFStringTokenizerUnitWord, NULL);
     NSRange range = CMPSelectActionRange(tokenizer, text, caret);
@@ -242,6 +134,9 @@ static NSRange CMPSelectActionRange(CFStringTokenizerRef tokenizer, NSString *te
             case UITextGranularitySentence:
                 unit = CMPTextSegmentUnitSentence;
                 break;
+            case UITextGranularityParagraph:
+                unit = CMPTextSegmentUnitParagraph;
+                break;
             case UITextGranularityLine:
                 unit = CMPTextSegmentUnitLine;
                 break;
@@ -265,10 +160,7 @@ static NSRange CMPSelectActionRange(CFStringTokenizerRef tokenizer, NSString *te
     }
     BOOL isForward = CMPIsForward(direction);
     NSInteger result;
-    if (granularity == UITextGranularityParagraph) {
-        NSString *text = [self tokenizedText];
-        result = isForward ? CMPParagraphEnd(text, offset) : CMPParagraphStart(text, offset);
-    } else if (CMPIsSegmentedGranularity(granularity)) {
+    if (CMPIsSegmentedGranularity(granularity)) {
         NSString *text = [self tokenizedText];
         CMPTextSegmenter *segmenter = [self segmenterForGranularity:granularity];
         // Both are clamped to the text bounds.
@@ -293,9 +185,6 @@ static NSRange CMPSelectActionRange(CFStringTokenizerRef tokenizer, NSString *te
     NSInteger offset = [self offsetOfTextPosition:position];
     if (offset == NSNotFound) {
         return NO;
-    }
-    if (granularity == UITextGranularityParagraph) {
-        return CMPIsParagraphBoundary([self tokenizedText], offset);
     }
     if (CMPIsSegmentedGranularity(granularity)) {
         return [[self segmenterForGranularity:granularity] isBoundary:offset inString:[self tokenizedText]];

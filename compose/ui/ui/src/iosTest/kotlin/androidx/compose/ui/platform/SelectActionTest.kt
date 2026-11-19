@@ -59,6 +59,18 @@ class SelectActionTest {
         "我在学习 中文。好的",
         "私は日本語を勉強しています。",
         "a \uD83D\uDC4D b",
+        "Visit example.com today.",
+        "Mail john.doe@mail.com now",
+        "https://jetbrains.com/kotlin",
+        "The U.S.A. is big.",
+        "Hello\u2014world",
+        "C++ and C# rock",
+        "#tag @user",
+        "Price: \$100.50!",
+        "Meet at 3:45pm.",
+        "Don't stop\u2014believing...",
+        "\"Quoted,\" she said.",
+        "Line one.\nLine two!",
     )
 
     private fun selectInTextView(text: String, cursor: Int): TextRange {

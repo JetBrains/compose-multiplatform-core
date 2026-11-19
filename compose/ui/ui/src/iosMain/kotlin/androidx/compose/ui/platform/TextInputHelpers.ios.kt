@@ -264,7 +264,7 @@ internal class DetachedTextEditingDelegate(
     override fun selectAll() = Unit
 
     override fun textInRange(range: TextRange): String? =
-        text.takeIf { range.isValidIn(it.length) }?.substring(range.start, range.end)
+        text.takeIf { range.isValidIn(it.length) }?.substringOrSelf(range)
 
     override fun replaceRange(range: TextRange, text: String) = Unit
 
@@ -306,6 +306,9 @@ internal fun NativeTextEditingDelegate.detachedCopy() = DetachedTextEditingDeleg
 
 internal fun TextRange.isValidIn(length: Int): Boolean =
     start >= 0 && start <= end && end <= length
+
+internal fun String.substringOrSelf(range: TextRange): String =
+    if (range.start == 0 && range.end == length) this else substring(range.start, range.end)
 
 internal fun String.movePositionByGraphemes(position: Int, offset: Int): Int? {
     val newPosition = position + offset

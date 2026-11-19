@@ -29,6 +29,49 @@ static CFOptionFlags CMPTokenizerUnit(CMPTextSegmentUnit unit) {
     }
 }
 
+/// Whether `c` is in `NSCharacterSet.newlineCharacterSet`.
+static inline BOOL CMPIsNewlineCharacter(UniChar c) {
+    return (c >= 0x000A && c <= 0x000D) || c == 0x0085 || c == 0x2028 || c == 0x2029;
+}
+
+// Paragraph scanning reads characters through `CFStringInlineBuffer`: directly from the UTF-16
+// storage when the string has one, as bridged Kotlin strings do, instead of a message send per
+// character.
+
+/// The offset of the newline at or after `offset`, or `length`. `offset` must be in `[0, length]`.
+static NSInteger CMPParagraphEnd(CFStringInlineBuffer *characters, NSInteger length, NSInteger offset) {
+    NSInteger location = offset;
+    while (location < length && !CMPIsNewlineCharacter(CFStringGetCharacterFromInlineBuffer(characters, location))) {
+        location++;
+    }
+    return location;
+}
+
+/// The offset after the newline before `offset`, or `0`. `offset` must be in `[0, length]`.
+static NSInteger CMPParagraphStart(CFStringInlineBuffer *characters, NSInteger offset) {
+    NSInteger location = offset;
+    while (location > 0 && !CMPIsNewlineCharacter(CFStringGetCharacterFromInlineBuffer(characters, location - 1))) {
+        location--;
+    }
+    return location;
+}
+
+static void CMPInitCharacters(CFStringInlineBuffer *characters, NSString *string, NSInteger length) {
+    CFStringInitInlineBuffer((__bridge CFStringRef)string, characters, CFRangeMake(0, length));
+}
+
+/// The paragraph containing the character at `index`, or the newline at `index`. `index` must be in
+/// `[0, length)`.
+static NSRange CMPParagraphRange(NSString *string, NSInteger index, NSInteger length) {
+    CFStringInlineBuffer characters;
+    CMPInitCharacters(&characters, string, length);
+    if (CMPIsNewlineCharacter(CFStringGetCharacterFromInlineBuffer(&characters, index))) {
+        return NSMakeRange(index, 1);
+    }
+    NSInteger start = CMPParagraphStart(&characters, index);
+    return NSMakeRange(start, CMPParagraphEnd(&characters, length, index) - start);
+}
+
 /// `index` must be in `[0, length)`.
 static NSRange CMPComposedCharacterRange(NSString *string, NSInteger index, NSInteger length) {
     CFRange range = CFStringGetRangeOfComposedCharactersAtIndex((__bridge CFStringRef)string, index);
@@ -99,6 +142,9 @@ static NSRange CMPComposedCharacterRange(NSString *string, NSInteger index, NSIn
 
 /// `index` must be in `[0, length)`.
 - (NSRange)segmentRangeAtValidIndex:(NSInteger)index inString:(NSString *)string length:(NSInteger)length {
+    if (_unit == CMPTextSegmentUnitParagraph) {
+        return CMPParagraphRange(string, index, length);
+    }
     if (_unit != CMPTextSegmentUnitCharacter) {
         [self bindString:string];
         if (CFStringTokenizerGoToTokenAtIndex(_tokenizer, index) != kCFStringTokenizerTokenNone) {
@@ -123,6 +169,11 @@ static NSRange CMPComposedCharacterRange(NSString *string, NSInteger index, NSIn
 
 - (NSInteger)followingBoundary:(NSInteger)offset inString:(NSString *)string {
     NSInteger length = (NSInteger)string.length;
+    if (_unit == CMPTextSegmentUnitParagraph) {
+        CFStringInlineBuffer characters;
+        CMPInitCharacters(&characters, string, length);
+        return CMPParagraphEnd(&characters, length, MIN(MAX(offset, 0), length));
+    }
     if (offset < 0) {
         return 0;
     }
@@ -134,6 +185,11 @@ static NSRange CMPComposedCharacterRange(NSString *string, NSInteger index, NSIn
 
 - (NSInteger)precedingBoundary:(NSInteger)offset inString:(NSString *)string {
     NSInteger length = (NSInteger)string.length;
+    if (_unit == CMPTextSegmentUnitParagraph) {
+        CFStringInlineBuffer characters;
+        CMPInitCharacters(&characters, string, length);
+        return CMPParagraphStart(&characters, MIN(MAX(offset, 0), length));
+    }
     if (offset <= 0) {
         return 0;
     }
@@ -150,6 +206,11 @@ static NSRange CMPComposedCharacterRange(NSString *string, NSInteger index, NSIn
     }
     if (offset == 0 || offset == length) {
         return YES;
+    }
+    if (_unit == CMPTextSegmentUnitParagraph) {
+        // The boundaries are the sides of newlines; no need to find the whole paragraph.
+        return CMPIsNewlineCharacter([string characterAtIndex:offset]) ||
+            CMPIsNewlineCharacter([string characterAtIndex:offset - 1]);
     }
     return [self segmentRangeAtValidIndex:offset inString:string length:length].location == (NSUInteger)offset;
 }

@@ -19,9 +19,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// A tokenizer that finds character, word, sentence and line boundaries with the system text
-/// segmentation (see `CMPTextSegmenter`), and paragraph boundaries at newline characters. Other
-/// granularities are handled by `UITextInputStringTokenizer`.
+/// A tokenizer that finds character, word, sentence, line and paragraph boundaries with
+/// `CMPTextSegmenter`. Other granularities are handled by `UITextInputStringTokenizer`.
 ///
 /// Subclasses provide the text and the mapping between text positions and UTF-16 offsets.
 @interface CMPTextInputStringTokenizer: UITextInputStringTokenizer <UITextInputTokenizer>
@@ -43,8 +42,8 @@ NS_ASSUME_NONNULL_BEGIN
 ///    paragraph;
 /// 3. otherwise, if no word precedes the caret, the text from the caret to the next word.
 ///
-/// Words are the word tokens of `CFStringTokenizer`, and whitespace-delimited runs of other
-/// characters, such as punctuation, that contain no word token.
+/// Words are the tokens of `kCFStringTokenizerUnitWord`, including whitespace-delimited runs of
+/// punctuation such as "--".
 + (NSRange)selectActionRangeForCaretAtOffset:(NSInteger)offset inText:(NSString *)text;
 
 // Distinct names for `isPosition:atBoundary:inDirection:` and
