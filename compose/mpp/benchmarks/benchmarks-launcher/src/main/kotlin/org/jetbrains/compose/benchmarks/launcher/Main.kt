@@ -298,7 +298,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             }
         }
         val passed = summaries.count { it.error == null && it.runs.all { run -> run.status == "passed" } }
-        println("Finished matrix: $passed/$total configurations passed. Results: $session")
+        println("Finished matrix: $passed passed, ${total - passed} failed ($total total). Results: $session")
         if (!shuttingDown.get()) {
             val code = if (interrupted) 130 else if (passed != total || reportFailed) 1 else 0
             if (code != 0) throw ProgramResult(code)
