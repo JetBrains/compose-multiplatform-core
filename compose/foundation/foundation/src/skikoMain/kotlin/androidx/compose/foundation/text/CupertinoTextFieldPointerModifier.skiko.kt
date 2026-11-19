@@ -45,7 +45,8 @@ internal fun Modifier.cupertinoTextFieldPointer(
     state: LegacyTextFieldState,
     focusRequester: FocusRequester,
     readOnly: Boolean,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
+    wordSelectionAdjustment: SelectionAdjustment = SelectionAdjustment.Word,
 ): Modifier = if (enabled) {
     this
         .updateSelectionTouchMode { state.isInTouchMode = it }
@@ -84,7 +85,14 @@ internal fun Modifier.cupertinoTextFieldPointer(
                 state.handleState = HandleState.Cursor
             }
         }
-        .then(CupertinoSelectionGesturesModifierElement(manager, state, offsetMapping))
+        .then(
+            CupertinoSelectionGesturesModifierElement(
+                manager,
+                state,
+                offsetMapping,
+                wordSelectionAdjustment,
+            )
+        )
         .pointerHoverIcon(PointerIcon.Text)
 } else {
     this
@@ -94,12 +102,18 @@ private data class CupertinoSelectionGesturesModifierElement(
     private val manager: TextFieldSelectionManager,
     private val state: LegacyTextFieldState,
     private val offsetMapping: OffsetMapping,
+    private val wordSelectionAdjustment: SelectionAdjustment,
 ) : ModifierNodeElement<CupertinoSelectionGesturesModifierNode>() {
     override fun create(): CupertinoSelectionGesturesModifierNode =
-        CupertinoSelectionGesturesModifierNode(manager, state, offsetMapping)
+        CupertinoSelectionGesturesModifierNode(
+            manager,
+            state,
+            offsetMapping,
+            wordSelectionAdjustment,
+        )
 
     override fun update(node: CupertinoSelectionGesturesModifierNode) {
-        node.update(manager, state, offsetMapping)
+        node.update(manager, state, offsetMapping, wordSelectionAdjustment)
     }
 
     override fun InspectorInfo.inspectableProperties() {
@@ -111,6 +125,7 @@ private class CupertinoSelectionGesturesModifierNode(
     private var manager: TextFieldSelectionManager,
     private var state: LegacyTextFieldState,
     private var offsetMapping: OffsetMapping,
+    private var wordSelectionAdjustment: SelectionAdjustment,
 ) : DelegatingNode() {
     private val longPressDragObserver = object : TextDragObserver {
         var dragTotalDistance = Offset.Zero
@@ -138,7 +153,13 @@ private class CupertinoSelectionGesturesModifierNode(
                     state.onValueChange
                 )
                 if (selectionAdjustment != SelectionAdjustment.None) {
-                    manager.doRepeatingTapSelection(startPoint, selectionAdjustment)
+                    val effectiveAdjustment =
+                        if (selectionAdjustment == SelectionAdjustment.Word) {
+                            wordSelectionAdjustment
+                        } else {
+                            selectionAdjustment
+                        }
+                    manager.doRepeatingTapSelection(startPoint, effectiveAdjustment)
                 }
                 dragBeginOffset = startPoint
             }
@@ -196,6 +217,7 @@ private class CupertinoSelectionGesturesModifierNode(
         manager: TextFieldSelectionManager,
         state: LegacyTextFieldState,
         offsetMapping: OffsetMapping,
+        wordSelectionAdjustment: SelectionAdjustment,
     ) {
         if (this.manager != manager) {
             pointerInputNode.resetPointerInputHandler()
@@ -203,6 +225,7 @@ private class CupertinoSelectionGesturesModifierNode(
         this.manager = manager
         this.state = state
         this.offsetMapping = offsetMapping
+        this.wordSelectionAdjustment = wordSelectionAdjustment
     }
 }
 
