@@ -13,7 +13,7 @@ jobs:
     if: >-
       github.event.issue.pull_request &&
       contains(fromJSON('["OWNER", "MEMBER"]'), github.event.comment.author_association) &&
-      startsWith(github.event.comment.body, 'benchmark ')
+      startsWith(github.event.comment.body, '/run-benchmarks ')
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
@@ -30,10 +30,10 @@ jobs:
           script: |
             // Accept space/comma-separated lists, optionally enclosed in square brackets.
             const match = context.payload.comment.body.trim().match(
-              /^benchmark\s+--target\s+(.+?)\s+--tests\s+(.+?)\s+--modes\s+(.+)$/
+              /^\/run-benchmarks\s+--target\s+(.+?)\s+--tests\s+(.+?)\s+--modes\s+(.+)$/
             );
             if (!match) {
-              throw new Error('Expected: benchmark --target [...] --tests [...] --modes [...]');
+              throw new Error('Expected: /run-benchmarks --target [...] --tests [...] --modes [...]');
             }
             function parseList(value) {
               const list = value.trim().replace(/^\[([^\[\]]*)\]$/, '$1');
