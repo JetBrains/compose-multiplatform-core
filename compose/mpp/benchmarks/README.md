@@ -10,7 +10,7 @@ requires JDK 17 or newer. Apple targets require macOS with Xcode.
 
 - `benchmarks-app` — an application with Compose benchmark cases.
 - `benchmarks-runtime` — runs measurements and sends results.
-- `benchmarks-skiko-init-legacy` / `benchmarks-skiko-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
+- `benchmarks-compose-init-1-12` / `benchmarks-compose-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
 - `benchmarks-data` — shared report models.
 - `benchmarks-report` — a JVM library that generates a static HTML report from a session directory.
 - `benchmarks-collector` — receives reports over HTTP and saves them as JSON files.
@@ -143,8 +143,8 @@ module. Both init modules provide the same `org.jetbrains.compose.benchmarks.ski
 The app calls it at startup to configure `onBenchmarkComposeSceneInit` and, on JVM,
 `getJvmGraphicsContext`. No reflection or service loading is needed.
 
-The app declares `benchmarks-skiko-init-current` in `commonMain`. When the Compose version is
-exactly `1.12.2`, Gradle substitutes `benchmarks-skiko-init-legacy` on all targets. The version comes
+The app declares `benchmarks-compose-init-current` in `commonMain`. When the Compose version is
+exactly `1.12.2`, Gradle substitutes `benchmarks-compose-init-1-12` on all targets. The version comes
 from `benchmarkComposeVersion` or the catalog default. Other versions and local core builds keep
 current initialization. Skiko and its native libraries come from Compose and are not overridden.
 

@@ -60,7 +60,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":benchmarks-runtime"))
-            implementation(project(":benchmarks-skiko-init-current"))
+            implementation(project(":benchmarks-compose-init-current"))
             implementation(project(":benchmarks-data"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.ui)
@@ -84,8 +84,8 @@ if (libs.versions.compose.multiplatform.get() == "1.12.2" &&
 ) {
     configurations.configureEach {
         resolutionStrategy.dependencySubstitution {
-            substitute(project(":benchmarks-skiko-init-current"))
-                .using(project(":benchmarks-skiko-init-legacy"))
+            substitute(project(":benchmarks-compose-init-current"))
+                .using(project(":benchmarks-compose-init-1-12"))
                 .because("Compose 1.12.2 requires legacy Skiko initialization")
         }
     }

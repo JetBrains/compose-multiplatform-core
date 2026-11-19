@@ -281,8 +281,8 @@
             <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-launcher" />
             <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-report" />
             <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-runtime" />
-            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-skiko-init-current" />
-            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-skiko-init-legacy" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-compose-init-current" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-compose-init-1-12" />
             <option value="$PROJECT_DIR$/compose/mpp/demo" />
             <option value="$PROJECT_DIR$/compose/mpp/demo-swiftui" />
             <option value="$PROJECT_DIR$/compose/runtime" />

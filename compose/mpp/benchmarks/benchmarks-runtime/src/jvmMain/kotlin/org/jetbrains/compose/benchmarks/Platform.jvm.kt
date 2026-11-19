@@ -26,7 +26,7 @@ internal actual object Platform {
 
 /**
  * Available JVM graphics backends depend on the Skiko version bundled with Compose.
- * The app selects a compatible benchmarks-skiko-init module, which installs this
+ * The app selects a compatible benchmarks-compose-init module, which installs this
  * provider before measurements start without making the runtime depend on version-specific APIs.
  */
 object JvmGraphicsContextConfiguration {

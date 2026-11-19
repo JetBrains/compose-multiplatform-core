@@ -28,7 +28,7 @@ import kotlinx.coroutines.Dispatchers
 /**
  * Scene initialization differs between Compose/Skiko versions: newer versions require explicit
  * Skiko implementation registration, while older versions do not provide that API. The app selects
- * a compatible benchmarks-skiko-init module, which configures this hook before measurements start,
+ * a compatible benchmarks-compose-init module, which configures this hook before measurements start,
  * keeping version-specific APIs out of the measurement runtime.
  */
 object BenchmarkComposeSceneConfiguration {
