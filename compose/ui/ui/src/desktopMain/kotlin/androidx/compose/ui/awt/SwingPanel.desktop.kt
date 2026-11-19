@@ -64,11 +64,55 @@ val NoOpUpdate: Component.() -> Unit = {}
  */
 @Deprecated(
     "Use overload without `background` parameter. " +
-        "Set the background manually in the factory method."
+        "Set the background manually in the factory method.",
+    level = DeprecationLevel.HIDDEN
 )
 @Composable
 fun <T : Component> SwingPanel(
     background: Color = Color.White,
+    factory: () -> T,
+    modifier: Modifier = Modifier,
+    update: (T) -> Unit = NoOpUpdate,
+) {
+    SwingPanelImpl(
+        background = background,
+        factory = factory,
+        modifier = modifier,
+        update = update
+    )
+}
+
+/**
+ * Composes an AWT/Swing component obtained from [factory]. The [factory] block will be called
+ * to obtain the [Component] to be composed.
+ *
+ * By default, the Swing component is placed on top of the Compose layer (that means that Compose
+ * content can't overlap or clip it). It might be changed by `compose.interop.blending` system
+ * property. See [ComposeFeatureFlags.useInteropBlending].
+ *
+ * The [update] block runs due to recomposition, this is the place to set [Component] properties
+ * depending on state. When state changes, the block will be re-executed to set the new properties.
+ *
+ * @param factory The block creating the [Component] to be composed.
+ * @param modifier The modifier to be applied to the layout.
+ * @param update The callback to be invoked after the layout is inflated.
+ */
+@Composable
+fun <T : Component> SwingPanel(
+    factory: () -> T,
+    modifier: Modifier = Modifier,
+    update: (T) -> Unit = NoOpUpdate,
+) {
+    SwingPanelImpl(
+        factory = factory,
+        modifier = modifier,
+        update = update
+    )
+}
+
+@Composable
+private fun <T : Component> SwingPanelImpl(
+    background: Color = Color.Unspecified, // Deprecated parameter; don't use
     factory: () -> T,
     modifier: Modifier = Modifier,
     update: (T) -> Unit = NoOpUpdate,
@@ -112,36 +156,6 @@ fun <T : Component> SwingPanel(
             }
             update(it)
         }
-    )
-}
-
-/**
- * Composes an AWT/Swing component obtained from [factory]. The [factory] block will be called
- * to obtain the [Component] to be composed.
- *
- * By default, the Swing component is placed on top of the Compose layer (that means that Compose
- * content can't overlap or clip it). It might be changed by `compose.interop.blending` system
- * property. See [ComposeFeatureFlags.useInteropBlending].
- *
- * The [update] block runs due to recomposition, this is the place to set [Component] properties
- * depending on state. When state changes, the block will be re-executed to set the new properties.
- *
- * @param factory The block creating the [Component] to be composed.
- * @param modifier The modifier to be applied to the layout.
- * @param update The callback to be invoked after the layout is inflated.
- */
-@Composable
-fun <T : Component> SwingPanel(
-    factory: () -> T,
-    modifier: Modifier = Modifier,
-    update: (T) -> Unit = NoOpUpdate,
-) {
-    @Suppress("DEPRECATION")
-    SwingPanel(
-        background = Color.Unspecified,
-        factory = factory,
-        modifier = modifier,
-        update = update
     )
 }
 
