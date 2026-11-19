@@ -195,8 +195,8 @@ internal class NativeTextInputView(
             this.attachSelectionInteractionIfNeeded()
             this.activateTextInputInteractionIfNeeded()
         }
-        touchesTrackerGestureRecognizer.onTouchesTrackingChanged = { hasTrackedTouches ->
-            completeAdjustingSelectionIfNeeded()
+        touchesTrackerGestureRecognizer.onTouchesTrackingChanged = {
+            completeAdjustingSelectionIfNeeded(force = false)
         }
 
         return result
@@ -210,7 +210,7 @@ internal class NativeTextInputView(
 
     override fun resignFirstResponder(): Boolean {
         // Complete ongoing selection activities, if any.
-        touchesTrackerGestureRecognizer.onTouchesTrackingChanged()
+        completeAdjustingSelectionIfNeeded(force = true)
         touchesTrackerGestureRecognizer.onTouchesTrackingChanged = {}
         
         input.onResignFocus()
@@ -326,8 +326,8 @@ internal class NativeTextInputView(
         }
     }
 
-    private fun completeAdjustingSelectionIfNeeded() {
-        if (isAdjustingSelection && !touchesTrackerGestureRecognizer.isTrackingTouches) {
+    private fun completeAdjustingSelectionIfNeeded(force: Boolean) {
+        if (isAdjustingSelection && (force || !touchesTrackerGestureRecognizer.isTrackingTouches)) {
             isAdjustingSelection = false
             selectionDidChange()
         }
