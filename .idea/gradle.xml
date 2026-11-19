@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/androidx-settings-plugins-fork" name="androidx-settings-plugins-fork">
+                <projects>
+                  <project path="$PROJECT_DIR$/androidx-settings-plugins-fork" />
+                  <project path="$PROJECT_DIR$/androidx-settings-plugins-fork/hostTestFailureHandlerPlugin" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/buildSrc" name="buildSrc-fork">
+                <projects>
+                  <project path="$PROJECT_DIR$/buildSrc" />
+                  <project path="$PROJECT_DIR$/buildSrc-fork/plugins" />
+                  <project path="$PROJECT_DIR$/buildSrc-fork/private" />
+                  <project path="$PROJECT_DIR$/buildSrc-fork/public" />
+                  <project path="$PROJECT_DIR$/buildSrc-fork/tests" />
+                  <project path="$PROJECT_DIR$/buildSrc/jetpad-integration" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/placeholder-fork" name="placeholder-fork">
+                <projects>
+                  <project path="$PROJECT_DIR$/placeholder-fork" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/androidx-settings-plugins-fork" />
+            <option value="$PROJECT_DIR$/androidx-settings-plugins-fork/hostTestFailureHandlerPlugin" />
+            <option value="$PROJECT_DIR$/buildSrc" />
+            <option value="$PROJECT_DIR$/buildSrc-fork/plugins" />
+            <option value="$PROJECT_DIR$/buildSrc-fork/private" />
+            <option value="$PROJECT_DIR$/buildSrc-fork/public" />
+            <option value="$PROJECT_DIR$/buildSrc-fork/tests" />
+            <option value="$PROJECT_DIR$/buildSrc/jetpad-integration" />
+            <option value="$PROJECT_DIR$/compose" />
+            <option value="$PROJECT_DIR$/compose/animation" />
+            <option value="$PROJECT_DIR$/compose/animation/animation" />
+            <option value="$PROJECT_DIR$/compose/animation/animation-core" />
+            <option value="$PROJECT_DIR$/compose/animation/animation-core-lint" />
+            <option value="$PROJECT_DIR$/compose/animation/animation-graphics" />
+            <option value="$PROJECT_DIR$/compose/desktop" />
+            <option value="$PROJECT_DIR$/compose/desktop/desktop" />
+            <option value="$PROJECT_DIR$/compose/desktop/desktop/samples" />
+            <option value="$PROJECT_DIR$/compose/foundation" />
+            <option value="$PROJECT_DIR$/compose/foundation/foundation" />
+            <option value="$PROJECT_DIR$/compose/foundation/foundation-layout" />
+            <option value="$PROJECT_DIR$/compose/foundation/foundation-lint" />
+            <option value="$PROJECT_DIR$/compose/lint" />
+            <option value="$PROJECT_DIR$/compose/lint/common" />
+            <option value="$PROJECT_DIR$/compose/lint/common-test" />
+            <option value="$PROJECT_DIR$/compose/lint/internal-lint-checks" />
+            <option value="$PROJECT_DIR$/compose/material" />
+            <option value="$PROJECT_DIR$/compose/material/material" />
+            <option value="$PROJECT_DIR$/compose/material/material-lint" />
+            <option value="$PROJECT_DIR$/compose/material/material-navigation" />
+            <option value="$PROJECT_DIR$/compose/material/material-ripple" />
+            <option value="$PROJECT_DIR$/compose/material3" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive/adaptive" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive/adaptive-layout" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive/adaptive-navigation" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive/adaptive-navigation3" />
+            <option value="$PROJECT_DIR$/compose/material3/material3" />
+            <option value="$PROJECT_DIR$/compose/material3/material3-adaptive-navigation-suite" />
+            <option value="$PROJECT_DIR$/compose/material3/material3-lint" />
+            <option value="$PROJECT_DIR$/compose/material3/material3-ripple" />
+            <option value="$PROJECT_DIR$/compose/material3/material3-window-size-class" />
+            <option value="$PROJECT_DIR$/compose/mpp" />
+            <option value="$PROJECT_DIR$/compose/mpp/demo" />
+            <option value="$PROJECT_DIR$/compose/mpp/demo-swiftui" />
+            <option value="$PROJECT_DIR$/compose/runtime" />
+            <option value="$PROJECT_DIR$/compose/runtime/runtime" />
+            <option value="$PROJECT_DIR$/compose/runtime/runtime-lint" />
+            <option value="$PROJECT_DIR$/compose/runtime/runtime-saveable" />
+            <option value="$PROJECT_DIR$/compose/runtime/runtime-test-utils" />
+            <option value="$PROJECT_DIR$/compose/ui" />
+            <option value="$PROJECT_DIR$/compose/ui/ui" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-backhandler" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-geometry" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-graphics" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-graphics-lint" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-lint" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-skiko" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-test" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-test-junit4" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-test-manifest-lint" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-text" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-tooling" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-tooling-data" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-tooling-preview" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-uikit" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-unit" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-util" />
+            <option value="$PROJECT_DIR$/kruth" />
+            <option value="$PROJECT_DIR$/kruth/kruth" />
+            <option value="$PROJECT_DIR$/lint-checks" />
+            <option value="$PROJECT_DIR$/mpp" />
+            <option value="$PROJECT_DIR$/navigation" />
+            <option value="$PROJECT_DIR$/navigation/navigation-common" />
+            <option value="$PROJECT_DIR$/navigation/navigation-compose" />
+            <option value="$PROJECT_DIR$/navigation/navigation-runtime" />
+            <option value="$PROJECT_DIR$/navigation/navigation-testing" />
+            <option value="$PROJECT_DIR$/navigation3" />
+            <option value="$PROJECT_DIR$/navigation3/navigation3-ui" />
+            <option value="$PROJECT_DIR$/placeholder-fork" />
+            <option value="$PROJECT_DIR$/testutils/testutils-fonts" />
+            <option value="$PROJECT_DIR$/testutils/testutils-navigation" />
+            <option value="$PROJECT_DIR$/testutils/testutils-xctest" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$" name="compose-multiplatform-core">
+                <projects>
+                  <project path="$PROJECT_DIR$" />
+                  <project path="$PROJECT_DIR$/compose" />
+                  <project path="$PROJECT_DIR$/compose/animation" />
+                  <project path="$PROJECT_DIR$/compose/animation/animation" />
+                  <project path="$PROJECT_DIR$/compose/animation/animation-core" />
+                  <project path="$PROJECT_DIR$/compose/animation/animation-core-lint" />
+                  <project path="$PROJECT_DIR$/compose/animation/animation-graphics" />
+                  <project path="$PROJECT_DIR$/compose/desktop" />
+                  <project path="$PROJECT_DIR$/compose/desktop/desktop" />
+                  <project path="$PROJECT_DIR$/compose/desktop/desktop/samples" />
+                  <project path="$PROJECT_DIR$/compose/foundation" />
+                  <project path="$PROJECT_DIR$/compose/foundation/foundation" />
+                  <project path="$PROJECT_DIR$/compose/foundation/foundation-layout" />
+                  <project path="$PROJECT_DIR$/compose/foundation/foundation-lint" />
+                  <project path="$PROJECT_DIR$/compose/lint" />
+                  <project path="$PROJECT_DIR$/compose/lint/common" />
+                  <project path="$PROJECT_DIR$/compose/lint/common-test" />
+                  <project path="$PROJECT_DIR$/compose/lint/internal-lint-checks" />
+                  <project path="$PROJECT_DIR$/compose/material" />
+                  <project path="$PROJECT_DIR$/compose/material/material" />
+                  <project path="$PROJECT_DIR$/compose/material/material-lint" />
+                  <project path="$PROJECT_DIR$/compose/material/material-navigation" />
+                  <project path="$PROJECT_DIR$/compose/material/material-ripple" />
+                  <project path="$PROJECT_DIR$/compose/material3" />
+                  <project path="$PROJECT_DIR$/compose/material3/adaptive" />
+                  <project path="$PROJECT_DIR$/compose/material3/adaptive/adaptive" />
+                  <project path="$PROJECT_DIR$/compose/material3/adaptive/adaptive-layout" />
+                  <project path="$PROJECT_DIR$/compose/material3/adaptive/adaptive-navigation" />
+                  <project path="$PROJECT_DIR$/compose/material3/adaptive/adaptive-navigation3" />
+                  <project path="$PROJECT_DIR$/compose/material3/material3" />
+                  <project path="$PROJECT_DIR$/compose/material3/material3-adaptive-navigation-suite" />
+                  <project path="$PROJECT_DIR$/compose/material3/material3-lint" />
+                  <project path="$PROJECT_DIR$/compose/material3/material3-ripple" />
+                  <project path="$PROJECT_DIR$/compose/material3/material3-window-size-class" />
+                  <project path="$PROJECT_DIR$/compose/mpp" />
+                  <project path="$PROJECT_DIR$/compose/mpp/demo" />
+                  <project path="$PROJECT_DIR$/compose/mpp/demo-swiftui" />
+                  <project path="$PROJECT_DIR$/compose/runtime" />
+                  <project path="$PROJECT_DIR$/compose/runtime/runtime" />
+                  <project path="$PROJECT_DIR$/compose/runtime/runtime-lint" />
+                  <project path="$PROJECT_DIR$/compose/runtime/runtime-saveable" />
+                  <project path="$PROJECT_DIR$/compose/runtime/runtime-test-utils" />
+                  <project path="$PROJECT_DIR$/compose/ui" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-backhandler" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-geometry" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-graphics" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-graphics-lint" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-lint" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-skiko" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-test" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-test-junit4" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-test-manifest-lint" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-text" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-tooling" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-tooling-data" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-tooling-preview" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-uikit" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-unit" />
+                  <project path="$PROJECT_DIR$/compose/ui/ui-util" />
+                  <project path="$PROJECT_DIR$/kruth" />
+                  <project path="$PROJECT_DIR$/kruth/kruth" />
+                  <project path="$PROJECT_DIR$/lint-checks" />
+                  <project path="$PROJECT_DIR$/mpp" />
+                  <project path="$PROJECT_DIR$/navigation" />
+                  <project path="$PROJECT_DIR$/navigation/navigation-common" />
+                  <project path="$PROJECT_DIR$/navigation/navigation-compose" />
+                  <project path="$PROJECT_DIR$/navigation/navigation-runtime" />
+                  <project path="$PROJECT_DIR$/navigation/navigation-testing" />
+                  <project path="$PROJECT_DIR$/navigation3" />
+                  <project path="$PROJECT_DIR$/navigation3/navigation3-ui" />
+                  <project path="$PROJECT_DIR$/testutils/testutils-fonts" />
+                  <project path="$PROJECT_DIR$/testutils/testutils-navigation" />
+                  <project path="$PROJECT_DIR$/testutils/testutils-xctest" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/androidx-settings-plugins-fork" name="androidx-settings-plugins-fork">
+                <projects>
+                  <project path="$PROJECT_DIR$/androidx-settings-plugins-fork" />
+                  <project path="$PROJECT_DIR$/androidx-settings-plugins-fork/hostTestFailureHandlerPlugin" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/buildSrc" name="buildSrc-fork">
+                <projects>
+                  <project path="$PROJECT_DIR$/buildSrc" />
+                  <project path="$PROJECT_DIR$/buildSrc-fork/plugins" />
+                  <project path="$PROJECT_DIR$/buildSrc-fork/private" />
+                  <project path="$PROJECT_DIR$/buildSrc-fork/public" />
+                  <project path="$PROJECT_DIR$/buildSrc-fork/tests" />
+                  <project path="$PROJECT_DIR$/buildSrc/jetpad-integration" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/placeholder-fork" name="placeholder-fork">
+                <projects>
+                  <project path="$PROJECT_DIR$/placeholder-fork" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/compose/mpp/benchmarks" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/androidx-settings-plugins-fork" />
+            <option value="$PROJECT_DIR$/androidx-settings-plugins-fork/hostTestFailureHandlerPlugin" />
+            <option value="$PROJECT_DIR$/buildSrc" />
+            <option value="$PROJECT_DIR$/buildSrc-fork/plugins" />
+            <option value="$PROJECT_DIR$/buildSrc-fork/private" />
+            <option value="$PROJECT_DIR$/buildSrc-fork/public" />
+            <option value="$PROJECT_DIR$/buildSrc-fork/tests" />
+            <option value="$PROJECT_DIR$/buildSrc/jetpad-integration" />
+            <option value="$PROJECT_DIR$/compose" />
+            <option value="$PROJECT_DIR$/compose/animation" />
+            <option value="$PROJECT_DIR$/compose/animation/animation" />
+            <option value="$PROJECT_DIR$/compose/animation/animation-core" />
+            <option value="$PROJECT_DIR$/compose/animation/animation-core-lint" />
+            <option value="$PROJECT_DIR$/compose/animation/animation-graphics" />
+            <option value="$PROJECT_DIR$/compose/desktop" />
+            <option value="$PROJECT_DIR$/compose/desktop/desktop" />
+            <option value="$PROJECT_DIR$/compose/desktop/desktop/samples" />
+            <option value="$PROJECT_DIR$/compose/foundation" />
+            <option value="$PROJECT_DIR$/compose/foundation/foundation" />
+            <option value="$PROJECT_DIR$/compose/foundation/foundation-layout" />
+            <option value="$PROJECT_DIR$/compose/foundation/foundation-lint" />
+            <option value="$PROJECT_DIR$/compose/lint" />
+            <option value="$PROJECT_DIR$/compose/lint/common" />
+            <option value="$PROJECT_DIR$/compose/lint/common-test" />
+            <option value="$PROJECT_DIR$/compose/lint/internal-lint-checks" />
+            <option value="$PROJECT_DIR$/compose/material" />
+            <option value="$PROJECT_DIR$/compose/material/material" />
+            <option value="$PROJECT_DIR$/compose/material/material-lint" />
+            <option value="$PROJECT_DIR$/compose/material/material-navigation" />
+            <option value="$PROJECT_DIR$/compose/material/material-ripple" />
+            <option value="$PROJECT_DIR$/compose/material3" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive/adaptive" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive/adaptive-layout" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive/adaptive-navigation" />
+            <option value="$PROJECT_DIR$/compose/material3/adaptive/adaptive-navigation3" />
+            <option value="$PROJECT_DIR$/compose/material3/material3" />
+            <option value="$PROJECT_DIR$/compose/material3/material3-adaptive-navigation-suite" />
+            <option value="$PROJECT_DIR$/compose/material3/material3-lint" />
+            <option value="$PROJECT_DIR$/compose/material3/material3-ripple" />
+            <option value="$PROJECT_DIR$/compose/material3/material3-window-size-class" />
+            <option value="$PROJECT_DIR$/compose/mpp" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-app" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-collector" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-data" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-launcher" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-report" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-runtime" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-skiko-init-current" />
+            <option value="$PROJECT_DIR$/compose/mpp/benchmarks/benchmarks-skiko-init-legacy" />
+            <option value="$PROJECT_DIR$/compose/mpp/demo" />
+            <option value="$PROJECT_DIR$/compose/mpp/demo-swiftui" />
+            <option value="$PROJECT_DIR$/compose/runtime" />
+            <option value="$PROJECT_DIR$/compose/runtime/runtime" />
+            <option value="$PROJECT_DIR$/compose/runtime/runtime-lint" />
+            <option value="$PROJECT_DIR$/compose/runtime/runtime-saveable" />
+            <option value="$PROJECT_DIR$/compose/runtime/runtime-test-utils" />
+            <option value="$PROJECT_DIR$/compose/ui" />
+            <option value="$PROJECT_DIR$/compose/ui/ui" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-backhandler" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-geometry" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-graphics" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-graphics-lint" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-lint" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-skiko" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-test" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-test-junit4" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-test-manifest-lint" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-text" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-tooling" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-tooling-data" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-tooling-preview" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-uikit" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-unit" />
+            <option value="$PROJECT_DIR$/compose/ui/ui-util" />
+            <option value="$PROJECT_DIR$/kruth" />
+            <option value="$PROJECT_DIR$/kruth/kruth" />
+            <option value="$PROJECT_DIR$/lint-checks" />
+            <option value="$PROJECT_DIR$/mpp" />
+            <option value="$PROJECT_DIR$/navigation" />
+            <option value="$PROJECT_DIR$/navigation/navigation-common" />
+            <option value="$PROJECT_DIR$/navigation/navigation-compose" />
+            <option value="$PROJECT_DIR$/navigation/navigation-runtime" />
+            <option value="$PROJECT_DIR$/navigation/navigation-testing" />
+            <option value="$PROJECT_DIR$/navigation3" />
+            <option value="$PROJECT_DIR$/navigation3/navigation3-ui" />
+            <option value="$PROJECT_DIR$/placeholder-fork" />
+            <option value="$PROJECT_DIR$/testutils/testutils-fonts" />
+            <option value="$PROJECT_DIR$/testutils/testutils-navigation" />
+            <option value="$PROJECT_DIR$/testutils/testutils-xctest" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>
