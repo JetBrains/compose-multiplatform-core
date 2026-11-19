@@ -359,7 +359,7 @@ internal abstract class KeyboardInsetsTest(
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
@@ -937,7 +937,7 @@ internal abstract class KeyboardInsetsTest(
         val drawnTextFieldFrames = mutableListOf<Pair<Int, Int>>()
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
 
         var focusManager: FocusManager? = null
         setContent({
