@@ -49,7 +49,6 @@ internal class KeyboardInsetsManager(
     private val onKeyboardOverlapHeightChanged: (Dp) -> Unit
 ) : KeyboardVisibilitySubscriber, FrameChoreographer.Listener {
     private val layoutGuideGeometrySource = KeyboardLayoutGuideGeometrySource(view)
-    private var hasTrackedLayoutGuideKeyboard = false
     private var isDisposed: Boolean = false
     private var isStarted = false
     private val activitiesHandler = frameChoreographer.createActivitiesHandler()
@@ -58,23 +57,11 @@ internal class KeyboardInsetsManager(
     private var activeAnimation: KeyboardAnimation? = null
     val hasPendingWork get() = activeAnimation != null || awaitingKeyboardFrameJob != null
 
-    /**
-     * The layout guide is authoritative after it has reported a docked keyboard. Until then,
-     * notification geometry remains the fallback for older systems and synthetic notification tests.
-     */
     private val keyboardFrame: CValue<CGRect>
-        get() {
-            val layoutGuideFrame = layoutGuideGeometrySource.keyboardFrame
-            if (layoutGuideGeometrySource.isDockedKeyboardFrame(layoutGuideFrame)) {
-                hasTrackedLayoutGuideKeyboard = true
-                return layoutGuideFrame
-            }
-            return if (hasTrackedLayoutGuideKeyboard) {
-                layoutGuideFrame
-            } else {
-                KeyboardVisibilityListener.keyboardFrame
-            }
-        }
+        get() = resolveKeyboardFrame(
+            layoutGuideGeometrySource.keyboardFrame,
+            KeyboardVisibilityListener.keyboardFrame
+        )
 
     /**
      * UIKit does not expose a callback for each presentation frame of a keyboard animation.

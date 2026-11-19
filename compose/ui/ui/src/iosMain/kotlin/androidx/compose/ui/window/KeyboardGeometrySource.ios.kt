@@ -24,12 +24,31 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGRect
+import platform.CoreGraphics.CGRectGetMinY
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIView
 
 internal interface KeyboardGeometrySource {
     val keyboardFrame: CValue<CGRect>
+}
+
+/**
+ * iOS 26.5 can under-report the system keyboard in the layout guide while a zero-sized accessory
+ * view is installed, while iOS 27.2 can under-report custom input views in notifications. Use the
+ * taller visible frame and trust the notification's empty frame after the keyboard hides.
+ */
+internal fun resolveKeyboardFrame(
+    layoutGuideFrame: CValue<CGRect>,
+    notificationFrame: CValue<CGRect>
+): CValue<CGRect> {
+    if (CGRectIsEmpty(notificationFrame)) return notificationFrame
+    if (CGRectIsEmpty(layoutGuideFrame)) return notificationFrame
+    return if (CGRectGetMinY(layoutGuideFrame) < CGRectGetMinY(notificationFrame)) {
+        layoutGuideFrame
+    } else {
+        notificationFrame
+    }
 }
 
 /**
@@ -60,18 +79,6 @@ internal class KeyboardLayoutGuideGeometrySource(
                 frame
             }
         }
-
-    internal fun isDockedKeyboardFrame(frame: CValue<CGRect>): Boolean {
-        if (CGRectIsEmpty(frame)) return false
-
-        val viewHeight = view.bounds.useContents { size.height }
-        return frame.useContents {
-            val bottom = origin.y + size.height
-            size.height > 0.0 &&
-                size.height < viewHeight &&
-                abs(bottom - viewHeight) <= KEYBOARD_BOTTOM_EDGE_TOLERANCE
-        }
-    }
 
     private fun isBottomSafeAreaFrame(frame: CValue<CGRect>): Boolean {
         if (CGRectIsEmpty(frame)) return false
