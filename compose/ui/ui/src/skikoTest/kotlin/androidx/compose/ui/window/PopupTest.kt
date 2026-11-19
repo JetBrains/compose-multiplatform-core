@@ -65,9 +65,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
-import androidx.compose.ui.test.runSkikoComposeUiTest
+import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.touch
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -83,7 +83,6 @@ import org.jetbrains.skia.Surface
 
 @OptIn(ExperimentalTestApi::class)
 class PopupTest : SkikoComposeTestBase() {
-    @Suppress("DEPRECATION")
     @Test
     fun passCompositionLocalsToPopup() = runSkikoComposeUiTest {
         val compositionLocal = staticCompositionLocalOf<Int> {
@@ -104,7 +103,6 @@ class PopupTest : SkikoComposeTestBase() {
     }
 
     // https://github.com/JetBrains/compose-multiplatform/issues/4558
-    @Suppress("DEPRECATION")
     @Test
     fun changeInStaticCompositionLocalVisibleImmediatelyInPopup() = runComposeUiTest {
         // Test that when the provided value of a staticCompositionLocalOf changes, the change is
@@ -140,7 +138,6 @@ class PopupTest : SkikoComposeTestBase() {
     }
 
     // https://github.com/JetBrains/compose-multiplatform/issues/3142
-    @Suppress("DEPRECATION")
     @Test
     fun passLayoutDirectionToPopup() = runSkikoComposeUiTest {
         lateinit var localLayoutDirection: LayoutDirection
@@ -162,7 +159,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(localLayoutDirection).isEqualTo(LayoutDirection.Ltr)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun onDisposeInsidePopup() = runSkikoComposeUiTest {
         var isPopupShowing by mutableStateOf(true)
@@ -186,7 +182,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(isDisposed).isEqualTo(true)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun useDensityInsidePopup() = runSkikoComposeUiTest {
         var density by mutableStateOf(Density(2f, 1f))
@@ -207,7 +202,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(densityInsidePopup).isEqualTo(3f)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun callDismissIfClickedOutsideOfFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -232,7 +226,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(onDismissRequestCallCount).isEqualTo(1)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun callDismissIfClickedOutsideOfNonFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -259,7 +252,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(onDismissRequestCallCount).isEqualTo(1)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun callDismissIfClickedOutsideOfMultipleNonFocusablePopups() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -293,7 +285,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(onDismissRequestCallCount).isEqualTo(2)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun callDismissForNonFocusablePopupsAbove() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -340,7 +331,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(onDismissRequestCallCount).isEqualTo(2)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun callDismissForAboveFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -387,7 +377,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(onDismissRequestCallCount).isEqualTo(2)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun passEventIfClickedOutsideOfNonFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -413,7 +402,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(onDismissRequestCallCount).isEqualTo(0)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun doNotPassEventIfClickedOutsideOfFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -434,7 +422,6 @@ class PopupTest : SkikoComposeTestBase() {
         background.events.assertReceivedNoEvents()
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun passEventIfClickedOutsideOfNonBlockingFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -459,7 +446,6 @@ class PopupTest : SkikoComposeTestBase() {
         background.events.assertReceivedLast(PointerEventType.Release, Offset(10f, 10f))
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun doNotPassEventIfClickedOutsideOfBlockingNonFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -481,7 +467,6 @@ class PopupTest : SkikoComposeTestBase() {
         background.events.assertReceivedNoEvents()
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun canScrollOutsideOfNonFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -499,7 +484,6 @@ class PopupTest : SkikoComposeTestBase() {
         background.events.assertReceivedLast(PointerEventType.Scroll, Offset(10f, 10f))
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun cannotScrollOutsideOfFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -516,7 +500,6 @@ class PopupTest : SkikoComposeTestBase() {
         background.events.assertReceivedNoEvents()
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun openFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -563,7 +546,6 @@ class PopupTest : SkikoComposeTestBase() {
         background.events.assertReceivedLast(PointerEventType.Exit, Offset(10f, 10f))
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun closeFocusablePopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -615,7 +597,6 @@ class PopupTest : SkikoComposeTestBase() {
         background.events.assertReceivedLast(PointerEventType.Enter, Offset(11f, 11f))
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun secondTouchDoesNotDismissPopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -660,7 +641,6 @@ class PopupTest : SkikoComposeTestBase() {
         )
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun secondaryButtonClickDismissPopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -695,7 +675,6 @@ class PopupTest : SkikoComposeTestBase() {
         onNodeWithTag(popup.tag).assertDoesNotExist()
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun clippingEnabledPopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -716,7 +695,6 @@ class PopupTest : SkikoComposeTestBase() {
         onNodeWithTag("box2").assertPositionInRootIsEqualTo(0.dp, 0.dp)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun clippingDisabledPopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -781,7 +759,6 @@ class PopupTest : SkikoComposeTestBase() {
             ) // Matches parent position (if inside bounds)
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun doNotLoseHoverOutsideOfPopup() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
@@ -872,7 +849,6 @@ class PopupTest : SkikoComposeTestBase() {
         }
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun popupFollowsAnchorWhenAncestorQueryingAlignmentLineIsMoved() = runSkikoComposeUiTest {
         val positionProvider = object : PopupPositionProvider {
@@ -920,7 +896,6 @@ class PopupTest : SkikoComposeTestBase() {
         assertThat(popupPosition()).isEqualTo(Offset(0f, 100f))
     }
 
-    @Suppress("DEPRECATION")
     @Test
     fun popupShownAtCorrectCoordinatesImmediately() = runSkikoComposeUiTest {
         val positionProvider = object : PopupPositionProvider {
