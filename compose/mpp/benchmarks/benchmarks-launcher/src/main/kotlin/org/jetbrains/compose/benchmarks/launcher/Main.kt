@@ -82,6 +82,7 @@ private fun browserArguments(args: Array<String>): List<String> = buildList {
 private class Launcher(private val invocationArguments: List<String>) : CliktCommand(name = "benchmarks-launcher") {
     init {
         context {
+            readArgumentFile = null
             // Mordant 3.0.2 can fail when detecting the Windows terminal size through FFM.
             // A reproducer from the repo root:
             // ./run-benchmarks.sh --target=jvm --compose-version=local --benchmarks=TextLayout
