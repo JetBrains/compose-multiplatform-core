@@ -53,8 +53,9 @@ Main options:
 
 - `--target` — required list of targets, separated by spaces or commas: `jvm`, `macos` (ARM64),
   `js`, `wasmJs`, or `ios` (ARM64 Simulator). Duplicate entries are ignored.
-- `--compose-version` — a list of published Compose versions and/or `local`; defaults to one catalog
-  version unless a core checkout is configured.
+- `--compose-version` — a list of published Compose versions and/or `local`; defaults to `local`
+  using the current core checkout (`composeCorePath=../../..` in `gradle.properties`). Specify a
+  published version explicitly to benchmark it instead.
 - `--kotlin-version` — a list of Kotlin and matching Compose Compiler versions; defaults to one catalog version.
 - `--tests` — test names separated by spaces or commas; defaults to all tests.
 - `--modes` — measurement modes; defaults to all four:
