@@ -39,9 +39,7 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.window.KeyboardLayoutGuideGeometrySource
-import androidx.compose.ui.window.KeyboardVisibilityListener
-import androidx.compose.ui.window.resolveKeyboardFrame
+import androidx.compose.ui.window.KeyboardFrameSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -288,11 +286,7 @@ internal class KeyboardInsetsCustomInputViewsTest {
     ) {}
 
     private fun UIKitInstrumentedTest.keyboardOverlapHeight(): Double {
-        val layoutGuideFrame = KeyboardLayoutGuideGeometrySource(viewController.view).keyboardFrame
-        val keyboardFrame = resolveKeyboardFrame(
-            layoutGuideFrame,
-            KeyboardVisibilityListener.keyboardFrame
-        )
+        val keyboardFrame = KeyboardFrameSource(viewController.view).keyboardFrame
         if (CGRectIsEmpty(keyboardFrame)) return 0.0
 
         val screenHeight = UIScreen.mainScreen.bounds.useContents { size.height }

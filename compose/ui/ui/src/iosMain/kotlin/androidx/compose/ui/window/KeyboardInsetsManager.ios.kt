@@ -40,17 +40,17 @@ import platform.UIKit.UIViewAnimationOptionCurveEaseInOut
 import platform.UIKit.UIViewAnimationOptions
 
 /**
- * Reports the height of the keyboard overlap with the Compose overlay view. The notification frame
- * starts the animation, while the layout guide supplies the actual target keyboard geometry.
+ * Reports the height of the keyboard overlap with the Compose overlay view. Notifications provide
+ * the animation timing, while [KeyboardFrameSource] supplies the target keyboard geometry.
  */
 internal class KeyboardInsetsManager(
     private val view: UIView,
     private val frameChoreographer: FrameChoreographer,
-    private val onKeyboardOverlapHeightChanged: (Dp) -> Unit
+    private val onKeyboardOverlapHeightChanged: (Dp) -> Unit,
 ) : KeyboardVisibilitySubscriber, FrameChoreographer.Listener {
-    private val layoutGuideGeometrySource = KeyboardLayoutGuideGeometrySource(view)
     private var isDisposed: Boolean = false
     private var isStarted = false
+    private val keyboardGeometrySource: KeyboardGeometrySource = KeyboardFrameSource(view)
     private val activitiesHandler = frameChoreographer.createActivitiesHandler()
     private val coroutineScope = CoroutineScope(frameChoreographer.coroutineContext)
     private var awaitingKeyboardFrameJob: Job? = null
@@ -58,10 +58,7 @@ internal class KeyboardInsetsManager(
     val hasPendingWork get() = activeAnimation != null || awaitingKeyboardFrameJob != null
 
     private val keyboardFrame: CValue<CGRect>
-        get() = resolveKeyboardFrame(
-            layoutGuideGeometrySource.keyboardFrame,
-            KeyboardVisibilityListener.keyboardFrame
-        )
+        get() = keyboardGeometrySource.keyboardFrame
 
     /**
      * UIKit does not expose a callback for each presentation frame of a keyboard animation.

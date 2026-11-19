@@ -34,24 +34,6 @@ internal interface KeyboardGeometrySource {
 }
 
 /**
- * iOS 26.5 can under-report the system keyboard in the layout guide while a zero-sized accessory
- * view is installed, while iOS 27.2 can under-report custom input views in notifications. Use the
- * taller visible frame and trust the notification's empty frame after the keyboard hides.
- */
-internal fun resolveKeyboardFrame(
-    layoutGuideFrame: CValue<CGRect>,
-    notificationFrame: CValue<CGRect>
-): CValue<CGRect> {
-    if (CGRectIsEmpty(notificationFrame)) return notificationFrame
-    if (CGRectIsEmpty(layoutGuideFrame)) return notificationFrame
-    return if (CGRectGetMinY(layoutGuideFrame) < CGRectGetMinY(notificationFrame)) {
-        layoutGuideFrame
-    } else {
-        notificationFrame
-    }
-}
-
-/**
  * Reads keyboard geometry from the view's keyboard layout guide. Unlike keyboard notifications,
  * the guide includes custom input and accessory views.
  */
@@ -94,4 +76,31 @@ internal class KeyboardLayoutGuideGeometrySource(
     private companion object {
         const val KEYBOARD_BOTTOM_EDGE_TOLERANCE = 0.5
     }
+}
+
+/**
+ * Combines keyboard notification geometry with the view's keyboard layout guide.
+ *
+ * iOS 26.5 can under-report the system keyboard in the layout guide while a zero-sized accessory
+ * view is installed, while iOS 27.2 can under-report custom input views in notifications. Use the
+ * taller visible frame and trust the notification's empty frame after the keyboard hides.
+ */
+internal class KeyboardFrameSource(
+    view: UIView,
+    private val layoutGuideSource: KeyboardGeometrySource = KeyboardLayoutGuideGeometrySource(view),
+    private val notificationSource: KeyboardGeometrySource = KeyboardVisibilityListener
+) : KeyboardGeometrySource {
+    override val keyboardFrame: CValue<CGRect>
+        get() {
+            val notificationFrame = notificationSource.keyboardFrame
+            val layoutGuideFrame = layoutGuideSource.keyboardFrame
+
+            if (CGRectIsEmpty(notificationFrame)) return notificationFrame
+            if (CGRectIsEmpty(layoutGuideFrame)) return notificationFrame
+            return if (CGRectGetMinY(layoutGuideFrame) < CGRectGetMinY(notificationFrame)) {
+                layoutGuideFrame
+            } else {
+                notificationFrame
+            }
+        }
 }
