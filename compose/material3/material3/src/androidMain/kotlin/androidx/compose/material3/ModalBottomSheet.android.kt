@@ -26,6 +26,7 @@ import android.view.ViewOutlineProvider
 import android.view.Window
 import android.view.WindowManager
 import androidx.activity.ComponentDialog
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.internal.shouldApplySecureFlag
 import androidx.compose.runtime.Composable
@@ -52,8 +53,10 @@ import androidx.compose.ui.platform.ViewRootForInspector
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.core.view.WindowCompat
@@ -230,6 +233,7 @@ internal actual fun ModalBottomSheetDialog(
     onDismissRequest: () -> Unit,
     contentColor: Color,
     properties: ModalBottomSheetProperties,
+    blurBehindRadius: Dp,
     content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
@@ -243,6 +247,7 @@ internal actual fun ModalBottomSheetDialog(
             ModalBottomSheetDialogWrapper(
                     onDismissRequest,
                     properties,
+                    blurBehindRadius,
                     contentColor,
                     view,
                     layoutDirection,
@@ -269,6 +274,7 @@ internal actual fun ModalBottomSheetDialog(
         dialog.updateParameters(
             onDismissRequest = onDismissRequest,
             properties = properties,
+            blurBehindRadius = blurBehindRadius,
             contentColor = contentColor,
             layoutDirection = layoutDirection,
         )
@@ -306,10 +312,11 @@ private class ModalBottomSheetDialogLayout(context: Context, override val window
 private class ModalBottomSheetDialogWrapper(
     private var onDismissRequest: () -> Unit,
     private var properties: ModalBottomSheetProperties,
+    private var blurBehindRadius: Dp,
     private var contentColor: Color,
     private val composeView: View,
     layoutDirection: LayoutDirection,
-    density: Density,
+    private val density: Density,
     dialogId: UUID,
 ) :
     ComponentDialog(
@@ -368,7 +375,7 @@ private class ModalBottomSheetDialogWrapper(
         )
 
         // Initial setup
-        updateParameters(onDismissRequest, properties, contentColor, layoutDirection)
+        updateParameters(onDismissRequest, properties, blurBehindRadius, contentColor, layoutDirection)
     }
 
     private fun setLayoutDirection(layoutDirection: LayoutDirection) {
@@ -399,14 +406,25 @@ private class ModalBottomSheetDialogWrapper(
     fun updateParameters(
         onDismissRequest: () -> Unit,
         properties: ModalBottomSheetProperties,
+        blurBehindRadius: Dp,
         contentColor: Color,
         layoutDirection: LayoutDirection,
     ) {
         this.onDismissRequest = onDismissRequest
         this.properties = properties
+        this.blurBehindRadius = blurBehindRadius
         this.contentColor = contentColor
         setSecurePolicy(properties.securePolicy)
         setLayoutDirection(layoutDirection)
+        if (Build.VERSION.SDK_INT >= 31) {
+            val blurBehindRadiusPx =
+                if (blurBehindRadius.isSpecified) {
+                    with(density) { blurBehindRadius.roundToPx() }
+                } else {
+                    0
+                }
+            ModalBottomSheetApi31Impl.setBlurBehindRadius(window!!, blurBehindRadiusPx)
+        }
 
         // Window flags to span parent window.
         window?.setLayout(
@@ -460,4 +478,18 @@ internal fun View.isFlagSecureEnabled(): Boolean {
 /** Determines if a color should be considered light or dark. */
 internal fun Color.isDark(): Boolean {
     return this != Color.Transparent && luminance() <= 0.5
+}
+
+@RequiresApi(31)
+private object ModalBottomSheetApi31Impl {
+    fun setBlurBehindRadius(window: Window, blurBehindRadius: Int) {
+        if (blurBehindRadius > 0) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val attributes = window.attributes
+            attributes.blurBehindRadius = blurBehindRadius
+            window.attributes = attributes
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+        }
+    }
 }

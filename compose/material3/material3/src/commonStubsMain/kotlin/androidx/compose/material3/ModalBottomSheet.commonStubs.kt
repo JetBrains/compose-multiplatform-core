@@ -19,6 +19,7 @@ package androidx.compose.material3
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 
 @Immutable
 @ExperimentalMaterial3Api
@@ -52,5 +53,6 @@ internal actual fun ModalBottomSheetDialog(
     onDismissRequest: () -> Unit,
     contentColor: Color,
     properties: ModalBottomSheetProperties,
+    blurBehindRadius: Dp,
     content: @Composable () -> Unit,
 ): Unit = implementedInJetBrainsFork()

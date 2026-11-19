@@ -4618,12 +4618,18 @@ public final class androidx/compose/ui/window/DialogModalityType$Companion {
 
 public final class androidx/compose/ui/window/DialogProperties {
 	public static final field $stable I
-	public fun <init> (ZZZ)V
+	public synthetic fun <init> (ZZZ)V
+	public synthetic fun <init> (ZZZFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ZZZFLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ZZZZZJFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ZZZZZJFLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (ZZZZZJILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (ZZZZZJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ZZZZZJZFILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (ZZZZZJZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBlurBehindRadius-D9Ej5fM ()F
 	public final fun getDismissOnBackPress ()Z
 	public final fun getDismissOnClickOutside ()Z
 	public final fun getScrimColor-0d7_KjU ()J

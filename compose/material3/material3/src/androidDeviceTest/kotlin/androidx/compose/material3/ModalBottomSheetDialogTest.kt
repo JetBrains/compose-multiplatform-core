@@ -128,6 +128,57 @@ class ModalBottomSheetDialogTest {
         rule.runOnIdle { assertThat(isSecure).isTrue() }
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+    @Test
+    fun dialog_blurBehindRadius_setsWindowBlur() {
+        var windowParams: WindowManager.LayoutParams? = null
+
+        rule.setContent {
+            ModalBottomSheetDialog(
+                onDismissRequest = {},
+                blurBehindRadius = 20.dp,
+                content = {
+                    val view = LocalView.current
+                    SideEffect {
+                        windowParams = view.rootView.layoutParams as? WindowManager.LayoutParams
+                    }
+                    Box(Modifier.size(100.dp))
+                },
+            )
+        }
+
+        rule.runOnIdle {
+            val params = windowParams!!
+            assertThat(params.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND).isNotEqualTo(0)
+            assertThat(params.blurBehindRadius)
+                .isEqualTo(with(rule.density) { 20.dp.roundToPx() })
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+    @Test
+    fun dialog_unspecifiedBlurBehindRadius_doesNotBlur() {
+        var windowParams: WindowManager.LayoutParams? = null
+
+        rule.setContent {
+            ModalBottomSheetDialog(
+                onDismissRequest = {},
+                content = {
+                    val view = LocalView.current
+                    SideEffect {
+                        windowParams = view.rootView.layoutParams as? WindowManager.LayoutParams
+                    }
+                    Box(Modifier.size(100.dp))
+                },
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(windowParams!!.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                .isEqualTo(0)
+        }
+    }
+
     @Test
     @Ignore("Dismiss callback should be reconsidered if API is made public")
     fun dialog_updatesParameters_whenRecomposed() {

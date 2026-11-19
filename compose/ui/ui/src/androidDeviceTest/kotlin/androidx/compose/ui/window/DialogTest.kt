@@ -1195,6 +1195,28 @@ class DialogTest {
     }
 
     @Test
+    fun dialogProperties_commonConstructorMatchesPlatformConstructor() {
+        val common =
+            DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false,
+                blurBehindRadius = 20.dp,
+            )
+        val platform =
+            DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+                securePolicy = SecureFlagPolicy.Inherit,
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = true,
+                blurBehindRadius = 20.dp,
+            )
+        assertThat(common).isEqualTo(platform)
+        assertThat(common.blurBehindRadius).isEqualTo(20.dp)
+    }
+
+    @Test
     fun dialogTest_scrimAlphaProperties() {
         lateinit var window: Window
         rule.setContent {

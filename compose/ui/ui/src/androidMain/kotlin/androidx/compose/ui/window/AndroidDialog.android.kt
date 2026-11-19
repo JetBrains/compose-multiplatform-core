@@ -187,7 +187,7 @@ public actual class DialogProperties(
     public val windowTitle: String = "",
     public val windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION,
     public val windowToken: IBinder? = null,
-    public val blurBehindRadius: Dp = Dp.Unspecified,
+    public actual val blurBehindRadius: Dp = Dp.Unspecified,
     public val backgroundBlurRadius: Dp = Dp.Unspecified,
     public val scrimAlpha: Float = Float.NaN,
     public val windowShape: Shape? = null,
@@ -208,16 +208,31 @@ public actual class DialogProperties(
             windowShape = null,
         )
 
-    public actual constructor(
-        dismissOnBackPress: Boolean,
-        dismissOnClickOutside: Boolean,
-        usePlatformDefaultWidth: Boolean,
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        usePlatformDefaultWidth: Boolean = true,
     ) : this(
         dismissOnBackPress = dismissOnBackPress,
         dismissOnClickOutside = dismissOnClickOutside,
         securePolicy = SecureFlagPolicy.Inherit,
         usePlatformDefaultWidth = usePlatformDefaultWidth,
         decorFitsSystemWindows = true,
+    )
+
+    public actual constructor(
+        dismissOnBackPress: Boolean,
+        dismissOnClickOutside: Boolean,
+        usePlatformDefaultWidth: Boolean,
+        blurBehindRadius: Dp,
+    ) : this(
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        securePolicy = SecureFlagPolicy.Inherit,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        decorFitsSystemWindows = true,
+        blurBehindRadius = blurBehindRadius,
     )
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
