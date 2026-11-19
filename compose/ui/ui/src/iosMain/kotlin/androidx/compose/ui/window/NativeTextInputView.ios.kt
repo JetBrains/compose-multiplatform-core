@@ -114,7 +114,6 @@ internal class NativeTextInputView(
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
         addGestureRecognizer(it)
-        it.isTrackingTouches
     }
 
     var input: NativeTextEditingDelegate = initialInput
@@ -210,8 +209,12 @@ internal class NativeTextInputView(
     }
 
     override fun resignFirstResponder(): Boolean {
-        input.onResignFocus()
+        // Complete ongoing selection activities, if any.
+        touchesTrackerGestureRecognizer.onTouchesTrackingChanged()
         touchesTrackerGestureRecognizer.onTouchesTrackingChanged = {}
+        
+        input.onResignFocus()
+        
         return super.resignFirstResponder()
     }
 
