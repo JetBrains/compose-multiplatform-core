@@ -48,6 +48,10 @@
             || event.clientY < bounds.top || event.clientY > bounds.bottom)) infoDialog.close();
     });
 
+    function higherIsBetter(metric) {
+        return ['Throughput', 'Frame rate', 'Frame FPS', 'Average frame FPS'].includes(metric.split(' — ')[0]);
+    }
+
     function chartExplanation(metric, distribution) {
         const [name, statistic] = metric.split(' — ');
         const descriptions = {
@@ -69,8 +73,7 @@
         const description = name.startsWith('Main to Nth frame')
             ? 'Elapsed time from main entry to the configured Nth frame callback after the first frame.'
             : descriptions[name];
-        const higherIsBetter = ['Throughput', 'Frame rate', 'Frame FPS', 'Average frame FPS'].includes(name);
-        const paragraphs = [higherIsBetter ? 'Higher is better.' : 'Lower is better.', description];
+        const paragraphs = [higherIsBetter(metric) ? 'Higher is better.' : 'Lower is better.', description];
         if (statistic) {
             paragraphs.push(statistic === 'mean' ? 'Uses the arithmetic mean of finite frame samples in each run.'
                 : `Uses ${statistic.toUpperCase()} of finite frame samples in each run, with linear interpolation between sorted values.`);
@@ -81,7 +84,10 @@
                 + 'Percentiles use linear interpolation; non-positive percentile values are omitted.');
         } else {
             paragraphs.push('X: Compose version. Y: metric value. Each line is a Kotlin version; points average the per-run values, '
-                + 'and whiskers show the minimum–maximum across repeated runs, not across individual frames.');
+                + 'and whiskers show the minimum–maximum across repeated runs, not across individual frames. '
+                + 'Thin blue lines mark each Kotlin series’ baseline at the first Compose version. '
+                + 'Tooltip changes compare point means with that baseline; green is better, red is worse. '
+                + 'Percentage changes are unavailable when the baseline is missing or zero.');
         }
         return paragraphs;
     }
@@ -202,6 +208,78 @@
             ctx.restore();
         }
     };
+
+    const baselineLines = {
+        id: 'baselineLines',
+        beforeDatasetsDraw(chart) {
+            const { ctx, chartArea, scales: { y } } = chart;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+            ctx.clip();
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 1;
+            chart.data.datasets.forEach((dataset, index) => {
+                if (!chart.isDatasetVisible(index) || !Number.isFinite(dataset.baseline)) return;
+                const first = chart.getDatasetMeta(index).data[0];
+                if (!first || first.skip) return;
+                const baselineY = y.getPixelForValue(dataset.baseline);
+                ctx.beginPath();
+                ctx.moveTo(chartArea.left, baselineY);
+                ctx.lineTo(chartArea.right, baselineY);
+                ctx.stroke();
+            });
+            ctx.restore();
+        }
+    };
+
+    const valueTooltip = element('div', null, document.body, 'value-tooltip');
+    valueTooltip.hidden = true;
+    valueTooltip.setAttribute('role', 'tooltip');
+    const hideValueTooltip = () => { valueTooltip.hidden = true; };
+    window.addEventListener('scroll', hideValueTooltip, true);
+    window.addEventListener('resize', hideValueTooltip);
+
+    function renderValueTooltip({ chart, tooltip }, metric, unit) {
+        if (!tooltip.opacity || !tooltip.dataPoints?.length) {
+            hideValueTooltip();
+            return;
+        }
+        valueTooltip.replaceChildren();
+        const format = value => value.toLocaleString(undefined, { maximumFractionDigits: 4 });
+        element('strong', tooltip.title?.join(' — ') ?? '', valueTooltip);
+        tooltip.dataPoints.forEach(point => {
+            const { dataset, dataIndex } = point;
+            const range = dataset.ranges[dataIndex];
+            if (!range) return;
+            const row = element('div', null, valueTooltip, 'value-tooltip-series');
+            element('div', `${dataset.label}: mean ${format(range.mean)} ${unit}`, row);
+            element('div', `Min–max: ${format(range.min)}–${format(range.max)} ${unit}`, row);
+            element('div', `Runs: ${range.count}`, row);
+            const baseline = dataset.baseline;
+            const label = `vs ${chart.data.labels[0]} baseline`;
+            if (!Number.isFinite(baseline) || baseline === 0) {
+                element('div', `Change ${label}: unavailable (baseline missing or zero)`, row);
+                return;
+            }
+            const change = (range.mean - baseline) / Math.abs(baseline) * 100;
+            if (!Number.isFinite(change)) {
+                element('div', `Change ${label}: unavailable`, row);
+                return;
+            }
+            const better = higherIsBetter(metric) ? change > 0 : change < 0;
+            const direction = change === 0 ? '' : better ? ' — better' : ' — worse';
+            const percent = change.toLocaleString(undefined, { maximumFractionDigits: 2, signDisplay: 'exceptZero' });
+            element('div', `${percent}% ${label}${direction}`, row,
+                change === 0 ? '' : better ? 'baseline-better' : 'baseline-worse');
+        });
+        valueTooltip.hidden = false;
+        const bounds = chart.canvas.getBoundingClientRect();
+        valueTooltip.style.left = Math.max(8, Math.min(bounds.left + tooltip.caretX + 12,
+            window.innerWidth - valueTooltip.offsetWidth - 8)) + 'px';
+        valueTooltip.style.top = Math.max(8, Math.min(bounds.top + tooltip.caretY + 12,
+            window.innerHeight - valueTooltip.offsetHeight - 8)) + 'px';
+    }
 
     function selectedPlatform(run) {
         return run.target === target.dataset.value
@@ -347,6 +425,7 @@
     }
 
     function render() {
+        hideValueTooltip();
         instances.forEach(chart => chart.destroy());
         instances = [];
         distributionCards = [];
@@ -409,6 +488,7 @@
                         seriesKey: kotlin,
                         label: `Kotlin ${kotlin}`,
                         data: ranges.map(range => range?.mean ?? null),
+                        baseline: ranges[0]?.mean ?? null,
                         ranges,
                         borderColor: color(kotlin),
                         backgroundColor: color(kotlin),
@@ -422,7 +502,7 @@
                 instances.push(chart = new Chart(canvas, {
                     type: 'line',
                     data: { labels: report.composeVersions, datasets },
-                    plugins: [minMaxWhiskers],
+                    plugins: [baselineLines, minMaxWhiskers],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -434,17 +514,8 @@
                         },
                         plugins: {
                             tooltip: {
-                                callbacks: {
-                                    label(context) {
-                                        const range = context.dataset.ranges[context.dataIndex];
-                                        const format = value => value.toLocaleString(undefined, { maximumFractionDigits: 4 });
-                                        return [
-                                            `${context.dataset.label}: mean ${format(range.mean)} ${unit}`,
-                                            `Min–max: ${format(range.min)}–${format(range.max)} ${unit}`,
-                                            `Runs: ${range.count}`
-                                        ];
-                                    }
-                                }
+                                enabled: false,
+                                external: context => renderValueTooltip(context, title, unit)
                             },
                             legend: { display: false }
                         }
@@ -550,6 +621,7 @@
         element('span', kotlin, label);
         input.addEventListener('change', () => {
             if (input.checked) hidden.delete(kotlin); else hidden.add(kotlin);
+            hideValueTooltip();
             distributionCards.forEach(({ kotlin, card }) => { card.hidden = hidden.has(kotlin); });
             instances.forEach(chart => {
                 chart.data.datasets.forEach((dataset, index) => {
