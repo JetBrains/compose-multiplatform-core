@@ -1,2 +1,6 @@
 /launcher/
 yarn.lock
+
+# Xcode user-specific settings and editor state
+xcuserdata/
+*.xcuserstate

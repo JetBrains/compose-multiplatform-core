@@ -190,8 +190,18 @@ internal fun runApplication(
     simulator: Simulator?,
     parameters: List<String>,
     log: Path,
+    phone: IosDevice? = null,
     waitForReport: (Process) -> Unit,
 ) {
+    if (phone != null) {
+        val command = listOf(
+            "xcrun", "devicectl", "device", "process", "launch", "--device", phone.id,
+            "--console", "--terminate-existing", bundleId,
+        ) + parameters
+        // devicectl --console forwards SIGTERM to the app when ManagedProcess closes.
+        processes.start(command, log).use { waitForReport(it.process) }
+        return
+    }
     if (target == "ios") {
         val device = requireNotNull(simulator).id
         try {

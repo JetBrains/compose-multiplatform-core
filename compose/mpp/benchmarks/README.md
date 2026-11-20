@@ -58,7 +58,7 @@ it started and keeps collected results.
 Main options:
 
 - `--target` — required list of targets, separated by spaces or commas: `jvm`, `macos` (ARM64),
-  `js`, `wasmJs`, or `ios` (ARM64 Simulator). Duplicate entries are ignored.
+  `js`, `wasmJs`, or `ios` (physical ARM64 iPhone or ARM64 Simulator). Duplicate entries are ignored.
 - `--compose-version` — a list of published Compose versions and/or `local`; defaults to `local`
   using the current core checkout (`composeCorePath=../../..` in `gradle.properties`). Specify a
   published version explicitly to benchmark it instead.
@@ -96,11 +96,16 @@ WebDriver does not wait for the page's `load` event; the collector report determ
 After an error or timeout, the current run is failed without a retry, and the next run starts a new
 browser session.
 
-For iOS, select an available iOS simulator with `--simulator UUID` (or a unique name). Without
-this option, the launcher uses the single booted iOS simulator. If none are booted, it selects
-the first available iOS simulator in `simctl list devices available --json` order and boots it
-automatically. Multiple booted iOS simulators require an explicit selection. The launcher waits
-for the selected simulator to finish booting before installing the app.
+For iOS, the launcher prefers an available physical iPhone, falling back to a simulator.
+Use `--device UDID` to select a phone explicitly (without fallback), or `--simulator UUID`
+(or a unique name) to force a simulator. Without an explicit selection, it uses the single booted
+simulator, or boots the first available one. Multiple available phones or booted simulators require
+an explicit selection.
+
+Physical iPhones require Xcode 15+, pairing, Developer Mode, and an unlocked screen. Pass
+`--development-team TEAM_ID` for signing without saving the team in the Xcode project.
+The collector address is detected automatically; the iPhone must be able to reach the Mac over
+the local network. Allow local-network access on iPhone and incoming collector connections on Mac.
 
 ### Example: JVM
 
