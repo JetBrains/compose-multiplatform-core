@@ -1,21 +1,12 @@
 #!/bin/bash
 
 # This script is rarely needed to be used explicitly.
-# Use parent scripts and see the parent Readme.txt
+# Use parent scripts and see the parent Readme.md
 
 set -e
 
 if [ -z "$1" ]; then
-echo "Specify the branch to merge into. For example:"
-echo "  ./copyLifecycle.sh jb-main"
-echo "  ./copyCompose.sh release/1.12"
-exit 1
-fi
-
-DESTINATION_BRANCH=$1
-shift
-if [ -z "$1" ]; then
-echo "Specify folders to copy. For example: ./copyToBranch.sh jb-main compose ':(exclude)compose/material3'"
+echo "Specify folders to copy to jb-main. For example: ./copyToJbMain.sh compose ':(exclude)compose/material3'"
 exit 1
 fi
 
@@ -28,9 +19,9 @@ CURRENT_COMMIT=$(git rev-parse --short @)
 BRANCH_TO_RESTORE_IN_THE_END=$(git branch --show-current)
 
 
-DESTINATION_REF=$(git config "branch.$DESTINATION_BRANCH.remote")/$DESTINATION_BRANCH
-TO_JB_MAIN_BRANCH=integration-copy/$FIRST_FOLDER/$CURRENT_COMMIT/to-$DESTINATION_BRANCH
-git checkout --quiet $(git merge-base $CURRENT_COMMIT $DESTINATION_REF) -B $TO_JB_MAIN_BRANCH
+JB_MAIN_BRANCH=$(git config branch.jb-main.remote)/jb-main
+TO_JB_MAIN_BRANCH=integration-copy/$FIRST_FOLDER/$CURRENT_COMMIT/to-jb-main
+git checkout --quiet $(git merge-base $CURRENT_COMMIT $JB_MAIN_BRANCH) -B $TO_JB_MAIN_BRANCH
 (
     cd $ROOT_DIR;
     git checkout --quiet --no-overlay $CURRENT_COMMIT -- $ALL_FOLDERS;
