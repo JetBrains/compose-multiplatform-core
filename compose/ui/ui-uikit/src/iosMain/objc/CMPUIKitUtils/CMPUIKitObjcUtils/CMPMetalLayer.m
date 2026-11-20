@@ -45,6 +45,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
         _drawableSize = CGSizeZero;
         _drawablesGeneration = 0;
         _lastDrawablePresentedTime = 0;
+        _disableDrawableAcquisitionRetries = NO;
     }
     return self;
 }
@@ -154,6 +155,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
 
 - (nullable CMPDrawable *)nextDrawable {
     NSTimeInterval startTime = CACurrentMediaTime();
+    BOOL isMainThread = [NSThread isMainThread];
 
     while (true) {
         CMPDrawable *drawable = [self findNextDrawable];
@@ -165,7 +167,15 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
             return nil;
         }
 
-        [NSThread sleepForTimeInterval:kDrawablePollingInterval];
+        if (isMainThread) {
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:kDrawablePollingInterval]];
+        } else {
+            [NSThread sleepForTimeInterval:kDrawablePollingInterval];
+        }
+
+        if (_disableDrawableAcquisitionRetries) {
+            return nil;
+        }
     }
 }
 
