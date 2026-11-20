@@ -39,10 +39,6 @@ import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptionCurveEaseInOut
 import platform.UIKit.UIViewAnimationOptions
 
-/**
- * Reports the height of the keyboard overlap with the Compose overlay view. Notifications provide
- * the animation timing, while [KeyboardFrameSource] supplies the target keyboard geometry.
- */
 internal class KeyboardInsetsManager(
     private val view: UIView,
     private val frameChoreographer: FrameChoreographer,
@@ -60,16 +56,11 @@ internal class KeyboardInsetsManager(
     private val keyboardFrame: CValue<CGRect>
         get() = keyboardGeometrySource.keyboardFrame
 
-    /**
-     * UIKit does not expose a callback for each presentation frame of a keyboard animation.
-     * This invisible view is animated with the keyboard notification's timing, and its
-     * presentation layer is sampled to interpolate the keyboard top on every display-link tick.
-     */
     private data class KeyboardAnimation(
         val progressView: UIView,
         val previousKeyboardTop: Double,
         val targetKeyboardTop: Double,
-        val overlayBounds: CValue<CGRect>,
+        val viewBounds: CValue<CGRect>,
     )
 
     fun start() {
@@ -172,7 +163,6 @@ internal class KeyboardInsetsManager(
         }
     }
 
-    /** Starts an animation from the current keyboard top to the target keyboard top. */
     private fun animateKeyboardOverlap(
         currentFrame: CValue<CGRect>,
         targetFrame: CValue<CGRect>,
@@ -262,12 +252,12 @@ internal class KeyboardInsetsManager(
         val currentKeyboardTop = activeAnimation?.keyboardTop() ?: previousKeyboardTop
         cancelActiveAnimation()
 
-        val overlayBounds = view.bounds
+        val viewBounds = view.bounds
         if (currentKeyboardTop == targetKeyboardTop) {
             val overlap =
-                (CGRectGetMaxY(overlayBounds) - targetKeyboardTop).coerceIn(
+                (CGRectGetMaxY(viewBounds) - targetKeyboardTop).coerceIn(
                     0.0,
-                    overlayBounds.useContents { size.height },
+                    viewBounds.useContents { size.height },
                 )
             onKeyboardOverlapHeightChanged(overlap.dp)
             return
@@ -282,7 +272,7 @@ internal class KeyboardInsetsManager(
                 progressView = progressView,
                 previousKeyboardTop = currentKeyboardTop,
                 targetKeyboardTop = targetKeyboardTop,
-                overlayBounds = overlayBounds,
+                viewBounds = viewBounds,
             )
         activeAnimation = animation
         activitiesHandler.onActivitiesStarted()
@@ -310,8 +300,8 @@ internal class KeyboardInsetsManager(
     private fun KeyboardAnimation.keyboardOverlapHeight(progress: Double = progress()): Dp {
         val keyboardTop = keyboardTop(progress)
         // Clamp after interpolation so the inset stays zero until the keyboard reaches the view.
-        return (CGRectGetMaxY(overlayBounds) - keyboardTop)
-            .coerceIn(0.0, overlayBounds.useContents { size.height })
+        return (CGRectGetMaxY(viewBounds) - keyboardTop)
+            .coerceIn(0.0, viewBounds.useContents { size.height })
             .dp
     }
 

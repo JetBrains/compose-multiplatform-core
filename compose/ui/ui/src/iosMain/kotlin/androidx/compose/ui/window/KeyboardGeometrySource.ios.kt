@@ -33,11 +33,7 @@ internal interface KeyboardGeometrySource {
     val keyboardFrame: CValue<CGRect>
 }
 
-/**
- * Reads keyboard geometry from the view's keyboard layout guide. Unlike keyboard notifications,
- * the guide includes custom input and accessory views.
- */
-internal class KeyboardLayoutGuideGeometrySource(
+private class KeyboardLayoutGuideGeometrySource(
     private val view: UIView
 ) : KeyboardGeometrySource {
     private val canDisableBottomSafeArea = available(OS.Ios to OSVersion(major = 17))
@@ -53,8 +49,6 @@ internal class KeyboardLayoutGuideGeometrySource(
     override val keyboardFrame: CValue<CGRect>
         get() {
             val frame = view.keyboardLayoutGuide.layoutFrame
-            // A hidden guide can be tied to the bottom safe area instead of becoming empty.
-            // Normalize that safe-area-only frame so it is not reported as keyboard geometry.
             return if (isBottomSafeAreaFrame(frame)) {
                 CGRectZero.readValue()
             } else {
