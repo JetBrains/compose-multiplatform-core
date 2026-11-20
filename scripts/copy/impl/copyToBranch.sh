@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script is rarely needed to be used explicitly.
-# Use parent scripts and see the parent Readme.txt
+# Use parent scripts and see the parent Readme.md
 
 set -e
 
