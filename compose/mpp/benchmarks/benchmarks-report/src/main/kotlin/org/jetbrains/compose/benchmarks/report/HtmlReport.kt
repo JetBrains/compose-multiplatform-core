@@ -340,6 +340,13 @@ private fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = bui
 }
 
 private fun reportDistributions(report: JsonObject): List<ChartDistribution> {
+    if (report.requiredText("type") == "realFrames") {
+        val frameTimes = report.getValue("frameTimes").jsonArray.map(::durationMillis).filter { it.isFinite() }
+        return listOf(
+            ChartDistribution("Frame time", "ms", frameTimes),
+            ChartDistribution("Frame rate", "FPS", frameTimes.filter { it > 0 }.map { 1000.0 / it }.filter { it.isFinite() }),
+        )
+    }
     if (report.requiredText("type") != "fps") return emptyList()
     val frames = report.getValue("frames").jsonArray.map { it.jsonObject }
     return listOf(

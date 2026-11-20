@@ -388,7 +388,7 @@
                     }
                 }));
             }
-            if (mode.dataset.value === 'fps') renderDistributions(testRuns, section);
+            renderDistributions(testRuns, section);
         }
         // Earlier charts may have been sized before their grid neighbors were added.
         instances.forEach(chart => chart.resize());
