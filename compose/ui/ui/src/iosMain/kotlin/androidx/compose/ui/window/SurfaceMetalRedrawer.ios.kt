@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(org.jetbrains.skiko.ExperimentalSkikoApi::class)
+
 package androidx.compose.ui.window
 
 import androidx.collection.IntIntPair
@@ -27,19 +29,13 @@ import kotlinx.cinterop.autoreleasepool
 import kotlinx.cinterop.objcPtr
 import kotlinx.cinterop.rawValue
 import kotlinx.cinterop.useContents
-import org.jetbrains.skia.BackendRenderTarget
 import org.jetbrains.skia.Canvas
-import org.jetbrains.skia.ColorSpace
-import org.jetbrains.skia.DirectContext
 import org.jetbrains.skia.Picture
 import org.jetbrains.skia.PictureRecorder
-import org.jetbrains.skia.PixelGeometry
 import org.jetbrains.skia.Surface
-import org.jetbrains.skia.SurfaceColorFormat
-import org.jetbrains.skia.SurfaceOrigin
-import org.jetbrains.skia.SurfaceProps
-import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
-import org.jetbrains.skia.gpu.ganesh.makeFromBackendRenderTarget
+import org.jetbrains.skia.gpu.GpuContext
+import org.jetbrains.skia.gpu.makeMetalContext
+import org.jetbrains.skia.gpu.makeMetalTexture
 import platform.Foundation.NSLock
 import platform.Foundation.NSThread
 import platform.IOSurface.IOSurfaceGetHeight
@@ -72,7 +68,7 @@ internal class SurfaceMetalRedrawer(
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
     private val queue = getCachedCommandQueue(device)
     // Created for the first frame, and again after releaseRenderingResources closed it.
-    private var context: DirectContext? = null
+    private var context: GpuContext? = null
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
 
@@ -342,26 +338,19 @@ internal class SurfaceMetalRedrawer(
             ?.takeIf { !it.isClosed }
             ?.let { return it }
 
-        val renderTarget = BackendRenderTarget.makeMetal(
+        val context = context
+            ?: makeMetalContext(device.objcPtr(), queue.objcPtr()).also { this.context = it }
+
+        val texture = makeMetalTexture(
             width = IOSurfaceGetWidth(drawable.surface).toInt(),
             height = IOSurfaceGetHeight(drawable.surface).toInt(),
             texturePtr = drawable.drawableTexture().rawValue,
         )
 
-        val context = context
-            ?: DirectContext.makeMetal(device.objcPtr(), queue.objcPtr()).also { this.context = it }
-
-        val surface = Surface.makeFromBackendRenderTarget(
-            context,
-            renderTarget,
-            SurfaceOrigin.TOP_LEFT,
-            SurfaceColorFormat.BGRA_8888,
-            ColorSpace.sRGB,
-            SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
-        )
+        val surface = context.makeSurface(texture)
 
         if (surface == null) {
-            renderTarget.close()
+            texture.close()
             return null
         }
 
@@ -369,7 +358,7 @@ internal class SurfaceMetalRedrawer(
 
         activeDrawableAssociatedResourcesDisposes.add {
             surface.close()
-            renderTarget.close()
+            texture.close()
         }
 
         return surface
@@ -409,7 +398,7 @@ internal class SurfaceMetalRedrawer(
 
         surface.canvas.drawPicture(frame.picture)
         frame.dispose()
-        surface.flushAndSubmit()
+        context?.submit()
 
         val commandBuffer = queue.commandBuffer()
         if (commandBuffer == null) {
