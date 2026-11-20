@@ -161,6 +161,16 @@ jobs:
             device_type: 'phone'
             device: 'iPhone 16'
 
+          - runtime: 'ios18'
+            runtime_name: 'iOS 18.6'
+            runner: macos-15-xlarge
+            simulator_os: '18.6'
+            xcode_path: '/Applications/Xcode_26.3.app'
+            xcode_cache_key_suffix: '26.3'
+            xcode_version: '26.3'
+            device_type: 'tablet'
+            device: 'iPad Pro 11-inch (M4)'
+
           - runtime: 'ios26'
             runtime_name: 'iOS 26.5'
             runner: macos-26-xlarge
