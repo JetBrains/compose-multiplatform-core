@@ -30,6 +30,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 
 private val reportJson = Json { encodeDefaults = true }
+private const val realFramesBudgetHz = 60
+private const val realFramesBudgetMs = 1000.0 / realFramesBudgetHz
+private const val realFramesBudgetTolerancePercent = 5
 
 @Serializable
 private data class ChartMeasurement(val title: String, val unit: String, val value: Double)
@@ -68,6 +71,7 @@ private data class ChartConfiguration(
 @Serializable
 private data class ChartReport(
     val composeVersions: List<String>,
+    val kotlinVersions: List<String>,
     val runs: List<ChartRun>,
     val warnings: List<String>,
     val configurations: List<ChartConfiguration>,
@@ -82,14 +86,18 @@ fun generateHtmlReport(session: Path): Path {
         warnings.add("Cannot read session metadata: "+error.message)
         null
     }
-    val launcherCommand = sessionInfo?.get("launcherCommand")?.jsonArray
-        ?.joinToString(" ") { shellArgument(it.jsonPrimitive.content) }
+    val launcherArguments = sessionInfo?.get("launcherCommand")?.jsonArray
+        ?.map { it.jsonPrimitive.content }.orEmpty()
+    val launcherCommand = launcherArguments.takeIf { it.isNotEmpty() }
+        ?.joinToString(" ") { shellArgument(it) }
     val totalTime = sessionInfo?.get("totalTimeSeconds")?.jsonPrimitive?.longOrNull?.let { seconds ->
         String.format(java.util.Locale.ROOT, "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
     }
     val runs = mutableListOf<ChartRun>()
     val configurations = mutableListOf<ChartConfiguration>()
-    val composeVersions = linkedSetOf<String>()
+    // Keep requested endpoints even when a configuration has no summary or measurements.
+    val composeVersions = requestedVersions(launcherArguments, "--compose-version")
+    val kotlinVersions = requestedVersions(launcherArguments, "--kotlin-version")
     Files.walk(session, 4).use { paths ->
         paths.filter { it.fileName.toString() == "summary.json" && Files.isRegularFile(it) }
             .sorted().forEach { summaryPath ->
@@ -109,6 +117,7 @@ fun generateHtmlReport(session: Path): Path {
                         "local"
                     } else summary.requiredText("composeVersion")
                     composeVersions.add(compose)
+                    kotlinVersions.add(kotlin)
                     summary["error"]?.jsonPrimitive?.contentOrNull?.let {
                         warnings.add("$configuration / Kotlin $kotlin / Compose $compose: $it")
                     }
@@ -144,6 +153,11 @@ fun generateHtmlReport(session: Path): Path {
                         val run = element.jsonObject
                         var parameters = buildJsonObject {
                             put("type", run.getValue("type"))
+                            if (run.requiredText("type") == "realFrames") {
+                                put("frameBudgetHz", realFramesBudgetHz)
+                                put("frameBudgetMs", realFramesBudgetMs)
+                                put("frameBudgetTolerancePercent", realFramesBudgetTolerancePercent)
+                            }
                             for (key in listOf("repeat", "timeoutSeconds")) summary[key]?.let { put(key, it) }
                         }
                         var reportPath: String? = null
@@ -181,7 +195,13 @@ fun generateHtmlReport(session: Path): Path {
                 }
             }
     }
-    val payload = reportJson.encodeToString(ChartReport(composeVersions.toList(), runs, warnings, configurations))
+    val kotlinOrder = kotlinVersions.withIndex().associate { it.value to it.index }
+    val composeOrder = composeVersions.withIndex().associate { it.value to it.index }
+    runs.sortWith(compareBy({ kotlinOrder.getValue(it.kotlin) }, { composeOrder.getValue(it.compose) }))
+    configurations.sortWith(compareBy({ kotlinOrder.getValue(it.kotlin) }, { composeOrder.getValue(it.compose) }))
+    val payload = reportJson.encodeToString(ChartReport(
+        composeVersions.toList(), kotlinVersions.toList(), runs, warnings, configurations,
+    ))
         // JSON lives in a script raw-text element, not in an HTML text node.
         .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     val html = createHTML().html {
@@ -280,6 +300,17 @@ fun generateHtmlReport(session: Path): Path {
     return session.resolve("index.html").also { it.writeText("<!DOCTYPE html>\n$html\n") }
 }
 
+private fun requestedVersions(arguments: List<String>, option: String): MutableSet<String> {
+    // Like the launcher's vararg option, the last occurrence wins.
+    val index = arguments.indexOfLast { it == option || it.startsWith("$option=") }
+    if (index < 0) return linkedSetOf()
+    val values = buildList {
+        arguments[index].takeIf { it.startsWith("$option=") }?.let { add(it.substringAfter('=')) }
+        addAll(arguments.drop(index + 1).takeWhile { !it.startsWith("-") })
+    }
+    return values.flatMap { it.split(",") }.toCollection(linkedSetOf())
+}
+
 private fun shellArgument(value: String): String =
     if (value.matches(Regex("[A-Za-z0-9_./:=,@%+-]+"))) value
     else "'" + value.replace("'", "'\"'\"'") + "'"
@@ -318,7 +349,17 @@ private fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = bui
             duration("Main to Nth frame (${report.requiredText("frameCount")} after first)", "timeToNthFrame")
         }
         "realFrames" -> {
-            samples("Frame time", "ms", report.getValue("frameTimes").jsonArray.map(::durationMillis))
+            val frameTimes = report.getValue("frameTimes").jsonArray.map(::durationMillis)
+            samples("Frame time", "ms", frameTimes)
+            val intervals = frameTimes.filter { it.isFinite() && it > 0 }
+            if (intervals.isNotEmpty()) {
+                val tolerance = realFramesBudgetTolerancePercent / 100.0
+                val threshold = realFramesBudgetMs * (1 + tolerance)
+                addValue("Over-budget intervals", "%", 100.0 * intervals.count { it > threshold } / intervals.size)
+                // Infer refresh slots from frame-loop intervals, not actual presentation timestamps.
+                val slots = intervals.map { ceil(it / realFramesBudgetMs - tolerance).coerceAtLeast(1.0) }
+                addValue("Estimated missed VSync", "%", 100.0 * slots.sumOf { it - 1 } / slots.sum())
+            }
             duration("Total duration", "totalDuration")
             val seconds = durationMillis(report.getValue("totalDuration")) / 1000
             if (seconds > 0) addValue("Throughput", "FPS", report.getValue("frameCount").jsonPrimitive.int / seconds)
@@ -340,6 +381,13 @@ private fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = bui
 }
 
 private fun reportDistributions(report: JsonObject): List<ChartDistribution> {
+    if (report.requiredText("type") == "realFrames") {
+        val frameTimes = report.getValue("frameTimes").jsonArray.map(::durationMillis).filter { it.isFinite() }
+        return listOf(
+            ChartDistribution("Frame time", "ms", frameTimes),
+            ChartDistribution("Frame rate", "FPS", frameTimes.filter { it > 0 }.map { 1000.0 / it }.filter { it.isFinite() }),
+        )
+    }
     if (report.requiredText("type") != "fps") return emptyList()
     val frames = report.getValue("frames").jsonArray.map { it.jsonObject }
     return listOf(

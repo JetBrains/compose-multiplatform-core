@@ -138,8 +138,11 @@ p { margin: 10px 0; }
     border-radius: 10px;
     background: #fff;
 }
+.chart-card.chart-regression { border-color: #b91c1c; box-shadow: 0 0 0 1px #b91c1c; }
+.chart-card.chart-improvement { border-color: #15803d; box-shadow: 0 0 0 1px #15803d; }
 .chart-heading, .raw-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .chart-heading { margin-bottom: 12px; }
+.chart-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .chart-heading h3, .raw-dialog-heading h2 { margin: 0; }
 .chart-raw-button { flex-shrink: 0; }
 .raw-dialog {
@@ -161,6 +164,24 @@ p { margin: 10px 0; }
 .raw-report-list small { display: block; margin-bottom: 4px; color: #617089; }
 .raw-report-list a { color: #1849ab; overflow-wrap: anywhere; }
 .canvas-container { position: relative; height: 360px; }
+.value-tooltip {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+    max-width: min(420px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    padding: 10px 14px;
+    border: 1px solid #dce1ea;
+    border-radius: 8px;
+    background: #fff;
+    color: #182235;
+    font-size: 13px;
+    box-shadow: 0 4px 20px #18223530;
+}
+.value-tooltip-series { margin-top: 8px; }
+.baseline-better { color: #15803d; font-weight: 600; }
+.baseline-worse { color: #b91c1c; font-weight: 600; }
 .warning {
     margin: 12px 0;
     padding: 12px 16px;

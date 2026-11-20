@@ -18,7 +18,7 @@
     const modes = ['startup', 'realFrames', 'averageFrame', 'fps'];
     const distinct = values => [...new Set(values)];
     const configurations = report.configurations ?? [];
-    const kotlinVersions = distinct([...report.runs, ...configurations].map(run => run.kotlin));
+    const kotlinVersions = report.kotlinVersions ?? distinct([...report.runs, ...configurations].map(run => run.kotlin));
     const hidden = new Set();
     let instances = [];
     let distributionCards = [];
@@ -39,10 +39,81 @@
             || event.clientY < bounds.top || event.clientY > bounds.bottom)) rawDialog.close();
     });
 
-    function chartHeading(card, title, sourceRuns) {
+    const infoDialog = element('dialog', null, document.body, 'raw-dialog');
+    infoDialog.id = 'chart-info-dialog';
+    infoDialog.setAttribute('aria-labelledby', 'chart-info-title');
+    infoDialog.addEventListener('click', event => {
+        const bounds = infoDialog.getBoundingClientRect();
+        if (event.target === infoDialog && (event.clientX < bounds.left || event.clientX > bounds.right
+            || event.clientY < bounds.top || event.clientY > bounds.bottom)) infoDialog.close();
+    });
+
+    function higherIsBetter(metric) {
+        return ['Throughput', 'Frame rate', 'Frame FPS', 'Average frame FPS'].includes(metric.split(' — ')[0]);
+    }
+
+    function chartExplanation(metric, distribution) {
+        const [name, statistic] = metric.split(' — ');
+        const descriptions = {
+            'Process to main': 'Elapsed time from process launch to main entry, when available.',
+            'Main to first frame': 'Elapsed time from main entry to the first observed frame callback.',
+            'Total duration': 'Wall-clock time for the measured frame-loop intervals. Compare runs with the same frame count.',
+            'Throughput': 'Measured frame count divided by total wall-clock duration, in FPS.',
+            'Frame time': 'Wall-clock intervals between frame-loop callbacks, including synchronization waits and scheduling delays; not CPU render time or presentation timestamps.',
+            'Frame rate': '1000 / frame interval in milliseconds, using only positive, finite frame-loop intervals; not measured display FPS.',
+            'Over-budget intervals': 'Percentage of positive, finite frame-loop intervals longer than 17.5 ms: a fixed 60 Hz budget (1000/60 ms) plus 5% tolerance.',
+            'Estimated missed VSync': 'Estimated missed slots / total slots × 100, using positive, finite frame-loop intervals. Slots = max(1, ceil(interval / (1000/60 ms) − 0.05)). Assumes 60 Hz with 5% tolerance, not measured presentation events; scheduling jitter can inflate this estimate.',
+            'CPU time': 'Per-frame offscreen elapsed time minus the GPU-completion wait. Includes CPU work and other elapsed overhead, not CPU utilization.',
+            'GPU time': 'Per-frame wall-clock time waiting for GPU completion during offscreen rendering; not GPU timestamp timing.',
+            'Frame FPS': 'Reciprocal of per-frame offscreen elapsed time, including the GPU-completion wait; not display FPS.',
+            'Average CPU time': 'Total offscreen measurement time minus GPU-completion waits, divided by frame count.',
+            'Average GPU time': 'Total offscreen GPU-completion wait time divided by frame count; not GPU timestamp timing.',
+            'Average frame FPS': 'Offscreen frame count divided by total measurement time, including GPU-completion waits; not display FPS.',
+        };
+        const description = name.startsWith('Main to Nth frame')
+            ? 'Elapsed time from main entry to the configured Nth frame callback after the first frame.'
+            : descriptions[name];
+        const paragraphs = [higherIsBetter(metric) ? 'Higher is better.' : 'Lower is better.', description];
+        if (statistic) {
+            paragraphs.push(statistic === 'mean' ? 'Uses the arithmetic mean of finite frame samples in each run.'
+                : `Uses ${statistic.toUpperCase()} of finite frame samples in each run, with linear interpolation between sorted values.`);
+        }
+        if (distribution) {
+            paragraphs.push('X: percentile P0–P100 (minimum to maximum). Y: metric value on a logarithmic scale. '
+                + 'Frame samples from repeated runs are pooled per Compose version and Kotlin version. '
+                + 'Percentiles use linear interpolation; non-positive percentile values are omitted.');
+        } else {
+            paragraphs.push('X: Compose version. Y: metric value. Each line is a Kotlin version; points average the per-run values, '
+                + 'and whiskers show the minimum–maximum across repeated runs, not across individual frames. '
+                + 'Thin blue lines mark each Kotlin series’ baseline at the first Compose version. '
+                + 'Tooltip changes compare point means with that baseline; green is better, red is worse. '
+                + 'Percentage changes are unavailable when the baseline is missing or zero. '
+                + 'A red border means at least one visible Kotlin series regressed by 5% or more at the last Compose version. '
+                + 'Otherwise, a green border means at least one improved by 5% or more.');
+        }
+        return paragraphs;
+    }
+
+    function chartHeading(card, title, sourceRuns, metric, distribution = false) {
         const heading = element('div', null, card, 'chart-heading');
         element('h3', title, heading);
-        const button = element('button', 'raw', heading, 'chart-raw-button');
+        const actions = element('div', null, heading, 'chart-actions');
+        const info = element('button', 'ⓘ', actions, 'chart-raw-button');
+        info.type = 'button';
+        info.setAttribute('aria-label', 'About ' + title);
+        info.setAttribute('aria-haspopup', 'dialog');
+        info.setAttribute('aria-controls', infoDialog.id);
+        info.addEventListener('click', () => {
+            infoDialog.replaceChildren();
+            const header = element('div', null, infoDialog, 'raw-dialog-heading');
+            element('h2', title, header).id = 'chart-info-title';
+            const close = element('button', 'Close', header, 'chart-raw-button');
+            close.type = 'button';
+            close.addEventListener('click', () => infoDialog.close());
+            chartExplanation(metric, distribution).forEach(text => element('p', text, infoDialog));
+            infoDialog.showModal();
+        });
+        const button = element('button', 'raw', actions, 'chart-raw-button');
         button.type = 'button';
         button.setAttribute('aria-label', 'Raw JSON reports for ' + title);
         button.addEventListener('click', () => {
@@ -140,6 +211,99 @@
         }
     };
 
+    const baselineLines = {
+        id: 'baselineLines',
+        beforeDatasetsDraw(chart) {
+            const { ctx, chartArea, scales: { y } } = chart;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+            ctx.clip();
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 1;
+            chart.data.datasets.forEach((dataset, index) => {
+                if (!chart.isDatasetVisible(index) || !Number.isFinite(dataset.baseline)) return;
+                const first = chart.getDatasetMeta(index).data[0];
+                if (!first || first.skip) return;
+                const baselineY = y.getPixelForValue(dataset.baseline);
+                ctx.beginPath();
+                ctx.moveTo(chartArea.left, baselineY);
+                ctx.lineTo(chartArea.right, baselineY);
+                ctx.stroke();
+            });
+            ctx.restore();
+        }
+    };
+
+    function highlightChart(card, chart, metric) {
+        let regression = false;
+        let improvement = false;
+        chart.data.datasets.forEach((dataset, index) => {
+            if (!chart.isDatasetVisible(index)) return;
+            const baseline = dataset.baseline;
+            const last = dataset.ranges.at(-1)?.mean;
+            if (!Number.isFinite(baseline) || baseline === 0 || !Number.isFinite(last)) return;
+            const change = (last - baseline) / Math.abs(baseline) * 100;
+            if (!Number.isFinite(change) || Math.abs(change) < 5) return;
+            const better = higherIsBetter(metric) ? change > 0 : change < 0;
+            if (better) improvement = true;
+            else regression = true;
+        });
+        card.classList.toggle('chart-regression', regression);
+        card.classList.toggle('chart-improvement', !regression && improvement);
+        const status = regression ? 'regression of at least 5%'
+            : improvement ? 'improvement of at least 5%' : 'no change of at least 5% with a valid baseline';
+        card.setAttribute('aria-label', `${metric}: ${status}, comparing the last Compose version with the first`);
+    }
+
+    const valueTooltip = element('div', null, document.body, 'value-tooltip');
+    valueTooltip.hidden = true;
+    valueTooltip.setAttribute('role', 'tooltip');
+    const hideValueTooltip = () => { valueTooltip.hidden = true; };
+    window.addEventListener('scroll', hideValueTooltip, true);
+    window.addEventListener('resize', hideValueTooltip);
+
+    function renderValueTooltip({ chart, tooltip }, metric, unit) {
+        if (!tooltip.opacity || !tooltip.dataPoints?.length) {
+            hideValueTooltip();
+            return;
+        }
+        valueTooltip.replaceChildren();
+        const format = value => value.toLocaleString(undefined, { maximumFractionDigits: 4 });
+        element('strong', tooltip.title?.join(' — ') ?? '', valueTooltip);
+        tooltip.dataPoints.forEach(point => {
+            const { dataset, dataIndex } = point;
+            const range = dataset.ranges[dataIndex];
+            if (!range) return;
+            const row = element('div', null, valueTooltip, 'value-tooltip-series');
+            element('div', `${dataset.label}: mean ${format(range.mean)} ${unit}`, row);
+            element('div', `Min–max: ${format(range.min)}–${format(range.max)} ${unit}`, row);
+            element('div', `Runs: ${range.count}`, row);
+            const baseline = dataset.baseline;
+            const label = `vs ${chart.data.labels[0]} baseline`;
+            if (!Number.isFinite(baseline) || baseline === 0) {
+                element('div', `Change ${label}: unavailable (baseline missing or zero)`, row);
+                return;
+            }
+            const change = (range.mean - baseline) / Math.abs(baseline) * 100;
+            if (!Number.isFinite(change)) {
+                element('div', `Change ${label}: unavailable`, row);
+                return;
+            }
+            const better = higherIsBetter(metric) ? change > 0 : change < 0;
+            const direction = change === 0 ? '' : better ? ' — better' : ' — worse';
+            const percent = change.toLocaleString(undefined, { maximumFractionDigits: 2, signDisplay: 'exceptZero' });
+            element('div', `${percent}% ${label}${direction}`, row,
+                change === 0 ? '' : better ? 'baseline-better' : 'baseline-worse');
+        });
+        valueTooltip.hidden = false;
+        const bounds = chart.canvas.getBoundingClientRect();
+        valueTooltip.style.left = Math.max(8, Math.min(bounds.left + tooltip.caretX + 12,
+            window.innerWidth - valueTooltip.offsetWidth - 8)) + 'px';
+        valueTooltip.style.top = Math.max(8, Math.min(bounds.top + tooltip.caretY + 12,
+            window.innerHeight - valueTooltip.offsetHeight - 8)) + 'px';
+    }
+
     function selectedPlatform(run) {
         return run.target === target.dataset.value
             && (browserControl.hidden || run.browser === browser.dataset.value);
@@ -236,7 +400,8 @@
             }
         }
         element('p', 'Memory and CPU values describe what the process can see. Browser memory is approximate; '
-            + 'simulator hardware may describe its host. JVM heap is not physical RAM.', container, 'environment-note');
+            + 'simulator hardware may describe its host. JVM heap is not physical RAM. '
+            + 'JVM GPU names list detected adapters, not necessarily the active rendering device.', container, 'environment-note');
     }
 
     function updateTests() {
@@ -284,6 +449,7 @@
     }
 
     function render() {
+        hideValueTooltip();
         instances.forEach(chart => chart.destroy());
         instances = [];
         distributionCards = [];
@@ -323,12 +489,13 @@
                     report.composeVersions.includes(run.compose)
                     && run.measurements.some(metric => metric.title === title && Number.isFinite(metric.value))
                     && chart.data.datasets.some((dataset, index) => dataset.seriesKey === run.kotlin && chart.isDatasetVisible(index))
-                ));
+                ), title);
                 const container = element('div', null, card, 'canvas-container');
                 const canvas = element('canvas', null, container);
                 canvas.setAttribute('role', 'img');
                 canvas.setAttribute('aria-label', `${name}: ${title}, ${unit}, by Compose version`);
-                const series = distinct(testRuns.filter(run => run.measurements.some(metric => metric.title === title)).map(run => run.kotlin));
+                const series = kotlinVersions.filter(kotlin => testRuns.some(run =>
+                    run.kotlin === kotlin && run.measurements.some(metric => metric.title === title)));
                 const datasets = series.map(kotlin => {
                     const ranges = report.composeVersions.map(compose => {
                         const values = testRuns.filter(run => run.kotlin === kotlin && run.compose === compose)
@@ -346,6 +513,7 @@
                         seriesKey: kotlin,
                         label: `Kotlin ${kotlin}`,
                         data: ranges.map(range => range?.mean ?? null),
+                        baseline: ranges[0]?.mean ?? null,
                         ranges,
                         borderColor: color(kotlin),
                         backgroundColor: color(kotlin),
@@ -359,7 +527,10 @@
                 instances.push(chart = new Chart(canvas, {
                     type: 'line',
                     data: { labels: report.composeVersions, datasets },
-                    plugins: [minMaxWhiskers],
+                    plugins: [baselineLines, minMaxWhiskers, {
+                        id: 'baselineHighlight',
+                        afterUpdate: chart => highlightChart(card, chart, title)
+                    }],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -371,24 +542,15 @@
                         },
                         plugins: {
                             tooltip: {
-                                callbacks: {
-                                    label(context) {
-                                        const range = context.dataset.ranges[context.dataIndex];
-                                        const format = value => value.toLocaleString(undefined, { maximumFractionDigits: 4 });
-                                        return [
-                                            `${context.dataset.label}: mean ${format(range.mean)} ${unit}`,
-                                            `Min–max: ${format(range.min)}–${format(range.max)} ${unit}`,
-                                            `Runs: ${range.count}`
-                                        ];
-                                    }
-                                }
+                                enabled: false,
+                                external: context => renderValueTooltip(context, title, unit)
                             },
                             legend: { display: false }
                         }
                     }
                 }));
             }
-            if (mode.dataset.value === 'fps') renderDistributions(testRuns, section);
+            renderDistributions(testRuns, section);
         }
         // Earlier charts may have been sized before their grid neighbors were added.
         instances.forEach(chart => chart.resize());
@@ -398,9 +560,6 @@
         const titles = distinct(runs.flatMap(run => (run.distributions ?? []).map(metric => metric.title)));
         if (!titles.length) return;
         element('h2', 'Per-frame percentiles', section);
-        element('p', 'X: percentile (0–100). Y: metric value (logarithmic scale). Repeated runs are pooled. '
-            + 'Percentiles use linear interpolation between sorted frame values; P0 is the minimum and P100 is the maximum. '
-            + 'Non-positive percentile values cannot be shown on a logarithmic scale and are omitted.', section);
         for (const kotlin of kotlinVersions) {
             const kotlinRuns = runs.filter(run => run.kotlin === kotlin);
             if (!kotlinRuns.some(run => run.distributions?.some(metric => metric.values.length))) continue;
@@ -446,7 +605,7 @@
                     !hidden.has(kotlin)
                     && run.distributions?.some(metric => metric.title === title && metric.values.some(Number.isFinite))
                     && chart.data.datasets.some((dataset, index) => dataset.composeVersion === run.compose && chart.isDatasetVisible(index))
-                ));
+                ), title, true);
                 const container = element('div', null, card, 'canvas-container');
                 const canvas = element('canvas', null, container);
                 canvas.setAttribute('role', 'img');
@@ -490,6 +649,7 @@
         element('span', kotlin, label);
         input.addEventListener('change', () => {
             if (input.checked) hidden.delete(kotlin); else hidden.add(kotlin);
+            hideValueTooltip();
             distributionCards.forEach(({ kotlin, card }) => { card.hidden = hidden.has(kotlin); });
             instances.forEach(chart => {
                 chart.data.datasets.forEach((dataset, index) => {
