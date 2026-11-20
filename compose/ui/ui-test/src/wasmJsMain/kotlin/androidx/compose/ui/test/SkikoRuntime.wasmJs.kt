@@ -17,9 +17,9 @@
 package androidx.compose.ui.test
 
 import kotlinx.coroutines.test.TestResult
+import org.jetbrains.skiko.InternalSkikoApi
+import org.jetbrains.skiko.wasm.awaitSkiko
 
-/**
- * Skiko is imported as an ES module (`skiko.mjs`) and instantiated before any Kotlin code runs, so
- * Skia is already usable here and there is nothing to wait for.
- */
-internal actual fun onSkikoReady(block: () -> TestResult): TestResult = block()
+@OptIn(InternalSkikoApi::class, ExperimentalWasmJsInterop::class)
+internal actual fun onSkikoReady(block: () -> TestResult): TestResult =
+    awaitSkiko.then<JsAny?> { block() as JsAny? } as TestResult
