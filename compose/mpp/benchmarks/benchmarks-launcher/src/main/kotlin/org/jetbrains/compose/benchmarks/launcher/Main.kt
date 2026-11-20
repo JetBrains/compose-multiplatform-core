@@ -173,11 +173,6 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         help = "Core checkout for local Compose; default: current core checkout"
     )
         .convert { absolutePath(it) }
-        .validate {
-            require(composeVersions.isEmpty() || composeVersions.flatMap { value -> value.split(",") }.contains("local")) {
-                "--compose-core-path requires local in --compose-version"
-            }
-        }
     private val browsers by option("--browser", help = "Browser executables, commands, or macOS .apps; space/comma separated")
         .multiple()
         .check("browser must not be empty") { values -> values.flatMap { it.split(",") }.none { it.isBlank() } }
