@@ -1,1 +1,1 @@
-$(dirname "$0")/impl/copyToBranch.sh "${1:-}" 'savedstate'
+$(dirname "$0")/impl/copyToJbMain.sh 'savedstate'

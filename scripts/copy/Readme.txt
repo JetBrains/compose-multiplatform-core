@@ -1,11 +1,11 @@
-These scripts copy a subfolder from "integration" or "integration-release/*" to a destination branch.
+The purposes of these scripts is to copy some subfolder to jb-main branch from "integration" or "integration-release/*".
 
-1. Check out the commit you want to copy ("integration" or "integration-release/*").
+1. Checkout the commit you want to copy ("integration" or "integration-release/*")
 
-2. Merge the destination branch into the source branch, picking the destination branch's state in case of conflicts in other folders.
+2. Merge jb-main to integration, pick "jb-main" state in a case of conflicts in other folders
 
-3. Call `./copyComposeUi.sh jb-main` or `./copyComposeUi.sh release/1.12` (use another script for another folder). The destination branch is required. The script fetches the destination branch from origin.
+3. Call `./copyCompose.sh` (use another script for another folder)
 
-This creates integration-copy/$folder/$hash/to-$destination to merge into the destination branch. It is based on the merge base of the current commit and destination branch and contains the copied subfolder.
-
-The script also makes an empty merge of the copy branch into the local integration branch to avoid conflicts in future merges of the destination branch.
+It creates 2 branches:
+- integration-copy/$hash/to-jb-main - should be merged to "jb-main". It is based on merge-base(currentCommit, jb-main) and has the copy of the subfolder from currentCommit
+- integration-copy/$hash/to-integration - should be merged to "integration", to avoid conflicts in future merges of jb-main. It is created as "empty" merge of "to-jb-main" to merge-base(currentCommit, integration)
