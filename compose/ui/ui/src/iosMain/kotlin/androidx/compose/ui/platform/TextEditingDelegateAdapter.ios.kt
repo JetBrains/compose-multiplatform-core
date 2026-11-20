@@ -58,7 +58,7 @@ internal class InactiveTextInputAdapter(
     override fun selectAll() = delegate.setSelectedText(TextRange(0, text.length))
 
     override fun textInRange(range: TextRange): String? =
-        text.takeIf { range.isValidIn(it.length) }?.substring(range.start, range.end)
+        text.takeIf { range.isValidIn(it.length) }?.substringOrSelf(range)
 
     override fun replaceRange(range: TextRange, text: String) = delegate.replaceRange(range, text)
 

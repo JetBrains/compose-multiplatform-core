@@ -31,4 +31,18 @@ object IosComposeUiTextFlags {
      */
     @ExperimentalTextApi
     var isNativeTextInputEnabled: Boolean = true
+
+    /**
+     * When `true`, text is segmented with the iOS text tokenizer (`CFStringTokenizer`) instead of
+     * the ICU bundled with Skia, whose data lacks the dictionary for CJK word segmentation. It
+     * affects:
+     * - word boundaries: word selection (double tap, long press), word-wise caret movement and
+     *   `UITextInput.characterRangeAtPoint`;
+     * - the character, word, sentence and line granularities of the `UITextInputTokenizer` given
+     *   to UIKit.
+     *
+     * With `false`, CJK text is split into single-character words.
+     */
+    @ExperimentalTextApi
+    var isNativeTextTokenizerEnabled: Boolean = true
 }

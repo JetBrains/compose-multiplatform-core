@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.isValidIn
 import androidx.compose.ui.platform.mapFromTransformed
 import androidx.compose.ui.platform.mapToTransformed
 import androidx.compose.ui.platform.movePositionByGraphemes
+import androidx.compose.ui.platform.substringOrSelf
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.density
@@ -421,7 +422,7 @@ internal abstract class TextInputConnection(
             return null
         }
         val text = currentTextFieldValue?.text ?: return null
-        return text.substring(range.start, range.end)
+        return text.substringOrSelf(range)
     }
 
     override fun replaceRange(range: TextRange, text: String) {

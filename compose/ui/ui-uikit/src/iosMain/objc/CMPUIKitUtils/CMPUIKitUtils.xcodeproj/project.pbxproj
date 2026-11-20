@@ -23,6 +23,7 @@
 		9963921B2F9A515D006EC6CE /* CMPDragInteractionProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = EADD028F2C9846D9003F66E8 /* CMPDragInteractionProxy.m */; };
 		9963921C2F9A515D006EC6CE /* CMPKeyValueObserver.m in Sources */ = {isa = PBXBuildFile; fileRef = 992EDDFA2E55EC8400FB44C5 /* CMPKeyValueObserver.m */; };
 		9963921D2F9A515D006EC6CE /* CMPTextLoupeSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */; };
+		FE938964C6990D9DB2A5CFC5 /* CMPTextSegmenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 7AC534CDF7B8567ED9BAA62D /* CMPTextSegmenter.m */; };
 		9963921E2F9A515D006EC6CE /* CMPPinchGestureRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 9968C3712D76FE17005E8DE4 /* CMPPinchGestureRecognizer.m */; };
 		9963921F2F9A515D006EC6CE /* CMPScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 991A97F62E1FB99300B47130 /* CMPScrollView.m */; };
 		996392202F9A515D006EC6CE /* CMPTextInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E882F57037300A9DC94 /* CMPTextInputView.m */; };
@@ -56,6 +57,7 @@
 		99D71BAB304604D90012EEB8 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 99D71BAA304604D90012EEB8 /* IOKit.framework */; };
 		99D97A882BF73A9B0035552B /* CMPEditMenuView.m in Sources */ = {isa = PBXBuildFile; fileRef = 99D97A872BF73A9B0035552B /* CMPEditMenuView.m */; };
 		99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */; };
+		7A7BF620EEF8826216C60CCA /* CMPTextSegmenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 7AC534CDF7B8567ED9BAA62D /* CMPTextSegmenter.m */; };
 		A01609822EB42A3300FB9790 /* CMPLayoutRegion.m in Sources */ = {isa = PBXBuildFile; fileRef = A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */; };
 		A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */; };
 		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
@@ -160,6 +162,8 @@
 		99D97A872BF73A9B0035552B /* CMPEditMenuView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPEditMenuView.m; sourceTree = "<group>"; };
 		99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPTextLoupeSession.h; sourceTree = "<group>"; };
 		99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPTextLoupeSession.m; sourceTree = "<group>"; };
+		03F16824EA3897B767C27065 /* CMPTextSegmenter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPTextSegmenter.h; sourceTree = "<group>"; };
+		7AC534CDF7B8567ED9BAA62D /* CMPTextSegmenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPTextSegmenter.m; sourceTree = "<group>"; };
 		A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPLayoutRegion.m; sourceTree = "<group>"; };
 		A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitSwiftUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPUIKitSwiftUtils.swift; sourceTree = "<group>"; };
@@ -291,6 +295,8 @@
 				C4C07E882F57037300A9DC94 /* CMPTextInputView.m */,
 				99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */,
 				99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */,
+				03F16824EA3897B767C27065 /* CMPTextSegmenter.h */,
+				7AC534CDF7B8567ED9BAA62D /* CMPTextSegmenter.m */,
 				996EFEF52B02CE8A0000FE0F /* CMPUIKitObjcUtils.h */,
 				AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */,
 				AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */,
@@ -558,6 +564,7 @@
 				EA4B52962C2EDEF200FBB55C /* CMPGestureRecognizer.m in Sources */,
 				EA70A7EB2B27106100300068 /* CMPAccessibilityElement.m in Sources */,
 				99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */,
+				7A7BF620EEF8826216C60CCA /* CMPTextSegmenter.m in Sources */,
 				EA82F4FC2B86184F00465418 /* CMPOSLoggerInterval.m in Sources */,
 				99293FF82F2B8A81001EC2A1 /* CMPDrawable.m in Sources */,
 				992014D33099D038000768B7 /* CMPProtocolProxy.m in Sources */,
@@ -592,6 +599,7 @@
 				9963921B2F9A515D006EC6CE /* CMPDragInteractionProxy.m in Sources */,
 				9963921C2F9A515D006EC6CE /* CMPKeyValueObserver.m in Sources */,
 				9963921D2F9A515D006EC6CE /* CMPTextLoupeSession.m in Sources */,
+				FE938964C6990D9DB2A5CFC5 /* CMPTextSegmenter.m in Sources */,
 				9963921E2F9A515D006EC6CE /* CMPPinchGestureRecognizer.m in Sources */,
 				9963921F2F9A515D006EC6CE /* CMPScrollView.m in Sources */,
 				996392202F9A515D006EC6CE /* CMPTextInputView.m in Sources */,
