@@ -87,7 +87,9 @@
                 + 'and whiskers show the minimum–maximum across repeated runs, not across individual frames. '
                 + 'Thin blue lines mark each Kotlin series’ baseline at the first Compose version. '
                 + 'Tooltip changes compare point means with that baseline; green is better, red is worse. '
-                + 'Percentage changes are unavailable when the baseline is missing or zero.');
+                + 'Percentage changes are unavailable when the baseline is missing or zero. '
+                + 'A red border means at least one visible Kotlin series regressed by 5% or more at the last Compose version. '
+                + 'Otherwise, a green border means at least one improved by 5% or more.');
         }
         return paragraphs;
     }
@@ -232,6 +234,27 @@
             ctx.restore();
         }
     };
+
+    function highlightChart(card, chart, metric) {
+        let regression = false;
+        let improvement = false;
+        chart.data.datasets.forEach((dataset, index) => {
+            if (!chart.isDatasetVisible(index)) return;
+            const baseline = dataset.baseline;
+            const last = dataset.ranges.at(-1)?.mean;
+            if (!Number.isFinite(baseline) || baseline === 0 || !Number.isFinite(last)) return;
+            const change = (last - baseline) / Math.abs(baseline) * 100;
+            if (!Number.isFinite(change) || Math.abs(change) < 5) return;
+            const better = higherIsBetter(metric) ? change > 0 : change < 0;
+            if (better) improvement = true;
+            else regression = true;
+        });
+        card.classList.toggle('chart-regression', regression);
+        card.classList.toggle('chart-improvement', !regression && improvement);
+        const status = regression ? 'regression of at least 5%'
+            : improvement ? 'improvement of at least 5%' : 'no change of at least 5% with a valid baseline';
+        card.setAttribute('aria-label', `${metric}: ${status}, comparing the last Compose version with the first`);
+    }
 
     const valueTooltip = element('div', null, document.body, 'value-tooltip');
     valueTooltip.hidden = true;
@@ -502,7 +525,10 @@
                 instances.push(chart = new Chart(canvas, {
                     type: 'line',
                     data: { labels: report.composeVersions, datasets },
-                    plugins: [baselineLines, minMaxWhiskers],
+                    plugins: [baselineLines, minMaxWhiskers, {
+                        id: 'baselineHighlight',
+                        afterUpdate: chart => highlightChart(card, chart, title)
+                    }],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,

@@ -138,6 +138,8 @@ p { margin: 10px 0; }
     border-radius: 10px;
     background: #fff;
 }
+.chart-card.chart-regression { border-color: #b91c1c; box-shadow: 0 0 0 1px #b91c1c; }
+.chart-card.chart-improvement { border-color: #15803d; box-shadow: 0 0 0 1px #15803d; }
 .chart-heading, .raw-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .chart-heading { margin-bottom: 12px; }
 .chart-actions { display: flex; gap: 8px; flex-shrink: 0; }
