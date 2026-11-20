@@ -24,6 +24,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -43,6 +44,8 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.isEqualTo
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
@@ -65,6 +68,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
 import androidx.compose.ui.test.runSkikoComposeUiTest
+import androidx.compose.ui.test.v2.runSkikoComposeUiTest as runSkikoComposeUiTestV2
 import androidx.compose.ui.touch
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -869,6 +873,53 @@ class PopupTest : SkikoComposeTestBase() {
         }
     }
 
+    @Test
+    fun popupFollowsAnchorWhenAncestorQueryingAlignmentLineIsMoved() = runSkikoComposeUiTestV2 {
+        val positionProvider = object : PopupPositionProvider {
+            override fun calculatePosition(
+                anchorBounds: IntRect,
+                windowSize: IntSize,
+                layoutDirection: LayoutDirection,
+                popupContentSize: IntSize
+            ): IntOffset {
+                return anchorBounds.topLeft
+            }
+        }
+
+        var offsetY by mutableIntStateOf(0)
+        setContent {
+            Layout(
+                content = {
+                    // The child queried for an alignment line.
+                    Box {
+                        // The popup anchor, nested inside the queried child.
+                        Box(Modifier.size(20.dp)) {
+                            Popup(popupPositionProvider = positionProvider) {
+                                Box(Modifier.size(10.dp).testTag(PopupContentTag))
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.offset { IntOffset(0, offsetY) },
+            ) { measurables, constraints ->
+                val placeable = measurables[0].measure(constraints)
+                // Querying an alignment line (like Row.alignByBaseline does) is the trigger.
+                placeable[FirstBaseline]
+                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+            }
+        }
+
+        fun popupPosition(): Offset =
+            onNodeWithTag(PopupContentTag).fetchSemanticsNode().boundsInWindow.topLeft
+
+        assertThat(popupPosition()).isEqualTo(Offset.Zero)
+
+        // Move the ancestor; the popup must follow the anchor.
+        offsetY = 100
+        waitForIdle()
+        assertThat(popupPosition()).isEqualTo(Offset(0f, 100f))
+    }
+
     @Suppress("DEPRECATION")
     @Test
     fun popupShownAtCorrectCoordinatesImmediately() = runSkikoComposeUiTest {
@@ -904,8 +955,12 @@ class PopupTest : SkikoComposeTestBase() {
         }
 
         showPopup = true
-        waitForIdle()
+        mainClock.advanceTimeByFrame()
         assertThat(popupPositions).containsExactly(Offset(100f, 100f))
+    }
+
+    private companion object {
+        const val PopupContentTag = "popupContent"
     }
 }
 

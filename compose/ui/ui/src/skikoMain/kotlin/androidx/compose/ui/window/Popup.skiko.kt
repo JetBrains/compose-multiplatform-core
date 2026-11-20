@@ -36,7 +36,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.EmptyLayout
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalPlatformWindowInsets
@@ -500,12 +500,8 @@ private fun PopupLayout(
     // Use a MutableState directly to avoid recomposing when the value changes
     val parentBoundsInWindow: MutableState<IntRect?> = remember { mutableStateOf(null) }
     var canCalculatePosition by remember { mutableStateOf(false) }
-    EmptyLayout(Modifier.onPlaced { childCoordinates ->
-        // For a layer in the same scene, this runs before its popup measure policy calculates a
-        // position, so the policy observes the parent bounds in the first frame.
+    EmptyLayout(Modifier.onGloballyPositioned { childCoordinates ->
         childCoordinates.parentCoordinates?.let {
-            // Nodes which read layout coordinates (including, e.g., positionInWindow) in
-            // layout/placement get invalidated when these coordinates change
             val layoutPosition = it.positionInWindow().round()
             val layoutSize = it.size
             parentBoundsInWindow.value = IntRect(layoutPosition, layoutSize)
