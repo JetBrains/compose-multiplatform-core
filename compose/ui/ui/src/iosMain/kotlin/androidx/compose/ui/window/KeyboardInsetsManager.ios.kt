@@ -170,7 +170,16 @@ internal class KeyboardInsetsManager(
         animationOptions: UIViewAnimationOptions
     ) {
         val screen = view.window?.screen ?: return
-        val resolvedTargetFrame = resolvedTargetKeyboardFrame(targetFrame, screen)
+        val screenHeight = screen.bounds.useContents { size.height }
+        val resolvedTargetFrame = if (
+            CGRectIsEmpty(targetFrame) ||
+            isUndockedKeyboard(targetFrame, screen) ||
+            CGRectGetMinY(targetFrame) >= screenHeight
+        ) {
+            CGRectZero.readValue()
+        } else {
+            keyboardFrame
+        }
 
         animateKeyboard(
             previousKeyboardTop = keyboardTop(currentFrame, screen),
@@ -211,22 +220,6 @@ internal class KeyboardInsetsManager(
                 fromCoordinateSpace = screen.coordinateSpace,
             )
         return CGRectGetMinY(frameInView)
-    }
-
-    private fun resolvedTargetKeyboardFrame(
-        notificationFrame: CValue<CGRect>,
-        screen: UIScreen
-    ): CValue<CGRect> {
-        val screenHeight = screen.bounds.useContents { size.height }
-        return if (
-            CGRectIsEmpty(notificationFrame) ||
-            isUndockedKeyboard(notificationFrame, screen) ||
-            CGRectGetMinY(notificationFrame) >= screenHeight
-        ) {
-            CGRectZero.readValue()
-        } else {
-            keyboardFrame
-        }
     }
 
     private fun keyboardHeight(frame: CValue<CGRect>): Double {
