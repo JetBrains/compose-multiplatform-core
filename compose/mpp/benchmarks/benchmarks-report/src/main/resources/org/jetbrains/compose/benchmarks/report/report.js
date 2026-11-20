@@ -400,7 +400,8 @@
             }
         }
         element('p', 'Memory and CPU values describe what the process can see. Browser memory is approximate; '
-            + 'simulator hardware may describe its host. JVM heap is not physical RAM.', container, 'environment-note');
+            + 'simulator hardware may describe its host. JVM heap is not physical RAM. '
+            + 'JVM GPU names list detected adapters, not necessarily the active rendering device.', container, 'environment-note');
     }
 
     function updateTests() {
