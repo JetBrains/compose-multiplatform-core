@@ -30,6 +30,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 
 private val reportJson = Json { encodeDefaults = true }
+private const val realFramesBudgetHz = 60
+private const val realFramesBudgetMs = 1000.0 / realFramesBudgetHz
+private const val realFramesBudgetTolerancePercent = 5
 
 @Serializable
 private data class ChartMeasurement(val title: String, val unit: String, val value: Double)
@@ -144,6 +147,11 @@ fun generateHtmlReport(session: Path): Path {
                         val run = element.jsonObject
                         var parameters = buildJsonObject {
                             put("type", run.getValue("type"))
+                            if (run.requiredText("type") == "realFrames") {
+                                put("frameBudgetHz", realFramesBudgetHz)
+                                put("frameBudgetMs", realFramesBudgetMs)
+                                put("frameBudgetTolerancePercent", realFramesBudgetTolerancePercent)
+                            }
                             for (key in listOf("repeat", "timeoutSeconds")) summary[key]?.let { put(key, it) }
                         }
                         var reportPath: String? = null
@@ -318,7 +326,17 @@ private fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = bui
             duration("Main to Nth frame (${report.requiredText("frameCount")} after first)", "timeToNthFrame")
         }
         "realFrames" -> {
-            samples("Frame time", "ms", report.getValue("frameTimes").jsonArray.map(::durationMillis))
+            val frameTimes = report.getValue("frameTimes").jsonArray.map(::durationMillis)
+            samples("Frame time", "ms", frameTimes)
+            val intervals = frameTimes.filter { it.isFinite() && it > 0 }
+            if (intervals.isNotEmpty()) {
+                val tolerance = realFramesBudgetTolerancePercent / 100.0
+                val threshold = realFramesBudgetMs * (1 + tolerance)
+                addValue("Over-budget intervals", "%", 100.0 * intervals.count { it > threshold } / intervals.size)
+                // Infer refresh slots from frame-loop intervals, not actual presentation timestamps.
+                val slots = intervals.map { ceil(it / realFramesBudgetMs - tolerance).coerceAtLeast(1.0) }
+                addValue("Estimated missed VSync", "%", 100.0 * slots.sumOf { it - 1 } / slots.sum())
+            }
             duration("Total duration", "totalDuration")
             val seconds = durationMillis(report.getValue("totalDuration")) / 1000
             if (seconds > 0) addValue("Throughput", "FPS", report.getValue("frameCount").jsonPrimitive.int / seconds)

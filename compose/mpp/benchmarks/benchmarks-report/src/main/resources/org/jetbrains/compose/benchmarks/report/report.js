@@ -304,6 +304,12 @@
             const testRuns = runs.filter(run => run.name === name);
             const section = element('section', null, charts);
             renderTestInfo(name, testRuns, section);
+            if (mode.dataset.value === 'realFrames') {
+                element('p', 'Smoothness assumes a fixed 60 Hz budget (1000/60 ms), not the detected display refresh rate. '
+                    + 'Over-budget intervals exceed the budget by more than 5%. '
+                    + 'Estimated missed VSync = 100 × missed slots / total slots, with slots per interval = max(1, ceil(interval / budget − 0.05)). '
+                    + 'Only positive, finite intervals are included. These are frame-loop estimates, not measured presentation events.', section);
+            }
             const failures = testRuns.filter(run => run.status !== 'passed' || run.measurements.length === 0);
             if (failures.length) {
                 const details = element('details', null, section, 'warning');
