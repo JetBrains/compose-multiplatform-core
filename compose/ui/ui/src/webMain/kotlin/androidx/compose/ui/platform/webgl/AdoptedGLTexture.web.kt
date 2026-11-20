@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:OptIn(ExperimentalWasmJsInterop::class, org.jetbrains.skiko.InternalSkikoApi::class)
 
 package androidx.compose.ui.platform.webgl
 
@@ -27,6 +27,7 @@ import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.DirectContext
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.SurfaceOrigin
+import org.jetbrains.skia.gpu.ganesh.adoptTextureFrom
 import org.jetbrains.skia.impl.use
 import org.khronos.webgl.WebGLRenderingContext
 import org.khronos.webgl.WebGLRenderingContext.Companion.CLAMP_TO_EDGE
