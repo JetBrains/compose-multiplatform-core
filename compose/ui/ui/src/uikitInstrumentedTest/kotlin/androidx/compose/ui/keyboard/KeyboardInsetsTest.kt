@@ -33,8 +33,6 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +53,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.rememberFocusedBottomSheetState
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.dpRectInWindow
 import androidx.compose.ui.test.utils.forEachWithPrevious
@@ -359,7 +358,7 @@ internal abstract class KeyboardInsetsTest(
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.KeyboardFrameAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
@@ -487,7 +486,7 @@ internal abstract class KeyboardInsetsTest(
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.KeyboardFrameAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.DoNothing
@@ -937,7 +936,7 @@ internal abstract class KeyboardInsetsTest(
         val drawnTextFieldFrames = mutableListOf<Pair<Int, Int>>()
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.RealAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.KeyboardFrameAnimationSpeed
 
         var focusManager: FocusManager? = null
         setContent({
@@ -1030,11 +1029,7 @@ internal abstract class KeyboardInsetsTest(
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
         }) {
-            val focusRequester = remember { FocusRequester() }
-            val sheetState = rememberBottomSheetState(
-                initialValue = SheetValue.Hidden,
-                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-            )
+            val (focusRequester, sheetState) = rememberFocusedBottomSheetState()
             ModalBottomSheet(
                 onDismissRequest = {},
                 sheetState = sheetState,
@@ -1050,12 +1045,12 @@ internal abstract class KeyboardInsetsTest(
                             lastTextFieldFrame = coordinates.boundsInWindow().toDpRect(density)
                         }
                 )
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
             }
         }
 
+        waitUntil("Modal bottom sheet text field must stay above the keyboard") {
+            lastTextFieldFrame.bottom == screenSize.height - keyboardHeight
+        }
         assertEquals(screenSize.height - keyboardHeight, lastTextFieldFrame.bottom)
     }
 

@@ -16,7 +16,14 @@
 
 package androidx.compose.ui.test
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.test.utils.activeHoverEvents
 import androidx.compose.test.utils.activePinchEvents
@@ -25,6 +32,7 @@ import androidx.compose.test.utils.activeScrollEvents
 import androidx.compose.test.utils.activeTouches
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
@@ -95,6 +103,7 @@ import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -225,6 +234,25 @@ internal fun runUIKitInstrumentedTest(
 }
 
 /**
+ * Remembers a bottom-sheet state and a focus requester, then requests focus once the sheet is expanded.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun rememberFocusedBottomSheetState(): Pair<FocusRequester, SheetState> {
+    val focusRequester = remember { FocusRequester() }
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
+    LaunchedEffect(sheetState) {
+        snapshotFlow { sheetState.currentValue }
+            .first { it == SheetValue.Expanded }
+        focusRequester.requestFocus()
+    }
+    return focusRequester to sheetState
+}
+
+/**
  * A class designed for instrumented testing of UIKit-related functionality. It provides methods for setting
  * content, simulating user interactions, and managing application lifecycle during testing scenarios.
  *
@@ -255,6 +283,12 @@ internal class UIKitInstrumentedTest(
          * Real animation speed for tests that require one-to-one animations.
          */
         internal const val RealAnimationSpeed = 1f
+
+        /**
+         * Animation speed for tests that sample individual keyboard animation frames. It is
+         * faster than real speed but leaves enough frames for reliable sampling.
+         */
+        internal const val KeyboardFrameAnimationSpeed = 2f
 
         /**
          * The default duration of drag gestures in instrumented tests.
@@ -749,8 +783,13 @@ internal class UIKitInstrumentedTest(
     fun AccessibilityTestNode.doubleTap() {
         val frame = frame ?: error("Internal error. Frame is missing.")
         tap(frame.center())
-        delay(50)
+        sleepBetweenTaps()
         return tap(frame.center())
+    }
+
+    private fun sleepBetweenTaps() {
+        // Running the UIKit event loop between synthetic taps can exceed the multi-tap timeout.
+        NSThread.sleepForTimeInterval(0.1)
     }
 
     /**
@@ -846,9 +885,7 @@ internal class UIKitInstrumentedTest(
         val point = characterPosition(offset)
         repeat(count) { i ->
             if (i > 0) {
-                // A cold first tap can start a long UIKit task. Running the run loop here can
-                // finish after the double-tap timeout, turning the second tap into a separate tap.
-                NSThread.sleepForTimeInterval(0.05)
+                sleepBetweenTaps()
             }
             tap(point)
         }
