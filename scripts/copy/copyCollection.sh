@@ -1,1 +1,1 @@
-$(dirname "$0")/impl/copyToBranch.sh "${1:-}" 'collection'
+$(dirname "$0")/impl/copyToJbMain.sh 'collection'
