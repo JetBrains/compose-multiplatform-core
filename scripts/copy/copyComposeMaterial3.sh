@@ -1,1 +1,1 @@
-$(dirname "$0")/impl/copyToJbMain.sh 'compose/material3' ':(exclude)compose/material3/adaptive' ':(exclude)compose/material3/xr'
+$(dirname "$0")/impl/copyToBranch.sh "${1:-}" 'compose/material3' ':(exclude)compose/material3/adaptive' ':(exclude)compose/material3/xr'
