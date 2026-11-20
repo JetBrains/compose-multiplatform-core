@@ -39,10 +39,73 @@
             || event.clientY < bounds.top || event.clientY > bounds.bottom)) rawDialog.close();
     });
 
-    function chartHeading(card, title, sourceRuns) {
+    const infoDialog = element('dialog', null, document.body, 'raw-dialog');
+    infoDialog.id = 'chart-info-dialog';
+    infoDialog.setAttribute('aria-labelledby', 'chart-info-title');
+    infoDialog.addEventListener('click', event => {
+        const bounds = infoDialog.getBoundingClientRect();
+        if (event.target === infoDialog && (event.clientX < bounds.left || event.clientX > bounds.right
+            || event.clientY < bounds.top || event.clientY > bounds.bottom)) infoDialog.close();
+    });
+
+    function chartExplanation(metric, distribution) {
+        const [name, statistic] = metric.split(' — ');
+        const descriptions = {
+            'Process to main': 'Elapsed time from process launch to main entry, when available.',
+            'Main to first frame': 'Elapsed time from main entry to the first observed frame callback.',
+            'Total duration': 'Wall-clock time for the measured frame-loop intervals. Compare runs with the same frame count.',
+            'Throughput': 'Measured frame count divided by total wall-clock duration, in FPS.',
+            'Frame time': 'Wall-clock intervals between frame-loop callbacks, including synchronization waits and scheduling delays; not CPU render time or presentation timestamps.',
+            'Frame rate': '1000 / frame interval in milliseconds, using only positive, finite frame-loop intervals; not measured display FPS.',
+            'Over-budget intervals': 'Percentage of positive, finite frame-loop intervals longer than 17.5 ms: a fixed 60 Hz budget (1000/60 ms) plus 5% tolerance.',
+            'Estimated missed VSync': 'Estimated missed slots / total slots × 100, using positive, finite frame-loop intervals. Slots = max(1, ceil(interval / (1000/60 ms) − 0.05)). Assumes 60 Hz with 5% tolerance, not measured presentation events; scheduling jitter can inflate this estimate.',
+            'CPU time': 'Per-frame offscreen elapsed time minus the GPU-completion wait. Includes CPU work and other elapsed overhead, not CPU utilization.',
+            'GPU time': 'Per-frame wall-clock time waiting for GPU completion during offscreen rendering; not GPU timestamp timing.',
+            'Frame FPS': 'Reciprocal of per-frame offscreen elapsed time, including the GPU-completion wait; not display FPS.',
+            'Average CPU time': 'Total offscreen measurement time minus GPU-completion waits, divided by frame count.',
+            'Average GPU time': 'Total offscreen GPU-completion wait time divided by frame count; not GPU timestamp timing.',
+            'Average frame FPS': 'Offscreen frame count divided by total measurement time, including GPU-completion waits; not display FPS.',
+        };
+        const description = name.startsWith('Main to Nth frame')
+            ? 'Elapsed time from main entry to the configured Nth frame callback after the first frame.'
+            : descriptions[name];
+        const higherIsBetter = ['Throughput', 'Frame rate', 'Frame FPS', 'Average frame FPS'].includes(name);
+        const paragraphs = [higherIsBetter ? 'Higher is better.' : 'Lower is better.', description];
+        if (statistic) {
+            paragraphs.push(statistic === 'mean' ? 'Uses the arithmetic mean of finite frame samples in each run.'
+                : `Uses ${statistic.toUpperCase()} of finite frame samples in each run, with linear interpolation between sorted values.`);
+        }
+        if (distribution) {
+            paragraphs.push('X: percentile P0–P100 (minimum to maximum). Y: metric value on a logarithmic scale. '
+                + 'Frame samples from repeated runs are pooled per Compose version and Kotlin version. '
+                + 'Percentiles use linear interpolation; non-positive percentile values are omitted.');
+        } else {
+            paragraphs.push('X: Compose version. Y: metric value. Each line is a Kotlin version; points average the per-run values, '
+                + 'and whiskers show the minimum–maximum across repeated runs, not across individual frames.');
+        }
+        return paragraphs;
+    }
+
+    function chartHeading(card, title, sourceRuns, metric, distribution = false) {
         const heading = element('div', null, card, 'chart-heading');
         element('h3', title, heading);
-        const button = element('button', 'raw', heading, 'chart-raw-button');
+        const actions = element('div', null, heading, 'chart-actions');
+        const info = element('button', 'ⓘ', actions, 'chart-raw-button');
+        info.type = 'button';
+        info.setAttribute('aria-label', 'About ' + title);
+        info.setAttribute('aria-haspopup', 'dialog');
+        info.setAttribute('aria-controls', infoDialog.id);
+        info.addEventListener('click', () => {
+            infoDialog.replaceChildren();
+            const header = element('div', null, infoDialog, 'raw-dialog-heading');
+            element('h2', title, header).id = 'chart-info-title';
+            const close = element('button', 'Close', header, 'chart-raw-button');
+            close.type = 'button';
+            close.addEventListener('click', () => infoDialog.close());
+            chartExplanation(metric, distribution).forEach(text => element('p', text, infoDialog));
+            infoDialog.showModal();
+        });
+        const button = element('button', 'raw', actions, 'chart-raw-button');
         button.type = 'button';
         button.setAttribute('aria-label', 'Raw JSON reports for ' + title);
         button.addEventListener('click', () => {
@@ -304,12 +367,6 @@
             const testRuns = runs.filter(run => run.name === name);
             const section = element('section', null, charts);
             renderTestInfo(name, testRuns, section);
-            if (mode.dataset.value === 'realFrames') {
-                element('p', 'Smoothness assumes a fixed 60 Hz budget (1000/60 ms), not the detected display refresh rate. '
-                    + 'Over-budget intervals exceed the budget by more than 5%. '
-                    + 'Estimated missed VSync = 100 × missed slots / total slots, with slots per interval = max(1, ceil(interval / budget − 0.05)). '
-                    + 'Only positive, finite intervals are included. These are frame-loop estimates, not measured presentation events.', section);
-            }
             const failures = testRuns.filter(run => run.status !== 'passed' || run.measurements.length === 0);
             if (failures.length) {
                 const details = element('details', null, section, 'warning');
@@ -329,7 +386,7 @@
                     report.composeVersions.includes(run.compose)
                     && run.measurements.some(metric => metric.title === title && Number.isFinite(metric.value))
                     && chart.data.datasets.some((dataset, index) => dataset.seriesKey === run.kotlin && chart.isDatasetVisible(index))
-                ));
+                ), title);
                 const container = element('div', null, card, 'canvas-container');
                 const canvas = element('canvas', null, container);
                 canvas.setAttribute('role', 'img');
@@ -404,9 +461,6 @@
         const titles = distinct(runs.flatMap(run => (run.distributions ?? []).map(metric => metric.title)));
         if (!titles.length) return;
         element('h2', 'Per-frame percentiles', section);
-        element('p', 'X: percentile (0–100). Y: metric value (logarithmic scale). Repeated runs are pooled. '
-            + 'Percentiles use linear interpolation between sorted frame values; P0 is the minimum and P100 is the maximum. '
-            + 'Non-positive percentile values cannot be shown on a logarithmic scale and are omitted.', section);
         for (const kotlin of kotlinVersions) {
             const kotlinRuns = runs.filter(run => run.kotlin === kotlin);
             if (!kotlinRuns.some(run => run.distributions?.some(metric => metric.values.length))) continue;
@@ -452,7 +506,7 @@
                     !hidden.has(kotlin)
                     && run.distributions?.some(metric => metric.title === title && metric.values.some(Number.isFinite))
                     && chart.data.datasets.some((dataset, index) => dataset.composeVersion === run.compose && chart.isDatasetVisible(index))
-                ));
+                ), title, true);
                 const container = element('div', null, card, 'canvas-container');
                 const canvas = element('canvas', null, container);
                 canvas.setAttribute('role', 'img');

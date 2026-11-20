@@ -140,6 +140,7 @@ p { margin: 10px 0; }
 }
 .chart-heading, .raw-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .chart-heading { margin-bottom: 12px; }
+.chart-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .chart-heading h3, .raw-dialog-heading h2 { margin: 0; }
 .chart-raw-button { flex-shrink: 0; }
 .raw-dialog {
