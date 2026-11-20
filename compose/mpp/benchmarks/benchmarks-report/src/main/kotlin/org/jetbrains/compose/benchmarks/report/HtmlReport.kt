@@ -71,6 +71,7 @@ private data class ChartConfiguration(
 @Serializable
 private data class ChartReport(
     val composeVersions: List<String>,
+    val kotlinVersions: List<String>,
     val runs: List<ChartRun>,
     val warnings: List<String>,
     val configurations: List<ChartConfiguration>,
@@ -85,14 +86,18 @@ fun generateHtmlReport(session: Path): Path {
         warnings.add("Cannot read session metadata: "+error.message)
         null
     }
-    val launcherCommand = sessionInfo?.get("launcherCommand")?.jsonArray
-        ?.joinToString(" ") { shellArgument(it.jsonPrimitive.content) }
+    val launcherArguments = sessionInfo?.get("launcherCommand")?.jsonArray
+        ?.map { it.jsonPrimitive.content }.orEmpty()
+    val launcherCommand = launcherArguments.takeIf { it.isNotEmpty() }
+        ?.joinToString(" ") { shellArgument(it) }
     val totalTime = sessionInfo?.get("totalTimeSeconds")?.jsonPrimitive?.longOrNull?.let { seconds ->
         String.format(java.util.Locale.ROOT, "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
     }
     val runs = mutableListOf<ChartRun>()
     val configurations = mutableListOf<ChartConfiguration>()
-    val composeVersions = linkedSetOf<String>()
+    // Keep requested endpoints even when a configuration has no summary or measurements.
+    val composeVersions = requestedVersions(launcherArguments, "--compose-version")
+    val kotlinVersions = requestedVersions(launcherArguments, "--kotlin-version")
     Files.walk(session, 4).use { paths ->
         paths.filter { it.fileName.toString() == "summary.json" && Files.isRegularFile(it) }
             .sorted().forEach { summaryPath ->
@@ -112,6 +117,7 @@ fun generateHtmlReport(session: Path): Path {
                         "local"
                     } else summary.requiredText("composeVersion")
                     composeVersions.add(compose)
+                    kotlinVersions.add(kotlin)
                     summary["error"]?.jsonPrimitive?.contentOrNull?.let {
                         warnings.add("$configuration / Kotlin $kotlin / Compose $compose: $it")
                     }
@@ -189,7 +195,13 @@ fun generateHtmlReport(session: Path): Path {
                 }
             }
     }
-    val payload = reportJson.encodeToString(ChartReport(composeVersions.toList(), runs, warnings, configurations))
+    val kotlinOrder = kotlinVersions.withIndex().associate { it.value to it.index }
+    val composeOrder = composeVersions.withIndex().associate { it.value to it.index }
+    runs.sortWith(compareBy({ kotlinOrder.getValue(it.kotlin) }, { composeOrder.getValue(it.compose) }))
+    configurations.sortWith(compareBy({ kotlinOrder.getValue(it.kotlin) }, { composeOrder.getValue(it.compose) }))
+    val payload = reportJson.encodeToString(ChartReport(
+        composeVersions.toList(), kotlinVersions.toList(), runs, warnings, configurations,
+    ))
         // JSON lives in a script raw-text element, not in an HTML text node.
         .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     val html = createHTML().html {
@@ -286,6 +298,17 @@ fun generateHtmlReport(session: Path): Path {
         }
     }
     return session.resolve("index.html").also { it.writeText("<!DOCTYPE html>\n$html\n") }
+}
+
+private fun requestedVersions(arguments: List<String>, option: String): MutableSet<String> {
+    // Like the launcher's vararg option, the last occurrence wins.
+    val index = arguments.indexOfLast { it == option || it.startsWith("$option=") }
+    if (index < 0) return linkedSetOf()
+    val values = buildList {
+        arguments[index].takeIf { it.startsWith("$option=") }?.let { add(it.substringAfter('=')) }
+        addAll(arguments.drop(index + 1).takeWhile { !it.startsWith("-") })
+    }
+    return values.flatMap { it.split(",") }.toCollection(linkedSetOf())
 }
 
 private fun shellArgument(value: String): String =

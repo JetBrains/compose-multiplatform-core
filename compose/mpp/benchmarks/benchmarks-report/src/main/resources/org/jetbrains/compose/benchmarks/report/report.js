@@ -18,7 +18,7 @@
     const modes = ['startup', 'realFrames', 'averageFrame', 'fps'];
     const distinct = values => [...new Set(values)];
     const configurations = report.configurations ?? [];
-    const kotlinVersions = distinct([...report.runs, ...configurations].map(run => run.kotlin));
+    const kotlinVersions = report.kotlinVersions ?? distinct([...report.runs, ...configurations].map(run => run.kotlin));
     const hidden = new Set();
     let instances = [];
     let distributionCards = [];
@@ -494,7 +494,8 @@
                 const canvas = element('canvas', null, container);
                 canvas.setAttribute('role', 'img');
                 canvas.setAttribute('aria-label', `${name}: ${title}, ${unit}, by Compose version`);
-                const series = distinct(testRuns.filter(run => run.measurements.some(metric => metric.title === title)).map(run => run.kotlin));
+                const series = kotlinVersions.filter(kotlin => testRuns.some(run =>
+                    run.kotlin === kotlin && run.measurements.some(metric => metric.title === title)));
                 const datasets = series.map(kotlin => {
                     const ranges = report.composeVersions.map(compose => {
                         const values = testRuns.filter(run => run.kotlin === kotlin && run.compose === compose)

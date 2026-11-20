@@ -45,6 +45,12 @@ before startup runs; the rendering browser is closed, and every startup run laun
 fresh browser session. It then moves to the next version pair. Builds always run; Gradle can reuse
 unchanged task outputs.
 
+Compose and Kotlin versions are run and displayed in the order supplied, ignoring duplicates after
+their first occurrence. Kotlin versions form the outer loop, Compose versions the inner loop.
+The report uses the first supplied Compose version as the baseline for each Kotlin series and
+compares the last supplied Compose version against it to highlight regressions or improvements.
+Missing results do not shift the baseline or the comparison to another version.
+
 The matrix continues after test errors, timeouts, or a failed configuration build. If any configuration
 fails, the launcher returns a nonzero exit code. On completion or interruption, it stops the processes
 it started and keeps collected results.
