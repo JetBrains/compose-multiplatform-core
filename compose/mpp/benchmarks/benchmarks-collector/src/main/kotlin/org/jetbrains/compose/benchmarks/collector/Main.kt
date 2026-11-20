@@ -52,14 +52,14 @@ import org.jetbrains.compose.benchmarks.data.StartupReport
 import org.jetbrains.compose.benchmarks.data.TargetEnvironment
 
 fun main(args: Array<String>) {
-    require(args.size == 2) { "Usage: benchmarks-collector <port> <output-directory>" }
+    require(args.size in 2..3) { "Usage: benchmarks-collector <port> <output-directory> [bind-host]" }
     val port = requireNotNull(args[0].toIntOrNull()?.takeIf { it in 1..65535 }) {
         "Port must be an integer between 1 and 65535"
     }
     val outputDirectory = Path.of(args[1]).toAbsolutePath()
     Files.createDirectories(outputDirectory)
 
-    embeddedServer(CIO, host = "127.0.0.1", port = port) {
+    embeddedServer(CIO, host = args.getOrElse(2) { "127.0.0.1" }, port = port) {
         collectReports(outputDirectory)
     }.start(wait = true)
 }
