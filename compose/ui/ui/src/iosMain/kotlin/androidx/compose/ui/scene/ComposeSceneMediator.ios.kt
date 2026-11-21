@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scene
 
-import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
@@ -24,6 +23,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.draganddrop.IosDragAndDropManager
@@ -38,8 +38,8 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.PointerKeyboardModifiers
 import androidx.compose.ui.input.key.internal
+import androidx.compose.ui.input.key.PointerKeyboardModifiers
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.HistoricalChange
@@ -47,7 +47,6 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isAltPressed
 import androidx.compose.ui.input.pointer.isCtrlPressed
@@ -56,32 +55,33 @@ import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.layout.OffsetToFocusedRect
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
-import androidx.compose.ui.platform.ApplicationIdleTimer
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
-import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
 import androidx.compose.ui.platform.FrameChoreographer
-import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.WindowContext
+import androidx.compose.ui.platform.ApplicationIdleTimer
+import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.TextInputService
-import androidx.compose.ui.platform.UriHandler
-import androidx.compose.ui.platform.ViewConfiguration
-import androidx.compose.ui.platform.WindowContext
-import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.WindowInsetsManager
-import androidx.compose.ui.platform.createPlatformClipboard
-import androidx.compose.ui.platform.createPlatformUriHandler
+import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.uikit.LocalTextInputContainer
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.platform.createPlatformClipboard
+import androidx.compose.ui.platform.createPlatformUriHandler
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -97,15 +97,15 @@ import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.viewinterop.InteropSyncTransaction
-import androidx.compose.ui.viewinterop.IosInteropContainer
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
+import androidx.compose.ui.viewinterop.IosInteropContainer
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.FocusedViewsList
-import androidx.compose.ui.window.IosPrefetchScheduler
 import androidx.compose.ui.window.KeyboardInsetsManager
 import androidx.compose.ui.window.OverlayInputView
+import androidx.compose.ui.window.IosPrefetchScheduler
 import androidx.compose.ui.window.TouchesEventKind
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
@@ -535,21 +535,23 @@ internal class ComposeSceneMediator(
             }
         }
 
-        scene.sendPointerEvent(
-            eventType = eventType,
-            pointers = listOf(
-                ComposeScenePointer(
-                    id = PointerId(0),
-                    position = position.toOffset(composeSceneDensity),
-                    pressed = false,
-                    type = PointerType.Mouse,
-                )
-            ),
-            timeMillis = event.timeMillis,
-            nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero),
-            panGestureOffset = delta.toOffset(composeSceneDensity),
-        )
+        frameChoreographer.runWithReentrantGuard {
+            scene.sendPointerEvent(
+                eventType = eventType,
+                pointers = listOf(
+                    ComposeScenePointer(
+                        id = PointerId(0),
+                        position = position.toOffset(composeSceneDensity),
+                        pressed = false,
+                        type = PointerType.Mouse,
+                    )
+                ),
+                timeMillis = event.timeMillis,
+                nativeEvent = event,
+                keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero),
+                panGestureOffset = delta.toOffset(composeSceneDensity),
+            )
+        }
     }
 
     private fun onPinchEvent(
@@ -572,21 +574,23 @@ internal class ComposeSceneMediator(
             }
         }
 
-        scene.sendPointerEvent(
-            eventType = eventType,
-            pointers = listOf(
-                ComposeScenePointer(
-                    id = PointerId(0),
-                    position = position.toOffset(composeSceneDensity),
-                    pressed = false,
-                    type = PointerType.Mouse,
-                )
-            ),
-            timeMillis = event.timeMillis,
-            nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero),
-            scaleGestureFactor = scale,
-        )
+        frameChoreographer.runWithReentrantGuard {
+            scene.sendPointerEvent(
+                eventType = eventType,
+                pointers = listOf(
+                    ComposeScenePointer(
+                        id = PointerId(0),
+                        position = position.toOffset(composeSceneDensity),
+                        pressed = false,
+                        type = PointerType.Mouse,
+                    )
+                ),
+                timeMillis = event.timeMillis,
+                nativeEvent = event,
+                keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero),
+                scaleGestureFactor = scale,
+            )
+        }
     }
 
     @OptIn(ExperimentalMediaQueryApi::class)
@@ -602,20 +606,22 @@ internal class ComposeSceneMediator(
             TouchesEventKind.ENDED -> PointerEventType.Exit
         }
 
-        scene.sendPointerEvent(
-            eventType = eventType,
-            pointers = listOf(
-                ComposeScenePointer(
-                    id = PointerId(0),
-                    position = position.toOffset(composeSceneDensity),
-                    pressed = false,
-                    type = PointerType.Mouse,
-                )
-            ),
-            timeMillis = event.timeMillis,
-            nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
-        )
+        frameChoreographer.runWithReentrantGuard {
+            scene.sendPointerEvent(
+                eventType = eventType,
+                pointers = listOf(
+                    ComposeScenePointer(
+                        id = PointerId(0),
+                        position = position.toOffset(composeSceneDensity),
+                        pressed = false,
+                        type = PointerType.Mouse,
+                    )
+                ),
+                timeMillis = event.timeMillis,
+                nativeEvent = event,
+                keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
+            )
+        }
     }
 
     private fun onCancelScroll() {
@@ -656,6 +662,7 @@ internal class ComposeSceneMediator(
                     anyTouchIsStylus = true
                     PointerType.Stylus
                 }
+
                 else -> PointerType.Touch
             }
             val id = touch.hashCode().toLong().takeIf {
@@ -687,21 +694,24 @@ internal class ComposeSceneMediator(
             pointers.any { it.pressed }
         } ?: 0L
 
-        return scene.sendPointerEvent(
-            eventType = eventKind.toPointerEventType(),
-            pointers = pointers,
-            timeMillis = event.timeMillis,
-            nativeEvent = event,
-            button = event?.getButton(previousButtonMask, eventKind, previousTouchEventKind),
-            buttons = PointerButtons(pointerButtonsMask),
-            keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
-        ).also {
-            previousButtonMask = event.buttonMaskOrZero
-            if (eventKind != TouchesEventKind.MOVED) {
-                previousTouchEventKind = eventKind
+        return frameChoreographer.runWithReentrantGuard {
+            scene.sendPointerEvent(
+                eventType = eventKind.toPointerEventType(),
+                pointers = pointers,
+                timeMillis = event.timeMillis,
+                nativeEvent = event,
+                button = event?.getButton(previousButtonMask, eventKind, previousTouchEventKind),
+                buttons = PointerButtons(pointerButtonsMask),
+                keyboardModifiers = PointerKeyboardModifiers(modifierFlags = event.modifierFlagsOrZero)
+            ).also {
+                previousButtonMask = event.buttonMaskOrZero
+                if (eventKind != TouchesEventKind.MOVED) {
+                    previousTouchEventKind = eventKind
+                }
             }
         }
     }
+
     private var previousButtonMask: Long = 0L
     private var previousTouchEventKind: TouchesEventKind? = null
 
@@ -765,7 +775,7 @@ internal class ComposeSceneMediator(
     }
 
     fun requestMeasureAndLayout(completion: () -> Unit = {}) {
-        frameChoreographer.performOutsideRecomposerFrame {
+        frameChoreographer.runNonReentrantOrDispatch {
             setContent?.invoke()
             scene.measureAndLayout()
             completion()
@@ -966,7 +976,7 @@ internal class ComposeSceneMediator(
     private fun onKeyboardEvent(keyEvent: KeyEvent): Boolean {
         val result = textInputService.onPreviewKeyEvent(keyEvent)
             || onPreviewKeyEvent(keyEvent)
-            || scene.sendKeyEvent(keyEvent)
+            || frameChoreographer.runWithReentrantGuard { scene.sendKeyEvent(keyEvent) }
             || onKeyEvent(keyEvent)
             || navigationEventInput.onKeyEvent(keyEvent)
 
