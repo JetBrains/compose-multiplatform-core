@@ -74,10 +74,16 @@ public value class Focusability private constructor(private val value: Int) {
     }
 }
 
+<<<<<<< HEAD
 // TODO https://youtrack.jetbrains.com/issue/CMP-6794
 // should be always true if foundaton.isRequestFocusOnClickEnabled is true
+=======
+>>>>>>> 0caed810f26efaa20521144fc9cee0c14aa5eae4
 internal expect fun systemDefinedCanFocus(node: CompositionLocalConsumerModifierNode): Boolean
 
 internal fun mobilePlatformSystemDefinedCanFocus(node: CompositionLocalConsumerModifierNode) =
     with(node) { currentValueOf(LocalInputModeManager).inputMode != InputMode.Touch }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0caed810f26efaa20521144fc9cee0c14aa5eae4

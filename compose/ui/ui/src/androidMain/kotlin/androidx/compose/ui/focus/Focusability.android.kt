@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2025 The Android Open Source Project
+=======
+ * Copyright 2026 The Android Open Source Project
+>>>>>>> 0caed810f26efaa20521144fc9cee0c14aa5eae4
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
