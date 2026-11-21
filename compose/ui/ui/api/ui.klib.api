@@ -5139,8 +5139,6 @@ final fun androidx.compose.ui.window/ComposeUIViewController(kotlin/Function1<an
 // Targets: [ios]
 final fun androidx.compose.ui.window/ComposeUIViewController(kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): platform.UIKit/UIViewController // androidx.compose.ui.window/ComposeUIViewController|ComposeUIViewController(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
-<<<<<<< HEAD
-=======
 // Targets: [js, wasmJs]
 final class androidx.compose.ui.window/ComposeViewportConfiguration { // androidx.compose.ui.window/ComposeViewportConfiguration|null[0]
     final var enableBrowserWindowInsets // androidx.compose.ui.window/ComposeViewportConfiguration.enableBrowserWindowInsets|{}enableBrowserWindowInsets[0]
@@ -5267,7 +5265,6 @@ final fun androidx.compose.ui.window/androidx_compose_ui_window_WebAccessibility
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.window/androidx_compose_ui_window_WebAccessibilityActivation_OnUserRequest$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_WebAccessibilityActivation_OnUserRequest$stableprop_getter|androidx_compose_ui_window_WebAccessibilityActivation_OnUserRequest$stableprop_getter(){}[0]
 
->>>>>>> origin/jb-main
 // Targets: [macosArm64]
 abstract interface androidx.compose.ui.window/WindowScope { // androidx.compose.ui.window/WindowScope|null[0]
     abstract val window // androidx.compose.ui.window/WindowScope.window|{}window[0]

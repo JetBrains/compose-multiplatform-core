@@ -620,11 +620,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                     event.type == PointerEventType.PanStart ||
                     event.type == PointerEventType.PanMove ||
                     event.type == PointerEventType.PanEnd
-<<<<<<< HEAD
-            if (isPan && isIn != hasEntered) {
-=======
-            if (isIn != wasIn && ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan) {
->>>>>>> origin/jb-main
+            if (isIn != wasIn && isPan) {
                 // Create a synthetic Enter or Exit event to dispatch to hover listeners
                 // without altering the pan gesture event. Construct new PointerInputChange
                 // instances instead of calling copy() so they do not share consumedDelegate with
