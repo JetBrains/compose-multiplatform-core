@@ -387,6 +387,11 @@ private class TextInputHolder(
         connection.updateNativeTextInputTintColor(color)
     }
 
+    override fun setNativeGesturesEnabled(enabled: Boolean) {
+        val connection = connection as? NativeTextInputConnection ?: return
+        connection.setNativeGesturesEnabled(enabled)
+    }
+
     override fun usingNativeTextInput(): Boolean {
         return connection is NativeTextInputConnection
     }

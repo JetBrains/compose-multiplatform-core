@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
+import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -132,6 +133,8 @@ internal fun TestTextField(
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
+        @Composable { innerTextField -> innerTextField() },
 ) {
     if (state.textFieldType == BasicTextFieldType.V1) {
         BasicTextField(
@@ -145,6 +148,7 @@ internal fun TestTextField(
             keyboardOptions = keyboardOptions,
             readOnly = readOnly,
             visualTransformation = visualTransformation,
+            decorationBox = decorationBox,
         )
     } else {
         BasicTextField(
@@ -154,6 +158,7 @@ internal fun TestTextField(
             readOnly = readOnly,
             inputTransformation = inputTransformation,
             outputTransformation = outputTransformation,
+            decorator = TextFieldDecorator { innerTextField -> decorationBox(innerTextField) },
         )
     }
 }
