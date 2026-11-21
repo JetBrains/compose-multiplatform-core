@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform.a11y
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,8 +39,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
-import androidx.compose.ui.currentTimeMillis
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
@@ -53,12 +57,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.get
 
 /**
  * Tests for scrolling initiated by assistive technologies (VoiceOver & co).
@@ -77,27 +79,6 @@ class A11yScrollTest : OnCanvasTests {
     private val density: Float
         get() = window.devicePixelRatio.toFloat()
 
-    private suspend fun awaitCondition(
-        message: String,
-        timeout: Duration = 5.seconds,
-        condition: () -> Boolean
-    ) {
-        val startTime = currentTimeMillis()
-        suspendCancellableCoroutine { continuation ->
-            fun check() {
-                when {
-                    condition() -> continuation.resumeWith(Result.success(Unit))
-                    currentTimeMillis() - startTime > timeout.inWholeMilliseconds ->
-                        continuation.resumeWith(
-                            Result.failure(AssertionError("Timed out waiting for: $message"))
-                        )
-                    else -> window.requestAnimationFrame { check() }
-                }
-            }
-            check()
-        }
-    }
-
     private fun getScrollableElement(tag: String = "scrollable"): HTMLElement =
         assertNotNull(
             getShadowRoot().getElementById(tag) as? HTMLElement,
@@ -105,10 +86,162 @@ class A11yScrollTest : OnCanvasTests {
         )
 
     @Test
+    fun clippedListItemsKeepTraversalOrderWhileScrolling() = runApplicationTest {
+        val scrollState = ScrollState(0)
+        val itemCount = 20
+        var a11ySyncMarker by mutableStateOf("initial")
+
+        createEagerAccessibilityWindow {
+            Column {
+                Spacer(Modifier.height(30.dp))
+                Column(
+                    modifier = Modifier
+                        .testTag("scrollable")
+                        .size(160.dp, 100.dp)
+                        .verticalScroll(scrollState)
+                        .semantics { contentDescription = a11ySyncMarker }
+                ) {
+                    repeat(itemCount) { index ->
+                        Box(
+                            Modifier
+                                .size(160.dp, 40.dp)
+                                .clickable {}
+                                .testTag("scrollItem$index")
+                        ) {
+                            Text("Item $index")
+                        }
+                    }
+                }
+            }
+        }
+
+        awaitCondition("the scrollable list items must be present in the a11y tree") {
+            getShadowRoot().getElementById("scrollable") != null &&
+                (0 until itemCount).all { index ->
+                    getShadowRoot().getElementById("scrollItem$index") != null
+                }
+        }
+
+        val scrollable = getScrollableElement()
+        assertTrue(
+            scrollable.getBoundingClientRect().top > 0.0,
+            "Scroll viewport must have a nonzero window offset",
+        )
+        val items = (0 until itemCount).map { index ->
+            assertNotNull(
+                getShadowRoot().getElementById("scrollItem$index") as? HTMLElement,
+                "Scrollable item $index must be present in the a11y tree",
+            )
+        }
+        val firstItemTopBeforeScroll = items.first().getBoundingClientRect().top
+        for (targetScrollPx in listOf(0, (400f * density).toInt(), scrollState.maxValue)) {
+            scrollState.scrollTo(targetScrollPx)
+            val expectedDomOffset = targetScrollPx.toDouble() / density.toDouble()
+            awaitCondition("Compose and DOM scroll offsets must reach $targetScrollPx") {
+                !scrollState.isScrollInProgress &&
+                    abs(scrollState.value - targetScrollPx) <= 1 &&
+                    abs(scrollable.scrollTop - expectedDomOffset) <= 1.0 &&
+                    abs(
+                        items.first().getBoundingClientRect().top -
+                            (firstItemTopBeforeScroll - expectedDomOffset)
+                    ) <= 1.0
+            }
+
+            val expectedA11ySyncMarker = "scroll-position-$targetScrollPx"
+            a11ySyncMarker = expectedA11ySyncMarker
+            awaitCondition("accessibility tree to sync marker '$expectedA11ySyncMarker'") {
+                scrollable.getAttribute("aria-label") == expectedA11ySyncMarker
+            }
+
+            val actualOrder = scrollable.querySelectorAll("[id^='scrollItem']").let { elements ->
+                (0 until elements.length).mapNotNull { (elements[it] as? HTMLElement)?.id }
+            }
+            items.forEachIndexed { index, item ->
+                assertFalse(item.hasAttribute("inert"), "Item $index must remain reachable at scroll=$targetScrollPx")
+                assertSame(item, getShadowRoot().getElementById("scrollItem$index"))
+            }
+            assertEquals((0 until itemCount).map { "scrollItem$it" }, actualOrder, "scroll=$targetScrollPx")
+        }
+    }
+
+    @Test
+    fun clippedGridItemsKeepGeometryOrderAndTraversalIndex() = runApplicationTest {
+        val scrollState = ScrollState(0)
+        var a11ySyncMarker by mutableStateOf("initial")
+
+        createEagerAccessibilityWindow {
+            Column {
+                Spacer(Modifier.height(30.dp))
+                Column(
+                    modifier = Modifier
+                        .testTag("gridScrollable")
+                        .size(160.dp, 100.dp)
+                        .verticalScroll(scrollState)
+                        .semantics { contentDescription = a11ySyncMarker }
+                ) {
+                    repeat(3) { row ->
+                        Row {
+                            repeat(2) { column ->
+                                val index = row * 2 + column
+                                Box(
+                                    Modifier
+                                        .size(80.dp, 60.dp)
+                                        .clickable {}
+                                        .then(
+                                            if (index == 5) {
+                                                Modifier.semantics { traversalIndex = -1f }
+                                            } else {
+                                                Modifier
+                                            }
+                                        )
+                                        .testTag("gridItem$index")
+                                ) {
+                                    Text("Grid item $index")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        awaitCondition("all grid items must be present in the a11y tree") {
+            getShadowRoot().getElementById("gridScrollable") != null &&
+                (0 until 6).all { index ->
+                    getShadowRoot().getElementById("gridItem$index") != null
+                }
+        }
+
+        val scrollable = getScrollableElement("gridScrollable")
+        val targetScrollPx = (60f * density).toInt()
+        launch { scrollState.scrollTo(targetScrollPx) }
+        val expectedDomOffset = targetScrollPx.toDouble() / density.toDouble()
+        awaitCondition("the grid must reach its scrolled position") {
+            !scrollState.isScrollInProgress &&
+                abs(scrollState.value - targetScrollPx) <= 1 &&
+                abs(scrollable.scrollTop - expectedDomOffset) <= 1.0
+        }
+
+        val expectedA11ySyncMarker = "scrolled-grid"
+        a11ySyncMarker = expectedA11ySyncMarker
+        awaitCondition("accessibility tree to sync marker '$expectedA11ySyncMarker'") {
+            scrollable.getAttribute("aria-label") == expectedA11ySyncMarker
+        }
+
+        val actualOrder = scrollable.querySelectorAll("[id^='gridItem']").let { elements ->
+            (0 until elements.length).mapNotNull { (elements[it] as? HTMLElement)?.id }
+        }
+        assertEquals(
+            listOf("gridItem5", "gridItem0", "gridItem1", "gridItem2", "gridItem3", "gridItem4"),
+            actualOrder,
+        )
+    }
+
+    @Test
     fun verticalScrollableBecomesScrollContainer() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -157,7 +290,7 @@ class A11yScrollTest : OnCanvasTests {
     fun domScrollDrivesComposeScroll() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -196,7 +329,7 @@ class A11yScrollTest : OnCanvasTests {
     fun composeScrollSyncsDomScrollOffset() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -225,7 +358,7 @@ class A11yScrollTest : OnCanvasTests {
     fun reverseScrollingMapsDomOffsetsToCompose() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -254,7 +387,7 @@ class A11yScrollTest : OnCanvasTests {
     fun horizontalScrollableBecomesScrollContainer() = runApplicationTest {
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Row(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -287,7 +420,7 @@ class A11yScrollTest : OnCanvasTests {
         val outerState = ScrollState(0)
         val innerState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("outer")
@@ -333,7 +466,7 @@ class A11yScrollTest : OnCanvasTests {
         // the scroll offset), while the container's scroll offset provides the shift.
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
                     .testTag("scrollable")
@@ -377,13 +510,13 @@ class A11yScrollTest : OnCanvasTests {
     fun lazyListItemIsScrolledIntoViewByBrowser() = runApplicationTest {
         val state = LazyListState()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LazyColumn(
                 modifier = Modifier.testTag("scrollable").width(100.dp).height(150.dp),
                 state = state,
             ) {
                 items(100) { index ->
-                    Box(Modifier.testTag("item$index").size(100.dp)) {
+                    Box(Modifier.testTagWithTraversalGroup("item$index").size(100.dp)) {
                         Text(
                             "$index",
                             Modifier.testTag("label$index").align(Alignment.Center),
@@ -447,14 +580,14 @@ class A11yScrollTest : OnCanvasTests {
     fun lazyGridItemIsScrolledIntoViewByBrowser() = runApplicationTest {
         val state = LazyGridState()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.testTag("scrollable").width(300.dp).height(150.dp),
                 state = state,
             ) {
                 items(100) { index ->
-                    Box(Modifier.testTag("item$index").size(100.dp)) {
+                    Box(Modifier.testTagWithTraversalGroup("item$index").size(100.dp)) {
                         Text(
                             "$index",
                             Modifier.testTag("label$index").align(Alignment.Center),
@@ -511,7 +644,7 @@ class A11yScrollTest : OnCanvasTests {
     fun lazyGridItemsRemainAlignedWithComposeAfterRepeatedScrolls() = runApplicationTest {
         val state = LazyGridState()
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.testTag("scrollable").size(300.dp),
@@ -552,7 +685,7 @@ class A11yScrollTest : OnCanvasTests {
         var prefix by mutableStateOf("Before ")
         val scrollState = ScrollState(0)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text(
                 text = buildAnnotatedString {
                     append(prefix)
@@ -599,10 +732,11 @@ class A11yScrollTest : OnCanvasTests {
         val scrollState = ScrollState(0)
         var scrollable by mutableStateOf(true)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column(
                 modifier = Modifier
-                    .testTag("scrollable")
+                    // Keeps the node exposed after verticalScroll (which is a traversal group) is removed.
+                    .testTagWithTraversalGroup("scrollable")
                     .size(100.dp)
                     .then(if (scrollable) Modifier.verticalScroll(scrollState) else Modifier)
             ) {

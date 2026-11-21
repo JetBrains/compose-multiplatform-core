@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
@@ -34,7 +33,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.MotionDurationScale
+import androidx.compose.ui.animation.durationScale
 import androidx.compose.ui.animation.easeOutTimingFunction
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.draw.drawBehind
@@ -64,7 +63,6 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
-import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -99,6 +97,8 @@ private const val AnimatedLayerDisappearanceDuration = 0.1
  * @property animateTransition Whether to animate the appearance and disappearance of the dialog.
  */
 @Immutable
+// TODO: https://youtrack.jetbrains.com/issue/CMP-11128 Stabilize or deprecate DialogProperties.animateTransition
+// Keep this API binary compatible: it is used by published Material3 versions
 actual class DialogProperties @ExperimentalComposeUiApi constructor(
     actual val dismissOnBackPress: Boolean = true,
     actual val dismissOnClickOutside: Boolean = true,
@@ -166,7 +166,6 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
     }
 }
 
-@OptIn(InternalComposeApi::class)
 @Composable
 actual fun Dialog(
     onDismissRequest: () -> Unit,
@@ -416,7 +415,3 @@ internal fun getDialogScrimBlendMode(isWindowTransparent: Boolean) =
     } else {
         BlendMode.SrcOver
     }
-
-private fun CoroutineContext.durationScale(): Float {
-    return this[MotionDurationScale]?.scaleFactor ?: 1f
-}

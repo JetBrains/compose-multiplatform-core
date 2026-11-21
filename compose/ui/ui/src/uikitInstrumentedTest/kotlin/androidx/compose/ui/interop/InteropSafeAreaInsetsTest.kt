@@ -35,13 +35,14 @@ import platform.UIKit.UIViewController
 
 class InteropSafeAreaInsetsTest {
     @Test
-    fun defaultAutomaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
+    fun defaultAutomaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTestWithInterop { overlay ->
         var view: SafeAreaTrackingView? = null
 
         setContent {
             UIKitView(
                 factory = { SafeAreaTrackingView().also { view = it } },
                 modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(placedAsOverlay = overlay),
             )
         }
 
@@ -54,7 +55,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun automaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
+    fun automaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTestWithInterop { overlay ->
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -63,6 +64,7 @@ class InteropSafeAreaInsetsTest {
                 modifier = Modifier.size(100.dp),
                 properties = UIKitInteropProperties(
                     safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
+                    placedAsOverlay = overlay,
                 ),
             )
         }
@@ -76,7 +78,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun safeAreaInsetsPolicyUpdatesTheExistingUIKitView() = runUIKitInstrumentedTest {
+    fun safeAreaInsetsPolicyUpdatesTheExistingUIKitView() = runUIKitInstrumentedTestWithInterop { overlay ->
         val policy = mutableStateOf<UIKitInteropSafeAreaInsetsPolicy>(
             UIKitInteropSafeAreaInsetsPolicy.Inherit,
         )
@@ -86,7 +88,10 @@ class InteropSafeAreaInsetsTest {
             UIKitView(
                 factory = { SafeAreaTrackingView().also { view = it } },
                 modifier = Modifier.size(100.dp),
-                properties = UIKitInteropProperties(safeAreaInsetsPolicy = policy.value),
+                properties = UIKitInteropProperties(
+                    safeAreaInsetsPolicy = policy.value,
+                    placedAsOverlay = overlay,
+                ),
             )
         }
 
@@ -102,7 +107,39 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun inheritPolicyExposesSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
+    fun safeAreaInsetsPolicyAndOverlayPlacementUpdateTogether() = runUIKitInstrumentedTest {
+        val properties = mutableStateOf(
+            UIKitInteropProperties(
+                safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+                placedAsOverlay = false,
+            ),
+        )
+        var view: SafeAreaTrackingView? = null
+
+        setContent {
+            UIKitView(
+                factory = { SafeAreaTrackingView().also { view = it } },
+                modifier = Modifier.size(100.dp),
+                properties = properties.value,
+            )
+        }
+
+        waitUntil("Inherited safe area was not exposed by the interop host") {
+            view?.hasTopSafeAreaInsetFromSuperview() == true && view?.isWrappedInClippingView() == true
+        }
+
+        properties.value = UIKitInteropProperties(
+            safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
+            placedAsOverlay = true,
+        )
+
+        waitUntil("Safe area policy and overlay placement were not updated") {
+            view?.hasNoTopSafeAreaInsetFromSuperview() == true && view?.isWrappedInClippingView() == false
+        }
+    }
+
+    @Test
+    fun inheritPolicyExposesSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTestWithInterop { overlay ->
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -111,6 +148,7 @@ class InteropSafeAreaInsetsTest {
                 modifier = Modifier.size(100.dp),
                 properties = UIKitInteropProperties(
                     safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+                    placedAsOverlay = overlay,
                 ),
             )
         }
@@ -121,7 +159,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun ignorePolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTest {
+    fun ignorePolicyDoesNotExposeSafeAreaInsetsFromTheInteropHost() = runUIKitInstrumentedTestWithInterop { overlay ->
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -130,6 +168,7 @@ class InteropSafeAreaInsetsTest {
                 modifier = Modifier.size(100.dp),
                 properties = UIKitInteropProperties(
                     safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Ignore,
+                    placedAsOverlay = overlay,
                 ),
             )
         }
@@ -143,7 +182,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun defaultAutomaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+    fun defaultAutomaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTestWithInterop { overlay ->
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -154,6 +193,7 @@ class InteropSafeAreaInsetsTest {
                     }
                 },
                 modifier = Modifier.size(100.dp),
+                properties = UIKitInteropProperties(placedAsOverlay = overlay),
             )
         }
 
@@ -166,7 +206,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun automaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+    fun automaticPolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTestWithInterop { overlay ->
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -179,6 +219,7 @@ class InteropSafeAreaInsetsTest {
                 modifier = Modifier.size(100.dp),
                 properties = UIKitInteropProperties(
                     safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Automatic,
+                    placedAsOverlay = overlay,
                 ),
             )
         }
@@ -192,7 +233,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun safeAreaInsetsPolicyUpdatesTheExistingUIKitViewController() = runUIKitInstrumentedTest {
+    fun safeAreaInsetsPolicyUpdatesTheExistingUIKitViewController() = runUIKitInstrumentedTestWithInterop { overlay ->
         val policy = mutableStateOf<UIKitInteropSafeAreaInsetsPolicy>(
             UIKitInteropSafeAreaInsetsPolicy.Inherit,
         )
@@ -206,7 +247,10 @@ class InteropSafeAreaInsetsTest {
                     }
                 },
                 modifier = Modifier.size(100.dp),
-                properties = UIKitInteropProperties(safeAreaInsetsPolicy = policy.value),
+                properties = UIKitInteropProperties(
+                    safeAreaInsetsPolicy = policy.value,
+                    placedAsOverlay = overlay,
+                ),
             )
         }
 
@@ -222,7 +266,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun inheritPolicyExposesSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+    fun inheritPolicyExposesSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTestWithInterop { overlay ->
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -235,6 +279,7 @@ class InteropSafeAreaInsetsTest {
                 modifier = Modifier.size(100.dp),
                 properties = UIKitInteropProperties(
                     safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Inherit,
+                    placedAsOverlay = overlay,
                 ),
             )
         }
@@ -245,7 +290,7 @@ class InteropSafeAreaInsetsTest {
     }
 
     @Test
-    fun ignorePolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTest {
+    fun ignorePolicyDoesNotExposeSafeAreaInsetsFromTheInteropHostToViewController() = runUIKitInstrumentedTestWithInterop { overlay ->
         var view: SafeAreaTrackingView? = null
 
         setContent {
@@ -258,6 +303,7 @@ class InteropSafeAreaInsetsTest {
                 modifier = Modifier.size(100.dp),
                 properties = UIKitInteropProperties(
                     safeAreaInsetsPolicy = UIKitInteropSafeAreaInsetsPolicy.Ignore,
+                    placedAsOverlay = overlay,
                 ),
             )
         }
@@ -282,6 +328,9 @@ private fun SafeAreaTrackingView.hasNoTopSafeAreaInsetFromSuperview(): Boolean =
 
 private fun SafeAreaTrackingView.hasBeenLaidOutInWindow(): Boolean =
     window != null && !lastLayoutSuperviewTopSafeAreaInset.isNaN()
+
+private fun SafeAreaTrackingView.isWrappedInClippingView(): Boolean? =
+    superview?.superview?.clipsToBounds
 
 private class SafeAreaTrackingView : UIView(frame = CGRectZero.readValue()) {
     var lastLayoutSuperviewTopSafeAreaInset = Double.NaN

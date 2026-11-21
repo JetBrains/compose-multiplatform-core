@@ -24,10 +24,10 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.WebApplicationScope
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.dp
@@ -37,7 +37,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.w3c.dom.HTMLElement
 
-@OptIn(InternalComposeUiApi::class)
 class WebTextToolbarTest : OnCanvasTests {
 
     @Test
@@ -45,7 +44,7 @@ class WebTextToolbarTest : OnCanvasTests {
         lateinit var toolbar: WebTextToolbar
         var fieldCount by mutableStateOf(2)
         var density = 1f
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             toolbar = LocalTextToolbar.current as WebTextToolbar
             density = LocalDensity.current.density
             Column {
@@ -81,7 +80,7 @@ class WebTextToolbarTest : OnCanvasTests {
     fun unfocusedLegacyTextFieldDoesNotHideToolbar() = runApplicationTest {
         lateinit var toolbar: WebTextToolbar
         var density = 1f
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             toolbar = LocalTextToolbar.current as WebTextToolbar
             density = LocalDensity.current.density
             BasicTextField(value = "Text", onValueChange = {})
@@ -110,7 +109,7 @@ class WebTextToolbarTest : OnCanvasTests {
         var density = 1f
         var firstCallbackCount = 0
         var secondCallbackCount = 0
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             toolbar = LocalTextToolbar.current as WebTextToolbar
             density = LocalDensity.current.density
             BasicTextField(state = rememberTextFieldState("Text"))
@@ -150,7 +149,7 @@ class WebTextToolbarTest : OnCanvasTests {
         lateinit var toolbar: WebTextToolbar
         var density = 1f
         var parentOffset by mutableStateOf(10.dp)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             toolbar = LocalTextToolbar.current as WebTextToolbar
             density = LocalDensity.current.density
             Box(Modifier.offset(parentOffset, parentOffset)) {

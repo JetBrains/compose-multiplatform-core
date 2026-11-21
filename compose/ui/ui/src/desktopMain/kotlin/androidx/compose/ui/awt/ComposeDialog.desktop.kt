@@ -245,7 +245,6 @@ class ComposeDialog : JDialog, ComposeDesktopEntryPoint {
      *
      * @param content Composable content of the ComposeDialog.
      */
-    @OptIn(ExperimentalComposeUiApi::class)
     fun setContent(
         content: @Composable DialogWindowScope.() -> Unit
     ) = setContent(

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Applier
@@ -31,13 +29,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.configureSwingGlobalsForCompose
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalGraphicsResourceCache
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -196,6 +194,9 @@ suspend fun awaitApplication(
     if (System.getProperty("compose.application.configure.swing.globals") == "true") {
         configureSwingGlobalsForCompose()
     }
+    // The application content can create graphics objects before any window exists,
+    // for example a vector painter passed as a window icon.
+    registerSkikoComposeImplementation()
     withContext(MainUIDispatcher) {
         withContext(YieldFrameClock) {
             val globalSnapshotRegistration = GlobalSnapshotManager.register(MainUIDispatcher)

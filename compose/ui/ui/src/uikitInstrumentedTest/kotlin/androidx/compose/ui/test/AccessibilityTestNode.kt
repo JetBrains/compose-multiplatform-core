@@ -17,6 +17,7 @@
 package androidx.compose.ui.test
 
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitIsEditing
+import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitSecureTextField
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitToggle
 import androidx.compose.ui.test.utils.DpRectZero
@@ -35,6 +36,7 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.Foundation.NSAttributedString
+import platform.Foundation.NSNotificationCenter
 import platform.UIKit.UIAccessibilityContainerType
 import platform.UIKit.UIAccessibilityContainerTypeDataTable
 import platform.UIKit.UIAccessibilityContainerTypeLandmark
@@ -42,6 +44,8 @@ import platform.UIKit.UIAccessibilityContainerTypeList
 import platform.UIKit.UIAccessibilityContainerTypeNone
 import platform.UIKit.UIAccessibilityContainerTypeSemanticGroup
 import platform.UIKit.UIAccessibilityElement
+import platform.UIKit.UIAccessibilityElementFocusedNotification
+import platform.UIKit.UIAccessibilityFocusedElementKey
 import platform.UIKit.UIAccessibilityTraitAdjustable
 import platform.UIKit.UIAccessibilityTraitAllowsDirectInteraction
 import platform.UIKit.UIAccessibilityTraitButton
@@ -194,6 +198,7 @@ private val allAccessibilityTraits = mutableMapOf(
     CMPAccessibilityTraitTextView to "CMPAccessibilityTraitTextView",
     CMPAccessibilityTraitIsEditing to "CMPAccessibilityTraitIsEditing",
     CMPAccessibilityTraitToggle to "CMPAccessibilityTraitToggle",
+    CMPAccessibilityTraitSecureTextField to "CMPAccessibilityTraitSecureTextField",
 ).let {
     if (available(OS.Ios to OSVersion(major = 17))) {
         it[UIAccessibilityTraitToggleButton] = "UIAccessibilityTraitToggleButton"
@@ -501,4 +506,16 @@ internal fun UIKitInstrumentedTest.assertAccessibilityTree(expected: Accessibili
 
         throw e
     }
+}
+
+/**
+ * Posts `UIAccessibilityElementFocusedNotification` for the [element], as iOS does when an
+ * assistive technology such as VoiceOver moves its focus to it.
+ */
+internal fun postAccessibilityElementFocused(element: NSObject?) {
+    NSNotificationCenter.defaultCenter.postNotificationName(
+        aName = UIAccessibilityElementFocusedNotification,
+        `object` = null,
+        userInfo = mapOf(UIAccessibilityFocusedElementKey to element)
+    )
 }

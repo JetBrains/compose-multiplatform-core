@@ -15,7 +15,6 @@
  */
 package androidx.compose.ui.test
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
@@ -43,7 +42,7 @@ private class TestInputEvent(
     val action: () -> Unit
 )
 
-@OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
+@OptIn(InternalComposeUiApi::class)
 internal class SkikoInputDispatcher(
     private val testContext: TestContext,
     private val root: PlatformRootForTest
@@ -219,7 +218,6 @@ internal class SkikoInputDispatcher(
         // desktop don't have cancel events as Android does
     }
 
-    @OptIn(ExperimentalTestApi::class)
     override fun CursorInputState.enqueueMouseScroll(delta: Float, scrollWheel: ScrollWheel) {
         val position = lastPosition
         val timeMillis = currentTime
@@ -390,7 +388,6 @@ internal class SkikoInputDispatcher(
         batchedEvents.add(TestInputEvent(timeMillis, action))
     }
 
-    @OptIn(InternalTestApi::class)
     private fun advanceClockTime(millis: Long) {
         // Don't bother advancing the clock if there's nothing to advance
         if (millis > 0) {

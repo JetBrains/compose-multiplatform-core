@@ -29,7 +29,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.IntVar
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.alloc
@@ -298,6 +297,9 @@ internal class FrameChoreographer private constructor(
     val preferredFramesPerSecond: NSInteger get() = displayLink.preferredFramesPerSecond
 
     @VisibleForTesting
+    val isDisplayLinkPaused: Boolean get() = displayLink.paused
+
+    @VisibleForTesting
     val currentTargetFrameDuration: NSTimeInterval
         get() = displayLink.targetTimestamp - displayLink.timestamp
 
@@ -343,10 +345,8 @@ internal class FrameChoreographer private constructor(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private val frameChoreographerAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
 
-@OptIn(ExperimentalForeignApi::class)
 private var UIWindow.frameChoreographer: FrameChoreographer?
     get() = objc_getAssociatedObject(this, frameChoreographerAssociationKey) as? FrameChoreographer
     set(value) {

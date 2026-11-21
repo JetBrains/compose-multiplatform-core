@@ -31,18 +31,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.HtmlElementView
-import kotlin.let
 import kotlinx.browser.document
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLLabelElement
-import org.w3c.dom.HTMLSelectElement
-import org.w3c.dom.HTMLOptionElement
 
 @Composable
 fun TabFocus() {
@@ -96,7 +91,6 @@ fun TabFocus() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TabFocusWithInterop() {
     Column(
@@ -132,7 +126,6 @@ fun TabFocusWithInterop() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun ComplexInteropWidget() {
     HtmlElementView(

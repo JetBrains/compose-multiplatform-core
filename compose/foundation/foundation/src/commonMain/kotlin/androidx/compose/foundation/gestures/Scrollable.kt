@@ -507,7 +507,7 @@ public object ScrollableDefaults {
         return rememberPlatformOverscrollEffect() ?: NoOpOverscrollEffect
     }
 
-    internal object NoOpOverscrollEffect : OverscrollEffect {
+    private object NoOpOverscrollEffect : OverscrollEffect {
         override fun applyToScroll(
             delta: Offset,
             source: NestedScrollSource,

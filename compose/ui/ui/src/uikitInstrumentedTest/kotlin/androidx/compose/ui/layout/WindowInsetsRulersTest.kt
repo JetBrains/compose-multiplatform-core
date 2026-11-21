@@ -30,6 +30,8 @@ import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.uikit.density
+import androidx.compose.ui.uikit.utils.CMPLayoutRegion
+import androidx.compose.ui.uikit.utils.CMPLayoutRegionAdaptivityAxisVertical
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toPlatformInsets
@@ -70,7 +72,7 @@ class WindowInsetsRulersTest {
         assertNotNull(insetsRect)
         assertEquals(1, displayCutoutRects.size)
         assertEquals(
-            IntRect(0, 0, screenSizePx.width, viewController.view.safeAreaPlatformInsets.top),
+            IntRect(0, 0, screenSizePx.width, viewController.view.safeAreaLayoutRegionInsets.top),
             displayCutoutRects.first()
         )
     }
@@ -86,14 +88,19 @@ class WindowInsetsRulersTest {
 
         assertNotNull(insetsRect)
 
-        val hasRightCutout = viewController.view.safeAreaPlatformInsets.right > 0
+        val hasRightCutout = viewController.view.safeAreaLayoutRegionInsets.right > 0
         val expectedDisplayCutoutRectsSize = if (hasRightCutout) 1 else 0
 
         assertEquals(expectedDisplayCutoutRectsSize, displayCutoutRects.size)
 
         if (hasRightCutout) {
             assertEquals(
-                IntRect(screenSizePx.width - viewController.view.safeAreaPlatformInsets.right,0,screenSizePx.width,screenSizePx.height),
+                IntRect(
+                    screenSizePx.width - viewController.view.safeAreaLayoutRegionInsets.right,
+                    0,
+                    screenSizePx.width,
+                    screenSizePx.height
+                ),
                 displayCutoutRects.first()
             )
         }
@@ -110,14 +117,14 @@ class WindowInsetsRulersTest {
 
         assertNotNull(insetsRect)
 
-        val hasLeftCutout = viewController.view.safeAreaPlatformInsets.left > 0
+        val hasLeftCutout = viewController.view.safeAreaLayoutRegionInsets.left > 0
         val expectedDisplayCutoutRectsSize = if (hasLeftCutout) 1 else 0
 
         assertEquals(expectedDisplayCutoutRectsSize, displayCutoutRects.size)
 
         if (hasLeftCutout) {
             assertEquals(
-                IntRect(0, 0, viewController.view.safeAreaPlatformInsets.left, screenSizePx.height),
+                IntRect(0, 0, viewController.view.safeAreaLayoutRegionInsets.left, screenSizePx.height),
                 displayCutoutRects.first()
             )
         }
@@ -145,7 +152,7 @@ class WindowInsetsRulersTest {
             IntRect(
                 0, 0,
                 screenSizePx.width,
-                viewController.view.safeAreaPlatformInsets.top
+                viewController.view.safeAreaLayoutRegionInsets.top
             ),
             displayCutoutRects.first()
         )
@@ -326,5 +333,9 @@ class WindowInsetsRulersTest {
         IntSize(screenSize.width.roundToPx(), screenSize.height.roundToPx())
     }
 
-    private val UIView.safeAreaPlatformInsets: PlatformInsets get() = safeAreaInsets.toPlatformInsets(density)
+    private val UIView.safeAreaLayoutRegionInsets: PlatformInsets
+        get() = CMPLayoutRegion
+            .safeAreaWithCornerAdaptation(CMPLayoutRegionAdaptivityAxisVertical)
+            .edgeInsetsInView(this)
+            .toPlatformInsets(density)
 }

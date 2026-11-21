@@ -20,6 +20,8 @@ import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.compose.ui.ExperimentalComposeUiApi
 
+// Keep this API binary compatible: it is used by published Material3 versions.
+// (see https://youtrack.jetbrains.com/issue/CMP-10388)
 @Deprecated("Use NavigationEvent instead")
 @ExperimentalComposeUiApi
 actual class BackEventCompat(

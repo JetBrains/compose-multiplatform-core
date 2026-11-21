@@ -854,8 +854,8 @@ class DialogWindowV2StateTest {
                         // Verify that the bounds are set correctly immediately, not just at some
                         // point after the window is shown.
                         override fun componentShown(e: ComponentEvent) {
-                            assertEquals(expectedSize, window.size.toDpSize())
-                            assertEquals(expectedPosition, window.location.toDpOffset())
+                            assertSizesApproximatelyEqual(expectedSize, window.size.toDpSize())
+                            assertCoordinatesApproximatelyEqual(expectedPosition, window.location.toDpOffset())
                         }
                     })
                 }

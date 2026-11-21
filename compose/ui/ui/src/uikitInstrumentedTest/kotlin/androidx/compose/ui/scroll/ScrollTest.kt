@@ -79,7 +79,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
 import org.jetbrains.skiko.OS
@@ -124,12 +123,14 @@ internal class ScrollTest {
         val initialBoxRect = boxRect.copy()
         val dyExact = CUPERTINO_TOUCH_SLOP.dp
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = dyExact)
 
         waitForIdle()
 
         assertEquals(initialBoxRect, boxRect)
+
+        touch.up()
     }
 
     @Test
@@ -171,12 +172,14 @@ internal class ScrollTest {
         val initialBoxRect = boxRect.copy()
         val dyExact = CUPERTINO_TOUCH_SLOP.dp
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = dyExact)
 
         waitForIdle()
 
         assertEquals(initialBoxRect, boxRect)
+
+        touch.up()
     }
 
     /**
@@ -206,7 +209,7 @@ internal class ScrollTest {
 
         val dyJustOver = CUPERTINO_TOUCH_SLOP.dp + 1.dp
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = dyJustOver)
 
         waitForIdle()
@@ -214,6 +217,8 @@ internal class ScrollTest {
         assertTrue(boxRect.top > 0.dp)
         // Scroll state remains at 0 despite visual overscroll
         assertEquals(0 * density.density, state.value.toFloat())
+
+        touch.up()
     }
 
     @Test
@@ -254,7 +259,7 @@ internal class ScrollTest {
 
         val dyJustOver = CUPERTINO_TOUCH_SLOP.dp + 1.dp
 
-        touchDown(screenSize.center)
+        val touch = touchDown(screenSize.center)
             .dragBy(dy = dyJustOver)
 
         waitForIdle()
@@ -262,6 +267,8 @@ internal class ScrollTest {
         assertTrue(boxRect.top > 0.dp)
         // Scroll state remains at 0 despite visual overscroll
         assertEquals(0 * density.density, state.value.toFloat())
+
+        touch.up()
     }
 
     @Test
@@ -292,7 +299,7 @@ internal class ScrollTest {
         var previousDiff = 0f
         val dragDelta = screenSize.center.y / 10
         repeat(10) { i ->
-            touch.dragBy(dy = dragDelta, duration = 100.milliseconds)
+            touch.dragBy(dy = dragDelta)
             waitForIdle()
 
             val currentBoxTop = boxRect.top
@@ -348,7 +355,7 @@ internal class ScrollTest {
         val dragDelta = screenSize.center.y / 10
 
         repeat(10) { i ->
-            touch.dragBy(dy = -dragDelta, duration = 0.1.seconds)
+            touch.dragBy(dy = -dragDelta)
             waitForIdle()
 
             val currentBoxTop = boxRect.top
@@ -418,7 +425,7 @@ internal class ScrollTest {
 
         // fling up
         touch
-            .dragBy(dy = -(boxHeight + 50).dp, duration = 100.milliseconds)
+            .dragBy(dy = -(boxHeight + 50).dp)
             .up()
 
         waitForIdle()
@@ -459,7 +466,7 @@ internal class ScrollTest {
         assertTrue(dySmall.value < CUPERTINO_TOUCH_SLOP)
 
         // downward drag - overscroll
-        touchDown(screenSize.center)
+        val downwardTouch = touchDown(screenSize.center)
             .dragBy(dy = dySmall)
         waitForIdle()
 
@@ -469,14 +476,19 @@ internal class ScrollTest {
         assertEquals(0 * density.density, state.value.toFloat())
         assertEquals(initialBoxRect, boxRect)
 
+        downwardTouch.up()
+        waitForIdle()
+
         // upward drag - scroll
-        touchDown(screenSize.center)
+        val upwardTouch = touchDown(screenSize.center)
             .dragBy(dy = -dySmall)
         waitForIdle()
 
         // expect no changes
         assertEquals(0 * density.density, state.value.toFloat())
         assertEquals(initialBoxRect, boxRect)
+
+        upwardTouch.up()
     }
 
     @Test
@@ -504,11 +516,13 @@ internal class ScrollTest {
 
         assertEquals(initialBoxRect, boxRect)
 
-        touchDown(DpOffset(screenSize.center.x, 50.dp))
+        val touch = touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dy = 50.dp)
 
         waitForIdle()
         assertEquals(initialBoxRect, boxRect)
+
+        touch.up()
     }
 
     @Test
@@ -531,11 +545,13 @@ internal class ScrollTest {
 
         assertEquals(initialBoxRect, boxRect)
 
-        touchDown(DpOffset(screenSize.center.x, 50.dp))
+        val touch = touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dy = 50.dp)
 
         waitForIdle()
         assertEquals(initialBoxRect, boxRect)
+
+        touch.up()
     }
 
     @Test
@@ -554,7 +570,7 @@ internal class ScrollTest {
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dx = (150 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -578,7 +594,7 @@ internal class ScrollTest {
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dx = -(150 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -701,7 +717,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UILabel")
             .touchDown()
             .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -712,7 +728,7 @@ internal class ScrollTest {
         findNodeWithTag("Red Box")
             .touchDown()
             .dragBy(dy = (100 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -747,11 +763,11 @@ internal class ScrollTest {
             .also {
                 // There is an issue on iOS < 15 where the simulated drag is not applied immediately.
                 if (!available(OS.Ios to OSVersion(16))) {
-                    delay(100)
+                    delay(50.milliseconds)
                 }
             }
             .dragBy(dy = -(250 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -782,7 +798,7 @@ internal class ScrollTest {
         findNodeWithTag("Top Box")
             .touchDown()
             .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -858,7 +874,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UIScrollView")
             .touchDown()
             .dragBy(dx = -(50 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -894,7 +910,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UIScrollView")
             .touchDown()
             .dragBy(dy = -(50 + CUPERTINO_TOUCH_SLOP).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -935,7 +951,7 @@ internal class ScrollTest {
             .dragBy(dx = 20.dp, dy = (-50).dp)
             .dragBy(dx = (-70).dp, dy = 50.dp)
             .dragBy(dy = (-150).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -974,7 +990,7 @@ internal class ScrollTest {
             .touchDown()
             .dragBy(dx = -(5 + CUPERTINO_TOUCH_SLOP).dp, dy = -(50 + CUPERTINO_TOUCH_SLOP).dp)
             .dragBy(dx = (-50).dp, dy = (-50).dp)
-            .also { delay(500) }
+            .wait(50.milliseconds)
             .up()
 
         waitForIdle()
@@ -1011,9 +1027,11 @@ internal class ScrollTest {
 
         // Simulate simultaneous drag of two fingers
         repeat(2) {
-            tap1.dragBy(dx = (-25).dp, duration = (0.5).seconds)
-            tap2.dragBy(dx = (-50).dp, duration = (0.5).seconds)
+            tap1.dragBy(dx = (-25).dp)
+            tap2.dragBy(dx = (-50).dp)
         }
+
+        delay(50.milliseconds) // hold fingers to avoid fling
 
         tap1.up()
         tap2.up()
@@ -1067,8 +1085,8 @@ internal class ScrollTest {
         val scrollAmount = 150.dp
         repeat(3) {
             touchDown(screenSize.center)
-                .dragBy(dy = -scrollAmount, duration = 100.milliseconds)
-                .wait(100.milliseconds)
+                .dragBy(dy = -scrollAmount)
+                .wait(50.milliseconds)
                 .up()
             modalVC.waitForIdle()
         }
@@ -1128,7 +1146,7 @@ internal class ScrollTest {
 
         // Swipe left over the embedded button — should scroll UIScrollView, not click button
         touchDown(swipeCenter)
-            .dragBy(dx = -(100 + CUPERTINO_TOUCH_SLOP).dp, duration = 300.milliseconds)
+            .dragBy(dx = -(100 + CUPERTINO_TOUCH_SLOP).dp)
             .up()
         waitForIdle()
 
@@ -1140,6 +1158,7 @@ internal class ScrollTest {
     }
 }
 
+@OptIn(ExperimentalForeignApi::class)
 @Composable
 private fun VerticalUIKitScrollInsideVerticalScroll(
     placeUIKitViewAsOverlay: Boolean,

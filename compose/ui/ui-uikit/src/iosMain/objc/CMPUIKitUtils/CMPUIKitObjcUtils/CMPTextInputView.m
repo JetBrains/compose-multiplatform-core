@@ -15,6 +15,14 @@
  */
 
 #import "CMPTextInputView.h"
+#import "CMPProtocolProxy.h"
+
+@protocol CMPTextInputReplacement <NSObject>
+
+- (nullable UITextRange *)range;
+- (nullable NSString *)replacementText;
+
+@end
 
 @interface CMPTextInputView ()
 
@@ -126,6 +134,19 @@
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
+- (void)replace:(NSObject *)replacement {
+    id<CMPTextInputReplacement> proxy =
+        (id<CMPTextInputReplacement>)[[CMPProtocolProxy alloc] initWithObject:replacement protocol:@protocol(CMPTextInputReplacement)];
+
+    NSString *text = proxy.replacementText;
+    UITextRange *range = proxy.range;
+
+    if (![text isKindOfClass:[NSString class]] || ![range isKindOfClass:[UITextRange class]]) {
+        return;
+    }
+    [self replaceRange:range withText:text];
+}
+
 - (void)deleteBackward {
     CMP_ABSTRACT_FUNCTION_CALLED
 }
@@ -212,6 +233,28 @@
         for (id<UIInteraction> interaction in self.interactions) {
             if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
                 [((UITextSelectionDisplayInteraction *)interaction) setActivated:NO];
+            }
+        }
+    }
+}
+
+- (void)activateSelectionDisplayIfNeeded {
+    if (@available(iOS 17, *)) {
+        for (id<UIInteraction> interaction in self.interactions) {
+            if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
+                // HACK: Show cursor again after updating marked text
+                [((UITextSelectionDisplayInteraction *)interaction) setActivated:YES];
+                return;
+            }
+        }
+    }
+}
+            
+- (void)reloadVisibleEditMenu {
+    if (@available(iOS 16, *)) {
+        for (id<UIInteraction> interaction in self.interactions) {
+            if ([interaction isKindOfClass:[UIEditMenuInteraction class]]) {
+                [((UIEditMenuInteraction *)interaction) reloadVisibleMenu];
             }
         }
     }

@@ -26,7 +26,6 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -38,13 +37,12 @@ import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.text.input.PlatformImeOptions
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.uikit.LocalTextInputContainer
+import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(InternalComposeUiApi::class)
 class TextFieldMagnifierTest {
 
     private val params = listOf(
@@ -84,11 +82,13 @@ class TextFieldMagnifierTest {
             message = "Text input mode should be ${factory.textInputModeName}"
         )
 
-        findNodeWithTag("textField").touchDown()
+        val touch = findNodeWithTag("textField").touchDown()
 
         waitUntil {
             findFirstDescendant { it.isLoupeView } != null
         }
+
+        touch.up()
     }
 
     @Test
@@ -160,6 +160,8 @@ class TextFieldMagnifierTest {
         waitUntil {
             findFirstDescendant { it.isLoupeView } == null
         }
+
+        touch.up()
     }
 
     private val textValue = "TEXT"

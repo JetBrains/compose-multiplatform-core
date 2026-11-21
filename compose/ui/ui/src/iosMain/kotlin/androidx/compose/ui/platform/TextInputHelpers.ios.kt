@@ -46,6 +46,7 @@ import platform.UIKit.UITextRange
 import platform.UIKit.UITextSelectionRect
 import platform.UIKit.UITextStorageDirectionForward
 import platform.UIKit.UITextWritingDirection
+import platform.darwin.NSUInteger
 
 internal interface TextEditingDelegate {
     val isInteractive: Boolean
@@ -129,7 +130,7 @@ internal interface TextEditingDelegate {
      * @param selectedRange A range within markedText that indicates the current selection.
      * This range is always relative to markedText.
      */
-    fun setMarkedText(markedText: String?, selectedRange: TextRange)
+    fun setMarkedText(markedText: String, selectedRange: TextRange)
 
     /**
      * The range of currently marked text in a document.
@@ -263,7 +264,7 @@ internal class DetachedTextEditingDelegate(
 
     override fun replaceRange(range: TextRange, text: String) = Unit
 
-    override fun setMarkedText(markedText: String?, selectedRange: TextRange) = Unit
+    override fun setMarkedText(markedText: String, selectedRange: TextRange) = Unit
 
     override fun markedTextRange(): TextRange? = null
 
@@ -407,6 +408,11 @@ private fun Char.isSelectableSpace(): Boolean = isWhitespace() && !isNewlineForS
 private fun Char.isVisibleForSelection(): Boolean = !isWhitespace()
 
 internal class TextInputPosition(val position: Int = 0) : UITextPosition() {
+    override fun isEqual(`object`: Any?): Boolean =
+        `object` is TextInputPosition && `object`.position == position
+
+    override fun hash(): NSUInteger = position.toULong()
+
     override fun description(): String {
         return "IntermediateTextPosition($position)"
     }
@@ -416,12 +422,6 @@ internal class TextInputPosition(val position: Int = 0) : UITextPosition() {
     }
 }
 
-internal fun TextInputRange(start: Int, end: Int) =
-    TextInputRange(
-        _start = TextInputPosition(start),
-        _end = TextInputPosition(end)
-    )
-
 internal class TextInputRange(
     val _start: TextInputPosition,
     val _end: TextInputPosition
@@ -430,10 +430,23 @@ internal class TextInputRange(
     override fun start(): UITextPosition = _start
     override fun end(): UITextPosition = _end
 
+    override fun isEqual(`object`: Any?): Boolean =
+        `object` is TextInputRange &&
+            `object`._start.position == _start.position &&
+            `object`._end.position == _end.position
+
+    override fun hash(): NSUInteger = (31 * _start.position + _end.position).toULong()
+
     override fun description(): String {
         return "IntermediateTextRange(start=$_start, end=$_end)"
     }
 }
+
+internal fun TextInputRange(start: Int, end: Int) =
+    TextInputRange(
+        _start = TextInputPosition(start),
+        _end = TextInputPosition(end)
+    )
 
 // Despite UITextRange being declared as non-null, iOS can still pass null to methods that take a UITextRange parameter.
 internal fun UITextRange.toTextRange(): TextRange? {

@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.PlatformPrefetchRequest
 import androidx.compose.ui.platform.PlatformPrefetchRequestScope
 import kotlin.test.Test
@@ -24,7 +23,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import platform.Foundation.NSTimeInterval
 
-@OptIn(InternalComposeUiApi::class)
 class PlatformPrefetchSchedulerTest {
     @Test
     fun testExecutesHighPriorityRequestsBeforeLowPriorityRequests() {

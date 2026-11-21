@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -26,7 +25,6 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 
-@OptIn(ExperimentalComposeUiApi::class)
 // A reproducer for https://youtrack.jetbrains.com/issue/CMP-10351
 fun embeddedScrollDemo(composeScroll: Boolean = true) {
     // Override the default fullscreen styles to allow page scrolling

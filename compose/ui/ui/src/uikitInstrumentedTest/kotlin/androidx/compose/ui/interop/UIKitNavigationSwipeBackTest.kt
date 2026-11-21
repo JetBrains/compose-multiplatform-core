@@ -44,25 +44,29 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.milliseconds
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
-internal abstract class UIKitNavigationSwipeBackTest(
-    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
-) {
+internal class UIKitNavigationSwipeBackTest {
+    /**
+     * A fast flick-like drag starting at the screen center is sometimes not recognized on iOS 26+.
+     */
+    private val CenterSwipeDuration = 150.milliseconds
+
     @Test
     fun testSwipeRightOnPagerDoesNotPopController() = runUIKitInstrumentedTest {
         val initialPage = 0
         val currentPage = mutableIntStateOf(initialPage)
 
         setNavigationControllerContent {
-            TestContent(currentPage = currentPage)
+            TestHorizontalPager(currentPage = currentPage)
         }
 
-        findNodeWithTag("pager").swipeRight().up()
+        findNodeWithTag("pager").swipeRight()
 
         waitForIdle()
 
@@ -77,10 +81,10 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val currentPage = mutableIntStateOf(initialPage)
 
         setNavigationControllerContent {
-            TestContent(currentPage = currentPage)
+            TestHorizontalPager(currentPage = currentPage)
         }
 
-        findNodeWithTag("pager").swipeLeft().up()
+        findNodeWithTag("pager").swipeLeft()
 
         waitForIdle()
 
@@ -94,10 +98,10 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val currentPage = mutableIntStateOf(initialPage)
 
         setNavigationControllerContent {
-            TestContent(currentPage = currentPage)
+            TestHorizontalPager(currentPage = currentPage)
         }
 
-        findNodeWithTag("outsideBox").swipeLeft().up()
+        findNodeWithTag("outsideBox").swipeLeft()
 
         assertEquals(initialPage, currentPage.value)
         assertEquals(2, navigationController.viewControllers.size)
@@ -106,10 +110,10 @@ internal abstract class UIKitNavigationSwipeBackTest(
     @Test
     fun testSwipeRightFromEdgePopsController() = runUIKitInstrumentedTest {
         val viewControllerHostingCompose = setNavigationControllerContent {
-            TestContent(currentPage = mutableIntStateOf(1))
+            TestHorizontalPager(currentPage = mutableIntStateOf(1))
         }
 
-        swipeFromLeftEdge().up()
+        swipeFromLeftEdge()
 
         waitForPopped(viewControllerHostingCompose)
     }
@@ -123,13 +127,14 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val currentPage = mutableIntStateOf(initialPage)
 
         setNavigationControllerContent {
-            TestContent(currentPage = currentPage)
+            TestHorizontalPager(currentPage = currentPage)
         }
 
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
             toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
-        ).up()
+            duration = CenterSwipeDuration,
+        )
 
         waitForIdle()
 
@@ -147,10 +152,10 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val currentPage = mutableIntStateOf(initialPage)
 
         val viewControllerHostingCompose = setNavigationControllerContent {
-            TestContent(currentPage = currentPage)
+            TestHorizontalPager(currentPage = currentPage)
         }
 
-        findNodeWithTag("outsideBox").swipeRight().up()
+        findNodeWithTag("outsideBox").swipeRight()
 
         waitForPopped(viewControllerHostingCompose)
     }
@@ -164,10 +169,10 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val currentPage = mutableIntStateOf(initialPage)
 
         val viewControllerHostingCompose = setNavigationControllerContent {
-            TestContent(currentPage = currentPage)
+            TestHorizontalPager(currentPage = currentPage)
         }
 
-        swipeFromLeftEdge().up()
+        swipeFromLeftEdge()
 
         waitForPopped(viewControllerHostingCompose)
     }
@@ -181,13 +186,10 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val currentPage = mutableIntStateOf(initialPage)
 
         val viewControllerHostingCompose = setNavigationControllerContent {
-            TestContent(currentPage = currentPage)
+            TestHorizontalPager(currentPage = currentPage)
         }
 
-        findNodeWithTag("outsideBox").swipe(
-            fromPosition = { center() },
-            toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
-        ).up()
+        findNodeWithTag("outsideBox").swipeRight()
 
         waitForPopped(viewControllerHostingCompose)
     }
@@ -235,7 +237,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
 }
 
 @Composable
-private fun TestContent(
+private fun TestHorizontalPager(
     currentPage: MutableIntState
 ) {
     val pagerColors = listOf(Color.Red, Color.Green, Color.Blue)
@@ -270,13 +272,3 @@ private fun TestContent(
         )
     }
 }
-
-@Suppress("unused")
-internal class UIKitNavigationSwipeBackInHostingViewTest : UIKitNavigationSwipeBackTest(
-    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
-)
-
-@Suppress("unused")
-internal class UIKitNavigationSwipeBackInHostingViewControllerTest : UIKitNavigationSwipeBackTest(
-   runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
-)

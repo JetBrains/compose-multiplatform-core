@@ -17,8 +17,6 @@
 package androidx.compose.material3
 
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.interaction.Interaction
@@ -26,25 +24,19 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.internal.DropdownMenuPositionProvider
-import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
@@ -55,7 +47,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -154,7 +145,6 @@ fun DropdownMenu(
  * @param properties [PopupProperties] for further customization of this popup's behavior
  * @param content the content of this dropdown menu, typically a [DropdownMenuItem]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 actual fun DropdownMenu(
     expanded: Boolean,
@@ -215,7 +205,6 @@ actual fun DropdownMenu(
 }
 
 @Suppress("ModifierParameter")
-@OptIn(ExperimentalMaterial3Api::class)
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
     replaceWith = ReplaceWith(
@@ -295,7 +284,7 @@ actual fun DropdownMenuItem(
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+// TODO https://youtrack.jetbrains.com/issue/CMP-11129 Migrate Material3 from deprecated Compose UI back handlers
 internal fun handleDropdownOnKeyEvent(
     keyEvent: KeyEvent,
     focusManager: FocusManager?,

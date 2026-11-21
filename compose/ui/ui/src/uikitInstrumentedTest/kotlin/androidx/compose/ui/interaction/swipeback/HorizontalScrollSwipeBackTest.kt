@@ -79,7 +79,7 @@ internal abstract class HorizontalScrollSwipeBackTest(
             )
         }
 
-        val backSwipe = swipeFromLeftEdge().hold()
+        val backSwipe = dragFromLeftEdge().hold()
         waitUntil("Back swipe over horizontal scroll content should start") {
             transitionState is InProgress
         }
@@ -117,7 +117,7 @@ internal abstract class HorizontalScrollSwipeBackTest(
             )
         }
 
-        val backSwipe = swipeFromRightEdge().hold()
+        val backSwipe = dragFromRightEdge().hold()
         waitUntil("Back swipe over horizontal scroll content should start") {
             transitionState is InProgress
         }

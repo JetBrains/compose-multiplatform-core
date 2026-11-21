@@ -198,7 +198,15 @@ internal fun PointerEventResult.merging(
     result5: PointerEventResult? = null,
     result6: PointerEventResult? = null,
     result7: PointerEventResult? = null,
+    result8: PointerEventResult? = null,
 ) = PointerEventResult(
-    value = this.value or result1.value or (result2?.value ?: 0) or (result3?.value ?: 0) or
-        (result4?.value ?: 0) or (result5?.value ?: 0) or (result6?.value ?: 0) or (result7?.value ?: 0)
+    value = this.value or
+        result1.value or
+        (result2?.value ?: 0) or
+        (result3?.value ?: 0) or
+        (result4?.value ?: 0) or
+        (result5?.value ?: 0) or
+        (result6?.value ?: 0) or
+        (result7?.value ?: 0) or
+        (result8?.value ?: 0)
 )

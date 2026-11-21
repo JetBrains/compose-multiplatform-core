@@ -32,12 +32,17 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathData
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalGraphicsResourceCache
+import androidx.compose.ui.platform.clearSkikoComposeImplementation
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -54,6 +59,20 @@ import kotlinx.coroutines.delay
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Test
+
+private val triangleImageVector = ImageVector.Builder(
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f
+).addPath(
+    pathData = PathData {
+        moveTo(12f, 2f)
+        lineTo(22f, 22f)
+        lineTo(2f, 22f)
+        close()
+    }
+).build()
 
 class ApplicationTest {
     @Test
@@ -74,6 +93,20 @@ class ApplicationTest {
 
         assertThat(isInit).isTrue()
         assertThat(isDisposed).isTrue()
+    }
+
+    @Test
+    fun `create vector painter in application scope before first window`() = runApplicationTest {
+        clearSkikoComposeImplementation()
+        var painter: Painter? = null
+
+        val appJob = launchTestApplication {
+            painter = rememberVectorPainter(triangleImageVector)
+        }
+
+        appJob.join()
+
+        assertThat(painter).isNotNull()
     }
 
     @Test

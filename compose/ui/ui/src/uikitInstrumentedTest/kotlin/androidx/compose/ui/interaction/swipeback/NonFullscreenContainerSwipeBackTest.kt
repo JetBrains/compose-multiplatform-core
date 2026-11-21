@@ -70,7 +70,7 @@ internal abstract class NonFullscreenContainerSwipeBackTest(
             }
         }
 
-        val swipeBack = swipeFromLeftEdge().hold()
+        val swipeBack = dragFromLeftEdge().hold()
 
         waitUntil("back swipe should be in progress in a non-fullscreen container") {
             transitionState is InProgress
@@ -116,7 +116,7 @@ internal abstract class NonFullscreenContainerSwipeBackTest(
             }
         }
 
-        val swipeBack = swipeFromRightEdge().hold()
+        val swipeBack = dragFromRightEdge().hold()
 
         waitUntil("back swipe should be in progress in a non-fullscreen container") {
             transitionState is InProgress

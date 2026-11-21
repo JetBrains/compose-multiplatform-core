@@ -169,7 +169,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                 isInBounds,
             )
         if (!changed) {
-            root.cleanUpHover()
             return false
         }
 
@@ -304,7 +303,6 @@ internal open class NodeParent {
             dispatched = it.dispatchFinalEventPass(internalPointerEvent) || dispatched
         }
         cleanUpHits(internalPointerEvent)
-        cleanUpHover()
         return dispatched
     }
 
@@ -362,12 +360,6 @@ internal open class NodeParent {
             }
         }
     }
-
-    open fun cleanUpHover() {
-        children.forEach {
-            it.cleanUpHover()
-        }
-    }
 }
 
 /**
@@ -382,9 +374,6 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     // a more generic collection such as HashMap or MutableObjectList.
     val pointerIds = PointerIdArray()
 
-    private var isIn = true
-    private var hasEntered = false
-
     /**
      * Cached properties that will be set before the main event pass, and reset after the final
      * pass. Since we know that these won't change within the entire pass, we don't need to
@@ -397,6 +386,9 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private var coordinates: LayoutCoordinates? = null
     private var pointerEvent: PointerEvent? = null
     private var syntheticHoverEvent: PointerEvent? = null
+    private var wasIn = false
+    private var isIn = true
+    private var hasExited = true
 
     override fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
@@ -628,7 +620,11 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                     event.type == PointerEventType.PanStart ||
                     event.type == PointerEventType.PanMove ||
                     event.type == PointerEventType.PanEnd
+<<<<<<< HEAD
             if (isPan && isIn != hasEntered) {
+=======
+            if (isIn != wasIn && ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan) {
+>>>>>>> origin/jb-main
                 // Create a synthetic Enter or Exit event to dispatch to hover listeners
                 // without altering the pan gesture event. Construct new PointerInputChange
                 // instances instead of calling copy() so they do not share consumedDelegate with
@@ -659,20 +655,23 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                         .also {
                             it.type = if (isIn) PointerEventType.Enter else PointerEventType.Exit
                         }
-            } else if (event.type == PointerEventType.Move ||
-                event.type == PointerEventType.Enter ||
-                event.type == PointerEventType.Exit
+            } else if (
+                isIn != wasIn &&
+                    (event.type == PointerEventType.Move ||
+                        event.type == PointerEventType.Enter ||
+                        event.type == PointerEventType.Exit)
             ) {
-                event.type = when {
-                    !hasEntered && isIn -> PointerEventType.Enter
-                    hasEntered && !isIn -> PointerEventType.Exit
-                    else -> PointerEventType.Move
-                }
+                event.type =
+                    if (isIn) {
+                        PointerEventType.Enter
+                    } else {
+                        PointerEventType.Exit
+                    }
+            } else if (event.type == PointerEventType.Enter && wasIn && !hasExited) {
+                event.type = PointerEventType.Move // We already knew that it was in.
+            } else if (event.type == PointerEventType.Exit && isIn && activeHoverChange.pressed) {
+                event.type = PointerEventType.Move // We are still in.
             }
-
-            val hoverType = syntheticHoverEvent?.type ?: event.type
-            if (hoverType == PointerEventType.Enter) hasEntered = true
-            if (hoverType == PointerEventType.Exit) hasEntered = false
         }
 
         val changed =
@@ -757,6 +756,8 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
 
         val event = pointerEvent ?: return
 
+        wasIn = isIn
+
         event.changes.fastForEach { change ->
             // There are two scenarios where we need to remove the pointerIds:
             //   1. Pointer is released AND event stream doesn't have an active hover.
@@ -780,11 +781,9 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 pointerIds.remove(change.id)
             }
         }
-    }
 
-    override fun cleanUpHover() {
-        super.cleanUpHover()
         isIn = false
+        hasExited = event.type == PointerEventType.Exit
     }
 
     override fun toString(): String {

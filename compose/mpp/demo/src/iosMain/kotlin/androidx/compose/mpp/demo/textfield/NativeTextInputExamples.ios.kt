@@ -68,14 +68,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.cinterop.BetaInteropApi
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.UIKit.UITextContentTypeUsername
 
 @OptIn(ExperimentalComposeUiApi::class)
-private val enabledNativeTextInputOptions = PlatformImeOptions {
-    usingNativeTextInput(true)
-}
+private fun nativeTextInputKeyboardOptions(enable: Boolean) = KeyboardOptions(
+    platformImeOptions = PlatformImeOptions {
+        usingNativeTextInput(enable)
+    }
+)
 
 val NativeTextInputTextFields = Screen.Selection(
     title = "Native Text Input Examples",
@@ -110,7 +109,7 @@ private fun NativeTextInputFullscreenBtf1() {
         TextField(
             textState.value, { textState.value = it },
             Modifier.fillMaxSize().padding(vertical = 40.dp),
-            keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions)
+            keyboardOptions = nativeTextInputKeyboardOptions(true)
         )
     }
 }
@@ -128,7 +127,7 @@ private fun NativeTextInputFullscreenBtf2() {
         TextField(
             state,
             Modifier.fillMaxSize().padding(vertical = 40.dp).background(Color.LightGray),
-            keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions)
+            keyboardOptions = nativeTextInputKeyboardOptions(true)
         )
     }
 }
@@ -146,6 +145,7 @@ private fun Btf1NativeTextInputComparison() {
             value = text1,
             onValueChange = { text1 = it },
             modifier = modifier,
+            keyboardOptions = nativeTextInputKeyboardOptions(false),
             decorationBox = { inner ->
                 Box {
                     if (text1.isEmpty()) Text("BTF1 without Native Text Input", color = Color.Gray)
@@ -160,7 +160,7 @@ private fun Btf1NativeTextInputComparison() {
             value = text2,
             onValueChange = { text2 = it },
             modifier = modifier,
-            keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+            keyboardOptions = nativeTextInputKeyboardOptions(true),
             decorationBox = { inner ->
                 Box {
                     if (text2.isEmpty()) Text("BTF1 with Native Text Input", color = Color.Gray)
@@ -175,6 +175,7 @@ private fun Btf1NativeTextInputComparison() {
             value = text3,
             onValueChange = { text3 = it },
             modifier = modifier,
+            keyboardOptions = nativeTextInputKeyboardOptions(false),
             decorationBox = { inner ->
                 Box {
                     if (text3.isEmpty()) Text("BTF1 with two lines without Native Text Input", color = Color.Gray)
@@ -188,7 +189,7 @@ private fun Btf1NativeTextInputComparison() {
         BasicTextField(
             state = state4,
             modifier = modifier,
-            keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+            keyboardOptions = nativeTextInputKeyboardOptions(true),
             //TODO: v.mazunin: uncomment after compile compose with Kotlin later than 2.3.20-RC1
 //            decorator = { inner ->
 //                Box {
@@ -212,6 +213,7 @@ private fun Btf2NativeTextInputComparison() {
         BasicTextField(
             state = state1,
             modifier = modifier,
+            keyboardOptions = nativeTextInputKeyboardOptions(false),
             //TODO: v.mazunin: uncomment after compile compose with Kotlin later than 2.3.20-RC1
 //            decorator = { inner ->
 //                Box {
@@ -226,7 +228,7 @@ private fun Btf2NativeTextInputComparison() {
         BasicTextField(
             state = state2,
             modifier = modifier,
-            keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+            keyboardOptions = nativeTextInputKeyboardOptions(true),
             //TODO: v.mazunin: uncomment after compile compose with Kotlin later than 2.3.20-RC1
 //            decorator = { inner ->
 //                Box {
@@ -241,6 +243,7 @@ private fun Btf2NativeTextInputComparison() {
         BasicTextField(
             state = state3,
             modifier = modifier,
+            keyboardOptions = nativeTextInputKeyboardOptions(false),
             //TODO: v.mazunin: uncomment after compile compose with Kotlin later than 2.3.20-RC1
 //            decorator = { inner ->
 //                Box {
@@ -255,7 +258,7 @@ private fun Btf2NativeTextInputComparison() {
         BasicTextField(
             state = state4,
             modifier = modifier,
-            keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+            keyboardOptions = nativeTextInputKeyboardOptions(true),
             //TODO: v.mazunin: uncomment after compile compose with Kotlin later than 2.3.20-RC1
 //            decorator = { inner ->
 //                Box {
@@ -276,7 +279,7 @@ private fun Brush() {
                 value = text,
                 onValueChange = { text = it },
                 Modifier.fillMaxWidth().height(56.dp),
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
                 textStyle = TextStyle(
                     brush = Brush.linearGradient(listOf(Color.Magenta, Color.Cyan)),
                     fontSize = 18.sp
@@ -288,7 +291,7 @@ private fun Brush() {
             BasicTextField(
                 state = text2,
                 Modifier.fillMaxWidth().height(56.dp),
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
                 textStyle = TextStyle(
                     brush = Brush.linearGradient(listOf(Color.Magenta, Color.Cyan)),
                     fontSize = 18.sp
@@ -312,7 +315,7 @@ private fun InteractionSourceFocusBorder() {
             modifier = Modifier
                 .border(2.dp, if (focused1) Color.Cyan else Color.Gray, RoundedCornerShape(8.dp))
                 .padding(8.dp),
-            keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+            keyboardOptions = nativeTextInputKeyboardOptions(true),
 
         )
         Box(modifier = Modifier.height(16.dp))
@@ -325,7 +328,7 @@ private fun InteractionSourceFocusBorder() {
             modifier = Modifier
                 .border(2.dp, if (focused) Color.Cyan else Color.Gray, RoundedCornerShape(8.dp))
                 .padding(8.dp),
-            keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+            keyboardOptions = nativeTextInputKeyboardOptions(true),
         )
     }
 }
@@ -342,7 +345,7 @@ private fun TextFieldDecoratorDecorationBox() {
                     .height(56.dp)
                     .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
                     .padding(4.dp),
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
                 decorationBox = { inner ->
                     Row(
                         Modifier
@@ -369,7 +372,7 @@ private fun TextFieldDecoratorDecorationBox() {
                     .height(56.dp)
                     .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
                     .padding(4.dp),
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
                 //TODO: v.mazunin: uncomment after compile compose with Kotlin later than 2.3.20-RC1
 //                decorator = { inner ->
 //                    Row(
@@ -405,7 +408,7 @@ private fun ScrollState() {
                     .fillMaxWidth()
                     .height(120.dp)
                     .verticalScroll(scroll1),
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
                 textStyle = TextStyle(color = Color.Black, fontSize = 14.sp)
             )
 
@@ -419,7 +422,7 @@ private fun ScrollState() {
                     .fillMaxWidth()
                     .height(120.dp)
                     .verticalScroll(scroll2),
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
                 textStyle = TextStyle(color = Color.Black, fontSize = 14.sp)
             )
         }
@@ -442,7 +445,7 @@ private fun GraphicsLayer() {
                     .fillMaxWidth()
                     .height(56.dp)
                     .graphicsLayer { scaleX = pulse1; scaleY = pulse1 },
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
                 textStyle = TextStyle(color = Color.Black, fontSize = 18.sp)
             )
 
@@ -458,7 +461,7 @@ private fun GraphicsLayer() {
                     .fillMaxWidth()
                     .height(56.dp)
                     .graphicsLayer { scaleX = pulse2; scaleY = pulse2 },
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
                 textStyle = TextStyle(color = Color.Black, fontSize = 18.sp)
             )
         }
@@ -481,7 +484,7 @@ private fun AppearanceModifiers() {
                     .background(Color(0xFFFFE0B2), RoundedCornerShape(10.dp))
                     .border(1.dp, Color(0xFF2A2A2A), RoundedCornerShape(10.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
             )
 
             Box(Modifier.height(16.dp))
@@ -497,7 +500,7 @@ private fun AppearanceModifiers() {
                     .background(Color(0xFFFFE0B2), RoundedCornerShape(10.dp))
                     .border(1.dp, Color(0xFF2A2A2A), RoundedCornerShape(10.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                keyboardOptions = KeyboardOptions(platformImeOptions = enabledNativeTextInputOptions),
+                keyboardOptions = nativeTextInputKeyboardOptions(true),
             )
         }
     }
@@ -511,10 +514,9 @@ private fun SecureInput() {
             BasicTextField(
                 value = text,
                 onValueChange = { text = it },
-                keyboardOptions = KeyboardOptions(
+                keyboardOptions = nativeTextInputKeyboardOptions(true).copy(
                     keyboardType = KeyboardType.Password,
                     autoCorrectEnabled = false,
-                    platformImeOptions = enabledNativeTextInputOptions
                 ),
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -526,10 +528,9 @@ private fun SecureInput() {
             val state2 = rememberTextFieldState("Native Text Input SecureTextField with a long text")
             SecureTextField(
                 state = state2,
-                keyboardOptions = KeyboardOptions(
+                keyboardOptions = nativeTextInputKeyboardOptions(true).copy(
                     keyboardType = KeyboardType.Password,
                     autoCorrectEnabled = false,
-                    platformImeOptions = enabledNativeTextInputOptions
                 ),
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 textStyle = TextStyle(color = Color.Black, fontSize = 16.sp)
@@ -538,7 +539,6 @@ private fun SecureInput() {
     }
 }
 
-@OptIn(BetaInteropApi::class, ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
 @Composable
 private fun NativeTextInputHotSwitchExample() {
     var usingNative by remember { mutableStateOf(false) }
@@ -557,11 +557,7 @@ private fun NativeTextInputHotSwitchExample() {
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Text") },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                platformImeOptions = PlatformImeOptions {
-                    usingNativeTextInput(usingNative)
-                }
-            )
+            keyboardOptions = nativeTextInputKeyboardOptions(usingNative)
         )
 
         Spacer(Modifier.height(16.dp))
@@ -573,11 +569,7 @@ private fun NativeTextInputHotSwitchExample() {
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Text") },
             lineLimits = TextFieldLineLimits.SingleLine,
-            keyboardOptions = KeyboardOptions(
-                platformImeOptions = PlatformImeOptions {
-                    usingNativeTextInput(usingNative)
-                }
-            )
+            keyboardOptions = nativeTextInputKeyboardOptions(usingNative)
         )
 
         Spacer(Modifier.height(16.dp))

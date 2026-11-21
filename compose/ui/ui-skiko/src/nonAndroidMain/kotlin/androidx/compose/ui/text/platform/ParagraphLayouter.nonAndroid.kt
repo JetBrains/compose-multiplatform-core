@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.platform
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isUnspecified
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
@@ -85,8 +87,10 @@ internal class ParagraphLayouter(
         fontResolutions = fontResolutions,
     )
     private var paragraphCache: SkParagraph? = null
-    private var updateForeground = false
     private var width: Float = Float.NaN
+    @VisibleForTesting
+    var updateForeground = false
+        private set
 
     private val unresolvedSymbolsRegistry = getUnresolvedSymbolsRegistry()
     private var unresolvedCodepoints = IntArray(0)
@@ -164,9 +168,9 @@ internal class ParagraphLayouter(
         val actualSize = builder.brushSize
         if (builder.textStyle.brush != brush ||
             actualSize.isUnspecified ||
-            !actualSize.width.sameValueAs(brushSize.width) ||
-            !actualSize.height.sameValueAs(brushSize.height) ||
-            !builder.textStyle.alpha.sameValueAs(alpha)
+            !actualSize.width.sameSizeAs(brushSize.width) ||
+            !actualSize.height.sameSizeAs(brushSize.height) ||
+            !builder.textStyle.alpha.sameAlphaAs(alpha)
         ) {
             builder.textStyle = builder.textStyle.copy(
                 brush = brush,
@@ -213,7 +217,7 @@ internal class ParagraphLayouter(
     }
 
     fun setDrawStyle(drawStyle: DrawStyle?) {
-        if (builder.drawStyle != drawStyle) {
+        if (!builder.drawStyle.sameValueAs(drawStyle)) {
             builder.drawStyle = drawStyle
             invalidateParagraph(onlyForeground = true)
         }
@@ -239,7 +243,7 @@ internal class ParagraphLayouter(
                 paragraph.markDirty()
                 layoutRequired = true
             }
-            if (!this.width.sameValueAs(width)) {
+            if (!this.width.sameSizeAs(width)) {
                 this.width = width
                 layoutRequired = true
             }
@@ -261,8 +265,16 @@ internal class ParagraphLayouter(
 private fun Shadow?.sameValueAs(other: Shadow?) =
     (this ?: Shadow.None) == (other ?: Shadow.None)
 
+// null is painted the same as Fill, see ParagraphTextPaint.setDrawStyle
+private fun DrawStyle?.sameValueAs(other: DrawStyle?) =
+    (this ?: Fill) == (other ?: Fill)
+
 private fun TextDecoration?.sameValueAs(other: TextDecoration?) =
     (this ?: TextDecoration.None) == (other ?: TextDecoration.None)
 
-private fun Float.sameValueAs(other: Float) =
+private fun Float.sameSizeAs(other: Float) =
     abs(this - other) < 0.00001f
+
+// NaN is used as "unspecified" in several places, for example in TextStyle constructor.
+private fun Float.sameAlphaAs(other: Float) =
+    (isNaN() && other.isNaN()) || abs(this - other) < 0.00001f

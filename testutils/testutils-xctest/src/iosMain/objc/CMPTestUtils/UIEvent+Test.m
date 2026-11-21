@@ -19,6 +19,41 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 
+#pragma mark - Active gesture sessions holder
+
+@interface CMPActiveGestureSessionsHolder : NSObject
+
+@property (strong, nonatomic) NSMutableArray<UIEvent *> *scrollSessions;
+@property (strong, nonatomic) NSMutableArray<UIEvent *> *pinchSessions;
+@property (strong, nonatomic) NSMutableArray<UIEvent *> *hoverSessions;
+
++ (instancetype)shared;
+
+@end
+
+@implementation CMPActiveGestureSessionsHolder
+
++ (instancetype)shared {
+    static CMPActiveGestureSessionsHolder *sharedInstance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedInstance = [[self alloc] init];
+    });
+    return sharedInstance;
+}
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _scrollSessions = [NSMutableArray new];
+        _pinchSessions = [NSMutableArray new];
+        _hoverSessions = [NSMutableArray new];
+    }
+    return self;
+}
+
+@end
+
 // Private enums; values confirmed via swizzle traces on iPadOS 17+.
 // Scroll and transform use different numbering — mixing them silently drops
 // synthetic events at the gesture environment.
@@ -575,6 +610,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                              delta:CGVectorMake(-delta.x, -delta.y)
                              phase:CMPScrollPhaseBegan
                           inWindow:window];
+    [CMPActiveGestureSessionsHolder.shared.scrollSessions addObject:scrollEvent];
     return (UIEvent *)scrollEvent;
 }
 
@@ -592,6 +628,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                              delta:CGVectorMake(0, 0)
                              phase:CMPScrollPhaseEnded
                           inWindow:window];
+    [CMPActiveGestureSessionsHolder.shared.scrollSessions removeObject:self];
 }
 
 @end
@@ -612,6 +649,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                                 scale:scale
                                 phase:CMPTransformPhaseBegan
                              inWindow:window];
+    [CMPActiveGestureSessionsHolder.shared.pinchSessions addObject:transformEvent];
     return (UIEvent *)transformEvent;
 }
 
@@ -629,6 +667,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                                 scale:CMPSynGetScale(self)
                                 phase:CMPTransformPhaseEnded
                              inWindow:window];
+    [CMPActiveGestureSessionsHolder.shared.pinchSessions removeObject:self];
 }
 
 @end
@@ -647,6 +686,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                          atAnchor:point
                             phase:CMPHoverPhaseBegan
                          inWindow:window];
+    [CMPActiveGestureSessionsHolder.shared.hoverSessions addObject:hoverEvent];
     return (UIEvent *)hoverEvent;
 }
 
@@ -662,6 +702,30 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                          atAnchor:CMPSynGetLocation(self)
                             phase:CMPHoverPhaseEnded
                          inWindow:window];
+    [CMPActiveGestureSessionsHolder.shared.hoverSessions removeObject:self];
+}
+
+@end
+
+@implementation UIEvent (CMPActiveGestures)
+
++ (NSArray<UIEvent *> *)activeScrollEvents {
+    return [CMPActiveGestureSessionsHolder.shared.scrollSessions copy];
+}
+
++ (NSArray<UIEvent *> *)activePinchEvents {
+    return [CMPActiveGestureSessionsHolder.shared.pinchSessions copy];
+}
+
++ (NSArray<UIEvent *> *)activeHoverEvents {
+    return [CMPActiveGestureSessionsHolder.shared.hoverSessions copy];
+}
+
++ (void)endAllGestures {
+    CMPActiveGestureSessionsHolder *holder = CMPActiveGestureSessionsHolder.shared;
+    [holder.scrollSessions removeAllObjects];
+    [holder.pinchSessions removeAllObjects];
+    [holder.hoverSessions removeAllObjects];
 }
 
 @end

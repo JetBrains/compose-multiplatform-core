@@ -20,11 +20,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.window.ComposeViewport
 import androidx.compose.ui.window.ComposeViewportConfiguration
 import androidx.compose.ui.window.ComposeWindow
 import androidx.compose.ui.window.LocalComposeWindow
+import androidx.compose.ui.window.WebAccessibilityActivation
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsReference
 import kotlin.js.get
@@ -141,8 +145,8 @@ internal interface OnCanvasTests {
     private fun getPositioningContainer() = getContainer().children[0] ?: error("failed to get positioning container")
     fun getShadowRoot() = (getPositioningContainer().children[0]?.shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
     private fun getAppRoot() = getShadowRoot().children[1] as? HTMLElement ?: error("failed to get app root")
-    fun getCanvas() = getAppRoot().children[0] as? HTMLCanvasElement ?: error("failed to get canvas")
-    fun getA11YContainer() = getAppRoot().children[1] as? HTMLDivElement
+    fun getCanvas() = getAppRoot().querySelector("canvas") as? HTMLCanvasElement ?: error("failed to get canvas")
+    fun getA11YContainer() = getShadowRoot().getElementById("cmp_a11y_root") as? HTMLDivElement
 
     suspend fun createComposeWindow(
         configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -170,6 +174,27 @@ internal interface OnCanvasTests {
             } catch (e: TimeoutCancellationException) {
                 throw AssertionError("Timed out ($timeoutDuration) waiting for AnimationFrame", e)
             }
+        }
+    }
+
+    suspend fun awaitCondition(
+        message: String,
+        timeout: Duration = 5.seconds,
+        condition: () -> Boolean
+    ) {
+        val startTime = currentTimeMillis()
+        suspendCancellableCoroutine { continuation ->
+            fun check() {
+                when {
+                    condition() -> continuation.resumeWith(Result.success(Unit))
+                    currentTimeMillis() - startTime > timeout.inWholeMilliseconds ->
+                        continuation.resumeWith(
+                            Result.failure(AssertionError("Timed out waiting for: $message"))
+                        )
+                    else -> window.requestAnimationFrame { check() }
+                }
+            }
+            check()
         }
     }
 
@@ -229,6 +254,18 @@ internal interface OnCanvasTests {
             }
         }
     }
+
+    /** Tags a test node and keeps its children grouped in the accessibility DOM. */
+    fun Modifier.testTagWithTraversalGroup(tag: String): Modifier =
+        semantics { isTraversalGroup = true }.testTag(tag)
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+internal suspend fun OnCanvasTests.createEagerAccessibilityWindow(content: @Composable () -> Unit) {
+    createComposeWindow(
+        configure = { accessibilityActivation = WebAccessibilityActivation.Eager },
+        content = content,
+    )
 }
 
 internal fun <T> Channel<T>.sendFromScope(value: T, scope: CoroutineScope = MainScope()) {

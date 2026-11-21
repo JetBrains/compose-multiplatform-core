@@ -20,9 +20,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalMediaQueryApi
@@ -33,9 +34,11 @@ import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.toComposeEvent
+import androidx.compose.ui.input.key.toKey
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
@@ -43,6 +46,7 @@ import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.EmptyPlatformWindowInsets
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformDragAndDropManager
+import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.platform.WebWindowInsetsManager
 import androidx.compose.ui.platform.WindowInfoImpl
@@ -66,7 +70,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.browser.document
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import org.jetbrains.skia.DirectContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
@@ -86,7 +89,7 @@ internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> =
         null
     }
 
-@OptIn(InternalComposeApi::class, ExperimentalMediaQueryApi::class)
+@OptIn(ExperimentalMediaQueryApi::class)
 internal class ComposeWindow(
     internal val htmlCanvas: HTMLCanvasElement,
     private val rootNode: Node,
@@ -114,11 +117,12 @@ internal class ComposeWindow(
 
     @VisibleForTesting
     internal val webSemanticsListener: ComposeWebSemanticsListener?
-        get() = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
+        get() = platformContext.webSemanticsListener
 
     private val navigationEventInput = BackNavigationEventInput()
 
     private val canvasEvents = EventTargetListener(htmlCanvas)
+    private val viewportEvents = EventTargetListener(viewportContainer)
 
     private var insetsManager: WebWindowInsetsManager? = null
 
@@ -143,6 +147,10 @@ internal class ComposeWindow(
     //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
     private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
 
+    private val isA11YActivated = mutableStateOf(
+        configuration.accessibilityActivation == WebAccessibilityActivation.Eager
+    )
+
     private val platformContext: WebWindowPlatformContext = object : WebWindowPlatformContext(
         canvas = htmlCanvas,
         layerRoot = layerRoot,
@@ -163,6 +171,13 @@ internal class ComposeWindow(
             WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, { density }) {
             override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                 get() = scene.rootDragAndDropNode
+        }
+
+        override val screenReader: PlatformScreenReader = object : PlatformScreenReader {
+            // On Web we can't detect if a screen reader is active. Here we assume a user could be
+            // using the screen reader when isA11YActivated is true.
+            override val isActive: Boolean
+                get() = isA11YActivated.value
         }
     }
 
@@ -271,6 +286,12 @@ internal class ComposeWindow(
     private fun initEvents(canvas: HTMLCanvasElement) {
         pointerInputHandler.initEvents(canvasEvents, state.globalEvents)
 
+        viewportEvents.addDisposableCaptureEvent("keydown") { event ->
+            if ((event as KeyboardEvent).toKey() != Key.Unknown) {
+                platformContext.inputModeManager.requestInputMode(InputMode.Keyboard)
+            }
+        }
+
         canvas.addEventListener("contextmenu", { event ->
             event.preventDefault()
         })
@@ -324,6 +345,15 @@ internal class ComposeWindow(
             .navigationEventDispatcher.addInput(navigationEventInput)
     }
 
+    internal fun requestA11YActivation() {
+        val webSemanticsListener = webSemanticsListener ?: error("WebSemanticsListener is not set")
+        if (isDisposed || isA11YActivated.value) {
+            return
+        }
+        isA11YActivated.value = true // processed in InitA11YTreeSync - the tree
+        webSemanticsListener.onUserActivationRequested()
+    }
+
     private fun setSceneContent(content: @Composable () -> Unit) {
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
@@ -359,20 +389,25 @@ internal class ComposeWindow(
                         onDispose(stopObservingSize)
                     }
 
-                    LaunchedEffect(Unit) {
-                        coroutineScope {
-                            // The initial composition would create a lot of noisy invalidations,
-                            // so it makes sense to start the listener here - after the initial composition.
-                            // The composition's coroutine scope ties the listener's lifetime to the composition.
-                            webSemanticsListener?.start(this)
-                        }
-                    }
-
-                    DisposableEffect(Unit) {
-                        onDispose { webSemanticsListener?.stop() }
-                    }
+                    // The initial composition would create a lot of noisy invalidations,
+                    // so it makes sense to start the listener here - after the initial composition.
+                    InitA11YTreeSync()
                 }
             )
+        }
+    }
+
+    @Composable
+    private fun InitA11YTreeSync() {
+        // Extracted in a separate Composable function to define a separate recomposable scope
+        if (isA11YActivated.value) {
+            val webSemanticsListener = webSemanticsListener ?: error("WebSemanticsListener is not set")
+            val coroutineScope = rememberCoroutineScope()
+
+            DisposableEffect(Unit) {
+                webSemanticsListener.start(coroutineScope)
+                onDispose { webSemanticsListener.stop() }
+            }
         }
     }
 
@@ -466,6 +501,7 @@ internal class ComposeWindow(
         // modern browsers supposed to garbage collect all events on the element disposed
         // but actually we never can be sure dom element was collected in first place
         canvasEvents.dispose()
+        viewportEvents.dispose()
 
         isDisposed = true
     }

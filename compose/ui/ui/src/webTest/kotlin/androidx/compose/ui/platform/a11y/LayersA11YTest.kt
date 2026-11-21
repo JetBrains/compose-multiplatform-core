@@ -20,8 +20,8 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -75,12 +75,11 @@ class LayersA11YTest : OnCanvasTests {
      * Dialogs animate by default ([androidx.compose.ui.ComposeUiFlags.isDialogAnimationEnabled]),
      * which keeps invalidating layout and makes the a11y tree settle at an unpredictable time.
      */
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun noAnimation() = DialogProperties(animateTransition = false)
 
     @Test
     fun dialogAddsAdditionalOwnerRootInHtml() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             Dialog(onDismissRequest = {}, properties = noAnimation()) {
                 Text("Dialog")
@@ -101,7 +100,7 @@ class LayersA11YTest : OnCanvasTests {
 
     @Test
     fun popupAddsAdditionalOwnerRootInHtml() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             Popup {
                 Text("Popup")
@@ -122,7 +121,7 @@ class LayersA11YTest : OnCanvasTests {
 
     @Test
     fun nonFocusablePopupKeepsContentBelowReadable() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             Popup(properties = PopupProperties(focusable = false)) {
                 Text("Popup")
@@ -144,7 +143,7 @@ class LayersA11YTest : OnCanvasTests {
 
     @Test
     fun dialogMakesContentBelowInert() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             Dialog(onDismissRequest = {}, properties = noAnimation()) {
                 Text("Dialog")
@@ -167,7 +166,7 @@ class LayersA11YTest : OnCanvasTests {
     fun dismissingDialogRestoresContentBelow() = runApplicationTest {
         var showDialog by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             if (showDialog) {
                 Dialog(onDismissRequest = {}, properties = noAnimation()) {
@@ -196,7 +195,7 @@ class LayersA11YTest : OnCanvasTests {
         // dropped the main tree, and closing it left the popup's stale nodes behind forever.
         var showPopup by mutableStateOf(false)
 
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             if (showPopup) {
                 Popup(properties = PopupProperties()) {
@@ -229,7 +228,7 @@ class LayersA11YTest : OnCanvasTests {
 
     @Test
     fun dialogOverPopupMakesBothLayersBelowInert() = runApplicationTest {
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             Popup(properties = PopupProperties()) {
                 Text("Popup")
@@ -249,7 +248,7 @@ class LayersA11YTest : OnCanvasTests {
     fun onlyLayersBelowTheTopmostDialogAreInert() = runApplicationTest {
         // Two stacked dialogs: the intermediate one is modal but must still be inert, because a
         // modal layer above it wins.
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             Dialog(onDismissRequest = {}, properties = noAnimation()) {
                 Text("Dialog1")
@@ -270,7 +269,7 @@ class LayersA11YTest : OnCanvasTests {
         // Pins a known limitation: `ComposeSceneLayer.focusable` is not carried by the semantics
         // tree, so a focusable Popup is indistinguishable from a non-focusable one here and is
         // treated as non-modal. Update this test when modality is plumbed through properly.
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Text("Root")
             Popup(properties = PopupProperties(focusable = true)) {
                 Text("Popup")

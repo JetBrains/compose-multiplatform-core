@@ -74,7 +74,7 @@ internal abstract class PopupSwipeBackTest(
             )
         }
 
-        val backSwipe = swipeFromLeftEdge().hold()
+        val backSwipe = dragFromLeftEdge().hold()
         waitForIdle()
 
         assertFalse(
@@ -121,7 +121,7 @@ internal abstract class PopupSwipeBackTest(
             )
         }
 
-        val backSwipe = swipeFromRightEdge().hold()
+        val backSwipe = dragFromRightEdge().hold()
         waitForIdle()
 
         assertFalse(

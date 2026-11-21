@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation.text.input.internal
 
 import androidx.compose.runtime.getValue
@@ -23,6 +25,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.platform.TextEditorOffsetMapping
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.CommitTextCommand
@@ -48,6 +51,7 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
 
         private var textFieldValue by mutableStateOf(TextFieldValue())
         private var textLayoutResult by mutableStateOf<TextLayoutResult?>(null)
+        private var offsetMapping by mutableStateOf(OffsetMapping.Identity)
         private var focusedRectInRoot by mutableStateOf(Rect.Zero)
         private var textFieldRectInRoot by mutableStateOf(Rect.Zero)
         private var textClippingRectInRoot by mutableStateOf(Rect.Zero)
@@ -94,6 +98,7 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
         ) {
             this.textFieldValue = textFieldValue
             this.textLayoutResult = textLayoutResult
+            this.offsetMapping = offsetMapping
 
             val matrix = Matrix().also { textFieldToRootTransform(it) }
             textFieldRectInRoot = matrix.map(decorationBoxBounds)
@@ -104,6 +109,26 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
         }
 
         override fun startStylusHandwriting() {}
+
+        private val transformedOffsetMapping = object : TextEditorOffsetMapping {
+            override fun mapToTransformed(range: TextRange): TextRange = if (range.collapsed) {
+                offsetMapping.originalToTransformed(range.start).let(::TextRange)
+            } else {
+                TextRange(
+                    start = offsetMapping.originalToTransformed(range.start),
+                    end = offsetMapping.originalToTransformed(range.end)
+                )
+            }
+
+            override fun mapFromTransformed(range: TextRange): TextRange = if (range.collapsed) {
+                offsetMapping.transformedToOriginal(range.start).let(::TextRange)
+            } else {
+                TextRange(
+                    start = offsetMapping.transformedToOriginal(range.start),
+                    end = offsetMapping.transformedToOriginal(range.end)
+                )
+            }
+        }
 
         private fun makeRequest(
             imeOptions: ImeOptions,
@@ -136,6 +161,7 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
                 onEditCommand = onEditCommand,
                 onImeAction = onImeActionPerformed,
                 textLayoutResult = { textLayoutResult },
+                offsetMapping = transformedOffsetMapping,
                 focusedRectInRoot = { focusedRectInRoot },
                 textFieldRectInRoot = { textFieldRectInRoot },
                 textClippingRectInRoot = { textClippingRectInRoot },

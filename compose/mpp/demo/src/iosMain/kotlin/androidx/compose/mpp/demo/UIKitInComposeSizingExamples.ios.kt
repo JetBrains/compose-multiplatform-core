@@ -17,7 +17,6 @@
 @file:OptIn(
     androidx.compose.ui.ExperimentalComposeUiApi::class,
     kotlinx.cinterop.BetaInteropApi::class,
-    kotlinx.cinterop.ExperimentalForeignApi::class,
 )
 
 package androidx.compose.mpp.demo

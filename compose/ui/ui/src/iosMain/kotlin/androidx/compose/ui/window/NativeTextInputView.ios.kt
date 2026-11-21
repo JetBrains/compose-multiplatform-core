@@ -43,7 +43,6 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
-import platform.CoreGraphics.CGPointEqualToPoint
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectContainsPoint
 import platform.CoreGraphics.CGRectEqualToRect
@@ -52,7 +51,6 @@ import platform.CoreGraphics.CGRectGetWidth
 import platform.CoreGraphics.CGRectInset
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectZero
-import platform.CoreGraphics.CGSizeEqualToSize
 import platform.Foundation.NSComparisonResult
 import platform.Foundation.NSDictionary
 import platform.Foundation.NSOrderedAscending
@@ -65,7 +63,7 @@ import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionNatural
 import platform.UIKit.UIAction
 import platform.UIKit.UIColor
-import platform.UIKit.UIEdgeInsetsEqualToEdgeInsets
+import platform.UIKit.UIEditMenuInteraction
 import platform.UIKit.UIEdgeInsetsMake
 import platform.UIKit.UIEvent
 import platform.UIKit.UIGestureRecognizer
@@ -83,6 +81,7 @@ import platform.UIKit.UITextInputDelegateProtocol
 import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UITextInputTokenizerProtocol
 import platform.UIKit.UITextInteraction
+import platform.UIKit.UITextInteractionDelegateProtocol
 import platform.UIKit.UITextInteractionMode
 import platform.UIKit.UITextLayoutDirection
 import platform.UIKit.UITextLayoutDirectionDown
@@ -98,12 +97,19 @@ import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
 import platform.UIKit.addInteraction
+import platform.UIKit.removeInteraction
+import platform.UIKit.interactions
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 
 internal class NativeTextInputView(
     initialInput: NativeTextEditingDelegate,
-) : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
+) : CMPTextInputView(frame = CGRectZero.readValue()),
+    UIKeyInputProtocol,
+    UITextInputProtocol,
+    UITextInteractionDelegateProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
@@ -133,16 +139,47 @@ internal class NativeTextInputView(
         UITextInteraction.textInteractionForMode(UITextInteractionMode.UITextInteractionModeEditable)
             .also {
                 it.setTextInput(this)
+                it.setDelegate(this)
             }
     private var selectionInteractionAttached: Boolean = false
+
+    /** Whether a [selectionInteraction] gesture (e.g. the loupe) is tracking a touch. */
+    private var isSelectionInteractionActive = false
+
+    /**
+     * Whether the edit menu was visible when the first [selectionInteraction] gesture of the
+     * current touch began.
+     */
+    private var wasEditMenuVisibleOnTouchStart = false
+
+    /** Temporary flag to check whether the edit menu is visible */
+    private var isEditMenuRequested = false
+
+    /** Indicates if user currently changes selection */
+    private var isAdjustingSelection = false
 
     override fun didMoveToWindow() {
         super.didMoveToWindow()
         if (window != null && !selectionInteractionAttached) {
             // Ensure UIKit text interaction is attached early so that cursor and selection
             // handles can be created and shown when needed.
-            this.addInteraction(selectionInteraction)
-            selectionInteractionAttached = true
+            attachSelectionInteractionIfNeeded()
+        }
+    }
+
+    /**
+     * HACK: UIKit hides the caret whenever the marked text range of a UITextInput changes.
+     * Removing the editable text interaction and adding it back, then re-activating the selection
+     * display, brings the caret back.
+     */
+    private fun didUpdateMarkedRange() {
+        dispatch_async(dispatch_get_main_queue()) {
+            if (!isFirstResponder() || selectionInteraction.view != this) {
+                return@dispatch_async
+            }
+            removeInteraction(selectionInteraction)
+            addInteraction(selectionInteraction)
+            activateSelectionDisplayIfNeeded()
         }
     }
 
@@ -155,15 +192,29 @@ internal class NativeTextInputView(
         val result = super.becomeFirstResponder()
 
         if (!isFirstResponder && this.isFirstResponder()) {
-            this.addInteraction(selectionInteraction)
+            this.attachSelectionInteractionIfNeeded()
             this.activateTextInputInteractionIfNeeded()
+        }
+        touchesTrackerGestureRecognizer.onTouchesTrackingChanged = {
+            completeAdjustingSelectionIfNeeded(force = false)
         }
 
         return result
     }
 
+    private fun attachSelectionInteractionIfNeeded() {
+        if (selectionInteractionAttached) return
+        this.addInteraction(selectionInteraction)
+        selectionInteractionAttached = true
+    }
+
     override fun resignFirstResponder(): Boolean {
+        // Complete ongoing selection activities, if any.
+        completeAdjustingSelectionIfNeeded(force = true)
+        touchesTrackerGestureRecognizer.onTouchesTrackingChanged = {}
+        
         input.onResignFocus()
+        
         return super.resignFirstResponder()
     }
 
@@ -263,11 +314,21 @@ internal class NativeTextInputView(
         // Posting an extra notification solves this issue
         val notifySelectionChanges = !available(OS.Ios to OSVersion(major = 17)) &&
             !touchesTrackerGestureRecognizer.isTrackingTouches
-        if (notifySelectionChanges) {
+        if (!isAdjustingSelection && touchesTrackerGestureRecognizer.isTrackingTouches) {
+            isAdjustingSelection = true
+            selectionWillChange()
+        } else if (notifySelectionChanges) {
             selectionWillChange()
         }
         input.setSelectedTextRange(range)
         if (notifySelectionChanges) {
+            selectionDidChange()
+        }
+    }
+
+    private fun completeAdjustingSelectionIfNeeded(force: Boolean) {
+        if (isAdjustingSelection && (force || !touchesTrackerGestureRecognizer.isTrackingTouches)) {
+            isAdjustingSelection = false
             selectionDidChange()
         }
     }
@@ -318,7 +379,8 @@ internal class NativeTextInputView(
             TextRange(loc, loc + length.toInt())
         }
 
-        input.setMarkedText(markedText, relativeTextRange)
+        input.setMarkedText(markedText ?: "", relativeTextRange)
+        didUpdateMarkedRange()
     }
 
     /**
@@ -328,6 +390,7 @@ internal class NativeTextInputView(
      */
     override fun unmarkText() {
         input.unmarkText()
+        didUpdateMarkedRange()
     }
 
     override fun beginningOfDocument(): UITextPosition {
@@ -623,6 +686,7 @@ internal class NativeTextInputView(
             "cut:" -> onCut != null
             "selectAll:" -> showSelectAndSelectAllMenus
             "select:" -> showSelectAndSelectAllMenus
+            "replace:" -> input.isEditable && input.isInteractive
             else -> super.canPerformAction(action, withSender)
         }
 
@@ -633,14 +697,25 @@ internal class NativeTextInputView(
         selectAll: (() -> Unit)?,
         customActions: List<CMPEditMenuCustomAction>
     ) {
+        val availableActionsChanged = (onCopy != null) != (copy != null) ||
+            (onPaste != null) != (paste != null) ||
+            (onCut != null) != (cut != null) ||
+            (onSelectAll != null) != (selectAll != null) ||
+            this.customActions.map { it.title } != customActions.map { it.title }
+
         onCopy = copy
         onPaste = paste
         onCut = cut
         onSelectAll = selectAll
         this.customActions = customActions
+
+        if (availableActionsChanged) {
+            reloadVisibleEditMenu()
+        }
     }
 
     override fun editMenuForTextRange(textRange: UITextRange, suggestedActions: List<*>): UIMenu? {
+        isEditMenuRequested = true
         val customMenuElements = makeCustomMenuElements()
         if (customMenuElements.isEmpty()) return null // The default menu would be returned
 
@@ -648,6 +723,37 @@ internal class NativeTextInputView(
         val suggestedActionsElements = suggestedActions as List<UIMenuElement>
 
         return UIMenu.menuWithTitle("", children = customMenuElements + suggestedActionsElements)
+    }
+
+    /**
+     * A press on the caret starts the loupe almost immediately and, if released before the tap
+     * timeout, is also recognized as a tap. The loupe shows the edit menu when it ends without
+     * moving the caret, and the tap then toggles the menu off, so such presses never showed the
+     * menu. Native text fields toggle the menu relative to its state before the press.
+     */
+    override fun interactionShouldBegin(
+        interaction: UITextInteraction,
+        atPoint: CValue<CGPoint>
+    ): Boolean {
+        if (!isSelectionInteractionActive) {
+            isEditMenuRequested = false
+            // HACK: Check if edit menu visible. The `reloadVisibleMenu` will trigger the
+            // `editMenuForTextRange` in this case.
+            for (interaction in interactions) {
+                (interaction as? UIEditMenuInteraction)?.reloadVisibleMenu()
+            }
+            wasEditMenuVisibleOnTouchStart = isEditMenuRequested
+            return true
+        }
+        return wasEditMenuVisibleOnTouchStart
+    }
+
+    override fun interactionWillBegin(interaction: UITextInteraction) {
+        isSelectionInteractionActive = true
+    }
+
+    override fun interactionDidEnd(interaction: UITextInteraction) {
+        isSelectionInteractionActive = false
     }
 
     private fun makeCustomMenuElements(): List<UIMenuElement> {
@@ -740,6 +846,10 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         }
     }
 
+    private var previousDpFrame: DpRect? = null
+    private var previousDpTextBounds: DpRect? = null
+    private var previousDpInsets: DpInsets? = null
+
     /**
      * Updates frames and insets of the scroll view and underlying text view.
      *
@@ -748,6 +858,18 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
      * - `dpInsets` is in Compose `Dp` and can be passed to UIKit as POINTS directly.
      */
     fun setFrame(dpNewFrame: DpRect, dpTextBounds: DpRect, dpInsets: DpInsets) {
+        val hasChanges = previousDpFrame != dpNewFrame ||
+            previousDpTextBounds != dpTextBounds ||
+            previousDpInsets != dpInsets
+
+        if (!hasChanges) {
+            return
+        }
+
+        previousDpFrame = dpNewFrame
+        previousDpTextBounds = dpTextBounds
+        previousDpInsets = dpInsets
+
         val newFrame = dpNewFrame.toCGRect()
         val textBounds = dpTextBounds.toCGRect()
 
@@ -766,32 +888,17 @@ internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readVa
         )
 
         val scrollContentSize = textBounds.useContents { size.readValue() }
-        val scrollContentInset = textBounds.useContents { origin.readValue() }
+        val scrollContentOffset = textBounds.useContents { origin.readValue() }
 
-        val textFrameChanged =
-            textView?.let { !CGRectEqualToRect(it.frame, textViewFrame) } ?: false
-        val frameChanged = !CGRectEqualToRect(frame, newFrame)
-        val contentInsetChanged = !UIEdgeInsetsEqualToEdgeInsets(contentInset, insets)
-        val contentSizeChanged = !CGSizeEqualToSize(contentSize, scrollContentSize)
-        val contentOffsetChanged = !CGPointEqualToPoint(contentOffset, scrollContentInset)
+        textView?.selectionWillChange()
 
-        val hasChanges = textFrameChanged ||
-            frameChanged ||
-            contentInsetChanged ||
-            contentSizeChanged ||
-            contentOffsetChanged
+        textView?.setFrame(textViewFrame)
+        setFrame(newFrame)
+        setContentInset(insets)
+        setContentSize(scrollContentSize)
+        setContentOffset(scrollContentOffset)
 
-        if (hasChanges) {
-            textView?.selectionWillChange()
-
-            textView?.setFrame(textViewFrame)
-            setFrame(newFrame)
-            setContentInset(insets)
-            setContentSize(scrollContentSize)
-            setContentOffset(scrollContentInset)
-
-            textView?.selectionDidChange()
-        }
+        textView?.selectionDidChange()
     }
 
     fun interactionModeAt(point: CValue<CGPoint>): UIKitInteropInteractionMode? {
@@ -840,35 +947,53 @@ private class TouchTrackingGestureRecognizer : CMPGestureRecognizer(target = nul
 
     val isTrackingTouches: Boolean get() = trackedTouches.isNotEmpty()
 
+    var onTouchesTrackingChanged: (Boolean) -> Unit = {}
+
     init {
         cancelsTouchesInView = true
         delaysTouchesBegan = false
     }
 
+    private fun updateTouches(update: () -> Unit) {
+        val touchesBefore = trackedTouches.size
+        update()
+        if (touchesBefore == 0 && trackedTouches.isNotEmpty()) {
+            onTouchesTrackingChanged(true)
+        } else if (touchesBefore != 0 && trackedTouches.isEmpty()) {
+            onTouchesTrackingChanged(false)
+        }
+    }
+
     override fun touchesBegan(touches: Set<*>, withEvent: UIEvent) {
         super.touchesBegan(touches, withEvent)
 
-        touches.forEach {
-            it as UITouch
-            trackedTouches.add(it)
+        updateTouches {
+            touches.forEach {
+                it as UITouch
+                trackedTouches.add(it)
+            }
         }
     }
 
     override fun touchesEnded(touches: Set<*>, withEvent: UIEvent) {
         super.touchesEnded(touches, withEvent)
 
-        touches.forEach {
-            it as UITouch
-            trackedTouches.remove(it)
+        updateTouches {
+            touches.forEach {
+                it as UITouch
+                trackedTouches.remove(it)
+            }
         }
     }
 
     override fun touchesCancelled(touches: Set<*>, withEvent: UIEvent) {
         super.touchesCancelled(touches, withEvent)
 
-        touches.forEach {
-            it as UITouch
-            trackedTouches.remove(it)
+        updateTouches {
+            touches.forEach {
+                it as UITouch
+                trackedTouches.remove(it)
+            }
         }
     }
 

@@ -284,6 +284,7 @@ private constructor(
             "density=$density, " +
             "layoutDirection=$layoutDirection, " +
             "fontFamilyResolver=$fontFamilyResolver, " +
+            "defaultLocaleList=$defaultLocaleList, " +
             "constraints=$constraints" +
             ")"
     }

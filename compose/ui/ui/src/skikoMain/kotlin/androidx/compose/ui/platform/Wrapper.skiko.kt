@@ -15,8 +15,11 @@
  */
 package androidx.compose.ui.platform
 
-import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.node.RootNodeOwner
 
 /**
@@ -28,7 +31,6 @@ import androidx.compose.ui.node.RootNodeOwner
  * Can be backed by `mutableStateOf` to dynamically change top-level locals.
  * @param content A `@Composable` function declaring the UI contents
  */
-@OptIn(ExperimentalComposeUiApi::class)
 internal fun RootNodeOwner.setContent(
     parent: CompositionContext,
     getCompositionLocalContext: () -> CompositionLocalContext? = { null },

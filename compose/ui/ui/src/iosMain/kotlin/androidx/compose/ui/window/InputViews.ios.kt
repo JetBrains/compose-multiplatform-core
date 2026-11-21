@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
-import kotlin.getValue
 import kotlin.math.abs
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -46,7 +45,6 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
-import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSStringFromClass
@@ -212,10 +210,7 @@ private class TouchesGestureRecognizer(
                 TouchesEventKind.MOVED
             )
             if (result.anyMovementConsumed) {
-                if (!state.isOngoing) {
-                    setState(UIGestureRecognizerStateBegan)
-                    cancelTouchesFailure()
-                }
+                beginGesture()
             }
         }
 
@@ -273,6 +268,13 @@ private class TouchesGestureRecognizer(
         super.touchesCancelled(touches, withEvent)
 
         cancelAllTrackedTouches()
+    }
+
+    private fun beginGesture() {
+        if (!state.isOngoing) {
+            setState(UIGestureRecognizerStateBegan)
+            cancelTouchesFailure()
+        }
     }
 
     private fun cancelAllTrackedTouches() {
@@ -707,6 +709,11 @@ internal class OverlayInputView(
      */
     var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean = { false }
 
+    /**
+     * See [androidx.compose.ui.draganddrop.IosDragAndDropManager] for more context
+     */
+    var setDragDropGesturesEnabled: (isDragDropEnabled: Boolean) -> Unit = {}
+
     var isInterceptingOutsideEvents: Boolean = false
     var onOutsidePointerEvent: (PointerEventType) -> Unit = {}
 
@@ -838,6 +845,7 @@ internal class OverlayInputView(
                 it.hitTest(inputPoint, withEvent)
             }
         }
+        setDragDropGesturesEnabled(nativeTextInputViewHitTest == null)
         if (nativeTextInputViewHitTest != null) {
             return nativeTextInputViewHitTest
         }
@@ -887,6 +895,7 @@ internal class OverlayInputView(
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         canIgnoreDragGesture = { false }
+        setDragDropGesturesEnabled = {}
         onKeyboardPresses = {}
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _, _ -> PointerEventResult() }
@@ -910,31 +919,12 @@ internal class BackgroundInputView(
     onCancelAllTouches: (cancelledTouches: Set<UITouch>) -> Unit,
     isHigherPriorityGestureTrackingTouches: () -> Boolean,
 ) : UIView(CGRectZero.readValue()) {
-
-    private var onAppeared: (() -> Unit)? = null
-
-    fun runOnceOnAppeared(block: () -> Unit) {
-        onAppeared = {
-            onAppeared = null
-            block()
-        }
-
-        runOnAppearedIfEligible()
-    }
-
-    private fun runOnAppearedIfEligible() {
-        if (window != null && !CGRectIsEmpty(frame)) {
-            onAppeared?.invoke()
-        }
-    }
-
     override fun canBecomeFocused(): Boolean = false
 
     override fun layoutSubviews() {
         super.layoutSubviews()
 
         onLayoutSubviews()
-        runOnAppearedIfEligible()
     }
 
     override fun didMoveToWindow() {
@@ -980,7 +970,6 @@ internal class BackgroundInputView(
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         onLayoutSubviews = {}
-        onAppeared = null
     }
 }
 
