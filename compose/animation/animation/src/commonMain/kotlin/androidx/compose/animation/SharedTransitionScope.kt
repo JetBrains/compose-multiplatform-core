@@ -93,11 +93,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.round
-<<<<<<< HEAD
 import kotlin.js.JsName
-=======
 import kotlin.jvm.JvmInline
->>>>>>> a611d73fbbb3e683f016e58fe6bc4b069f2b5d1a
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
