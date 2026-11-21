@@ -23,10 +23,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.test.rememberFocusedBottomSheetState
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.DpRectZero
 import androidx.compose.ui.unit.dp
@@ -60,12 +60,13 @@ class ModalBottomSheetTest {
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun testContentBottomInsetWithKeyboardOpen() = runUIKitInstrumentedTest {
-        val focusRequester = FocusRequester()
         var contentRect = DpRectZero()
 
         setContent {
+            val (focusRequester, sheetState) = rememberFocusedBottomSheetState()
             ModalBottomSheet(
                 onDismissRequest = {},
+                sheetState = sheetState,
                 content = {
                     TextField(
                         value = "",
@@ -75,15 +76,13 @@ class ModalBottomSheetTest {
                             .focusRequester(focusRequester)
                             .onGloballyPositioned { contentRect = it.boundsInWindow().toDpRect(density) }
                     )
-
                 }
             )
         }
 
-        focusRequester.requestFocus()
-
-        waitForIdle()
-
+        waitUntil("Modal bottom sheet content must stay above the keyboard") {
+            contentRect.bottom == screenSize.height - keyboardHeight
+        }
         assertEquals(screenSize.height - keyboardHeight, contentRect.bottom)
     }
 }

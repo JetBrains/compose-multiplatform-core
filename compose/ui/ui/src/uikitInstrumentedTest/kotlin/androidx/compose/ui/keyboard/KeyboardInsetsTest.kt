@@ -33,8 +33,6 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +53,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.rememberFocusedBottomSheetState
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.dpRectInWindow
 import androidx.compose.ui.test.utils.forEachWithPrevious
@@ -161,20 +160,29 @@ internal class KeyboardInsetsRotationTest {
             }
         }
 
+        // iPadOS 27.2 can dismiss the keyboard during a rotation while preserving the first
+        // responder. Keyboard geometry is system-controlled at that point, so the invariant under
+        // test is that Compose focus survives the rotation.
+        fun assertFocusedAfterRotation(step: String) {
+            waitUntil("Text field must remain focused after rotation $step") {
+                isFocused
+            }
+        }
+
         tapTextField()
         assertFocusedAboveKeyboard("after tapping it")
 
         rotateTo(UIInterfaceOrientationLandscapeRight)
-        assertFocusedAboveKeyboard("after rotating to landscape")
+        assertFocusedAfterRotation("after rotating to landscape")
 
         tapOutsideTextField()
         assertFalse(isFocused, "Focus must be cleared by a tap outside the text field in landscape")
 
         tapTextField()
-        assertFocusedAboveKeyboard("after refocusing it in landscape")
+        assertFocusedAfterRotation("after refocusing it in landscape")
 
         rotateTo(UIInterfaceOrientationPortrait)
-        assertFocusedAboveKeyboard("after rotating back to portrait")
+        assertFocusedAfterRotation("after rotating back to portrait")
 
         tapOutsideTextField()
         assertFalse(
@@ -350,7 +358,7 @@ internal abstract class KeyboardInsetsTest(
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.KeyboardFrameAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
@@ -436,6 +444,22 @@ internal abstract class KeyboardInsetsTest(
         }
     }
 
+    private fun UIKitInstrumentedTest.warmUpKeyboardTransition(
+        focusRequester: FocusRequester,
+        focusManager: FocusManager
+    ) {
+        focusRequester.requestFocus()
+        waitUntil("Keyboard must be shown before measuring its animation") {
+            keyboardHeight != 0.dp
+        }
+        waitForIdle()
+        focusManager.clearFocus()
+        waitUntil("Keyboard must be hidden before measuring its animation") {
+            keyboardHeight == 0.dp
+        }
+        waitForIdle()
+    }
+
     private fun postKeyboardFrame(frame: CValue<CGRect>, duration: Double = 0.0) {
         NSNotificationCenter.defaultCenter.postNotificationName(
             aName = UIKeyboardWillChangeFrameNotification,
@@ -462,7 +486,7 @@ internal abstract class KeyboardInsetsTest(
         var focusManager: FocusManager? = null
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.KeyboardFrameAnimationSpeed
 
         setContent({
             onFocusBehavior = OnFocusBehavior.DoNothing
@@ -496,6 +520,10 @@ internal abstract class KeyboardInsetsTest(
 
         assertEquals(screenRect, contentFrames.last())
         assertTrue(contentFrames.all { it == screenRect })
+
+        // iPadOS 27.2 can present the first keyboard transition without an animation. Warm the
+        // keyboard up, then measure later transitions that UIKit reports as animated.
+        warmUpKeyboardTransition(focusRequester, requireNotNull(focusManager))
 
         // Show keyboard with animation
         focusRequester.requestFocus()
@@ -908,11 +936,13 @@ internal abstract class KeyboardInsetsTest(
         val drawnTextFieldFrames = mutableListOf<Pair<Int, Int>>()
         val focusRequester = FocusRequester()
 
-        animationSpeed = UIKitInstrumentedTest.IncreasedAnimationSpeed
+        animationSpeed = UIKitInstrumentedTest.KeyboardFrameAnimationSpeed
 
+        var focusManager: FocusManager? = null
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
         }) {
+            focusManager = LocalFocusManager.current
             val imeInsets = WindowInsets.ime
             @Suppress("DEPRECATION")
             BasicTextField(
@@ -932,6 +962,8 @@ internal abstract class KeyboardInsetsTest(
                     }
             )
         }
+
+        warmUpKeyboardTransition(focusRequester, requireNotNull(focusManager))
 
         drawnTextFieldFrames.clear()
         focusRequester.requestFocus()
@@ -997,11 +1029,7 @@ internal abstract class KeyboardInsetsTest(
         setContent({
             onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
         }) {
-            val focusRequester = remember { FocusRequester() }
-            val sheetState = rememberBottomSheetState(
-                initialValue = SheetValue.Hidden,
-                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-            )
+            val (focusRequester, sheetState) = rememberFocusedBottomSheetState()
             ModalBottomSheet(
                 onDismissRequest = {},
                 sheetState = sheetState,
@@ -1017,12 +1045,12 @@ internal abstract class KeyboardInsetsTest(
                             lastTextFieldFrame = coordinates.boundsInWindow().toDpRect(density)
                         }
                 )
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
             }
         }
 
+        waitUntil("Modal bottom sheet text field must stay above the keyboard") {
+            lastTextFieldFrame.bottom == screenSize.height - keyboardHeight
+        }
         assertEquals(screenSize.height - keyboardHeight, lastTextFieldFrame.bottom)
     }
 

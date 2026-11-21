@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.CValue
+import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -32,6 +33,7 @@ import platform.CoreGraphics.CGRectGetMaxY
 import platform.CoreGraphics.CGRectGetMinY
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectMake
+import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIScreen
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptionCurveEaseInOut
@@ -40,17 +42,22 @@ import platform.UIKit.UIViewAnimationOptions
 internal class KeyboardInsetsManager(
     private val view: UIView,
     private val frameChoreographer: FrameChoreographer,
-    private val onKeyboardOverlapHeightChanged: (Dp) -> Unit
+    private val onKeyboardOverlapHeightChanged: (Dp) -> Unit,
 ) : KeyboardVisibilitySubscriber, FrameChoreographer.Listener {
     private var isDisposed: Boolean = false
     private var isStarted = false
+    private val keyboardGeometrySource: KeyboardGeometrySource = KeyboardFrameSource(view)
     private val activitiesHandler = frameChoreographer.createActivitiesHandler()
     private val coroutineScope = CoroutineScope(frameChoreographer.coroutineContext)
     private var awaitingKeyboardFrameJob: Job? = null
     private var activeAnimation: KeyboardAnimation? = null
     val hasPendingWork get() = activeAnimation != null || awaitingKeyboardFrameJob != null
+
+    private val keyboardFrame: CValue<CGRect>
+        get() = keyboardGeometrySource.keyboardFrame
+
     private data class KeyboardAnimation(
-        val view: UIView,
+        val progressView: UIView,
         val previousKeyboardTop: Double,
         val targetKeyboardTop: Double,
         val viewBounds: CValue<CGRect>,
@@ -64,9 +71,9 @@ internal class KeyboardInsetsManager(
         KeyboardVisibilityListener.addSubscriber(this)
         frameChoreographer.addListener(this)
 
-        adjustViewBounds(
-            KeyboardVisibilityListener.keyboardFrame,
-            KeyboardVisibilityListener.keyboardFrame,
+        animateKeyboardOverlap(
+            keyboardFrame,
+            keyboardFrame,
             0.0,
             UIViewAnimationOptionCurveEaseInOut
         )
@@ -96,7 +103,7 @@ internal class KeyboardInsetsManager(
      */
     fun awaitKeyboardFrameIfNeeded() {
         cancelAwaitingKeyboardFrame()
-        if (keyboardHeight(KeyboardVisibilityListener.keyboardFrame) == 0.0) {
+        if (keyboardHeight(keyboardFrame) == 0.0) {
             awaitingKeyboardFrameJob = coroutineScope.launch {
                 delay(KEYBOARD_FRAME_AWAIT_TIMEOUT_MILLIS)
                 if (awaitingKeyboardFrameJob === coroutineContext[Job]) {
@@ -130,7 +137,7 @@ internal class KeyboardInsetsManager(
         animationOptions: UIViewAnimationOptions
     ) {
         cancelAwaitingKeyboardFrame()
-        adjustViewBounds(
+        animateKeyboardOverlap(
             currentFrame = currentFrame,
             targetFrame = targetFrame,
             duration = duration,
@@ -147,21 +154,36 @@ internal class KeyboardInsetsManager(
         cancelAwaitingKeyboardFrame()
         // A preceding willChangeFrame may already have animated to the empty target frame.
         if (!CGRectIsEmpty(currentFrame)) {
-            adjustViewBounds(currentFrame, targetFrame, duration, animationOptions)
+            animateKeyboardOverlap(
+                currentFrame = currentFrame,
+                targetFrame = targetFrame,
+                duration = duration,
+                animationOptions = animationOptions
+            )
         }
     }
 
-    private fun adjustViewBounds(
+    private fun animateKeyboardOverlap(
         currentFrame: CValue<CGRect>,
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
     ) {
         val screen = view.window?.screen ?: return
+        val screenHeight = screen.bounds.useContents { size.height }
+        val resolvedTargetFrame = if (
+            CGRectIsEmpty(targetFrame) ||
+            isUndockedKeyboard(targetFrame, screen) ||
+            CGRectGetMinY(targetFrame) >= screenHeight
+        ) {
+            CGRectZero.readValue()
+        } else {
+            keyboardFrame
+        }
 
         animateKeyboard(
             previousKeyboardTop = keyboardTop(currentFrame, screen),
-            targetKeyboardTop = keyboardTop(targetFrame, screen),
+            targetKeyboardTop = keyboardTop(resolvedTargetFrame, screen),
             duration = duration,
             animationOptions = animationOptions
         )
@@ -172,8 +194,8 @@ internal class KeyboardInsetsManager(
         // Recomputing would cancel the running animation and snap to the target overlap.
         if (!isStarted || activeAnimation != null) return
 
-        val frame = KeyboardVisibilityListener.keyboardFrame
-        adjustViewBounds(
+        val frame = keyboardFrame
+        animateKeyboardOverlap(
             currentFrame = frame,
             targetFrame = frame,
             duration = 0.0,
@@ -234,11 +256,13 @@ internal class KeyboardInsetsManager(
             return
         }
 
-        val animationView = UIView()
-        view.addSubview(animationView)
+        // This view is never visible and is not the keyboard. UIKit animates its frame only so
+        // its presentation layer can be sampled as a progress value for the keyboard transition.
+        val progressView = UIView()
+        view.addSubview(progressView)
         val animation =
             KeyboardAnimation(
-                view = animationView,
+                progressView = progressView,
                 previousKeyboardTop = currentKeyboardTop,
                 targetKeyboardTop = targetKeyboardTop,
                 viewBounds = viewBounds,
@@ -253,7 +277,7 @@ internal class KeyboardInsetsManager(
             delay = 0.0,
             options = animationOptions,
             animations = {
-                animationView.setFrame(animationTargetFrame)
+                progressView.setFrame(animationTargetFrame)
             },
             completion = { _ ->
                 finishAnimation(animation)
@@ -262,7 +286,7 @@ internal class KeyboardInsetsManager(
     }
 
     private fun KeyboardAnimation.progress(): Double {
-        val layer = view.layer.presentationLayer() ?: return 0.0
+        val layer = progressView.layer.presentationLayer() ?: return 0.0
         return layer.frame.useContents { size.height / ANIMATION_TARGET_SIZE }
     }
 
@@ -279,7 +303,7 @@ internal class KeyboardInsetsManager(
 
     private fun finishAnimation(animation: KeyboardAnimation) {
         if (activeAnimation !== animation) {
-            animation.view.removeFromSuperview()
+            animation.progressView.removeFromSuperview()
             return
         }
 
@@ -287,7 +311,7 @@ internal class KeyboardInsetsManager(
         onKeyboardOverlapHeightChanged(finalOverlapHeight)
         activeAnimation = null
         activitiesHandler.onActivitiesEnded()
-        animation.view.removeFromSuperview()
+        animation.progressView.removeFromSuperview()
     }
 
     private fun cancelActiveAnimation() {
@@ -295,8 +319,8 @@ internal class KeyboardInsetsManager(
         activeAnimation = null
         activitiesHandler.onActivitiesEnded()
         UIView.performWithoutAnimation {
-            animation.view.layer.removeAllAnimations()
-            animation.view.removeFromSuperview()
+            animation.progressView.layer.removeAllAnimations()
+            animation.progressView.removeFromSuperview()
         }
     }
 
