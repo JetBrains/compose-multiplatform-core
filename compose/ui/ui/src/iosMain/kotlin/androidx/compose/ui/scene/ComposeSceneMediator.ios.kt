@@ -1012,6 +1012,8 @@ internal class ComposeSceneMediator(
             createFontFamilyResolver()
         }
 
+        override val sharedOwnerContext: SharedOwnerContext = SharedOwnerContext()
+
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
             windowContext.convertLocalToWindowPosition(_overlayView, localPosition)
 

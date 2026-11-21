@@ -67,6 +67,7 @@ import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.layout.areWindowInsetsRulersEnabled
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
+import androidx.compose.ui.platform.GraphicsResourceCache
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -470,7 +471,7 @@ internal class RootNodeOwner(
             it.modifier = rootModifier
         }
 
-        override val sharedDrawScope = LayoutNodeDrawScope()
+        override val sharedDrawScope = platformContext.sharedOwnerContext.sharedDrawScope ?: LayoutNodeDrawScope()
         override val layoutNodes: MutableIntObjectMap<LayoutNode> = mutableIntObjectMapOf()
         override val rootForTest get() = this@RootNodeOwner.rootForTest
         override val hapticFeedBack get() = platformContext.hapticFeedback
@@ -546,13 +547,14 @@ internal class RootNodeOwner(
 
         override val uriHandler : UriHandler get() = platformContext.uriHandler
         override val soundEffect: SoundEffect get() = platformContext.soundEffect
+        override val graphicsResourceCache: GraphicsResourceCache get() = platformContext.sharedOwnerContext.graphicsResourceCache
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val taskDispatchers: TaskDispatchers get() = platformContext.taskDispatchers
         @ExperimentalMediaQueryApi
         override val uiMediaScope: UiMediaScope get() = platformContext.mediaScope
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
-        override val rectManager = RectManager(layoutNodes)
+        override val rectManager = RectManager(layoutNodes, platformContext.sharedOwnerContext.executeDelayed)
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
         override val fontFamilyResolver: FontFamily.Resolver get() = platformContext.fontFamilyResolver
