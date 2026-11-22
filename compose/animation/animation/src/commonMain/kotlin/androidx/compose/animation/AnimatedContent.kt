@@ -976,6 +976,38 @@ public fun <S> Transition<S>.AnimatedContent(
 }
 
 /**
+ * [AnimatedContent] overload that applies [contentModifier] to the built-in layout of each
+ * currently visible content state.
+ *
+ * The returned modifier is composed after the built-in enter/exit transition modifiers. This lets a
+ * container observe the final animated bounds of each content state without adding an extra layout.
+ *
+ * @param contentModifier A function returning the modifier for a given content state.
+ */
+@ExperimentalAnimationApi
+@Composable
+public fun <S> Transition<S>.AnimatedContent(
+    modifier: Modifier = Modifier,
+    transitionSpec: AnimatedContentTransitionScope<S>.() -> ContentTransform = {
+        AnimatedContentDefaults.ContentTransform
+    },
+    contentAlignment: Alignment = Alignment.TopStart,
+    contentKey: (targetState: S) -> Any? = { it },
+    contentModifier: (targetState: S) -> Modifier,
+    content: @Composable() AnimatedContentScope.(targetState: S) -> Unit,
+) {
+    AnimatedContentImpl(
+        modifier = modifier,
+        transitionSpec = transitionSpec,
+        contentAlignment = contentAlignment,
+        contentKey = contentKey,
+        mutableTransformSpec = { null },
+        contentModifier = contentModifier,
+        content = content,
+    )
+}
+
+/**
  * [AnimatedContent] is a container that automatically animates its content when
  * [Transition.targetState] changes. Its [content] for different target states is defined in a
  * mapping between a target state and a composable function.
@@ -1069,9 +1101,11 @@ internal fun <S> Transition<S>.AnimatedContentImpl(
     mutableTransformSpec: AnimatedContentTransitionScope<S>.() -> MutableContentTransform? = {
         null
     },
+    contentModifier: (targetState: S) -> Modifier = { Modifier },
     content: @Composable() AnimatedContentScope.(targetState: S) -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
+    val currentContentModifier by rememberUpdatedState(contentModifier)
     val rootScope =
         remember(this) {
             AnimatedContentTransitionScopeImpl(this, contentAlignment, layoutDirection)
@@ -1251,6 +1285,7 @@ internal fun <S> Transition<S>.AnimatedContentImpl(
                                 else -> null
                             }
                         },
+                    postEnterExitModifier = currentContentModifier(stateForContent),
                     forceVisible =
                         this@AnimatedContentImpl is DeferredTransition &&
                             currentlyVisible.indexOf(stateForContent).let { index ->
