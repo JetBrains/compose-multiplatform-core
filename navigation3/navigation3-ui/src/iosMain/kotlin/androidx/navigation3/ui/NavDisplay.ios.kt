@@ -28,6 +28,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.unveilIn
 import androidx.compose.animation.veilOut
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.sceneInteropLayer as uiSceneInteropLayer
+import androidx.compose.ui.viewinterop.sceneInteropLayerRoot as uiSceneInteropLayerRoot
 import androidx.navigation3.scene.Scene
 import androidx.navigationevent.NavigationEvent.Companion.EDGE_LEFT
 import androidx.navigationevent.NavigationEvent.SwipeEdge
@@ -93,3 +97,13 @@ public actual fun <T : Any> defaultPredictivePopTransitionSpec():
         ),
     )
 }
+
+@OptIn(ExperimentalComposeUiApi::class)
+internal actual fun Modifier.sceneInteropLayerRoot(): Modifier =
+    uiSceneInteropLayerRoot()
+
+@OptIn(ExperimentalComposeUiApi::class)
+internal actual fun Modifier.sceneInteropLayer(
+    occludesLowerLayers: Boolean,
+    zIndex: Float,
+): Modifier = uiSceneInteropLayer(occludesLowerLayers = occludesLowerLayers, zIndex = zIndex)
