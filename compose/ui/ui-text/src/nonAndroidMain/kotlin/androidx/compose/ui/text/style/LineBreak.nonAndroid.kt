@@ -22,7 +22,7 @@ import kotlin.jvm.JvmInline
 
 @Immutable
 @JvmInline
-actual value class LineBreak private constructor(
+actual value class LineBreak internal constructor(
     internal val mask: Int
 ) {
     actual companion object {
