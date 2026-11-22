@@ -17,7 +17,6 @@
 package androidx.compose.foundation.text.input
 
 import androidx.compose.foundation.assertThat
-import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.isEqualTo
 import androidx.compose.foundation.text.BasicTextField

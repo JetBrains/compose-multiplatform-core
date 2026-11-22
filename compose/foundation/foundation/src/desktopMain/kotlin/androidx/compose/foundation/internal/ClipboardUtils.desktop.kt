@@ -39,24 +39,10 @@ import kotlinx.coroutines.withContext
 private val annotatedStringFlavor: DataFlavor =
     DataFlavor(AnnotatedString::class.java, "AnnotatedString")
 
-internal actual suspend fun ClipEntry.readText(): String? {
-    if (!hasText()) return null
-
-    val transferable = asAwtTransferable
-    return withContext(Dispatchers.IO) {
-        try {
-            transferable?.getTransferData(DataFlavor.stringFlavor) as? String
-        } catch (_: IOException) {
-            // the data is no longer available in the requested flavor
-            null
-        }
-    }
-}
-
 internal actual suspend fun ClipEntry.readAnnotatedString(): AnnotatedString? {
     if (!hasAnnotatedString()) {
         if (!hasText()) return null
-        return readText()?.let { AnnotatedString(it) }
+        return readPlainText()?.let { AnnotatedString(it) }
     }
 
     val transferable = asAwtTransferable

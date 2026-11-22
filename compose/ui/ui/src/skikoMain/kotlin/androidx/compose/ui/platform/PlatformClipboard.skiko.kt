@@ -17,7 +17,17 @@
 package androidx.compose.ui.platform
 
 // TODO: https://youtrack.jetbrains.com/issue/CMP-1260
-actual class ClipMetadata private constructor()
+// TODO(Merge) Major, Implement after merging 437520c6f81b48618204661cefa664e599147763
+// Implement clipboard metadata inspection for non-Android targets; until then all metadata queries return false.
+actual class ClipMetadata internal constructor() {
+    actual fun hasText(): Boolean = false
+
+    actual fun hasPlainText(): Boolean = false
+
+    actual fun hasHtml(): Boolean = false
+
+    actual fun hasUrl(): Boolean = false
+}
 
 @Suppress("DEPRECATION")
 internal expect fun createPlatformClipboardManager(): ClipboardManager

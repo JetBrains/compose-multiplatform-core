@@ -23,6 +23,8 @@ import kotlin.js.Promise
 import kotlinx.coroutines.await
 import org.w3c.files.Blob
 
+private const val MIME_TYPE_PLAIN_TEXT = "text/plain"
+
 private val browserClipboard by lazy {
     getW3CClipboard()
 }
@@ -122,12 +124,41 @@ constructor(
 
     // TODO: https://youtrack.jetbrains.com/issue/CMP-1260
     actual val clipMetadata: ClipMetadata
-        get() = TODO("ClipMetadata is not implemented. Consider using nativeClipboard")
+        get() = ClipMetadata()
 
     @InternalComposeUiApi
     var fallbackPlainText: String? = null
 
-    companion object {
+    // TODO(Merge) Major, Implement after merging 437520c6f81b48618204661cefa664e599147763
+    // Implement clipboard metadata inspection and HTML/URL support for JavaScript.
+    // Until then metadata is false, HTML/URL reads return null, and factories create empty entries.
+    actual suspend fun readText(): String? = readPlainText()
+
+    @OptIn(InternalComposeUiApi::class)
+    actual suspend fun readPlainText(): String? {
+        fallbackPlainText?.let { return it }
+        if (clipboardItems.isEmpty()) return null
+
+        return try {
+            val blob = clipboardItems[0].getType(MIME_TYPE_PLAIN_TEXT).await<Blob>()
+            readClipboardTextFromBlob(blob).await<String>()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    actual suspend fun readHtml(): String? = null
+
+    actual suspend fun readUrl(): String? = null
+
+    actual companion object {
+        @Suppress("UNUSED_PARAMETER")
+        actual fun withText(plainText: String, html: String?): ClipEntry = ClipEntry(emptyArray())
+
+        @Suppress("UNUSED_PARAMETER")
+        actual fun withUrl(url: String, plainText: String, html: String?): ClipEntry =
+            ClipEntry(emptyArray())
+
         fun withPlainText(text: String): ClipEntry {
             return when {
                 isFullClipboardApiSupported -> ClipEntry(
@@ -147,6 +178,10 @@ constructor(
 @Suppress("UNUSED_PARAMETER")
 private fun createClipboardItemWithPlainText(text: String): Array<ClipboardItem> =
     js("[new ClipboardItem({'text/plain': new Blob([text], { type: 'text/plain' })})]")
+
+@Suppress("UNUSED_PARAMETER")
+private fun readClipboardTextFromBlob(blob: Blob): Promise<String> =
+    js("blob.text()")
 
 // Can't truly clear the clipboard, so setting the empty text
 private fun emptyClipboardItems(): Array<ClipboardItem> =

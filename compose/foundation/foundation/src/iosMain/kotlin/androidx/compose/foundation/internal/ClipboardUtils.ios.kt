@@ -23,9 +23,6 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.text.AnnotatedString
 
-
-internal actual suspend fun ClipEntry.readText(): String? = getPlainText()
-
 internal actual suspend fun ClipEntry.readAnnotatedString(): AnnotatedString? {
     val text = getPlainText() ?: return null
     return AnnotatedString(text)

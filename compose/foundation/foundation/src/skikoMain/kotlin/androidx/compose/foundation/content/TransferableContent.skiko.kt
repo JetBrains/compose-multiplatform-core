@@ -29,4 +29,4 @@ actual fun TransferableContent.hasMediaType(mediaType: MediaType): Boolean {
     return false
 }
 
-internal actual fun ClipEntry.readPlainText(): String? = null
+internal actual fun ClipEntry.readAllPlainText(): String? = null

@@ -23,25 +23,12 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.text.AnnotatedString
-import kotlin.js.Promise
-import kotlinx.coroutines.await
-import org.w3c.files.Blob
 
 private const val MIME_TYPE_PLAIN_TEXT = "text/plain"
 private val MIME_TYPE_PLAIN_TEXT_JS = MIME_TYPE_PLAIN_TEXT.toJsString()
 
-@OptIn(InternalComposeUiApi::class)
-internal actual suspend fun ClipEntry.readText(): String? {
-    if (!this.hasText()) return null
-    if (this.fallbackPlainText != null) return this.fallbackPlainText
-
-    if (this.clipboardItems.length == 0) return null
-    val blob = clipboardItems[0]!!.getType(MIME_TYPE_PLAIN_TEXT_JS).await<Blob>()
-    return getTextFromBlob(blob).await<JsString>().toString()
-}
-
 internal actual suspend fun ClipEntry.readAnnotatedString(): AnnotatedString? {
-    val text = readText() ?: return null
+    val text = readPlainText() ?: return null
     return AnnotatedString(text)
 }
 
@@ -73,7 +60,3 @@ private fun isClipboardWriteSupported(): Boolean =
 @Suppress("UNUSED_PARAMETER")
 private fun doesJsArrayContainValue(jsArray: JsArray<*>, value: JsAny): Boolean =
     js("jsArray.includes(value)")
-
-@Suppress("UNUSED_PARAMETER")
-private fun getTextFromBlob(blob: Blob): Promise<JsString> =
-    js("blob.text()")

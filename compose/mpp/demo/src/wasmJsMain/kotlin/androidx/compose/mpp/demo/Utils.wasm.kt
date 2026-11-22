@@ -17,7 +17,6 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 package androidx.compose.mpp.demo
 
-import androidx.compose.foundation.internal.readText
 import androidx.compose.ui.platform.ClipEntry
 import kotlin.wasm.unsafe.UnsafeWasmMemoryApi
 import kotlin.wasm.unsafe.WebAssembly
@@ -32,7 +31,7 @@ import org.khronos.webgl.Int8Array
 import org.w3c.fetch.Response
 
 actual suspend fun ClipEntry?.getPlainText(): String? {
-    return this?.readText()
+    return this?.readPlainText()
 }
 
 actual fun createClipEntryWithPlainText(text: String): ClipEntry {

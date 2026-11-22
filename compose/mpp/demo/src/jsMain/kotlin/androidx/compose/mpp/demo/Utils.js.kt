@@ -17,11 +17,10 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 package androidx.compose.mpp.demo
 
-import androidx.compose.foundation.internal.readText
 import androidx.compose.ui.platform.ClipEntry
 
 actual suspend fun ClipEntry?.getPlainText(): String? {
-    return this?.readText()
+    return this?.readPlainText()
 }
 
 actual fun createClipEntryWithPlainText(text: String): ClipEntry {

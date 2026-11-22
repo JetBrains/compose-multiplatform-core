@@ -26,6 +26,8 @@ import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.IOException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 actual typealias NativeClipboard = Any
 
@@ -130,7 +132,41 @@ constructor(
 ) {
     // TODO: https://youtrack.jetbrains.com/issue/CMP-1260
     actual val clipMetadata: ClipMetadata
-        get() = TODO("ClipMetadata is not implemented. Consider using nativeClipboard")
+        get() = ClipMetadata()
+
+    // TODO(Merge) Major, Implement after merging 437520c6f81b48618204661cefa664e599147763
+    // Implement clipboard metadata inspection and HTML/URL support for desktop.
+    // Until then metadata is false, HTML/URL reads return null, and factories create empty entries.
+    actual suspend fun readText(): String? = readPlainText()
+
+    actual suspend fun readPlainText(): String? {
+        val transferable = asAwtTransferable ?: return null
+        if (!transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) return null
+
+        return withContext(Dispatchers.IO) {
+            try {
+                transferable.getTransferData(DataFlavor.stringFlavor) as? String
+            } catch (_: IOException) {
+                null
+            } catch (_: UnsupportedFlavorException) {
+                null
+            }
+        }
+    }
+
+    actual suspend fun readHtml(): String? = null
+
+    actual suspend fun readUrl(): String? = null
+
+    actual companion object {
+        @Suppress("UNUSED_PARAMETER")
+        actual fun withText(plainText: String, html: String?): ClipEntry =
+            ClipEntry(EmptyTransferable)
+
+        @Suppress("UNUSED_PARAMETER")
+        actual fun withUrl(url: String, plainText: String, html: String?): ClipEntry =
+            ClipEntry(EmptyTransferable)
+    }
 }
 
 /**

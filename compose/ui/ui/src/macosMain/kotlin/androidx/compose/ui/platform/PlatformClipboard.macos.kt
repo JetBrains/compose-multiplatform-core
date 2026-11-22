@@ -84,14 +84,31 @@ actual class ClipEntry internal constructor() {
 
     // TODO: https://youtrack.jetbrains.com/issue/CMP-1260
     actual val clipMetadata: ClipMetadata
-        get() = TODO("ClipMetadata is not implemented. Consider using nativeClipboard")
+        get() = ClipMetadata()
+
+    // TODO(Merge) Major, Implement after merging 437520c6f81b48618204661cefa664e599147763
+    // Implement clipboard metadata inspection and HTML/URL support for macOS.
+    // Until then metadata is false, HTML/URL reads return null, and factories create empty entries.
+    actual suspend fun readText(): String? = readPlainText()
+
+    actual suspend fun readPlainText(): String? = getPlainText()
+
+    actual suspend fun readHtml(): String? = null
+
+    actual suspend fun readUrl(): String? = null
 
     internal var plainText: String? = null
 
     @ExperimentalComposeUiApi
     fun getPlainText(): String? = plainText
 
-    companion object {
+    actual companion object {
+        @Suppress("UNUSED_PARAMETER")
+        actual fun withText(plainText: String, html: String?): ClipEntry = ClipEntry()
+
+        @Suppress("UNUSED_PARAMETER")
+        actual fun withUrl(url: String, plainText: String, html: String?): ClipEntry = ClipEntry()
+
         @ExperimentalComposeUiApi
         fun withPlainText(text: String): ClipEntry = ClipEntry().apply {
             plainText = text
