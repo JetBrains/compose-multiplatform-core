@@ -154,6 +154,11 @@ internal class IosInteropContainer(
         requestRedraw()
     }
 
+    internal fun scheduleFinalFrameUpdate(action: () -> Unit) {
+        transaction.scheduleFinalFrameSynchronizedAction(action)
+        requestRedraw()
+    }
+
     override fun scheduleUpdate(holder: InteropViewHolder) {
         scheduledUpdatesCount++
         transaction.scheduleViewUpdate(holder) {

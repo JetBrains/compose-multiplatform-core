@@ -41,6 +41,13 @@ internal fun CValue<CGRect>.dpSize() = useContents {
     DpSize(size.width.dp, size.height.dp)
 }
 
+internal fun IntRect.toCGRect(density: Density): CValue<CGRect> = CGRectMake(
+    (left / density.density).toDouble(),
+    (top / density.density).toDouble(),
+    ((right - left) / density.density).toDouble(),
+    ((bottom - top) / density.density).toDouble(),
+)
+
 internal fun DpRect.toCGRect() = CGRectMake(
     left.value.toDouble(),
     top.value.toDouble(),

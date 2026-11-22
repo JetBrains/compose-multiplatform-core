@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.uikit.utils.CMPInteropWrappingView
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
+import platform.QuartzCore.CAShapeLayer
 import platform.UIKit.UIResponder
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -56,6 +57,24 @@ internal class InteropWrappingView(
     interactionMode: UIKitInteropInteractionMode?,
     compositionContext: CompositionContext,
 ) : CMPInteropWrappingView(frame = CGRectZero.readValue()) {
+    /**
+     * Overlay interop uses a mask for Compose clipping; background interop uses UIKit's regular
+     * bounds clipping.
+     *
+     * A newly placed or reused overlay starts hidden. [InteropMask] makes it visible only after it
+     * has applied the first mask decision, preventing an unmasked native view from appearing for
+     * the frames between insertion and the final-frame mask update.
+     */
+    var placedAsOverlay: Boolean = false
+        set(value) {
+            field = value
+            clipsToBounds = !value
+            setOverlayVisibilityResolved(false)
+        }
+
+    private var currentMaskLayer: CAShapeLayer? = null
+    private var isOverlayHidden = false
+
     var actualAccessibilityContainer: Any? = null
     var isAccessibilityFocusable: () -> Boolean = { true }
     var onDidMoveToWindow: () -> Unit = {}
@@ -81,6 +100,27 @@ internal class InteropWrappingView(
     override fun safeAreaInsetsDidChange() {
         super.safeAreaInsetsDidChange()
         onSafeAreaInsetsChanged()
+    }
+
+    /** Installs the layer used to mask overlay interop. A null value removes the current mask. */
+    fun setInteropMaskLayer(maskLayer: CAShapeLayer?) {
+        if (currentMaskLayer == maskLayer) return
+
+        currentMaskLayer = maskLayer
+        layer.mask = maskLayer
+    }
+
+    /**
+     * Keeps overlay interop hidden until its visible area has been resolved.
+     *
+     * Background interop remains visible because its visible area is controlled by UIKit clipping.
+     */
+    fun setOverlayVisibilityResolved(resolved: Boolean) {
+        val hidden = !resolved && placedAsOverlay
+        if (isOverlayHidden == hidden) return
+
+        isOverlayHidden = hidden
+        setHidden(hidden)
     }
 
     private fun updateAccessibilityElements() {

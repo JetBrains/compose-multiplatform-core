@@ -26,13 +26,17 @@ import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.findRootCoordinates
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.LayoutAwareModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.UnplacedAwareModifierNode
+import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.scene.attachedCompositionContext
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.unit.toCGRect
-import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.unit.toRect
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityFrame
 
@@ -71,11 +75,14 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
      */
     protected abstract val userComponentView: UIView
     private var currentUnclippedRect: IntRect? = null
+    private var currentRootSize: IntSize? = null
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
     private val layout = InteropElementLayout(
         group = interopWrappingView,
         userComponent = userComponentView,
+        densityProvider = { container.root.density },
+        finalFrameUpdateScheduler = interopContainer.createFinalFrameUpdateScheduler(),
     )
     override val measurePolicy: MeasurePolicy get() = layout.measurePolicy
 
@@ -98,7 +105,6 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
 
     override fun layoutAccordingTo(layoutCoordinates: LayoutCoordinates) {
         val rootCoordinates = layoutCoordinates.findRootCoordinates()
-        val screenDensity = container.root.density
 
         val unclippedRect = rootCoordinates
             .localBoundingBoxOf(
@@ -112,15 +118,10 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
                 clipBounds = true
             ).roundToIntRect()
 
-        if (currentUnclippedRect == unclippedRect && currentClippedRect == clippedRect) {
-            return
-        }
+        val rootSize = rootCoordinates.size
 
         val groupFrame = if (clippedRect != currentClippedRect) {
             clippedRect
-                .toRect()
-                .toDpRect(screenDensity)
-                .toCGRect()
         } else {
             null
         }
@@ -135,41 +136,74 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
         // The user component's local frame changes only when its offset inside the clipping group
         // changes.
         val userComponentFrame = if (userComponentRect != currentUserComponentRect) {
-            currentUserComponentRect = userComponentRect
-
             userComponentRect
-                .toRect()
-                .toDpRect(screenDensity)
-                .toCGRect()
         } else {
             null
         }
 
-        if (groupFrame != null || userComponentFrame != null) {
+        if (
+            groupFrame != null ||
+            userComponentFrame != null ||
+            rootSize != currentRootSize ||
+            unclippedRect != currentUnclippedRect
+        ) {
             container.scheduleUpdate {
+                val screenDensity = container.root.density
+
                 UIView.performWithoutAnimation {
-                    layout.updateFrames(
-                        groupFrame = groupFrame,
-                        userComponentFrame = userComponentFrame,
+                    layout.update(
+                        groupFrame = groupFrame?.toCGRect(screenDensity),
+                        userComponentFrame = userComponentFrame?.toCGRect(screenDensity),
+                        rootSize = rootSize,
+                        unclippedRect = unclippedRect,
+                        clippedRect = clippedRect,
                     )
                     if (groupFrame != null) {
-                        group.accessibilityFrame = unclippedRect
-                            .toRect()
-                            .toDpRect(screenDensity)
-                            .toCGRect()
+                        group.accessibilityFrame = unclippedRect.toCGRect(screenDensity)
                     }
                 }
             }
         }
 
         currentUnclippedRect = unclippedRect
+        currentRootSize = rootSize
         currentClippedRect = clippedRect
-
+        currentUserComponentRect = userComponentRect
     }
 
     override fun dispatchToView(pointerEvent: PointerEvent) {
         // No-op, we can't dispatch events to UIView or UIViewController directly, see
         // [InteractionUIView] logic
+    }
+
+    /** Applies the opaque regions owned by higher-z scene layers. */
+    fun updateSceneLayerMask(occluderRects: List<IntRect>) {
+        layout.updateSceneLayerMask(occluderRects)
+    }
+
+    override fun removeInteropView(root: InteropViewGroup) {
+        layout.clearSceneLayerMask()
+        super.removeInteropView(root)
+    }
+
+    override fun onReuse() {
+        super.onReuse()
+        // A reused overlay is hidden until its mask is rebuilt. Invalidate the cached layout so
+        // the next placement reapplies frames even when the holder returns to the same geometry.
+        currentUnclippedRect = null
+        currentRootSize = null
+        currentClippedRect = null
+        currentUserComponentRect = null
+        container.scheduleUpdate {
+            layout.clearSceneLayerMask()
+        }
+    }
+
+    override fun onRelease() {
+        super.onRelease()
+        container.scheduleUpdate {
+            layout.clearSceneLayerMask()
+        }
     }
 
     /**
@@ -193,10 +227,11 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
 
     private fun onPropertiesChanged() {
         interopWrappingView.interactionMode = properties.interactionMode
+        interopWrappingView.placedAsOverlay = properties.placedAsOverlay
         layout.updateSafeAreaInsetsPolicy(properties.safeAreaInsetsPolicy)
-        // required to properly clip the content of the wrapping view in case interop unclipped
-        // bounds are larger than clipped bounds
-        interopWrappingView.clipsToBounds = !properties.placedAsOverlay
+        container.scheduleUpdate {
+            layout.scheduleMaskUpdate()
+        }
 
         platformModifier = Modifier
             .pointerInteropFilter(
@@ -208,5 +243,61 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
                 isEnabled = properties.isNativeAccessibilityEnabled,
                 interopWrappingView
             )
+            .sceneInteropLayerAware(this)
+    }
+}
+
+private fun Modifier.sceneInteropLayerAware(holder: IosInteropElementHolder<*>): Modifier =
+    this then SceneInteropLayerAwareModifierElement(holder)
+
+private data class SceneInteropLayerAwareModifierElement(
+    val holder: IosInteropElementHolder<*>,
+) : ModifierNodeElement<SceneInteropLayerAwareModifierNode>() {
+    override fun create() = SceneInteropLayerAwareModifierNode(holder)
+
+    override fun update(node: SceneInteropLayerAwareModifierNode) {}
+}
+
+private class SceneInteropLayerAwareModifierNode(
+    private val holder: IosInteropElementHolder<*>,
+) : Modifier.Node(),
+    LayoutAwareModifierNode,
+    UnplacedAwareModifierNode,
+    GlobalPositionAwareModifierNode {
+    private var isPlaced = false
+    private var layerNode: SceneInteropLayerModifierNode? = null
+
+    override fun onPlaced(coordinates: LayoutCoordinates) {
+        val currentLayerNode =
+            findNearestAncestor(SceneInteropLayerNodeKey) as? SceneInteropLayerModifierNode
+        if (currentLayerNode != layerNode) {
+            layerNode?.unregisterHolder(holder)
+            layerNode = currentLayerNode
+        }
+        currentLayerNode?.registerHolder(holder)
+
+        isPlaced = true
+    }
+
+    override fun onUnplaced() {
+        layerNode?.unregisterHolder(holder)
+        layerNode = null
+        isPlaced = false
+    }
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        // Global-position callbacks can arrive before the placement callback. Register the layer
+        // then so the first layout can already update the interop mask.
+        if (!isPlaced) {
+            onPlaced(coordinates)
+        }
+    }
+
+    override fun onDetach() {
+        if (isPlaced) {
+            onUnplaced()
+        }
+        layerNode = null
+        super.onDetach()
     }
 }

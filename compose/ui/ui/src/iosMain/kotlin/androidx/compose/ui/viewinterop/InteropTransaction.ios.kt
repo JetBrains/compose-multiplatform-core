@@ -76,12 +76,13 @@ internal class InteropMutableTransaction(
     override var isInteropActive: Boolean
 ) : InteropSyncTransaction {
     private val actions = mutableListOf<InteropSyncAction>()
+    private val finalFrameActions = mutableListOf<InteropSyncAction>()
     private val holdersWithPendingViewUpdates = mutableSetOf<InteropViewHolder>()
 
     private var requiresFrameSynchronization = false
 
     override val hasPendingActions: Boolean
-        get() = actions.isNotEmpty()
+        get() = actions.isNotEmpty() || finalFrameActions.isNotEmpty()
 
     val hasPendingViewUpdatesOnly: Boolean
         get() = hasPendingActions && !requiresFrameSynchronization
@@ -91,6 +92,7 @@ internal class InteropMutableTransaction(
 
     override fun performTransaction() {
         actions.fastForEach { it.invoke() }
+        finalFrameActions.fastForEach { it.invoke() }
     }
 
     /**
@@ -98,6 +100,17 @@ internal class InteropMutableTransaction(
      */
     fun scheduleFrameSynchronizedAction(action: InteropSyncAction) {
         actions.add(action)
+        requiresFrameSynchronization = true
+    }
+
+    /**
+     * Schedules an action after all regular frame-synchronised updates for the current frame.
+     *
+     * Scene-level overlay masks depend on the current frames of every affected interop wrapper, so
+     * they must be applied after holder layout updates.
+     */
+    fun scheduleFinalFrameSynchronizedAction(action: InteropSyncAction) {
+        finalFrameActions.add(action)
         requiresFrameSynchronization = true
     }
 
