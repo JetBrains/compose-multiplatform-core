@@ -38,12 +38,9 @@ import platform.UIKit.UIColor
  */
 internal class InteropMask(
     private val interopWrappingView: InteropWrappingView,
-    private val densityProvider: () -> Density,
+    private val density: () -> Density,
     private val finalFrameUpdateScheduler: FinalFrameUpdateScheduler,
 ) {
-    private val density: Density
-        get() = densityProvider()
-
     private var rootSize: IntSize? = null
     private var unclippedRect: IntRect? = null
     private var clippedRect: IntRect? = null
@@ -54,6 +51,9 @@ internal class InteropMask(
     private var currentFrame: IntRect? = null
     private var currentVisibleRects: List<IntRect>? = null
 
+    val hasInstalledMask: Boolean
+        get() = interopMaskLayer != null
+
     // Distinguishes final-frame callbacks queued before a clear from those queued after it.
     private var updateGeneration = 0
 
@@ -61,6 +61,11 @@ internal class InteropMask(
         this.rootSize = rootSize
         this.unclippedRect = unclippedRect
         this.clippedRect = clippedRect
+
+        // Background interop is clipped by the wrapping view and never needs a mask. Keep the
+        // geometry so a later switch to overlay can resolve the mask without another layout pass.
+        if (!interopWrappingView.placedAsOverlay) return
+
         scheduleUpdate()
     }
 
@@ -139,7 +144,7 @@ internal class InteropMask(
 
         if (currentFrame != frame) {
             currentFrame = frame
-            maskLayer.frame = frame.toCGRect(density)
+            maskLayer.frame = frame.toCGRect(density())
         }
         if (currentVisibleRects != visibleRects) {
             currentVisibleRects = visibleRects
@@ -155,7 +160,7 @@ internal class InteropMask(
 
     private fun createMaskPath(visibleRects: List<IntRect>) =
         CGPathCreateMutable().also { path ->
-            val scale = density.density
+            val scale = density().density
             visibleRects.forEach { rect ->
                 val left = (rect.left / scale).toDouble()
                 val top = (rect.top / scale).toDouble()

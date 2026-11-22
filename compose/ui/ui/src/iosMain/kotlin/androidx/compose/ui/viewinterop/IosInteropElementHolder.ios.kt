@@ -78,10 +78,11 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
     private var currentRootSize: IntSize? = null
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
+    private val screenDensity get() = container.root.density
     private val layout = InteropElementLayout(
         group = interopWrappingView,
         userComponent = userComponentView,
-        densityProvider = { container.root.density },
+        density = { screenDensity },
         finalFrameUpdateScheduler = interopContainer.createFinalFrameUpdateScheduler(),
     )
     override val measurePolicy: MeasurePolicy get() = layout.measurePolicy
@@ -148,8 +149,6 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
             unclippedRect != currentUnclippedRect
         ) {
             container.scheduleUpdate {
-                val screenDensity = container.root.density
-
                 UIView.performWithoutAnimation {
                     layout.update(
                         groupFrame = groupFrame?.toCGRect(screenDensity),
@@ -229,8 +228,14 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
         interopWrappingView.interactionMode = properties.interactionMode
         interopWrappingView.placedAsOverlay = properties.placedAsOverlay
         layout.updateSafeAreaInsetsPolicy(properties.safeAreaInsetsPolicy)
-        container.scheduleUpdate {
-            layout.scheduleMaskUpdate()
+
+        // A new overlay must resolve its first mask. A switch from overlay to background must
+        // remove an installed mask; unmasked overlays need no work because UIKit clipping is
+        // restored synchronously by the placedAsOverlay setter.
+        if (properties.placedAsOverlay || layout.hasInstalledMask) {
+            container.scheduleUpdate {
+                layout.scheduleMaskUpdate()
+            }
         }
 
         platformModifier = Modifier
@@ -243,12 +248,18 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
                 isEnabled = properties.isNativeAccessibilityEnabled,
                 interopWrappingView
             )
-            .sceneInteropLayerAware(this)
+            .sceneInteropLayerAware(
+                isEnabled = properties.placedAsOverlay,
+                this
+            )
     }
 }
 
-private fun Modifier.sceneInteropLayerAware(holder: IosInteropElementHolder<*>): Modifier =
-    this then SceneInteropLayerAwareModifierElement(holder)
+private fun Modifier.sceneInteropLayerAware(
+    isEnabled: Boolean,
+    holder: IosInteropElementHolder<*>
+): Modifier =
+    if (isEnabled) this then SceneInteropLayerAwareModifierElement(holder) else this
 
 private data class SceneInteropLayerAwareModifierElement(
     val holder: IosInteropElementHolder<*>,

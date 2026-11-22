@@ -66,7 +66,7 @@ import platform.UIKit.UIView
 internal class InteropElementLayout(
     private val group: InteropWrappingView,
     private val userComponent: UIView,
-    private val densityProvider: () -> Density,
+    density: () -> Density,
     private val finalFrameUpdateScheduler: FinalFrameUpdateScheduler,
 ) {
     /**
@@ -81,7 +81,7 @@ internal class InteropElementLayout(
     private var userComponentHostSafeAreaInsets: UserComponentHostSafeAreaInsets? = null
     private val interopMask = InteropMask(
         interopWrappingView = group,
-        densityProvider = densityProvider,
+        density = density,
         finalFrameUpdateScheduler = finalFrameUpdateScheduler,
     )
 
@@ -169,6 +169,9 @@ internal class InteropElementLayout(
 
     /** Removes the mask and clears cached mask state when the interop is removed or reused. */
     fun clearSceneLayerMask() = interopMask.clear()
+
+    val hasInstalledMask: Boolean
+        get() = interopMask.hasInstalledMask
 
     fun updateSafeAreaInsetsPolicy(policy: UIKitInteropSafeAreaInsetsPolicy) {
         val currentSafeAreaInsets = userComponentHostSafeAreaInsets

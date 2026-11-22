@@ -104,6 +104,56 @@ class InteropSceneLayerTest {
     }
 
     @Test
+    fun backgroundInteropAvoidsAndClearsOverlayMask() = runUIKitInstrumentedTest {
+        val interopView = UIView()
+        val properties = mutableStateOf(UIKitInteropProperties(placedAsOverlay = false))
+        var interopContainer: IosInteropContainer? = null
+
+        setContent {
+            interopContainer = LocalInteropContainer.current as IosInteropContainer
+
+            Box(modifier = Modifier.fillMaxSize().sceneInteropLayerRoot()) {
+                Box(
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .sceneInteropLayer(occludesLowerLayers = false, zIndex = 0f)
+                ) {
+                    UIKitView(
+                        factory = { interopView },
+                        modifier = Modifier.fillMaxSize(),
+                        properties = properties.value,
+                    )
+                }
+                Box(
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .background(Color.Black)
+                            .sceneInteropLayer(occludesLowerLayers = true, zIndex = 1f)
+                )
+            }
+        }
+
+        waitUntil("Background interop view was not attached") { interopView.window != null }
+        waitForIdle()
+        val interopWrappingView =
+            checkNotNull(checkNotNull(interopContainer).groupForInteropView(interopView))
+        assertNull(
+            interopWrappingView.layer.mask,
+            "Background interop must use UIKit clipping instead of a mask",
+        )
+
+        properties.value = UIKitInteropProperties(placedAsOverlay = true)
+        waitUntil("Switching to overlay did not install its mask") {
+            checkNotNull(interopContainer).groupForInteropView(interopView)?.layer?.mask != null
+        }
+
+        properties.value = UIKitInteropProperties(placedAsOverlay = false)
+        waitUntil("Switching back to background did not clear the overlay mask") {
+            checkNotNull(interopContainer).groupForInteropView(interopView)?.layer?.mask == null
+        }
+    }
+
+    @Test
     fun removedOrReusedOverlayClearsItsMask() = runUIKitInstrumentedTest {
         val interopView = UIView()
         var interopContainer: IosInteropContainer? = null
