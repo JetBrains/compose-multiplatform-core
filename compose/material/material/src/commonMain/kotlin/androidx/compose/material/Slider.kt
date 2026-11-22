@@ -174,9 +174,6 @@ public fun Slider(
     val onValueChangeFinishedState = rememberUpdatedState(onValueChangeFinished)
     val tickFractions = remember(steps) { stepsToTickFractions(steps) }
 
-<<<<<<< HEAD
-    val focusRequester = remember { FocusRequester() }
-=======
     val requestFocusOnGesture = sliderRequestsFocusOnGestureEnd
     val focusRequester =
         if (requestFocusOnGesture) {
@@ -184,7 +181,6 @@ public fun Slider(
         } else {
             null
         }
->>>>>>> c0a15af47ea3115feb16165cdb8330cd7c3b9a58
     BoxWithConstraints(
         modifier
             .minimumInteractiveComponentSize()
@@ -197,13 +193,9 @@ public fun Slider(
                 valueRange,
                 steps,
             )
-<<<<<<< HEAD
-            .focusRequester(focusRequester)
-=======
             .then(
                 if (requestFocusOnGesture) Modifier.focusRequester(focusRequester!!) else Modifier
             )
->>>>>>> c0a15af47ea3115feb16165cdb8330cd7c3b9a58
             .focusable(enabled, interactionSource)
             .slideOnKeyEvents(
                 enabled,
@@ -251,13 +243,9 @@ public fun Slider(
             rememberUpdatedState<(Float) -> Unit> { velocity: Float ->
                 val current = rawOffset.floatValue
                 val target = snapValueToTick(current, tickFractions, minPx, maxPx)
-<<<<<<< HEAD
-                focusRequester.requestFocus()
-=======
                 if (requestFocusOnGesture) {
                     focusRequester!!.requestFocus()
                 }
->>>>>>> c0a15af47ea3115feb16165cdb8330cd7c3b9a58
                 if (current != target) {
                     scope.launch {
                         animateToTarget(draggableState, current, target, velocity)
