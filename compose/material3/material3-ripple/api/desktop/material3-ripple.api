@@ -1,3 +1,12 @@
+public final class androidx/compose/material3/ripple/ComposeMaterial3RippleFlags {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/ripple/ComposeMaterial3RippleFlags;
+	public static field isBorderRendererFocusRingEnabled Z
+}
+
+public abstract interface annotation class androidx/compose/material3/ripple/ExperimentalMaterial3RippleApi : java/lang/annotation/Annotation {
+}
+
 public final class androidx/compose/material3/ripple/RippleKt {
 	public static final fun createRippleModifierNode (Landroidx/compose/foundation/interaction/InteractionSource;Lkotlin/jvm/functions/Function0;)Landroidx/compose/ui/node/DelegatableNode;
 }

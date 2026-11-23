@@ -3,6 +3,14 @@ public final class androidx/compose/animation/AnimateBoundsModifierKt {
 	public static synthetic fun animateBounds$default (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/layout/LookaheadScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/BoundsTransform;ZILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 }
 
+public final class androidx/compose/animation/AnimatedContentDefaults {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/animation/AnimatedContentDefaults;
+	public final fun getContentTransform ()Landroidx/compose/animation/ContentTransform;
+	public final fun getSizeAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
+	public final fun getSizeTransform ()Landroidx/compose/animation/SizeTransform;
+}
+
 public final class androidx/compose/animation/AnimatedContentKt {
 	public static final fun AnimatedContent (Landroidx/compose/animation/core/Transition;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
 	public static final fun AnimatedContent (Ljava/lang/Object;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Alignment;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
@@ -247,6 +255,7 @@ public final class androidx/compose/animation/MutableContentTransform {
 	public fun <init> (Landroidx/compose/animation/MutableTransform;Landroidx/compose/animation/MutableTransform;)V
 	public fun <init> (ZZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
 	public final fun initialContentTransform (Lkotlin/jvm/functions/Function2;)V
+	public final fun sharedElementProgress (Lkotlin/jvm/functions/Function0;)V
 	public final fun targetContentTransform (Lkotlin/jvm/functions/Function2;)V
 }
 
@@ -272,6 +281,9 @@ public final class androidx/compose/animation/SharedTransitionDefaults {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/animation/SharedTransitionDefaults;
 	public final fun getBoundsTransform ()Landroidx/compose/animation/BoundsTransform;
+	public final fun getEnterTransition ()Landroidx/compose/animation/EnterTransition;
+	public final fun getExitTransition ()Landroidx/compose/animation/ExitTransition;
+	public final fun getResizeMode ()Landroidx/compose/animation/SharedTransitionScope$ResizeMode;
 }
 
 public final class androidx/compose/animation/SharedTransitionDefaults$SharedContentConfig : androidx/compose/animation/SharedTransitionScope$SharedContentConfig {
@@ -283,6 +295,7 @@ public abstract interface class androidx/compose/animation/SharedTransitionScope
 	public abstract fun OverlayClip (Landroidx/compose/ui/graphics/Shape;)Landroidx/compose/animation/SharedTransitionScope$OverlayClip;
 	public fun SharedContentConfig ()Landroidx/compose/animation/SharedTransitionScope$SharedContentConfig;
 	public fun SharedContentConfig (Z)Landroidx/compose/animation/SharedTransitionScope$SharedContentConfig;
+	public fun SharedContentConfig-my67O7I (I)Landroidx/compose/animation/SharedTransitionScope$SharedContentConfig;
 	public abstract fun isTransitionActive ()Z
 	public fun rememberSharedContentState (Ljava/lang/Object;Landroidx/compose/animation/SharedTransitionScope$SharedContentConfig;Landroidx/compose/runtime/Composer;I)Landroidx/compose/animation/SharedTransitionScope$SharedContentState;
 	public fun rememberSharedContentState (Ljava/lang/Object;Landroidx/compose/runtime/Composer;I)Landroidx/compose/animation/SharedTransitionScope$SharedContentState;
@@ -298,6 +311,25 @@ public abstract interface class androidx/compose/animation/SharedTransitionScope
 	public static synthetic fun skipToLookaheadPosition$default (Landroidx/compose/animation/SharedTransitionScope;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 	public abstract fun skipToLookaheadSize (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function0;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun skipToLookaheadSize$default (Landroidx/compose/animation/SharedTransitionScope;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+}
+
+public final class androidx/compose/animation/SharedTransitionScope$DeferredTransitionBehavior {
+	public static final field Companion Landroidx/compose/animation/SharedTransitionScope$DeferredTransitionBehavior$Companion;
+	public static final synthetic fun box-impl (I)Landroidx/compose/animation/SharedTransitionScope$DeferredTransitionBehavior;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class androidx/compose/animation/SharedTransitionScope$DeferredTransitionBehavior$Companion {
+	public final fun getFollowContainer-EhBA31Y ()I
+	public final fun getSeekToTarget-EhBA31Y ()I
+	public final fun getStatic-EhBA31Y ()I
 }
 
 public abstract interface class androidx/compose/animation/SharedTransitionScope$OverlayClip {
@@ -326,6 +358,7 @@ public final class androidx/compose/animation/SharedTransitionScope$ResizeMode$C
 
 public abstract interface class androidx/compose/animation/SharedTransitionScope$SharedContentConfig {
 	public fun alternativeTargetBoundsInTransitionScopeAfterRemoval-cSwnlzA (Landroidx/compose/animation/SharedTransitionScope$SharedContentState;Landroidx/compose/ui/geometry/Rect;J)Landroidx/compose/ui/geometry/Rect;
+	public fun getDeferredTransitionBehavior-EhBA31Y ()I
 	public fun getPermitTransformDuringDeferredTransition ()Z
 	public fun getShouldKeepEnabledForOngoingAnimation ()Z
 	public fun isEnabled (Landroidx/compose/animation/SharedTransitionScope$SharedContentState;)Z
