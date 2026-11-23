@@ -47,11 +47,9 @@ import androidx.compose.runtime.internal.invokeComposable
 import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 import androidx.compose.runtime.internal.trace
 import androidx.compose.runtime.snapshots.IndirectState
-import androidx.compose.runtime.snapshots.IndirectStateObserver
 import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastToSet
-import androidx.compose.runtime.snapshots.observeIndirectStateRecalculations
 import androidx.compose.runtime.tooling.ComposeStackTrace
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 import androidx.compose.runtime.tooling.ComposeToolingApi
@@ -252,21 +250,6 @@ internal class GapComposer(
 
     override var sourceMarkersEnabled =
         parentContext.collectingSourceInformation || parentContext.collectingCallByInformation
-
-    private val indirectStateObserver =
-        object : IndirectStateObserver {
-            override fun start(state: IndirectState<*>) {
-                if (state is DerivedState<*>) {
-                    childrenComposing++
-                }
-            }
-
-            override fun done(state: IndirectState<*>, calculatedValue: Any?) {
-                if (state is DerivedState<*>) {
-                    childrenComposing--
-                }
-            }
-        }
 
     private val invalidateStack = Stack<RecomposeScopeImpl>()
 
@@ -1072,18 +1055,18 @@ internal class GapComposer(
         changeListWriter.sideEffect(effect)
     }
 
+    override val currentCompositionLocalMap: CompositionLocalMap
+        get() = currentCompositionLocalScope()
+
+    /**
+     * Returns the current [CompositionLocalMap] for the current group, or [providerCache] if a
+     * cached value present. [providerCache] must be reset to `null` when entering or exiting a new
+     * group to prevent a stale value from being returned.
+     */
     private fun currentCompositionLocalScope(): PersistentCompositionLocalMap {
         providerCache?.let {
             return it
         }
-        return currentCompositionLocalScope(reader.parent)
-    }
-
-    override val currentCompositionLocalMap: CompositionLocalMap
-        get() = currentCompositionLocalScope()
-
-    /** Return the current [CompositionLocal] scope which was provided by a parent group. */
-    private fun currentCompositionLocalScope(group: Int): PersistentCompositionLocalMap {
         if (inserting && writerHasAProvider) {
             var current = writer.parent
             while (current > 0) {
@@ -1098,6 +1081,14 @@ internal class GapComposer(
                 current = writer.parent(current)
             }
         }
+        return currentCompositionLocalScope(reader.parent).also { providerCache = it }
+    }
+
+    /**
+     * Resolves the current [CompositionLocalMap] for the given [group]. This does **NOT** update
+     * the [providerCache] or perform any other caching.
+     */
+    private fun currentCompositionLocalScope(group: Int): PersistentCompositionLocalMap {
         if (reader.size > 0) {
             var current = group
             while (current > 0) {
@@ -1105,16 +1096,12 @@ internal class GapComposer(
                     reader.groupKey(current) == compositionLocalMapKey &&
                         reader.groupObjectKey(current) == compositionLocalMap
                 ) {
-                    val providers =
-                        providerUpdates?.get(current)
-                            ?: reader.groupAux(current) as PersistentCompositionLocalMap
-                    providerCache = providers
-                    return providers
+                    return providerUpdates?.get(current)
+                        ?: reader.groupAux(current) as PersistentCompositionLocalMap
                 }
                 current = reader.parent(current)
             }
         }
-        providerCache = rootProvider
         return rootProvider
     }
 
@@ -1288,7 +1275,9 @@ internal class GapComposer(
 
     override val currentRecomposeScope: RecomposeScopeImpl?
         get() = invalidateStack.let {
-            if (childrenComposing == 0 && it.isNotEmpty()) it.peek() else null
+            if (childrenComposing == 0 && composition.derivedStateDepth == 0 && it.isNotEmpty())
+                it.peek()
+            else null
         }
 
     private fun ensureWriter() {
@@ -1781,6 +1770,8 @@ internal class GapComposer(
             while (current != -1) {
                 val newCurrentNodes = updatedNodeCount(current) + delta
                 updateNodeCount(current, newCurrentNodes)
+                if (current >= 0 && reader.isNode(current)) break
+
                 for (pendingIndex in minPending downTo 0) {
                     val pending = pendingStack.peek(pendingIndex)
                     if (pending != null && pending.updateNodeCount(current, newCurrentNodes)) {
@@ -1788,13 +1779,7 @@ internal class GapComposer(
                         break
                     }
                 }
-                @Suppress("LiftReturnOrAssignment")
-                if (current < 0) {
-                    current = reader.parent
-                } else {
-                    if (reader.isNode(current)) break
-                    current = reader.parent(current)
-                }
+                current = if (current < 0) reader.parent else reader.parent(current)
             }
         }
     }
@@ -2307,9 +2292,7 @@ internal class GapComposer(
             val observer = observerHolder.pin()
             observer?.onBeginComposition(composition)
             try {
-                observeIndirectStateRecalculations(indirectStateObserver) {
-                    insertMovableContentGuarded(references)
-                }
+                insertMovableContentGuarded(references)
                 completed = true
             } finally {
                 observer?.onEndComposition(composition)
@@ -2665,25 +2648,23 @@ internal class GapComposer(
                 }
                 // ^^ Experimental for forced
 
-                // Ignore reads of derivedStateOf recalculations
-                observeIndirectStateRecalculations(indirectStateObserver) {
-                    if (content != null) {
-                        startGroup(invocationKey, invocation)
-                        invokeComposable(this, content)
-                        endGroup()
-                    } else if (
-                        (forciblyRecompose || providersInvalid) &&
-                            savedContent != null &&
-                            savedContent != Composer.Empty
-                    ) {
-                        startGroup(invocationKey, invocation)
-                        @Suppress("UNCHECKED_CAST")
-                        invokeComposable(this, savedContent as @Composable () -> Unit)
-                        endGroup()
-                    } else {
-                        skipCurrentGroup()
-                    }
+                if (content != null) {
+                    startGroup(invocationKey, invocation)
+                    invokeComposable(this, content)
+                    endGroup()
+                } else if (
+                    (forciblyRecompose || providersInvalid) &&
+                        savedContent != null &&
+                        savedContent != Composer.Empty
+                ) {
+                    startGroup(invocationKey, invocation)
+                    @Suppress("UNCHECKED_CAST")
+                    invokeComposable(this, savedContent as @Composable () -> Unit)
+                    endGroup()
+                } else {
+                    skipCurrentGroup()
                 }
+
                 endRoot()
                 complete = true
             } catch (e: Throwable) {
@@ -3160,7 +3141,8 @@ internal class GapComposer(
             invalidateStack.size +
             providersInvalidStack.size +
             pendingStack.size +
-            parentStateStack.size
+            parentStateStack.size +
+            invalidations.size
     }
 
     override val recomposeScope: RecomposeScope?

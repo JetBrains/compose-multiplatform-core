@@ -209,6 +209,7 @@ public final class androidx/compose/ui/KeepScreenOnKt {
 }
 
 public final class androidx/compose/ui/MediaQueryKt {
+	public static final fun computedMediaQuery (Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
 	public static final fun derivedMediaQuery (Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
 	public static final fun getLocalUiMediaScope ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 	public static final fun mediaQuery (Landroidx/compose/runtime/CompositionLocalAccessorScope;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
@@ -2907,19 +2908,32 @@ public abstract interface class androidx/compose/ui/layout/LayoutIdParentData {
 }
 
 public abstract interface class androidx/compose/ui/layout/LayoutInfo {
+	public static final field Companion Landroidx/compose/ui/layout/LayoutInfo$Companion;
+	public static final field NotPlacedPlaceOrder I
 	public abstract fun getCoordinates ()Landroidx/compose/ui/layout/LayoutCoordinates;
 	public abstract fun getDensity ()Landroidx/compose/ui/unit/Density;
 	public abstract fun getHeight ()I
 	public abstract fun getLayoutDirection ()Landroidx/compose/ui/unit/LayoutDirection;
 	public abstract fun getModifierInfo ()Ljava/util/List;
 	public abstract fun getParentInfo ()Landroidx/compose/ui/layout/LayoutInfo;
+	public fun getPlaceOrder ()I
 	public abstract fun getSemanticsId ()I
 	public abstract fun getViewConfiguration ()Landroidx/compose/ui/platform/ViewConfiguration;
 	public abstract fun getWidth ()I
+	public fun getZIndex ()F
 	public abstract fun isAttached ()Z
 	public fun isDeactivated ()Z
 	public abstract fun isPlaced ()Z
 	public fun isVirtual ()Z
+}
+
+public final class androidx/compose/ui/layout/LayoutInfo$Companion {
+	public static final field NotPlacedPlaceOrder I
+}
+
+public final class androidx/compose/ui/layout/LayoutInfoKt {
+	public static final fun calculateOuterBoundsInRoot (Landroidx/compose/ui/layout/LayoutInfo;Landroidx/compose/ui/geometry/MutableRect;)V
+	public static final fun isTransparent (Landroidx/compose/ui/layout/LayoutInfo;)Z
 }
 
 public final class androidx/compose/ui/layout/LayoutKt {
@@ -3625,6 +3639,7 @@ public final class androidx/compose/ui/node/LayoutModifierNodeKt {
 	public static final fun invalidateLayer (Landroidx/compose/ui/node/LayoutModifierNode;)V
 	public static final fun invalidateMeasurement (Landroidx/compose/ui/node/LayoutModifierNode;)V
 	public static final fun invalidatePlacement (Landroidx/compose/ui/node/LayoutModifierNode;)V
+	public static final fun invalidateRulers (Landroidx/compose/ui/node/LayoutModifierNode;)V
 	public static final fun remeasureSync (Landroidx/compose/ui/node/LayoutModifierNode;)V
 	public static final fun updateLayerBlock (Landroidx/compose/ui/node/LayoutModifierNode;Lkotlin/jvm/functions/Function1;)V
 }
@@ -3644,6 +3659,10 @@ public abstract class androidx/compose/ui/node/ModifierNodeElement : androidx/co
 	public abstract fun hashCode ()I
 	public fun inspectableProperties (Landroidx/compose/ui/platform/InspectorInfo;)V
 	public abstract fun update (Landroidx/compose/ui/Modifier$Node;)V
+}
+
+public abstract interface class androidx/compose/ui/node/ObservationTarget {
+	public abstract fun isObservationValid ()Z
 }
 
 public abstract interface class androidx/compose/ui/node/ObserverModifierNode : androidx/compose/ui/node/DelegatableNode {
@@ -3845,6 +3864,9 @@ public final class androidx/compose/ui/platform/DefaultViewConfiguration : andro
 	public fun getDoubleTapTimeoutMillis ()J
 	public fun getLongPressTimeoutMillis ()J
 	public fun getTouchSlop ()F
+}
+
+public abstract interface annotation class androidx/compose/ui/platform/ExperimentalComposeUiHostApi : java/lang/annotation/Annotation {
 }
 
 public abstract interface class androidx/compose/ui/platform/InfiniteAnimationPolicy : kotlin/coroutines/CoroutineContext$Element {
@@ -4124,10 +4146,13 @@ public final class androidx/compose/ui/semantics/CollectionInfo {
 public final class androidx/compose/ui/semantics/CollectionItemInfo {
 	public static final field $stable I
 	public fun <init> (IIII)V
+	public fun equals (Ljava/lang/Object;)Z
 	public final fun getColumnIndex ()I
 	public final fun getColumnSpan ()I
 	public final fun getRowIndex ()I
 	public final fun getRowSpan ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class androidx/compose/ui/semantics/CustomAccessibilityAction {
@@ -4259,27 +4284,32 @@ public final class androidx/compose/ui/semantics/SemanticsActions {
 	public final fun getShowTextSubstitution ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 }
 
-public final class androidx/compose/ui/semantics/SemanticsConfiguration : androidx/compose/ui/semantics/SemanticsPropertyReceiver, java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
+public final class androidx/compose/ui/semantics/SemanticsConfiguration : androidx/compose/ui/semantics/SemanticsPropertyProvider, androidx/compose/ui/semantics/SemanticsPropertyReceiver, java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
 	public static final field $stable I
 	public fun <init> ()V
-	public final fun contains (Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Z
+	public fun anyProperty (Lkotlin/jvm/functions/Function2;)Z
+	public fun contains (Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Z
 	public final fun copy ()Landroidx/compose/ui/semantics/SemanticsConfiguration;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun get (Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Ljava/lang/Object;
-	public final fun getOrElse (Landroidx/compose/ui/semantics/SemanticsPropertyKey;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-	public final fun getOrElseNullable (Landroidx/compose/ui/semantics/SemanticsPropertyKey;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public fun forEachProperty (Lkotlin/jvm/functions/Function2;)V
+	public fun get (Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Ljava/lang/Object;
+	public fun getAccessibilityExtraKeys ()Ljava/util/Set;
+	public fun getOrElse (Landroidx/compose/ui/semantics/SemanticsPropertyKey;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public fun getOrElseNullable (Landroidx/compose/ui/semantics/SemanticsPropertyKey;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun hashCode ()I
 	public final fun isClearingSemantics ()Z
-	public final fun isMergingSemanticsOfDescendants ()Z
+	public fun isMergingSemanticsOfDescendants ()Z
 	public fun iterator ()Ljava/util/Iterator;
 	public fun set (Landroidx/compose/ui/semantics/SemanticsPropertyKey;Ljava/lang/Object;)V
 	public final fun setClearingSemantics (Z)V
-	public final fun setMergingSemanticsOfDescendants (Z)V
+	public fun setMergingSemanticsOfDescendants (Z)V
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class androidx/compose/ui/semantics/SemanticsConfigurationKt {
 	public static final fun getOrNull (Landroidx/compose/ui/semantics/SemanticsConfiguration;Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Ljava/lang/Object;
+	public static final fun getOrNull (Landroidx/compose/ui/semantics/SemanticsPropertyProvider;Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Ljava/lang/Object;
+	public static final fun hasKeysMissingFrom (Landroidx/compose/ui/semantics/SemanticsPropertyProvider;Landroidx/compose/ui/semantics/SemanticsPropertyProvider;)Z
 }
 
 public abstract interface class androidx/compose/ui/semantics/SemanticsModifier : androidx/compose/ui/Modifier$Element {
@@ -4304,7 +4334,14 @@ public final class androidx/compose/ui/semantics/SemanticsModifierKt {
 
 public final class androidx/compose/ui/semantics/SemanticsNode {
 	public static final field $stable I
+	public final fun anyMergedProperty (Lkotlin/jvm/functions/Function2;)Z
+	public final fun calculateBoundsInParent (Landroidx/compose/ui/geometry/MutableRect;)V
+	public final fun calculateShapeBoundsInRoot (Landroidx/compose/ui/geometry/MutableRect;)Z
+	public final fun collectAccessibilityChildren (Ljava/util/List;)V
 	public final fun computeEffectiveAlpha ()F
+	public final fun forEachAccessibilityChild (Lkotlin/jvm/functions/Function1;)V
+	public final fun forEachMergedProperty (Lkotlin/jvm/functions/Function2;)V
+	public final fun forEachSemanticsAncestor (Lkotlin/jvm/functions/Function2;)Landroidx/compose/ui/layout/LayoutInfo;
 	public final fun getAlignmentLinePosition (Landroidx/compose/ui/layout/AlignmentLine;)I
 	public final fun getBoundsInRoot ()Landroidx/compose/ui/geometry/Rect;
 	public final fun getBoundsInWindow ()Landroidx/compose/ui/geometry/Rect;
@@ -4312,6 +4349,8 @@ public final class androidx/compose/ui/semantics/SemanticsNode {
 	public final fun getConfig ()Landroidx/compose/ui/semantics/SemanticsConfiguration;
 	public final fun getId ()I
 	public final fun getLayoutInfo ()Landroidx/compose/ui/layout/LayoutInfo;
+	public final fun getMergedConfig ()Landroidx/compose/ui/semantics/SemanticsPropertyProvider;
+	public final fun getMergedOrNull (Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Ljava/lang/Object;
 	public final fun getMergingEnabled ()Z
 	public final fun getParent ()Landroidx/compose/ui/semantics/SemanticsNode;
 	public final fun getPositionInRoot-F1C5BW0 ()J
@@ -4320,19 +4359,32 @@ public final class androidx/compose/ui/semantics/SemanticsNode {
 	public final fun getRoot ()Landroidx/compose/ui/node/RootForTest;
 	public final fun getSize-YbymL2g ()J
 	public final fun getTouchBoundsInRoot ()Landroidx/compose/ui/geometry/Rect;
+	public final fun getUnmergedConfig ()Landroidx/compose/ui/semantics/SemanticsPropertyProvider;
+	public final fun hasAccessibilityChild ()Z
+	public final fun isMergingSemanticsOfDescendants ()Z
 	public final fun isRoot ()Z
+}
+
+public final class androidx/compose/ui/semantics/SemanticsNodeKt {
+	public static final fun getSemanticsConfiguration (Landroidx/compose/ui/layout/LayoutInfo;)Landroidx/compose/ui/semantics/SemanticsPropertyProvider;
 }
 
 public final class androidx/compose/ui/semantics/SemanticsOwner {
 	public static final field $stable I
+	public final fun get (I)Landroidx/compose/ui/semantics/SemanticsNode;
+	public final fun getLayoutInfo (I)Landroidx/compose/ui/layout/LayoutInfo;
 	public final fun getRootSemanticsNode ()Landroidx/compose/ui/semantics/SemanticsNode;
 	public final fun getUnmergedRootSemanticsNode ()Landroidx/compose/ui/semantics/SemanticsNode;
+	public final fun hitTest-3MmeM6k (JLkotlin/jvm/functions/Function1;)Landroidx/compose/ui/layout/LayoutInfo;
 }
 
 public final class androidx/compose/ui/semantics/SemanticsOwnerKt {
+	public static final fun forEachUncoveredSemanticsNode (Landroidx/compose/ui/semantics/SemanticsOwner;Landroidx/compose/ui/semantics/UncoveredSemanticsNodeVisitor;)V
 	public static final synthetic fun getAllSemanticsNodes (Landroidx/compose/ui/semantics/SemanticsOwner;Z)Ljava/util/List;
 	public static final fun getAllSemanticsNodes (Landroidx/compose/ui/semantics/SemanticsOwner;ZZ)Ljava/util/List;
 	public static synthetic fun getAllSemanticsNodes$default (Landroidx/compose/ui/semantics/SemanticsOwner;ZZILjava/lang/Object;)Ljava/util/List;
+	public static final fun isHidden (Landroidx/compose/ui/semantics/SemanticsNode;)Z
+	public static final fun isImportantForAccessibility (Landroidx/compose/ui/semantics/SemanticsNode;)Z
 }
 
 public final class androidx/compose/ui/semantics/SemanticsProperties {
@@ -4537,6 +4589,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertyKey {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAccessibilityExtraKey ()Ljava/lang/String;
 	public final fun getName ()Ljava/lang/String;
 	public final fun getValue (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Lkotlin/reflect/KProperty;)Ljava/lang/Object;
 	public final fun merge (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
@@ -4544,8 +4597,23 @@ public final class androidx/compose/ui/semantics/SemanticsPropertyKey {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class androidx/compose/ui/semantics/SemanticsPropertyProvider {
+	public abstract fun anyProperty (Lkotlin/jvm/functions/Function2;)Z
+	public abstract fun contains (Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Z
+	public abstract fun forEachProperty (Lkotlin/jvm/functions/Function2;)V
+	public abstract fun get (Landroidx/compose/ui/semantics/SemanticsPropertyKey;)Ljava/lang/Object;
+	public abstract fun getAccessibilityExtraKeys ()Ljava/util/Set;
+	public abstract fun getOrElse (Landroidx/compose/ui/semantics/SemanticsPropertyKey;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public abstract fun getOrElseNullable (Landroidx/compose/ui/semantics/SemanticsPropertyKey;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public abstract fun isMergingSemanticsOfDescendants ()Z
+}
+
 public abstract interface class androidx/compose/ui/semantics/SemanticsPropertyReceiver {
 	public abstract fun set (Landroidx/compose/ui/semantics/SemanticsPropertyKey;Ljava/lang/Object;)V
+}
+
+public abstract interface class androidx/compose/ui/semantics/UncoveredSemanticsNodeVisitor {
+	public abstract fun visit (Landroidx/compose/ui/semantics/SemanticsNode;IIIIZ)V
 }
 
 public final class androidx/compose/ui/spatial/RelativeLayoutBounds {

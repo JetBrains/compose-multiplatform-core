@@ -131,42 +131,6 @@ public object ComposeUiFlags {
     @JvmField
     public var isTriggerMoveEventsWhenLocationHasNotChangedEnabled: Boolean = true
 
-    /** Fixes trackpad pan gestures (CLASSIFICATION_TWO_FINGER_SWIPE). */
-    // TODO: b/535296682 - Cleanup feature flag
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isTrackpadPanHoverFixEnabled: Boolean = true
-
-    /**
-     * Enables re-interpreting trackpad pinch gestures (CLASSIFICATION_PINCH) as mouse events with
-     * scale factor, rather than passing through fake finger touch events.
-     */
-    // TODO: b/519714278 - Cleanup feature flag
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isTrackpadPinchReinterpretationEnabled: Boolean = true
-
-    /**
-     * Reduce provided CompositionLocals by letting them pull from LocalOwner /
-     * LocalAndroidComposeView dynamically when unprovided, instead of eagerly providing all of
-     * them.
-     */
-    // TODO: b/523295932 - Cleanup feature flag
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isMinimalistLocalsEnabled: Boolean = true
-
-    /**
-     * Enables calculating velocity from two sample points instead of returning zero. This changes
-     * how velocity is calculated for flings, which may affect scrolling, nested scrolling, and
-     * similar gesture behaviors. Please file a bug report if disabling this flag resolves the
-     * issue.
-     */
-    // TODO: b/530873034 - Cleanup feature flag
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isVelocityTrackerMinSampleSizeFixEnabled: Boolean = true
-
     /**
      * If enabled, [androidx.compose.ui.graphics.vector.VectorPainter] will use a shared cache to
      * reuse [androidx.compose.ui.graphics.vector.DrawCache] instances across different painters
@@ -179,10 +143,4 @@ public object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isVectorDrawCacheSharingEnabled: Boolean = true
-
-    /** Guard for Hardware Navigation system default behavior in Compose. */
-    // TODO(b/520209822): Cleanup once proven stable.
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isHardwareNavigationHandlingEnabled: Boolean = false
 }

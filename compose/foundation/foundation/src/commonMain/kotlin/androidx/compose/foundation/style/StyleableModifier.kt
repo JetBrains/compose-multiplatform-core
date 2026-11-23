@@ -19,7 +19,7 @@
 
 package androidx.compose.foundation.style
 
-import androidx.compose.foundation.border.BorderLogic
+import androidx.compose.foundation.BorderRenderer
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.internal.identityHashCode
 import androidx.compose.runtime.CompositionLocal
@@ -78,6 +78,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
+@Suppress("DEPRECATION")
 internal data class StyleElement(val styleState: StyleState?, val style: Style) :
     ModifierNodeElement<StyleOuterNode>() {
     override fun create() = StyleOuterNode(styleState, style)
@@ -118,6 +119,7 @@ internal object StyleInnerElement : ModifierNodeElement<StyleInnerNode>() {
     override fun hashCode(): Int = identityHashCode(this)
 }
 
+@Suppress("DEPRECATION")
 internal class StyleOuterNode(
     styleState: StyleState?,
     style: Style,
@@ -177,9 +179,17 @@ internal class StyleOuterNode(
         }
 
     private var borderLayer: GraphicsLayer? = null
-    private var borderLayerProvider: (() -> GraphicsLayer)? = null
 
-    private val borderLogic = BorderLogic()
+    // Lazily allocated, since many styles never draw a border
+    private var borderRenderer: BorderRenderer? = null
+
+    private fun obtainBorderRenderer(): BorderRenderer =
+        borderRenderer
+            ?: BorderRenderer {
+                borderLayer
+                    ?: requireGraphicsContext().createGraphicsLayer().also { borderLayer = it }
+            }
+                .also { borderRenderer = it }
 
     private var _state: StyleState = styleState ?: MutableStyleState(null)
     private var currentInteractionSource: InteractionSource? = null
@@ -601,21 +611,13 @@ internal class StyleOuterNode(
         // border
         if (hasBorder) {
             val brush = borderBrush ?: SolidColor(borderColor)
-            borderLogic.drawBorder(
-                drawScope = this,
-                width = borderWidth,
-                brush = brush,
-                graphicsLayerProvider =
-                    borderLayerProvider
-                        ?: {
-                            borderLayer
-                                ?: requireGraphicsContext().createGraphicsLayer().also {
-                                    borderLayer = it
-                                }
-                        }
-                            .also { borderLayerProvider = it },
-                outline = outline,
-            )
+            obtainBorderRenderer()
+                .drawBorder(
+                    drawScope = this,
+                    width = borderWidth,
+                    brush = brush,
+                    outline = outline,
+                )
         }
     }
 
@@ -723,7 +725,6 @@ internal class StyleOuterNode(
             requireGraphicsContext().releaseGraphicsLayer(it)
             borderLayer = null
         }
-        borderLayerProvider = null
     }
 }
 

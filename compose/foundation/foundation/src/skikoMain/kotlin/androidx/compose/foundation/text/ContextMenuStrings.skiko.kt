@@ -37,6 +37,8 @@ internal actual value class ContextMenuStrings actual constructor(actual val val
             get() = ContextMenuStrings(3)
         actual inline val Autofill: ContextMenuStrings
             get() = ContextMenuStrings(4)
+        actual inline val LookUp: ContextMenuStrings
+            get() = ContextMenuStrings(5)
     }
 }
 

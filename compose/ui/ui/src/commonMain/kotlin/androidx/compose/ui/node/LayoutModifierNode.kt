@@ -132,6 +132,10 @@ public fun LayoutModifierNode.invalidateLayer(): Unit =
 /**
  * This will invalidate the current node's placement result, and ensure that relayout (the placement
  * block rerun) of this node will happen for the next frame .
+ *
+ * Does not recalculate provided [Ruler][androidx.compose.ui.layout.Ruler] values.
+ *
+ * @see invalidateRulers
  */
 public fun LayoutModifierNode.invalidatePlacement(): Unit = requireLayoutNode().requestRelayout()
 
@@ -141,6 +145,33 @@ public fun LayoutModifierNode.invalidatePlacement(): Unit = requireLayoutNode().
  */
 public fun LayoutModifierNode.invalidateMeasurement(): Unit =
     requireLayoutNode().invalidateMeasurements()
+
+/**
+ * Recalculates the [Ruler][androidx.compose.ui.layout.Ruler] values this node provides, without
+ * remeasuring or re-placing the node.
+ *
+ * Call this when a value read while providing rulers changes and that value is not snapshot state
+ * (for example, a plain `var` on the node). Changes to [State][androidx.compose.runtime.State] read
+ * while providing rulers are observed and recalculate rulers automatically.
+ *
+ * Choosing an invalidation:
+ * - [invalidateMeasurement]: reruns the measure block. Rulers are recalculated with the new measure
+ *   result. Use it when size or child measurement also depends on the changed value.
+ * - [invalidatePlacement]: reruns the placement block. Does not recalculate rulers; the ruler
+ *   values from the last measure result are reused.
+ * - [invalidateRulers]: recalculates only the rulers. This node's measure and placement blocks do
+ *   not rerun. Layouts that read the affected rulers are re-placed.
+ *
+ * Has no effect if the node is not attached.
+ *
+ * @sample androidx.compose.ui.samples.InvalidateRulersSample
+ */
+public fun LayoutModifierNode.invalidateRulers() {
+    if (!node.isAttached) return
+    val coordinator = requireCoordinator(Nodes.Layout)
+    coordinator.invalidateRulers()
+    coordinator.lookaheadDelegate?.invalidateRulers()
+}
 
 internal fun LayoutModifierNode.requestRemeasure() = requireLayoutNode().requestRemeasure()
 

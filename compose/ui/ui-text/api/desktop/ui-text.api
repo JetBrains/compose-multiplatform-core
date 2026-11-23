@@ -9,6 +9,7 @@ public final class androidx/compose/ui/text/AnnotatedString : java/lang/CharSequ
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun flatMapAnnotations (Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/text/AnnotatedString;
 	public fun get (I)C
+	public final fun getDrawAnnotations (II)Ljava/util/List;
 	public fun getLength ()I
 	public final fun getLinkAnnotations (II)Ljava/util/List;
 	public final fun getParagraphStyles ()Ljava/util/List;
@@ -17,8 +18,11 @@ public final class androidx/compose/ui/text/AnnotatedString : java/lang/CharSequ
 	public final fun getStringAnnotations (Ljava/lang/String;II)Ljava/util/List;
 	public final fun getText ()Ljava/lang/String;
 	public final fun getTtsAnnotations (II)Ljava/util/List;
+	public final fun hasDrawAnnotations (II)Z
 	public final fun hasEqualAnnotations (Landroidx/compose/ui/text/AnnotatedString;)Z
 	public final fun hasLinkAnnotations (II)Z
+	public final fun hasSameDrawAffectingAnnotations (Landroidx/compose/ui/text/AnnotatedString;)Z
+	public final fun hasSameLayoutAffectingAnnotations (Landroidx/compose/ui/text/AnnotatedString;)Z
 	public final fun hasStringAnnotations (Ljava/lang/String;II)Z
 	public fun hashCode ()I
 	public final fun length ()I
@@ -47,6 +51,7 @@ public final class androidx/compose/ui/text/AnnotatedString$Builder : java/lang/
 	public fun <init> (Ljava/lang/String;)V
 	public final fun addBullet (Landroidx/compose/ui/text/Bullet;II)V
 	public final fun addBullet-r9BaKPg (Landroidx/compose/ui/text/Bullet;JII)V
+	public final fun addDrawAnnotation (Landroidx/compose/ui/text/DrawAnnotation;II)V
 	public final fun addLink (Landroidx/compose/ui/text/LinkAnnotation$Clickable;II)V
 	public final fun addLink (Landroidx/compose/ui/text/LinkAnnotation$Url;II)V
 	public final fun addStringAnnotation (Ljava/lang/String;Ljava/lang/String;II)V
@@ -125,6 +130,7 @@ public final class androidx/compose/ui/text/AnnotatedStringKt {
 	public static synthetic fun toUpperCase$default (Landroidx/compose/ui/text/AnnotatedString;Landroidx/compose/ui/text/intl/LocaleList;ILjava/lang/Object;)Landroidx/compose/ui/text/AnnotatedString;
 	public static final fun withAnnotation (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/TtsAnnotation;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withAnnotation (Landroidx/compose/ui/text/AnnotatedString$Builder;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static final fun withDrawAnnotation (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/DrawAnnotation;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withLink (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/LinkAnnotation;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withStyle (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/ParagraphStyle;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withStyle (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/SpanStyle;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
@@ -159,6 +165,26 @@ public final class androidx/compose/ui/text/Bullet$Companion {
 public final class androidx/compose/ui/text/DesktopTextStyle_skikoKt {
 	public static final fun lerp (Landroidx/compose/ui/text/PlatformParagraphStyle;Landroidx/compose/ui/text/PlatformParagraphStyle;F)Landroidx/compose/ui/text/PlatformParagraphStyle;
 	public static final fun lerp (Landroidx/compose/ui/text/PlatformSpanStyle;Landroidx/compose/ui/text/PlatformSpanStyle;F)Landroidx/compose/ui/text/PlatformSpanStyle;
+}
+
+public abstract class androidx/compose/ui/text/DrawAnnotation : androidx/compose/ui/text/AnnotatedString$Annotation {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun drawBehind (Landroidx/compose/ui/text/DrawAnnotationScope;)V
+	public fun drawOver (Landroidx/compose/ui/text/DrawAnnotationScope;)V
+	public abstract fun equals (Ljava/lang/Object;)Z
+	public abstract fun hashCode ()I
+}
+
+public final class androidx/compose/ui/text/DrawAnnotationKt {
+	public static final fun DrawAnnotation (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/text/DrawAnnotation;
+	public static synthetic fun DrawAnnotation$default (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/text/DrawAnnotation;
+}
+
+public abstract interface class androidx/compose/ui/text/DrawAnnotationScope : androidx/compose/ui/graphics/drawscope/DrawScope {
+	public abstract fun getEnd ()I
+	public abstract fun getStart ()I
+	public abstract fun getTextLayoutResult ()Landroidx/compose/ui/text/TextLayoutResult;
 }
 
 public abstract interface annotation class androidx/compose/ui/text/ExperimentalTextApi : java/lang/annotation/Annotation {
@@ -627,8 +653,11 @@ public final class androidx/compose/ui/text/TextLayoutResult {
 	public final fun copy-O0kMr_c (Landroidx/compose/ui/text/TextLayoutInput;J)Landroidx/compose/ui/text/TextLayoutResult;
 	public static synthetic fun copy-O0kMr_c$default (Landroidx/compose/ui/text/TextLayoutResult;Landroidx/compose/ui/text/TextLayoutInput;JILjava/lang/Object;)Landroidx/compose/ui/text/TextLayoutResult;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun fillPathForRange-w_Dsyms (IILandroidx/compose/ui/graphics/Path;JZ)V
+	public static synthetic fun fillPathForRange-w_Dsyms$default (Landroidx/compose/ui/text/TextLayoutResult;IILandroidx/compose/ui/graphics/Path;JZILjava/lang/Object;)V
 	public final fun getBidiRunDirection (I)Landroidx/compose/ui/text/style/ResolvedTextDirection;
 	public final fun getBoundingBox (I)Landroidx/compose/ui/geometry/Rect;
+	public final fun getBoundingBoxesForRange (II)Ljava/util/List;
 	public final fun getCursorRect (I)Landroidx/compose/ui/geometry/Rect;
 	public final fun getDidOverflowHeight ()Z
 	public final fun getDidOverflowWidth ()Z

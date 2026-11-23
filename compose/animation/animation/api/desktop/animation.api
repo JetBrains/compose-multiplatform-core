@@ -244,6 +244,7 @@ public final class androidx/compose/animation/LookaheadAnimationVisualDebugHelpe
 
 public final class androidx/compose/animation/MutableContentTransform {
 	public static final field $stable I
+	public fun <init> (Landroidx/compose/animation/MutableTransform;Landroidx/compose/animation/MutableTransform;)V
 	public fun <init> (ZZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
 	public final fun initialContentTransform (Lkotlin/jvm/functions/Function2;)V
 	public final fun targetContentTransform (Lkotlin/jvm/functions/Function2;)V

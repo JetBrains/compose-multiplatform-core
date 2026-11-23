@@ -31,20 +31,22 @@ import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingGfxInfoMetric
 import androidx.benchmark.macro.MacrobenchmarkScope
+import androidx.benchmark.macro.Metric
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.compose.integration.hero.common.macrobenchmark.HeroMacrobenchmarkDefaults
 import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.PokedexConstants.POKEDEX_TARGET_PACKAGE_NAME
-import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.findObjectOrThrow
-import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.waitOrThrow
 import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import androidx.testutils.CpuFrequencyChangeMetric
+import androidx.testutils.TraceCounterMetric
 import androidx.testutils.createCompilationParams
 import androidx.testutils.defaultComposeScrollingMetrics
 import androidx.testutils.defaultMemoryMetrics
+import androidx.testutils.findObjectOrThrow
+import androidx.testutils.waitOrThrow
 import androidx.tracing.Trace
 import kotlin.math.roundToInt
 import org.junit.Test
@@ -64,13 +66,9 @@ class PokedexScrollBenchmark(
             action = "$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_COMPOSE_ACTIVITY",
             setupBlock = {
                 device.waitForIdle()
-                val searchCondition = Until.hasObject(By.res("Pokemon"))
-                device.wait(searchCondition, 3_000)
-                val content = device.findObject(By.res("PokedexList"))
-                // Set gesture margin to avoid triggering gesture navigation
-                content.setGestureMargin(device.displayWidth / 5)
+                device.waitOrThrow(Until.hasObject(By.res("Ablazeon_card")), 3_000)
             },
-            measureBlock = { scrollActions(device.findObject(By.res("PokedexList"))) },
+            measureBlock = { scrollActions(device.findObjectOrThrow(By.res("PokedexList"))) },
         )
 
     @Test
@@ -79,15 +77,10 @@ class PokedexScrollBenchmark(
             action = "$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_VIEWS_HOME_ACTIVITY",
             setupBlock = {
                 device.waitForIdle()
-                // Wait until we have content loaded
                 device.waitOrThrow(
                     Until.hasObject(By.res(POKEDEX_TARGET_PACKAGE_NAME, "name")),
                     3_000,
                 )
-                val content =
-                    device.findObjectOrThrow(By.res(POKEDEX_TARGET_PACKAGE_NAME, "PokedexList"))
-                // Set gesture margin to avoid triggering gesture navigation
-                content.setGestureMargin(device.displayWidth / 5)
             },
             measureBlock = {
                 scrollActions(
@@ -110,6 +103,7 @@ class PokedexScrollBenchmark(
                 defaultComposeScrollingMetrics() +
                     FrameTimingGfxInfoMetric() +
                     CpuFrequencyChangeMetric() +
+                    activeGridItemsMetrics() +
                     defaultMemoryMetrics(),
             compilationMode = compilationMode,
             iterations = HeroMacrobenchmarkDefaults.ITERATIONS,
@@ -138,28 +132,37 @@ class PokedexScrollBenchmark(
                 )
                 startActivityAndWait(intent)
                 setupBlock()
+                mockServerRule.awaitPendingRequests()
+                device.waitForIdle()
             },
             measureBlock = measureBlock,
         )
     }
 
     private fun MacrobenchmarkScope.scrollActions(content: UiObject2) {
-        // Important: We perform up flings with the default fling speed, and down flings with a
-        // slightly lower speed. Injected input event velocity can be slightly varied, so the up
-        // fling could result in a gesture that hits the bounds and shows overscroll. We
-        // specifically only want to measure scroll here.
-        val upSpeed = (FLING_SPEED_DP_PER_SECOND * targetDisplayDensity).roundToInt()
-        val downSpeed = (upSpeed * OPPOSING_DIRECTION_FLING_FACTOR).roundToInt()
+        // Set gesture margin on the UiObject2 used for flinging (findObject returns a new
+        // UiObject2 instance with default 10% margins on each call).
+        content.setGestureMargin(device.displayWidth / 5)
+        // Perform down flings (scrolling toward the bottom of the list) with the default fling
+        // speed, and up flings (scrolling back toward the top) with a lower speed. Injected input
+        // event velocity varies across gestures, so a lower up-fling speed prevents the return
+        // fling from hitting the top bound of the list.
+        val downSpeed = (FLING_SPEED_DP_PER_SECOND * targetDisplayDensity).roundToInt()
+        val upSpeed = (downSpeed * OPPOSING_DIRECTION_FLING_FACTOR).roundToInt()
         fun flingAndWaitForIdle(direction: Direction, speed: Int) {
             trace("PokedexScrollBenchmark#fling($direction, speed=$speed)") {
-                content.fling(direction, speed)
+                val canStillScroll = content.fling(direction, speed)
+                Trace.setCounter(
+                    "pokedex:scroll:canStillScroll",
+                    if (canStillScroll) 1 else 0,
+                )
                 device.waitForIdle()
             }
         }
-        flingAndWaitForIdle(Direction.DOWN, upSpeed)
-        flingAndWaitForIdle(Direction.UP, downSpeed)
-        flingAndWaitForIdle(Direction.DOWN, upSpeed)
-        flingAndWaitForIdle(Direction.UP, downSpeed)
+        flingAndWaitForIdle(Direction.DOWN, downSpeed)
+        flingAndWaitForIdle(Direction.UP, upSpeed)
+        flingAndWaitForIdle(Direction.DOWN, downSpeed)
+        flingAndWaitForIdle(Direction.UP, upSpeed)
     }
 
     /** Density of the instrumentation's target context, in DP. */
@@ -175,13 +178,10 @@ class PokedexScrollBenchmark(
         private const val FLING_SPEED_DP_PER_SECOND = 7_500
 
         /**
-         * The factor to be applied to a [UiObject2.fling]s in an opposing direction. For example,
-         * after a DOWN fling with 7500f, we want to perform an UP fling with 7000f to work around
-         * UiAutomator/ADB issues with velocity from injected input events.
-         *
-         * The value of 0.92 has been found through rigorous estimation and tests on this benchmark.
+         * Slows [Direction.UP] flings so they do not scroll past the start of the list when
+         * injected [android.view.MotionEvent] timing varies.
          */
-        private const val OPPOSING_DIRECTION_FLING_FACTOR = 0.92f
+        private const val OPPOSING_DIRECTION_FLING_FACTOR = 0.85f
 
         /**
          * Parameters for the benchmark. Uses abbreviations because of file length limit for
@@ -208,3 +208,40 @@ internal fun <R> trace(sectionName: String, block: () -> R): R =
     } finally {
         Trace.endSection()
     }
+
+// Keep in sync with ACTIVE_GRID_ITEMS_COUNTER_NAME in:
+// -
+// external/compose-hero-benchmarks/pokedex-compose/app/src/main/kotlin/com/skydoves/pokedex/compose/feature/home/ActiveGridItemModifier.kt
+// -
+// external/compose-hero-benchmarks/pokedex-views/app/src/main/kotlin/com/skydoves/pokedex/ui/main/PokemonAdapter.kt
+private const val ACTIVE_GRID_ITEMS_COUNTER_NAME = "pokedex:grid:items:active"
+private const val ACTIVE_GRID_ITEMS_METRIC_LABEL = "activeGridItems"
+private const val FLING_WINDOW_SLICE_PATTERN = "PokedexScrollBenchmark#fling%"
+
+/**
+ * Tracks the `pokedex:grid:items:active` trace counter across the full benchmark and per fling
+ * window to verify that Compose and Views keep a comparable number of grid items active during
+ * scrolling.
+ */
+private fun activeGridItemsMetrics(): List<Metric> {
+    val modes =
+        listOf(
+            TraceCounterMetric.Mode.Min,
+            TraceCounterMetric.Mode.Median,
+            TraceCounterMetric.Mode.Max,
+            TraceCounterMetric.Mode.Last,
+        )
+    return listOf(
+        TraceCounterMetric(
+            counterName = ACTIVE_GRID_ITEMS_COUNTER_NAME,
+            label = ACTIVE_GRID_ITEMS_METRIC_LABEL,
+            modes = modes,
+        ),
+        TraceCounterMetric(
+            counterName = ACTIVE_GRID_ITEMS_COUNTER_NAME,
+            label = ACTIVE_GRID_ITEMS_METRIC_LABEL,
+            modes = modes,
+            windowSliceName = FLING_WINDOW_SLICE_PATTERN,
+        ),
+    )
+}

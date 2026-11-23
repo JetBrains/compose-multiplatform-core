@@ -21,15 +21,12 @@ import android.view.ScrollCaptureCallback
 import android.view.ScrollCaptureTarget
 import android.view.View
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toAndroidRect
-import androidx.compose.ui.internal.checkPreconditionNotNull
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.SemanticsActions.ScrollByOffset
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -44,6 +41,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 
 /** Separate class to host the implementation of scroll capture for dex verification. */
+@OptIn(ExperimentalComposeUiHostApi::class)
 @RequiresApi(31)
 internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSessionListener {
 
@@ -73,7 +71,7 @@ internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSession
         targets: Consumer<ScrollCaptureTarget>,
     ) {
         // Search the semantics tree for scroll containers.
-        val candidates = mutableVectorOf<ScrollCaptureCandidate>()
+        val candidates = mutableObjectListOf<ScrollCaptureCandidate>()
         visitScrollCaptureCandidates(
             fromNode = semanticsOwner.unmergedRootSemanticsNode,
             onCandidate = candidates::add,
@@ -94,7 +92,7 @@ internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSession
                 listener = this,
                 view,
             )
-        val localVisibleRectOfCandidate = candidate.coordinates.boundsInRoot()
+        val localVisibleRectOfCandidate = candidate.node.boundsInRoot
         val windowOffsetOfCandidate = candidate.viewportBoundsInWindow.topLeft
         targets.accept(
             ScrollCaptureTarget(
@@ -120,6 +118,7 @@ internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSession
  * Walks the tree of [SemanticsNode]s rooted at [fromNode] to find nodes that look scrollable and
  * calculate their nesting depth.
  */
+@OptIn(ExperimentalComposeUiHostApi::class)
 private fun visitScrollCaptureCandidates(
     fromNode: SemanticsNode,
     depth: Int = 0,
@@ -134,15 +133,16 @@ private fun visitScrollCaptureCandidates(
             return@visitDescendants false
         }
 
-        val nodeCoordinates =
-            checkPreconditionNotNull(node.findCoordinatorToGetBounds()) {
-                    "Expected semantics node to have a coordinator."
-                }
-                .coordinates
+        // The accessibility traversal only reports attached layouts, plus synthetic nodes (a
+        // merging node's content description or role), which have no layout of their own, can't
+        // scroll, and have no children.
+        if (!node.layoutInfo.isAttached) {
+            return@visitDescendants false
+        }
 
         // Zero-sized nodes can't be candidates, and by definition would clip all their children so
         // they and their descendants can't be candidates either.
-        val viewportBoundsInWindow = nodeCoordinates.boundsInWindow().roundToIntRect()
+        val viewportBoundsInWindow = node.boundsInWindow.roundToIntRect()
         if (viewportBoundsInWindow.isEmpty) {
             return@visitDescendants false
         }
@@ -163,7 +163,6 @@ private fun visitScrollCaptureCandidates(
                 node = node,
                 depth = candidateDepth,
                 viewportBoundsInWindow = viewportBoundsInWindow,
-                coordinates = nodeCoordinates,
             )
         )
         visitScrollCaptureCandidates(
@@ -176,9 +175,11 @@ private fun visitScrollCaptureCandidates(
     }
 }
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal val SemanticsNode.scrollCaptureScrollByAction
     get() = unmergedConfig.getOrNull(ScrollByOffset)
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 private val SemanticsNode.canScrollVertically: Boolean
     get() {
         val scrollByOffset = scrollCaptureScrollByAction
@@ -189,29 +190,24 @@ private val SemanticsNode.canScrollVertically: Boolean
     }
 
 /**
- * Visits all the descendants of this [SemanticsNode].
+ * Visits all the descendants of this [SemanticsNode] in the accessibility tree, which excludes
+ * descendants of [androidx.compose.ui.semantics.clearAndSetSemantics].
  *
  * @param onNode Function called for each [SemanticsNode]. Iff this function returns true, the
  *   children of the current node will be visited.
  */
+@ExperimentalComposeUiHostApi
 private inline fun SemanticsNode.visitDescendants(onNode: (SemanticsNode) -> Boolean) {
-    val nodes = mutableVectorOf<SemanticsNode>()
-    nodes.addAll(getChildrenForSearch())
+    val nodes = mutableObjectListOf<SemanticsNode>()
+    forEachAccessibilityChild { nodes.add(it) }
     while (nodes.isNotEmpty()) {
-        val node = nodes.removeAt(nodes.lastIndex)
+        val node = nodes.removeAt(nodes.size - 1)
         val visitChildren = onNode(node)
         if (visitChildren) {
-            nodes.addAll(node.getChildrenForSearch())
+            node.forEachAccessibilityChild { nodes.add(it) }
         }
     }
 }
-
-private fun SemanticsNode.getChildrenForSearch() =
-    getChildren(
-        includeDeactivatedNodes = false,
-        includeReplacedSemantics = false,
-        includeFakeNodes = false,
-    )
 
 /**
  * Information about a potential [ScrollCaptureTarget] needed to both select the final candidate and
@@ -221,11 +217,9 @@ private class ScrollCaptureCandidate(
     val node: SemanticsNode,
     val depth: Int,
     val viewportBoundsInWindow: IntRect,
-    val coordinates: LayoutCoordinates,
 ) {
     override fun toString(): String =
         "ScrollCaptureCandidate(node=$node, " +
             "depth=$depth, " +
-            "viewportBoundsInWindow=$viewportBoundsInWindow, " +
-            "coordinates=$coordinates)"
+            "viewportBoundsInWindow=$viewportBoundsInWindow)"
 }

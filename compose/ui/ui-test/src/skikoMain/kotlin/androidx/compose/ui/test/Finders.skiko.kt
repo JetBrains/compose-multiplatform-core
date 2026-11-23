@@ -20,3 +20,5 @@ import androidx.compose.ui.semantics.SemanticsNode
 
 internal actual val SemanticsNode.hasFocusAndWindowFocus: Boolean
     get() = false // TODO: https://youtrack.jetbrains.com/issue/CMP-10168
+
+internal actual fun TestContext.waitForWindowFocus(roots: List<SemanticsNode>): Boolean = false

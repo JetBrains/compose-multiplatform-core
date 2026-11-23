@@ -18,8 +18,10 @@ package androidx.compose.ui.scrollcapture
 
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color
+import android.graphics.HardwareRenderer
 import android.graphics.Paint
 import android.graphics.Rect as AndroidRect
+import android.graphics.RenderNode
 import android.os.CancellationSignal
 import android.util.Log
 import android.view.ScrollCaptureCallback
@@ -35,6 +37,7 @@ import androidx.compose.ui.graphics.toAndroidRect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toComposeIntRect
 import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.SemanticsActions.ScrollByOffset
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
@@ -59,6 +62,7 @@ private const val TAG = "ScrollCapture"
  * known or not (e.g. `LazyColumn`). Pixels are captured by drawing the node directly after each
  * scroll operation.
  */
+@OptIn(ExperimentalComposeUiHostApi::class)
 @RequiresApi(31)
 internal class ComposeScrollCaptureCallback(
     private val node: SemanticsNode,
@@ -95,6 +99,18 @@ internal class ComposeScrollCaptureCallback(
     /** Only used when [DEBUG] is true. */
     private var requestCount = 0
 
+    private val renderNode =
+        RenderNode("ScrollCapture").apply {
+            clipToBounds = false
+            isForceDarkAllowed = false
+        }
+
+    private val hardwareRenderer =
+        HardwareRenderer().apply {
+            setLightSourceAlpha(0f, 0f)
+            setLightSourceGeometry(0f, 0f, 0f, 0f)
+        }
+
     override fun onScrollCaptureSearch(signal: CancellationSignal, onReady: Consumer<AndroidRect>) {
         val bounds = viewportBoundsInWindow
         onReady.accept(bounds.toAndroidRect())
@@ -107,6 +123,8 @@ internal class ComposeScrollCaptureCallback(
     ) {
         scrollTracker.reset()
         requestCount = 0
+        hardwareRenderer.setContentRoot(renderNode)
+        hardwareRenderer.setSurface(session.surface)
         listener.onSessionStarted()
         onReady.run()
     }
@@ -118,16 +136,12 @@ internal class ComposeScrollCaptureCallback(
         onComplete: Consumer<AndroidRect>,
     ) {
         coroutineScope.launchWithCancellationSignal(signal) {
-            val result = onScrollCaptureImageRequest(session, captureArea.toComposeIntRect())
+            val result = onScrollCaptureImageRequest(captureArea.toComposeIntRect())
             onComplete.accept(result.toAndroidRect())
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    private suspend fun onScrollCaptureImageRequest(
-        session: ScrollCaptureSession,
-        captureArea: IntRect,
-    ): IntRect {
+    private suspend fun onScrollCaptureImageRequest(captureArea: IntRect): IntRect {
         // Scroll the requested capture area into the viewport so we can draw it.
         val targetMin = captureArea.top
         val targetMax = captureArea.bottom
@@ -151,7 +165,7 @@ internal class ComposeScrollCaptureCallback(
             return IntRect.Zero
         }
 
-        val canvas = session.surface.lockHardwareCanvas()
+        val canvas = renderNode.beginRecording(captureArea.width, captureArea.height)
         try {
             if (DEBUG) {
                 canvas.drawDebugBackground()
@@ -175,7 +189,12 @@ internal class ComposeScrollCaptureCallback(
                 canvas.drawDebugOverlay()
             }
         } finally {
-            session.surface.unlockCanvasAndPost(canvas)
+            renderNode.endRecording()
+            hardwareRenderer
+                .createRenderRequest()
+                .setVsyncTime(System.nanoTime())
+                .setWaitForPresent(true)
+                .syncAndDraw()
         }
 
         // Translate back to "original" coordinates to report.
@@ -187,6 +206,7 @@ internal class ComposeScrollCaptureCallback(
     override fun onScrollCaptureEnd(onReady: Runnable) {
         coroutineScope.launch(NonCancellable) {
             scrollTracker.scrollTo(0f)
+            hardwareRenderer.destroy()
             listener.onSessionEnded()
             onReady.run()
         }

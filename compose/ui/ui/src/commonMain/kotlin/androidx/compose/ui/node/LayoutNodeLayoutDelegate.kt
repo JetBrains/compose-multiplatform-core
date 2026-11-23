@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.node
 
-import androidx.compose.runtime.collection.MutableVector
+import androidx.collection.MutableObjectList
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.Placeable
@@ -158,8 +158,10 @@ internal class LayoutNodeLayoutDelegate(internal val layoutNode: LayoutNode) {
 
     /** Marks the layoutNode dirty for another lookahead layout pass. */
     internal fun markLookaheadLayoutPending() {
+        if (lookaheadLayoutPending && lookaheadLayoutPendingForAlignment) return
         lookaheadLayoutPending = true
         lookaheadLayoutPendingForAlignment = true
+        layoutNode.forEachCoordinator { it.lookaheadDelegate?.layoutPendingForAlignment = true }
     }
 
     /** Marks the layoutNode dirty for another lookahead measure pass. */
@@ -385,7 +387,7 @@ internal val LayoutNode.isOutMostLookaheadRoot: Boolean
             (parent?.lookaheadRoot == null || layoutDelegate.detachedFromParentLookaheadPass)
 
 internal inline fun <T : Measurable> LayoutNode.updateChildMeasurables(
-    destination: MutableVector<T>,
+    destination: MutableObjectList<T>,
     transform: (LayoutNode) -> T,
 ) {
     forEachChildIndexed { i, layoutNode ->

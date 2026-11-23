@@ -33,7 +33,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.animation"
-        compileSdk { version = release(37) { minorApiLevel = 1 } }
+        compileSdk { version = release(37) { minorApiLevel = 2 } }
     }
     jvmStubs()
     linuxX64Stubs()
@@ -51,7 +51,7 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui"))
             implementation("androidx.compose.ui:ui-util:1.10.0")
             implementation("androidx.compose.ui:ui-graphics:1.10.0")
-            implementation("androidx.collection:collection:1.6.0")
+            implementation("androidx.collection:collection:1.7.0")
         }
 
         androidMain.dependencies {
@@ -90,5 +90,6 @@ androidx {
     inceptionYear = "2019"
     description = "Compose animation library"
     samples(project(":compose:animation:animation:animation-samples"))
+    enableRobolectric()
 }
 

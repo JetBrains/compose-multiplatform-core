@@ -30,11 +30,11 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(37) { minorApiLevel = 1 } }
+    compileSdk { version = release(37) { minorApiLevel = 2 } }
     defaultConfig {
         applicationId = "androidx.compose.material.catalog"
-        versionCode 2500
-        versionName "2.5.0"
+        versionCode 2600
+        versionName "2.6.0"
     }
     buildTypes {
         release {

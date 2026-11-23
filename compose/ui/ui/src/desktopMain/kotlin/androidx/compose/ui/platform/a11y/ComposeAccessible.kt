@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.internal.fastIndexOfFirst
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.requireCoordinator
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.AccessibilityAction
 import androidx.compose.ui.semantics.DesktopSemanticsProperties
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -418,6 +419,7 @@ internal class ComposeAccessible(
             return focused != null
         }
 
+        @OptIn(ExperimentalComposeUiHostApi::class)
         override fun requestFocus() {
             if (focused == false) {
                 semanticsNode.unmergedConfig.getOrNull(SemanticsActions.RequestFocus)
@@ -965,6 +967,7 @@ private class ProgressBarAccessibleValue(
     }
 }
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 private fun SemanticsNode.traversalOrderedChildren(
     cachedConfig: SemanticsConfiguration? = null
 ): List<SemanticsNode> {

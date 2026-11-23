@@ -21,6 +21,7 @@ import androidx.collection.intObjectMapOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.LayoutDirection
@@ -37,6 +38,7 @@ import kotlin.math.min
  * TODO: Support caller-provided bounds in the common sorter, upstream it and reuse it here:
  * https://youtrack.jetbrains.com/issue/CMP-11119
  */
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal fun SemanticsNode.sortByGeometryGroupingsForWeb(
     parentListToSort: List<SemanticsNode>,
     isFocusableContainer: (SemanticsNode) -> Boolean = { false },

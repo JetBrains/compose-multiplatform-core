@@ -80,4 +80,3 @@ internal expect fun systemDefinedCanFocus(node: CompositionLocalConsumerModifier
 
 internal fun mobilePlatformSystemDefinedCanFocus(node: CompositionLocalConsumerModifierNode) =
     with(node) { currentValueOf(LocalInputModeManager).inputMode != InputMode.Touch }
-
