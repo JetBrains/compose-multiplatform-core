@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(org.jetbrains.skiko.ExperimentalSkikoApi::class)
-
 package androidx.compose.ui.window
 
 import androidx.collection.IntIntPair
@@ -27,6 +25,7 @@ import kotlinx.cinterop.*
 import org.jetbrains.skia.*
 import org.jetbrains.skia.gpu.makeMetalContext
 import org.jetbrains.skia.gpu.makeMetalTexture
+import org.jetbrains.skiko.ExperimentalSkikoApi
 import platform.Foundation.NSThread
 import platform.QuartzCore.*
 import platform.darwin.*
@@ -75,6 +74,7 @@ internal class LegacyMetalRedrawer(
     private val device = metalLayer.device as MTLDeviceProtocol?
         ?: throw IllegalStateException("CAMetalLayer.device can not be null")
     private val queue = getCachedCommandQueue(device)
+    @OptIn(ExperimentalSkikoApi::class)
     private val context = makeMetalContext(device.objcPtr(), queue.objcPtr())
     private val pictureRecorder = PictureRecorder()
     private val inflightCommandBuffersGroup = dispatch_group_create()
@@ -132,6 +132,7 @@ internal class LegacyMetalRedrawer(
         )
     }
 
+    @OptIn(ExperimentalSkikoApi::class)
     override fun dispose() {
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
@@ -152,7 +153,7 @@ internal class LegacyMetalRedrawer(
      * @param waitUntilCompletion if `true`, the method will block the thread until the frame is
      * presented on the screen. If false, the method will just dispatch GPU workload and return.
      */
-    @OptIn(BetaInteropApi::class)
+    @OptIn(BetaInteropApi::class, ExperimentalSkikoApi::class)
     override fun render(waitUntilCompletion: Boolean) = trace("MetalRedrawer:draw") {
         check(NSThread.isMainThread)
         check(!isDrawRecursiveCall) {

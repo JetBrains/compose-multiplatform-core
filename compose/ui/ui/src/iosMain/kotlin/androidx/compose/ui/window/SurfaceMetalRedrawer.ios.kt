@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(org.jetbrains.skiko.ExperimentalSkikoApi::class)
-
 package androidx.compose.ui.window
 
 import androidx.collection.IntIntPair
@@ -36,6 +34,7 @@ import org.jetbrains.skia.Surface
 import org.jetbrains.skia.gpu.GpuContext
 import org.jetbrains.skia.gpu.makeMetalContext
 import org.jetbrains.skia.gpu.makeMetalTexture
+import org.jetbrains.skiko.ExperimentalSkikoApi
 import platform.Foundation.NSLock
 import platform.Foundation.NSThread
 import platform.IOSurface.IOSurfaceGetHeight
@@ -68,6 +67,7 @@ internal class SurfaceMetalRedrawer(
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
     private val queue = getCachedCommandQueue(device)
     // Created for the first frame, and again after releaseRenderingResources closed it.
+    @OptIn(ExperimentalSkikoApi::class)
     private var context: GpuContext? = null
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
@@ -155,12 +155,14 @@ internal class SurfaceMetalRedrawer(
      * Drains the drawables and closes the Skia context, which keeps GPU memory (offscreen layer
      * textures, glyph atlases) for as long as it lives. The next frame creates a new context.
      */
+    @OptIn(ExperimentalSkikoApi::class)
     fun releaseRenderingResources() {
         drainSkiaSurfaces()
         context?.close()
         context = null
     }
 
+    @OptIn(ExperimentalSkikoApi::class)
     override fun dispose() {
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
@@ -333,6 +335,7 @@ internal class SurfaceMetalRedrawer(
         }
     }
 
+    @OptIn(ExperimentalSkikoApi::class)
     private fun getSkiaSurface(drawable: CMPDrawable): Surface? {
         (drawable.associatedSkiaSurface as? Surface)
             ?.takeIf { !it.isClosed }
@@ -376,6 +379,7 @@ internal class SurfaceMetalRedrawer(
         }
     }
 
+    @OptIn(ExperimentalSkikoApi::class)
     private fun renderAndPresentFrame(frame: Frame) {
         disposeDrawableAssociatedResources(generation = metalLayer.drawablesGeneration.toInt())
 
