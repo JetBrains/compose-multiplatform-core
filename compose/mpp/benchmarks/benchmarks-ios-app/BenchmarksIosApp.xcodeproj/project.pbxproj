@@ -301,7 +301,6 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BenchmarksIosApp/Info.plist;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Send benchmark results to the collector running on your Mac.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -338,7 +337,6 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BenchmarksIosApp/Info.plist;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Send benchmark results to the collector running on your Mac.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
