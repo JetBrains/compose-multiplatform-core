@@ -27,12 +27,16 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.clearSkikoComposeImplementation
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.font.createFontFamilyResolver
-import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.platform.FontCache
 import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
@@ -53,6 +57,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
+import org.jetbrains.skia.Surface
+import org.jetbrains.skia.paragraph.ParagraphBuilder
+import org.jetbrains.skia.paragraph.ParagraphStyle as SkParagraphStyle
+import org.jetbrains.skia.paragraph.TextStyle as SkTextStyle
 
 // Adopted tests from text/text/src/androidTest/java/androidx/compose/ui/text/android/selection/WordBoundaryTest.kt
 @OptIn(InternalComposeUiApi::class)
@@ -741,6 +749,47 @@ class SkikoParagraphTest {
     private val Color.isPainted get() = alpha > 0f
     private val Color.hasRed get() = red > 0f
 
+    // https://youtrack.jetbrains.com/issue/CMP-10337
+    @Test
+    fun textStyleLocaleList_selectsLocaleSpecificGlyphs() {
+        if (!hasLocaleSpecificCjkGlyphs) return
+
+        fun paintedPixels(localeList: LocaleList) =
+            paintedPixels(HAN_TEXT, TextStyle(localeList = localeList))
+
+        val japanese = paintedPixels(LocaleList("ja"))
+        val simplifiedChinese = paintedPixels(LocaleList("zh-Hans"))
+
+        assertTrue(
+            japanese.contentEquals(paintedPixels(LocaleList("ja"))),
+            "The same locale must render identically"
+        )
+        assertFalse(
+            japanese.contentEquals(simplifiedChinese),
+            "Japanese and Simplified Chinese glyphs must differ"
+        )
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-10337
+    @Test
+    fun spanStyleLocaleList_selectsLocaleSpecificGlyphs() {
+        if (!hasLocaleSpecificCjkGlyphs) return
+
+        fun text(localeList: LocaleList) = buildAnnotatedString {
+            withStyle(SpanStyle(localeList = localeList)) {
+                append(HAN_TEXT)
+            }
+        }
+
+        val japanese = paintedPixels(text(LocaleList("ja")), TextStyle())
+        val simplifiedChinese = paintedPixels(text(LocaleList("zh-Hans")), TextStyle())
+
+        assertFalse(
+            japanese.contentEquals(simplifiedChinese),
+            "Japanese and Simplified Chinese glyphs must differ"
+        )
+    }
+
     private fun simpleLayouter() =
         (simpleIntrinsics("Lorem ipsum", TextStyle()) as SkikoParagraphIntrinsics).layouter()
             .apply { layoutParagraph(maxWidthConstraint.toFloat()) }
@@ -760,4 +809,74 @@ class SkikoParagraphTest {
         density = defaultDensity,
         fontFamilyResolver = fontFamilyResolver
     )
+
+    /** Paints [text] and returns its pixels, checking that some text has actually been painted. */
+    private fun paintedPixels(text: AnnotatedString, textStyle: TextStyle): IntArray {
+        val paragraph = Paragraph(
+            text = text.text,
+            style = textStyle.merge(fontSize = 32.sp, color = Color.Black),
+            constraints = Constraints(maxWidth = CANVAS_WIDTH),
+            density = defaultDensity,
+            fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList("en-US"),
+            spanStyles = text.spanStyles,
+        )
+        val image = ImageBitmap(CANVAS_WIDTH, CANVAS_HEIGHT)
+        paragraph.paint(
+            canvas = Canvas(image),
+            color = Color.Unspecified,
+            shadow = null,
+            textDecoration = null,
+            drawStyle = null,
+            blendMode = DrawScope.DefaultBlendMode
+        )
+        val pixels = image.toPixelMap().buffer
+        assertTrue(pixels.any { it != 0 }, "No text was painted")
+        return pixels
+    }
+
+    private fun paintedPixels(text: String, textStyle: TextStyle) =
+        paintedPixels(AnnotatedString(text), textStyle)
+
+    private companion object {
+        // Ideographs whose glyph shapes differ between the Japanese and Chinese conventions
+        const val HAN_TEXT = "直海角骨"
+
+        // The size of the canvas the locale tests paint [HAN_TEXT] on
+        const val CANVAS_WIDTH = 400
+        const val CANVAS_HEIGHT = 60
+
+        /**
+         * Whether the host's fonts have locale-specific glyph variants for [HAN_TEXT].
+         *
+         * Checked by drawing the text with Skia directly, bypassing Compose's text styles, in
+         * Japanese and in Simplified Chinese, using the same font fallback setup as Compose. Hosts
+         * without such fonts (e.g. Linux machines without CJK fonts) draw both the same way, or not
+         * at all. Computed once, as it can't change during a test run.
+         */
+        val hasLocaleSpecificCjkGlyphs: Boolean by lazy {
+            val fonts = FontCache().fonts
+
+            fun skiaPixels(locale: String): IntArray {
+                val style = SkTextStyle()
+                    .setFontSize(32f)
+                    .setColor(Color.Black.toArgb())
+                    .setLocale(locale)
+                val paragraph = ParagraphBuilder(SkParagraphStyle(), fonts)
+                    .pushStyle(style)
+                    .addText(HAN_TEXT)
+                    .build()
+                    .layout(CANVAS_WIDTH.toFloat())
+                val surface = Surface.makeRasterN32Premul(CANVAS_WIDTH, CANVAS_HEIGHT)
+                try {
+                    paragraph.paint(surface.canvas, 0f, 0f)
+                    return surface.makeImageSnapshot().toComposeImageBitmap().toPixelMap().buffer
+                } finally {
+                    surface.close()
+                }
+            }
+
+            !skiaPixels("ja").contentEquals(skiaPixels("zh-Hans"))
+        }
+    }
 }
