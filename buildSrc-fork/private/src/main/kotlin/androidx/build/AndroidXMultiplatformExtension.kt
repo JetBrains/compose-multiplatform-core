@@ -623,7 +623,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @JvmOverloads
     fun watchos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
         return listOfNotNull(
-            watchosArm32(block),
             watchosArm64(block),
             // TODO(https://youtrack.jetbrains.com/issue/CMP-9513) publish it
             // watchosDeviceArm64()
