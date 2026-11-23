@@ -20,15 +20,21 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.clearSkikoComposeImplementation
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.style.TextOverflow
@@ -594,9 +600,9 @@ class SkikoParagraphTest {
 
         // The default draw style is null, while painters pass Fill; both are painted the same
         layouter.setDrawStyle(Fill)
-        assertFalse(layouter.updateForeground)
+        assertFalse(layouter.needsForegroundUpdate)
         layouter.setDrawStyle(null)
-        assertFalse(layouter.updateForeground)
+        assertFalse(layouter.needsForegroundUpdate)
     }
 
     @Test
@@ -604,7 +610,7 @@ class SkikoParagraphTest {
         val layouter = simpleLayouter()
 
         layouter.setDrawStyle(Stroke(width = 2f))
-        assertTrue(layouter.updateForeground)
+        assertTrue(layouter.needsForegroundUpdate)
     }
 
     @Test
@@ -617,7 +623,7 @@ class SkikoParagraphTest {
         layouter.setBrush(brush, size, alpha = Float.NaN)
         layouter.layoutParagraph(maxWidthConstraint.toFloat())
         layouter.setBrush(brush, size, alpha = Float.NaN)
-        assertFalse(layouter.updateForeground)
+        assertFalse(layouter.needsForegroundUpdate)
     }
 
     @Test
@@ -629,8 +635,111 @@ class SkikoParagraphTest {
         layouter.setBrush(brush, size, alpha = Float.NaN)
         layouter.layoutParagraph(maxWidthConstraint.toFloat())
         layouter.setBrush(brush, size, alpha = 0.5f)
-        assertTrue(layouter.updateForeground)
+        assertTrue(layouter.needsForegroundUpdate)
     }
+
+    // https://youtrack.jetbrains.com/issue/CMP-8959
+    @Test
+    fun paintWithNewColor_changesTextDecorationColor() {
+        val paragraph = decoratedParagraph()
+
+        assertTrue(
+            paragraph.paintedImage(Color.Red).anyPixel { it.isPainted },
+            "Nothing was painted"
+        )
+        val image = paragraph.paintedImage(Color.Blue)
+        assertTrue(image.anyPixel { it.isPainted }, "Nothing was painted")
+        assertFalse(
+            image.anyPixel { it.hasRed },
+            "Some pixels are still painted with the old color"
+        )
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-8959
+    @Test
+    fun paintWithNewSolidColorBrush_changesTextDecorationColor() {
+        val paragraph = decoratedParagraph()
+
+        assertTrue(
+            paragraph.paintedImage(SolidColor(Color.Red)).anyPixel { it.isPainted },
+            "Nothing was painted"
+        )
+        val image = paragraph.paintedImage(SolidColor(Color.Blue))
+        assertTrue(image.anyPixel { it.isPainted }, "Nothing was painted")
+        assertFalse(
+            image.anyPixel { it.hasRed },
+            "Some pixels are still painted with the old color"
+        )
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-8959
+    @Test
+    fun setShaderBrush_onDecoratedText_doesNotRequireRelayout() {
+        val layouter =
+            (simpleIntrinsics("Lorem ipsum", TextStyle(textDecoration = TextDecoration.Underline))
+                as SkikoParagraphIntrinsics).layouter()
+        val size = Size(100f, 100f)
+
+        // Skia only paints decorations with a solid color, and with a ShaderBrush that color
+        // doesn't depend on the brush, so changing the brush doesn't need to update them
+        val gradient1 = Brush.verticalGradient(listOf(Color.Blue, Color.Red))
+        val gradient2 = Brush.verticalGradient(listOf(Color.Green, Color.Red))
+        layouter.setBrush(gradient1, size, alpha = 1f)
+        layouter.layoutParagraph(maxWidthConstraint.toFloat())
+        layouter.setBrush(gradient2, size, alpha = 0.5f)
+        assertTrue(layouter.needsForegroundUpdate)
+    }
+
+    private fun decoratedParagraph() = simpleParagraph(
+        text = "Hello",
+        textStyle = TextStyle(
+            fontSize = 20.sp,
+            color = Color.Red,
+            textDecoration = TextDecoration.Underline + TextDecoration.LineThrough
+        )
+    )
+
+    private fun Paragraph.paintedImage(color: Color): ImageBitmap {
+        val image = ImageBitmap(width = 200, height = 40)
+        paint(
+            canvas = Canvas(image),
+            color = color,
+            shadow = null,
+            textDecoration = TextDecoration.Underline + TextDecoration.LineThrough,
+            drawStyle = null,
+            blendMode = DrawScope.DefaultBlendMode
+        )
+        return image
+    }
+
+    private fun Paragraph.paintedImage(brush: Brush): ImageBitmap {
+        val image = ImageBitmap(width = 200, height = 40)
+        paint(
+            canvas = Canvas(image),
+            brush = brush,
+            alpha = Float.NaN,
+            shadow = null,
+            textDecoration = TextDecoration.Underline + TextDecoration.LineThrough,
+            drawStyle = null,
+            blendMode = DrawScope.DefaultBlendMode
+        )
+        return image
+    }
+
+    private fun ImageBitmap.anyPixel(predicate: (Color) -> Boolean): Boolean {
+        val pixelMap = toPixelMap()
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                if (predicate(pixelMap[x, y])) return true
+            }
+        }
+        return false
+    }
+
+    // The canvas is fully transparent, and antialiasing only changes a pixel's alpha, so a pixel
+    // painted pure blue has no red at all, and one painted pure red does
+    private val Color.isPainted get() = alpha > 0f
+    private val Color.hasRed get() = red > 0f
 
     private fun simpleLayouter() =
         (simpleIntrinsics("Lorem ipsum", TextStyle()) as SkikoParagraphIntrinsics).layouter()
