@@ -51,6 +51,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun double_tap_selects_word() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
+        findNodeWithTag(TAG).warmUpMultiTap()
         findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2)
         waitForIdle()
         assertEquals(
@@ -63,6 +64,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun triple_tap_selects_all_text() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
+        findNodeWithTag(TAG).warmUpMultiTap()
         findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 3)
         waitForIdle()
         assertEquals(
@@ -75,6 +77,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun multitap_does_not_show_magnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
+        findNodeWithTag(TAG).warmUpMultiTap()
         findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2) // double tap is enough
         delay(100)
         assertEquals(
@@ -87,6 +90,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun BTF2_triple_tap_then_double_tap_selects_word() = runUIKitInstrumentedTest(params = listOf(TextFieldFactory(BasicTextFieldType.V2, nativeInput = false))) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
+        findNodeWithTag(TAG).warmUpMultiTap()
 
         findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 3)
         waitForIdle()

@@ -112,7 +112,6 @@ import platform.Foundation.NSDate
 import platform.Foundation.NSNotification
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSRunLoop
-import platform.Foundation.NSThread
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.runUntilDate
@@ -783,13 +782,13 @@ internal class UIKitInstrumentedTest(
     fun AccessibilityTestNode.doubleTap() {
         val frame = frame ?: error("Internal error. Frame is missing.")
         tap(frame.center())
-        sleepBetweenTaps()
+        delay(50)
         return tap(frame.center())
     }
 
-    private fun sleepBetweenTaps() {
-        // Running the UIKit event loop between synthetic taps can exceed the multi-tap timeout.
-        NSThread.sleepForTimeInterval(0.1)
+    fun AccessibilityTestNode.warmUpMultiTap() {
+        tap(pointInNode(xFraction = 0.9f, yFraction = 0.5f))
+        waitForIdle()
     }
 
     /**
@@ -884,9 +883,7 @@ internal class UIKitInstrumentedTest(
         require(count >= 1) { "count must be >= 1, was $count" }
         val point = characterPosition(offset)
         repeat(count) { i ->
-            if (i > 0) {
-                sleepBetweenTaps()
-            }
+            if (i > 0) delay(50)
             tap(point)
         }
     }
