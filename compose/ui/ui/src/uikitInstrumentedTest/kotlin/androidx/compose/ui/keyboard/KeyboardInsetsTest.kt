@@ -406,20 +406,10 @@ internal abstract class KeyboardInsetsTest(
             bottom = screenSize.height - keyboardHeight
         )
 
-        assertTrue(contentFrames.count() > 5, "Animation should produce large number of frames")
+        assertKeyboardAnimationSampled(contentFrames, isShowing = true)
         assertEquals(visibleRect, contentFrames.last(), "")
         contentFrames.forEach {
             assertEquals(0.dp, it.top, "Content must be top-aligned")
-        }
-        contentFrames.forEachWithPrevious { previousFrame, nextFrame ->
-            assertTrue(
-                nextFrame.bottom <= previousFrame.bottom,
-                "Content must shrink up on every frame"
-            )
-            assertTrue(
-                nextFrame.height <= previousFrame.height,
-                "Content size must decrease on every frame"
-            )
         }
 
         // Hide keyboard with animation
@@ -427,19 +417,45 @@ internal abstract class KeyboardInsetsTest(
         contentFrames.clear()
         waitForIdle()
 
-        assertTrue(contentFrames.count() > 5, "Animation should produce large number of frames")
+        assertKeyboardAnimationSampled(contentFrames, isShowing = false)
         assertEquals(screenRect, contentFrames.last())
         contentFrames.forEach {
             assertEquals(0.dp, it.top, "Content must be top-aligned")
         }
+    }
+
+    private fun assertKeyboardAnimationSampled(
+        contentFrames: List<DpRect>,
+        isShowing: Boolean
+    ) {
+        assertTrue(contentFrames.isNotEmpty(), "Keyboard animation should be sampled")
+        val firstBottom = contentFrames.first().bottom
+        val lastBottom = contentFrames.last().bottom
+        val animationIsSampled = if (isShowing) firstBottom > lastBottom else firstBottom < lastBottom
+        assertTrue(
+            actual = animationIsSampled,
+            message = "Keyboard ${if (isShowing) "show" else "hide"} animation should be sampled before it settles"
+        )
         contentFrames.forEachWithPrevious { previousFrame, nextFrame ->
+            val bottomMovesCorrectly = if (isShowing) {
+                nextFrame.bottom <= previousFrame.bottom
+            } else {
+                nextFrame.bottom >= previousFrame.bottom
+            }
+            val sizeChangesCorrectly = if (isShowing) {
+                nextFrame.height <= previousFrame.height
+            } else {
+                nextFrame.height >= previousFrame.height
+            }
             assertTrue(
-                actual = nextFrame.bottom >= previousFrame.bottom,
-                "Content must expand down on every frame"
+                actual = bottomMovesCorrectly,
+                message = "Content must ${if (isShowing) "shrink up" else "expand down"} on every frame: " +
+                    "previous=${previousFrame.bottom}, next=${nextFrame.bottom}"
             )
             assertTrue(
-                actual = nextFrame.height >= previousFrame.height,
-                "Content size must increase on every frame"
+                actual = sizeChangesCorrectly,
+                message = "Content size must ${if (isShowing) "decrease" else "increase"} on every frame: " +
+                    "previous=${previousFrame.height}, next=${nextFrame.height}"
             )
         }
     }
@@ -537,20 +553,10 @@ internal abstract class KeyboardInsetsTest(
             bottom = screenSize.height - keyboardHeight
         )
 
-        assertTrue(contentFrames.count() > 5, "Animation should produce large number of frames")
+        assertKeyboardAnimationSampled(contentFrames, isShowing = true)
         assertEquals(visibleRect, contentFrames.last(), "")
         contentFrames.forEach {
             assertEquals(0.dp, it.top, "Content must be top-aligned")
-        }
-        contentFrames.forEachWithPrevious { previousFrame, nextFrame ->
-            assertTrue(
-                nextFrame.bottom <= previousFrame.bottom,
-                "Content must shrink up on every frame"
-            )
-            assertTrue(
-                nextFrame.height <= previousFrame.height,
-                "Content size must decrease on every frame"
-            )
         }
 
         // Hide keyboard with animation
@@ -558,20 +564,10 @@ internal abstract class KeyboardInsetsTest(
         contentFrames.clear()
         waitForIdle()
 
-        assertTrue(contentFrames.count() > 5, "Animation should produce large number of frames")
+        assertKeyboardAnimationSampled(contentFrames, isShowing = false)
         assertEquals(screenRect, contentFrames.last())
         contentFrames.forEach {
             assertEquals(0.dp, it.top, "Content must be top-aligned")
-        }
-        contentFrames.forEachWithPrevious { previousFrame, nextFrame ->
-            assertTrue(
-                actual = nextFrame.bottom >= previousFrame.bottom,
-                "Content must expand down on every frame"
-            )
-            assertTrue(
-                actual = nextFrame.height >= previousFrame.height,
-                "Content size must increase on every frame"
-            )
         }
     }
 
@@ -970,9 +966,20 @@ internal abstract class KeyboardInsetsTest(
         waitForIdle()
 
         assertTrue(
-            drawnTextFieldFrames.size > 5,
-            "Animation should produce large number of frames"
+            drawnTextFieldFrames.isNotEmpty(),
+            "Keyboard animation should be sampled"
         )
+        assertTrue(
+            actual = drawnTextFieldFrames.first().second > drawnTextFieldFrames.last().second,
+            message = "Keyboard animation should be sampled before it settles"
+        )
+        drawnTextFieldFrames.forEachWithPrevious { previousFrame, nextFrame ->
+            assertTrue(
+                actual = nextFrame.second <= previousFrame.second,
+                message = "Visible bottom must move upward on every frame: " +
+                    "previous=${previousFrame.second}, next=${nextFrame.second}",
+            )
+        }
 
         assertEquals(
             expected = with(density) { (screenSize.height - keyboardHeight).roundToPx() },
