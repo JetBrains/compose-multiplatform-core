@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.takeOrElse
@@ -89,7 +90,7 @@ internal class ParagraphLayouter(
     private var paragraphCache: SkParagraph? = null
     private var width: Float = Float.NaN
     @VisibleForTesting
-    var updateForeground = false
+    var needsForegroundUpdate = false
         private set
 
     private val unresolvedSymbolsRegistry = getUnresolvedSymbolsRegistry()
@@ -126,10 +127,23 @@ internal class ParagraphLayouter(
         // skia's updateForegroundPaint applies the same style to every span,
         // so if we have any, we need to rebuild the entire paragraph :'(
         if (onlyForeground && builder.annotations.isEmpty()) {
-            updateForeground = true
+            needsForegroundUpdate = true
         } else {
             paragraphCache = null
         }
+    }
+
+    /**
+     * Invalidates the paragraph after a change to the text's foreground.
+     *
+     * Decorations (e.g. underlines) take [decorationColor] when the paragraph is built, and skia's
+     * `updateForegroundPaint` doesn't change them, so if it changes on decorated text, the
+     * paragraph needs to be rebuilt.
+     */
+    private fun invalidateParagraph(previousDecorationColor: Color) {
+        val isDecorationColorChanged = !builder.textStyle.textDecoration.sameValueAs(null) &&
+            decorationColor != previousDecorationColor
+        invalidateParagraph(onlyForeground = !isDecorationColorChanged)
     }
 
     internal fun emptyLineMetrics(paragraph: SkParagraph): Array<LineMetrics> =
@@ -153,12 +167,22 @@ internal class ParagraphLayouter(
     ) {
         val actualColor = color.takeOrElse { builder.textStyle.color }
         if (builder.textStyle.color != actualColor) {
+            val previousDecorationColor = decorationColor
             builder.textStyle = builder.textStyle.copy(
                 color = actualColor,
             )
-            invalidateParagraph(onlyForeground = true)
+            invalidateParagraph(previousDecorationColor)
         }
     }
+
+    /**
+     * The color decorations take: the text color, or the color of a [SolidColor] brush.
+     * Unspecified for a [ShaderBrush].
+     *
+     * Computed the same way the paragraph builder computes the color it gives decorations.
+     */
+    private val decorationColor: Color
+        get() = builder.textStyle.toSpanStyle().toParagraphTextForegroundStyle().color
 
     fun setBrush(
         brush: Brush?,
@@ -172,12 +196,13 @@ internal class ParagraphLayouter(
             !actualSize.height.sameSizeAs(brushSize.height) ||
             !builder.textStyle.alpha.sameAlphaAs(alpha)
         ) {
+            val previousDecorationColor = decorationColor
             builder.textStyle = builder.textStyle.copy(
                 brush = brush,
                 alpha = alpha,
             )
             builder.brushSize = brushSize
-            invalidateParagraph(onlyForeground = true)
+            invalidateParagraph(previousDecorationColor)
         }
     }
 
@@ -234,9 +259,9 @@ internal class ParagraphLayouter(
         var paragraph = paragraphCache
         return if (paragraph != null) {
             var layoutRequired = false
-            if (updateForeground) {
+            if (needsForegroundUpdate) {
                 builder.updateForegroundPaint(paragraph)
-                updateForeground = false
+                needsForegroundUpdate = false
 
                 // Skia caches everything internally, so to actually apply it
                 // markDirty + layout is required.
@@ -256,7 +281,7 @@ internal class ParagraphLayouter(
             paragraph.layout(width)
             paragraphCache = paragraph
             unresolvedCodepoints = paragraph.unresolvedCodepoints
-            updateForeground = false
+            needsForegroundUpdate = false
             paragraph
         }
     }
