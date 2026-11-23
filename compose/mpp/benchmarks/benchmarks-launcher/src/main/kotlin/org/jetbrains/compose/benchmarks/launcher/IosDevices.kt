@@ -23,35 +23,27 @@ import kotlinx.serialization.json.*
 
 @Serializable
 internal data class IosDevice(
-    val id: String,
+    override val id: String,
     val udid: String,
     val name: String,
     val model: String?,
     val osVersion: String?,
-)
+) : IosTarget
 
 // Use a file rather than stdout: older Xcode releases mix progress messages into stdout.
-internal fun selectIosDevice(selection: String?, processes: Processes): IosDevice? {
+internal fun listIosDevices(processes: Processes): List<IosDevice> {
     val output = Files.createTempFile("benchmark-ios-devices-", ".json")
     val data = try {
-        try {
-            processes.capture(listOf("xcrun", "devicectl", "list", "devices", "--json-output", output.toString()))
-            Json.parseToJsonElement(output.readText()).jsonObject
-        } catch (error: InterruptedException) {
-            throw error
-        } catch (error: Exception) {
-            if (selection != null) throw error
-            println("Cannot discover physical iPhones (${error.message}); using a simulator")
-            return null
-        }
+        processes.capture(listOf("xcrun", "devicectl", "list", "devices", "--json-output", output.toString()))
+        Json.parseToJsonElement(output.readText()).jsonObject
     } finally {
         Files.deleteIfExists(output)
     }
-    return selectIosDevice(selection, data)
+    return listIosDevices(data)
 }
 
-internal fun selectIosDevice(selection: String?, data: JsonObject): IosDevice? {
-    val devices = data.getValue("result").jsonObject.getValue("devices").jsonArray.map { it.jsonObject }
+internal fun listIosDevices(data: JsonObject): List<IosDevice> =
+    data.getValue("result").jsonObject.getValue("devices").jsonArray.map { it.jsonObject }
         .filter { device ->
             val hardware = device.properties("hardware", "hardwareProperties")
             val connection = device.properties("connection", "connectionProperties")
@@ -78,15 +70,6 @@ internal fun selectIosDevice(selection: String?, data: JsonObject): IosDevice? {
                     ?: device["deviceProperties"]?.jsonObject?.string("osVersionNumber"),
             )
         }
-    val matches = if (selection == null) devices else devices.filter {
-        selection in listOf(it.id, it.udid, it.name)
-    }
-    check(matches.size <= 1) { "multiple available iPhones; specify --device UDID or --simulator UUID" }
-    check(selection == null || matches.isNotEmpty()) {
-        "no available iPhone matching '$selection'; connect, pair and unlock the device, and enable Developer Mode"
-    }
-    return matches.singleOrNull()
-}
 
 private fun JsonObject.properties(name: String, legacy: String): JsonObject =
     get("properties")?.jsonObject?.get(name)?.jsonObject ?: getValue(legacy).jsonObject

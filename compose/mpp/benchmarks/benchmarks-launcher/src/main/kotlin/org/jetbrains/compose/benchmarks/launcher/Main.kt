@@ -112,14 +112,16 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
 
         benchmarks-launcher --target jvm --compose-version local --compose-core-path /path/to/core
 
-        Lists accept spaces or commas. Use all alone to select all targets, cases, or modes.
-        Web targets require --browser. iOS prefers an available physical iPhone, otherwise uses a simulator.
-        Use --device UDID or --simulator UUID to select explicitly.
+        Lists accept spaces or commas. Only --target, --tests, and --modes accept all; use it alone.
+        Web targets require --browser. iOS uses the first booted simulator, or boots the first available one.
+        Physical iPhones require explicit --ios-target selection. Missing or ambiguous matches are errors.
+        Names require discovery of both simulators and physical iPhones; use an ID if either discovery fails.
         Compose defaults to local when a core checkout is configured, otherwise to the version catalog.
+        Local core sources use their own Kotlin version; --kotlin-version applies to the benchmarks project.
     """.trimIndent()
 
     // split() resets the value count; use valueSplit to preserve space-separated varargs as well.
-    private val targets by option("--target", help = "Targets, space/comma separated, or all")
+    private val targets by option("--target", help = "Targets, space/comma separated, or all; macos and ios require macOS and build for ARM64")
         .choice(availableTargets + "all").varargValues()
         .copy(valueSplit = { it.split(",") }).required()
         .validate {
@@ -136,14 +138,14 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
     ).varargValues().default(emptyList(), defaultForHelp = "local if a core checkout is configured, otherwise version catalog")
     private val kotlinVersions by option(
         "--kotlin-version",
-        help = "Kotlin versions, space/comma separated"
+        help = "Published Kotlin and Compose Compiler versions for the benchmarks project, space/comma separated"
     ).varargValues().default(emptyList(), defaultForHelp = "version catalog")
         .validate {
             require(it.flatMap { value -> value.split(",") }.none { value -> value == "local" }) {
                 "Kotlin must use published versions"
             }
         }
-    private val port by option(help = "Collector port").int().restrictTo(1..65535).default(8090)
+    private val port by option(help = "Collector TCP port (1-65535); must be free").int().restrictTo(1..65535).default(8090)
     private val tests by option(
         help = "Case names, space/comma separated, or all. Available: ${cases.joinToString()}"
     )
@@ -151,44 +153,53 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         .copy(valueSplit = { it.split(",") })
         .default(listOf("all"), defaultForHelp = "all")
         .check("use all alone") { "all" !in it || it == listOf("all") }
-    private val selectedModes by option("--modes", help = "Modes, space/comma separated, or all")
+    private val selectedModes by option("--modes", help = "Measurement modes, space/comma separated, or all; startup: startup time, realFrames: on-screen frames, averageFrame/fps: offscreen rendering")
         .choice(modes + "all").varargValues()
         .copy(valueSplit = { it.split(",") })
         .default(listOf("all"), defaultForHelp = "all")
         .check("use all alone") { "all" !in it || it == listOf("all") }
     private val repeat by option(help = "Repetitions of each case/mode").int().restrictTo(min = 1).default(1)
-    private val timeout by option(help = "Seconds per test, excluding build time").double()
+    private val timeout by option(help = "Report timeout in seconds for each test run and environment collection; excludes build time").double()
         .default(300.0)
         .check("must be finite and positive") { it.isFinite() && it > 0 }
     private val outputDir by option(
         "--output-dir",
-        help = "Base directory for timestamped results; default: out/benchmark-reports"
+        help = "Base directory for timestamped results; default: \$OUT_DIR/benchmark-reports, otherwise <project>/out/benchmark-reports",
+        metavar = "PATH"
     ).convert { absolutePath(it) }
     private val projectDir by option(
         "--project-dir",
-        help = "Standalone benchmarks project, detected by default"
+        help = "Standalone benchmarks project directory; default: detected from the working directory or launcher location",
+        metavar = "PATH"
     )
         .convert { absolutePath(it) }
     private val corePath by option(
         "--compose-core-path",
-        help = "Core checkout for local Compose; default: current core checkout"
+        help = "Core checkout for local Compose; default: configured composeCorePath, otherwise ../../.. relative to the benchmarks project",
+        metavar = "PATH"
     )
         .convert { absolutePath(it) }
-    private val browsers by option("--browser", help = "Browser executables, commands, or macOS .apps; space/comma separated")
+    private val browsers by option("--browser", help = "Browser executables, commands, or macOS .apps; space/comma separated or repeated; required for js/wasmJs, ignored otherwise")
         .multiple()
         .check("browser must not be empty") { values -> values.flatMap { it.split(",") }.none { it.isBlank() } }
     private val webPort by option(
         "--web-port",
-        help = "Static file port, 0 selects a free port"
+        help = "Static HTTP server port for js/wasmJs (0-65535); 0 selects a free port"
     ).int().restrictTo(0..65535).default(0)
-    private val simulator by option(help = "iOS Simulator UUID or unique name; default: single booted device, or first available")
 
-    private val device by option(help = "Physical iPhone UDID, CoreDevice UUID or unique name (no simulator fallback)")
-    private val developmentTeam by option("--development-team", help = "Apple development team ID for device signing; otherwise use Xcode project settings")
+    private val iosTarget by option(
+        "--ios-target",
+        help = "iOS only: simulator UUID, physical iPhone UDID/CoreDevice UUID, or unique name; default: first booted iOS simulator, otherwise boot the first available one",
+        metavar = "ID_OR_NAME"
+    )
+    private val xcodeDevelopmentTeam by option(
+        "--apple-development-team",
+        help = "Apple development team ID for physical iPhone signing only; default: Xcode project settings",
+        metavar = "TEAM_ID"
+    )
 
     override fun run() {
         try {
-            require(device == null || simulator == null) { "--device and --simulator are mutually exclusive" }
             val selectedTargets = select(targets, availableTargets)
             val selectedBrowsers = browsers.flatMap { it.split(",") }.distinct()
             launchSeries(selectedTargets, selectedBrowsers)
@@ -314,13 +325,14 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         println("Results: $directory")
         try {
             summary.save(directory)
-            val phone = if (target == "ios" && simulator == null) selectIosDevice(device, processes) else null
-            val device = if (target == "ios" && phone == null) selectSimulator(simulator, processes) else null
-            if (phone != null) println("iPhone: ${phone.name} (${phone.udid})")
-            if (device != null) println("Simulator: ${device.name} (${device.id})")
-            val reportHost = if (phone != null) iosCollectorHost(processes) else "127.0.0.1"
+            val selectedIosTarget = if (target == "ios") selectIosTarget(iosTarget, processes) else null
+            val targetIosDevice = selectedIosTarget as? IosDevice
+            val targetIosSimulator = selectedIosTarget as? IosSimulator
+            if (targetIosDevice != null) println("iPhone: ${targetIosDevice.name} (${targetIosDevice.udid})")
+            if (targetIosSimulator != null) println("Simulator: ${targetIosSimulator.name} (${targetIosSimulator.id})")
+            val reportHost = if (targetIosDevice != null) iosCollectorHost(processes) else "127.0.0.1"
             val collectorUrl = "http://$reportHost:$port"
-            if (phone != null) println("Collector: $collectorUrl (must be reachable from the iPhone)")
+            if (targetIosDevice != null) println("Collector: $collectorUrl (must be reachable from the iPhone)")
             val browserPath = if (target in listOf("js", "wasmJs")) executable(
                 requireNotNull(browser),
                 processes
@@ -335,35 +347,31 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                 }
             }
             summary.launcherEnvironment = collectLauncherEnvironment(
-                target, summary.composeCorePath?.let { Path.of(it) }, browserPath, device, processes, phone
+                target, summary.composeCorePath?.let { Path.of(it) }, browserPath, selectedIosTarget, processes
             )
             summary.save(directory)
             ensureFreePort(port)
             build(
-                root, out, logs, device, processes, summary.kotlinVersion,
+                root, out, logs, selectedIosTarget, processes, summary.kotlinVersion,
                 summary.composeVersion,
-                summary.composeCorePath?.let { Path.of(it) }, target, phone
+                summary.composeCorePath?.let { Path.of(it) }, target
             )
-            val app = artifact(root.resolve("benchmarks-app/build"), out, target, phone != null)
-            if (phone != null) processes.run(
-                listOf("xcrun", "devicectl", "device", "install", "app", "--device", phone.id, app.toString()),
+            val app = artifact(root.resolve("benchmarks-app/build"), out, target, targetIosDevice != null)
+            if (targetIosDevice != null) processes.run(
+                listOf("xcrun", "devicectl", "device", "install", "app", "--device", targetIosDevice.id, app.toString()),
                 logs.resolve("device.log"), timeoutSeconds = 120,
             )
-            if (device != null) {
-                if (device.state != "Booted") processes.run(
-                    listOf(
-                        "xcrun",
-                        "simctl",
-                        "boot",
-                        device.id
-                    ), logs.resolve("simulator.log")
-                )
-                processes.run(
-                    listOf("xcrun", "simctl", "bootstatus", device.id, "-b"),
+            if (targetIosSimulator != null) {
+                if (targetIosSimulator.state != "Booted") processes.run(
+                    listOf("xcrun", "simctl", "boot", targetIosSimulator.id),
                     logs.resolve("simulator.log")
                 )
                 processes.run(
-                    listOf("xcrun", "simctl", "install", device.id, app.toString()),
+                    listOf("xcrun", "simctl", "bootstatus", targetIosSimulator.id, "-b"),
+                    logs.resolve("simulator.log")
+                )
+                processes.run(
+                    listOf("xcrun", "simctl", "install", targetIosSimulator.id, app.toString()),
                     logs.resolve("simulator.log")
                 )
             }
@@ -372,7 +380,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             val collectorCommand = listOf(
                 root.resolve("benchmarks-collector/build/install/benchmarks-collector/bin/$collectorScript").toString(),
                 port.toString(), reports.toString()
-            ) + if (phone != null) {
+            ) + if (targetIosDevice != null) {
                 // A physical iPhone reaches the collector over LAN, so bind to all interfaces;
                 // simulator and other local runs keep the default loopback-only binding.
                 listOf("0.0.0.0")
@@ -396,7 +404,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                         if (webApplications != null) {
                             webApplications.run(requireNotNull(server).url, parameters, log, wait)
                         } else {
-                            runApplication(processes, target, app, device, parameters, log, phone) { process ->
+                            runApplication(processes, target, app, selectedIosTarget, parameters, log) { process ->
                                 wait { process.isAlive }
                             }
                         }
@@ -489,8 +497,8 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
     }
 
     private fun build(
-        root: Path, out: Path, logs: Path, device: Simulator?, processes: Processes,
-        kotlinVersion: String, composeVersion: String, core: Path?, target: String, phone: IosDevice?,
+        root: Path, out: Path, logs: Path, iosTarget: IosTarget?, processes: Processes,
+        kotlinVersion: String, composeVersion: String, core: Path?, target: String,
     ) {
         val appTask = when (target) {
             "jvm" -> "packageReleaseUberJarForCurrentOS"
@@ -531,16 +539,16 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                     "-configuration",
                     "Release",
                     "-sdk",
-                    if (phone != null) "iphoneos" else "iphonesimulator",
+                    if (iosTarget is IosDevice) "iphoneos" else "iphonesimulator",
                     "-destination",
-                    "id=${phone?.udid ?: requireNotNull(device).id}",
+                    "id=${(iosTarget as? IosDevice)?.udid ?: requireNotNull(iosTarget).id}",
                     "-derivedDataPath",
                     out.resolve("benchmarks-ios-derived").toString(),
                     "ARCHS=arm64",
-                ) + if (phone != null) {
+                ) + if (iosTarget is IosDevice) {
                     buildList {
                         addAll(listOf("-allowProvisioningUpdates"))
-                        addAll(listOfNotNull(this@Launcher.developmentTeam?.let { "DEVELOPMENT_TEAM=$it" }))
+                        addAll(listOfNotNull(this@Launcher.xcodeDevelopmentTeam?.let { "DEVELOPMENT_TEAM=$it" }))
                         add("build")
                     }
                 } else listOf("CODE_SIGNING_ALLOWED=NO", "build"), logs.resolve("xcode-build.log")

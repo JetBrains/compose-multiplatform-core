@@ -79,17 +79,17 @@ internal fun browserKind(browser: Path): String {
 }
 
 @Serializable
-internal data class Simulator(
-    val id: String,
+internal data class IosSimulator(
+    override val id: String,
     val state: String,
     val name: String,
     val deviceTypeIdentifier: String?,
     val runtimeIdentifier: String,
     val runtimeVersion: String? = null,
     val runtimeBuild: String? = null,
-)
+) : IosTarget
 
-internal fun selectSimulator(selection: String?, processes: Processes): Simulator {
+internal fun listIosSimulators(processes: Processes): List<IosSimulator> {
     val data = Json.parseToJsonElement(
         processes.capture(
             listOf(
@@ -97,30 +97,21 @@ internal fun selectSimulator(selection: String?, processes: Processes): Simulato
             )
         )
     ).jsonObject.getValue("devices").jsonObject
-    return selectSimulator(selection, data)
+    return listIosSimulators(data)
 }
 
-internal fun selectSimulator(selection: String?, data: JsonObject): Simulator {
-    val devices = data.filterKeys { it.startsWith("com.apple.CoreSimulator.SimRuntime.iOS-") }
+internal fun listIosSimulators(data: JsonObject): List<IosSimulator> =
+    data.filterKeys { it.startsWith("com.apple.CoreSimulator.SimRuntime.iOS-") }
         .flatMap { (runtime, devices) ->
             devices.jsonArray.map { JsonObject(it.jsonObject + ("runtimeIdentifier" to JsonPrimitive(runtime))) }
         }
         .filter { it["isAvailable"]?.jsonPrimitive?.booleanOrNull == true }
-    val device = if (selection == null) {
-        val booted = devices.filter { it.text("state") == "Booted" }
-        check(booted.size <= 1) { "specify --simulator UUID, or boot exactly one iOS simulator before running" }
-        booted.singleOrNull() ?: devices.firstOrNull()
-            ?: error("no available iOS simulators; install an iOS runtime and create a simulator in Xcode")
-    } else {
-        val matches = devices.filter { selection in listOf(it.text("udid"), it.text("name")) }
-        check(matches.size == 1) { "specify --simulator UUID or a unique available iOS simulator name" }
-        matches.single()
-    }
-    return Simulator(
-        device.text("udid"), device.text("state"), device.text("name"),
-        device["deviceTypeIdentifier"]?.jsonPrimitive?.contentOrNull, device.text("runtimeIdentifier"),
-    )
-}
+        .map { device ->
+            IosSimulator(
+                device.text("udid"), device.text("state"), device.text("name"),
+                device["deviceTypeIdentifier"]?.jsonPrimitive?.contentOrNull, device.text("runtimeIdentifier"),
+            )
+        }
 
 internal fun JsonObject.text(key: String): String = getValue(key).jsonPrimitive.content
 
@@ -187,15 +178,14 @@ internal fun runApplication(
     processes: Processes,
     target: String,
     app: Path,
-    simulator: Simulator?,
+    iosTarget: IosTarget?,
     parameters: List<String>,
     log: Path,
-    phone: IosDevice? = null,
     waitForReport: (Process) -> Unit,
 ) {
-    if (phone != null) {
+    if (iosTarget is IosDevice) {
         val command = listOf(
-            "xcrun", "devicectl", "device", "process", "launch", "--device", phone.id,
+            "xcrun", "devicectl", "device", "process", "launch", "--device", iosTarget.id,
             "--console", "--terminate-existing", bundleId,
         ) + parameters
         // devicectl --console forwards SIGTERM to the app when ManagedProcess closes.
@@ -203,15 +193,15 @@ internal fun runApplication(
         return
     }
     if (target == "ios") {
-        val device = requireNotNull(simulator).id
+        val simulatorId = requireNotNull(iosTarget as? IosSimulator).id
         try {
             val command = listOf(
-                "xcrun", "simctl", "launch", "--console", "--terminate-running-process", device, bundleId
+                "xcrun", "simctl", "launch", "--console", "--terminate-running-process", simulatorId, bundleId
             ) + parameters
             processes.start(command, log).use { waitForReport(it.process) }
         } finally {
             processes.run(
-                listOf("xcrun", "simctl", "terminate", device, bundleId),
+                listOf("xcrun", "simctl", "terminate", simulatorId, bundleId),
                 log,
                 10,
                 checkExit = false

@@ -31,7 +31,7 @@ internal data class LauncherEnvironment(
     val coreCommit: String? = null,
     val coreDirty: Boolean? = null,
     val browserVersion: String? = null,
-    val simulator: Simulator? = null,
+    val simulator: IosSimulator? = null,
     val device: IosDevice? = null,
     val host: HostEnvironment? = null,
     val xcodeVersion: String? = null,
@@ -59,7 +59,7 @@ internal data class EnvironmentCollection(
 )
 
 internal fun collectLauncherEnvironment(
-    target: String, core: Path?, browser: Path?, simulator: Simulator?, processes: Processes, phone: IosDevice? = null,
+    target: String, core: Path?, browser: Path?, iosTarget: IosTarget?, processes: Processes,
 ): LauncherEnvironment {
     val warnings = mutableListOf<String>()
     fun <T> read(field: String, block: () -> T): T? = try {
@@ -84,7 +84,7 @@ internal fun collectLauncherEnvironment(
                 bundle.resolve("Contents/Info.plist").toString())
         } else command(it.toString(), "--version")
     } }
-    val device = simulator?.let { selected -> read("simulatorRuntime") {
+    val simulator = (iosTarget as? IosSimulator)?.let { selected -> read("simulatorRuntime") {
         val runtimes = Json.parseToJsonElement(command("xcrun", "simctl", "list", "runtimes", "--json"))
             .jsonObject.getValue("runtimes").jsonArray.map { it.jsonObject }
         val runtime = runtimes.first { it.text("identifier") == selected.runtimeIdentifier }
@@ -106,10 +106,10 @@ internal fun collectLauncherEnvironment(
             "js", "wasmJs" -> "Kotlin production executable / webpack production"
             else -> "Kotlin/Native release optimizations"
         },
-        coreCommit = commit, coreDirty = dirty, browserVersion = browserVersion, simulator = device, device = phone, host = host,
+        coreCommit = commit, coreDirty = dirty, browserVersion = browserVersion, simulator = simulator, device = iosTarget as? IosDevice, host = host,
         xcodeVersion = if (target in listOf("ios", "macos")) read("xcodeVersion") { command("xcodebuild", "-version") } else null,
         sdkVersion = if (target in listOf("ios", "macos")) read("sdkVersion") {
-            command("xcrun", "--sdk", if (target == "ios") { if (phone != null) "iphoneos" else "iphonesimulator" } else "macosx", "--show-sdk-version")
+            command("xcrun", "--sdk", if (target == "ios") { if (iosTarget is IosDevice) "iphoneos" else "iphonesimulator" } else "macosx", "--show-sdk-version")
         } else null,
         warnings = warnings.toList(),
     )
