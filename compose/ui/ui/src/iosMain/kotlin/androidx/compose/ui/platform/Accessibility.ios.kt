@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalComposeUiHostApi::class)
+
 package androidx.compose.ui.platform
 
 import androidx.collection.MutableIntSet
@@ -1496,6 +1498,15 @@ internal class AccessibilityMediator(
             customRootNodeId = rootNode.id,
             shouldIgnoreNode = { false }
         )
+        fun uncoveredBounds(node: SemanticsNode): Rect? {
+            nodes[node.id]?.let { return it.adjustedBounds.toRect() }
+            // The shared traversal skips inline link markers. iOS exposes links as separate
+            // elements, so derive their visible bounds from the containing text instead.
+            if (!node.unmergedConfig.contains(SemanticsProperties.LinkTestMarker)) return null
+            val parentBounds = node.parent?.let { nodes[it.id]?.adjustedBounds?.toRect() }
+                ?: return null
+            return node.boundsInRoot.intersect(parentBounds).takeUnless { it.isEmpty }
+        }
         keyboardFocusedElementKey?.id?.let {
             if (!nodes.contains(it)) {
                 // The keyboard-focused node is removed. It's important to trigger focus reload
@@ -1529,7 +1540,7 @@ internal class AccessibilityMediator(
                 val canBeAccessibilityElement = child.canBeAccessibilityElement()
                 if (child.isValid && (!collectOnlyAccessibilityElements || canBeAccessibilityElement)) {
                     presentIds.add(child.id)
-                    if (nodes.contains(child.id)) {
+                    if (uncoveredBounds(child) != null) {
                         semanticsChildren.add(child)
                     } else if (child.size != IntSize.Zero && (child.isScreenReaderFocusable() ||
                             child.unmergedConfig.contains(NativeAccessibilityViewSemanticsKey))
@@ -1560,7 +1571,7 @@ internal class AccessibilityMediator(
             isBeyondBounds: Boolean,
             flatten: Boolean
         ): AccessibilityElement {
-            val frame = nodes[node.id]?.adjustedBounds?.toRect() ?: node.unclippedBoundsInWindow
+            val frame = uncoveredBounds(node) ?: node.unclippedBoundsInWindow
 
             if (node.unmergedConfig.getOrNull(SemanticsProperties.Focused) == true) {
                 focusedKey = node.semanticsKey
