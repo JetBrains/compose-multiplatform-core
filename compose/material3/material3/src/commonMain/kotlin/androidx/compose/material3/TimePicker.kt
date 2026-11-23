@@ -62,6 +62,7 @@ import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldBuffer
@@ -211,6 +212,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastFirstOrNull
@@ -478,9 +481,15 @@ internal fun TimePickerImpl(
 
     val analogState = remember(state) { AnalogTimePickerState(state, userOverride) }
 
-    LaunchedEffect(state.hour, state.minute) {
+    LaunchedEffect(state.hour) {
         if (userOverride.value == true) {
             analogState.hour = state.hour
+        }
+        userOverride.value = true
+    }
+
+    LaunchedEffect(state.minute) {
+        if (userOverride.value == true) {
             analogState.minute = state.minute
         }
         userOverride.value = true
@@ -1465,6 +1474,8 @@ private val VibrantPeriodToggleHeight
     get() = 120.dp
 private val UncontainedTimeFieldHeight
     get() = 136.dp
+private val UncontainedScrollFieldItemHeight
+    get() = 60.dp
 private val UncontainedToggleHeight
     get() = 140.dp
 private val VibrantPeriodToggleHorizontalHeight
@@ -1785,7 +1796,7 @@ internal class AnalogTimePickerState(
         return anim.value - diff
     }
 
-    private var anim = Animatable(hourAngle)
+    private var anim by mutableStateOf(Animatable(hourAngle))
 
     suspend fun onGestureEnd(animationSpec: AnimationSpec<Float>) {
         val end =
@@ -1824,7 +1835,7 @@ internal class AnalogTimePickerState(
         }
     }
 
-    override var minuteInput: Int
+    override var minute: Int
         get() = state.minute
         set(value) {
             minuteAngle = RadiansPerMinute * value - FullCircle / 4
@@ -1834,7 +1845,13 @@ internal class AnalogTimePickerState(
             }
         }
 
-    override var hourInput: Int
+    override var minuteInput: Int
+        get() = state.minuteInput
+        set(value) {
+            minute = value
+        }
+
+    override var hour: Int
         get() = state.hour
         set(value) {
             hourAngle = RadiansPerHour * (value % 12) - FullCircle / 4
@@ -1842,6 +1859,12 @@ internal class AnalogTimePickerState(
             if (selection == TimePickerSelectionMode.Hour) {
                 anim = Animatable(hourAngle)
             }
+        }
+
+    override var hourInput: Int
+        get() = state.hourInput
+        set(value) {
+            hour = value
         }
 
     private fun Float.normalize(): Float {
@@ -2275,6 +2298,11 @@ private fun TimeScrollImpl(
     val hasSideControlColumn = toggle != null
     val fieldHeight =
         if (hasSideControlColumn) UncontainedTimeFieldHeight else VibrantTimeFieldHeight
+    // The uncontained field is 16dp taller, so its items are 8dp further apart (24dp gap instead of
+    // 16dp). This keeps the neighbors cut off the same as in the contained field.
+    val itemHeight =
+        if (hasSideControlColumn) UncontainedScrollFieldItemHeight
+        else ScrollFieldDefaults.ItemHeight
 
     Row(
         modifier = modifier.semantics { isTraversalGroup = true },
@@ -2307,13 +2335,14 @@ private fun TimeScrollImpl(
             // Always display the time input text field from left to right.
             LocalLayoutDirection provides LayoutDirection.Ltr,
         ) {
-            ScrollField(
+            ScrollFieldImpl(
                 state = hourState,
                 contentDescription = hourSelectionDescription,
                 modifier = Modifier.size(width = 100.dp, height = fieldHeight),
                 fieldAccessibilityDescription = { index ->
                     formatString(hourSuffix, if (state.is24hour) index else index + 1)
                 },
+                itemHeight = itemHeight,
                 field = { index, selected, enabled ->
                     ScrollFieldDefaults.Item(
                         index = if (state.is24hour) index else index + 1,
@@ -2330,11 +2359,12 @@ private fun TimeScrollImpl(
                 )
             )
 
-            ScrollField(
+            ScrollFieldImpl(
                 state = minuteState,
                 contentDescription = minuteSelectionDescription,
                 modifier = Modifier.size(width = 100.dp, height = fieldHeight),
                 fieldAccessibilityDescription = { index -> formatString(minuteSuffix, index) },
+                itemHeight = itemHeight,
             )
         }
 
@@ -2778,6 +2808,14 @@ private fun PeriodToggleImpl(
     toggle: @Composable (() -> Unit)? = null,
 ) {
     val style = PeriodSelectorLabelTextFont.value
+    val lineHeight = (style.lineHeight.value / style.fontSize.value).em
+    val autoSize =
+        remember(style.fontSize) {
+            TextAutoSize.StepBased(
+                minFontSize = PeriodToggleMinFontSize,
+                maxFontSize = style.fontSize,
+            )
+        }
     val contentDescription = getString(Strings.TimePickerPeriodToggle)
     val useUpdatedToggle =
         ComposeMaterial3Flags.isUpdatedTimepickerToggleEnabled || shapes.orVibrant(false, true)
@@ -2832,6 +2870,7 @@ private fun PeriodToggleImpl(
                                     if (!state.isPm) style.copy(fontWeight = FontWeight.Bold)
                                     else style,
                                 text = getString(string = Strings.TimePickerAM),
+                                maxLines = 1,
                             )
                         }
                         SideControlItem(
@@ -2849,6 +2888,7 @@ private fun PeriodToggleImpl(
                                     if (state.isPm) style.copy(fontWeight = FontWeight.Bold)
                                     else style,
                                 text = getString(string = Strings.TimePickerPM),
+                                maxLines = 1,
                             )
                         }
                     } else {
@@ -2868,6 +2908,9 @@ private fun PeriodToggleImpl(
                                     if (!state.isPm) style.copy(fontWeight = FontWeight.Bold)
                                     else style,
                                 text = getString(string = Strings.TimePickerAM),
+                                lineHeight = lineHeight,
+                                maxLines = 1,
+                                autoSize = autoSize,
                             )
                         }
                         ToggleItem(
@@ -2886,6 +2929,9 @@ private fun PeriodToggleImpl(
                                     if (state.isPm) style.copy(fontWeight = FontWeight.Bold)
                                     else style,
                                 text = getString(string = Strings.TimePickerPM),
+                                lineHeight = lineHeight,
+                                maxLines = 1,
+                                autoSize = autoSize,
                             )
                         }
                     }
@@ -2902,7 +2948,13 @@ private fun PeriodToggleImpl(
                     },
                     colors = colors,
                 ) {
-                    Text(style = style, text = getString(string = Strings.TimePickerAM))
+                    Text(
+                        style = style,
+                        text = getString(string = Strings.TimePickerAM),
+                        lineHeight = lineHeight,
+                        maxLines = 1,
+                        autoSize = autoSize,
+                    )
                 }
                 Spacer(
                     Modifier.layoutId("Spacer")
@@ -2920,7 +2972,13 @@ private fun PeriodToggleImpl(
                     },
                     colors = colors,
                 ) {
-                    Text(style = style, text = getString(string = Strings.TimePickerPM))
+                    Text(
+                        style = style,
+                        text = getString(string = Strings.TimePickerPM),
+                        lineHeight = lineHeight,
+                        maxLines = 1,
+                        autoSize = autoSize,
+                    )
                 }
             }
         },
@@ -3008,7 +3066,7 @@ private fun ToggleItem(
                 },
             shapes = toggleButtonShapes,
             colors = toggleButtonColors,
-            contentPadding = PaddingValues(0.dp),
+            contentPadding = PaddingValues(horizontal = PeriodTogglePaddingSmall),
             content = content,
         )
     } else {
@@ -3020,7 +3078,7 @@ private fun ToggleItem(
                 Modifier.zIndex(if (checked) 0f else 1f).fillMaxSize().semantics {
                     selected = checked
                 },
-            contentPadding = PaddingValues(0.dp),
+            contentPadding = PaddingValues(horizontal = PeriodTogglePaddingSmall),
             shape = shape,
             onClick = onClick,
             content = content,
@@ -4063,6 +4121,8 @@ private val PeriodTogglePaddingSmall
     get() = 4.dp
 private val PeriodTogglePaddingLarge
     get() = 16.dp
+private val PeriodToggleMinFontSize
+    get() = 6.sp
 
 private val TimePickerMaxHeight
     get() = 384.dp

@@ -53,7 +53,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.RangeSliderState.Companion.Saver
 import androidx.compose.material3.SliderState.Companion.Saver
 import androidx.compose.material3.internal.IncreaseHorizontalSemanticsBounds
@@ -117,8 +116,10 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
@@ -443,6 +444,8 @@ public fun Slider(
  *   lambda receives a [SliderState] which is used to obtain the current active track.
  * @param track the track to be displayed on the slider, it is placed underneath the thumb. The
  *   lambda receives a [SliderState] which is used to obtain the current active track.
+ *
+ * @material3expressive
  */
 @Composable
 public fun VerticalSlider(
@@ -531,6 +534,8 @@ public fun VerticalSlider(
  *   lambda receives a [SliderState] which is used to obtain the current active track.
  * @param track the track to be displayed on the slider, it is placed underneath the thumb. The
  *   lambda receives a [SliderState] which is used to obtain the current active track.
+ *
+ * @material3expressive
  */
 @Deprecated(message = "Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
 @Composable
@@ -985,9 +990,7 @@ private fun SliderImpl(
                 .focusable(enabled, interactionSource)
                 .slideOnKeyEvents(
                     enabled,
-                    state.steps,
-                    state.trackRange,
-                    state.value,
+                    state,
                     reverseDirection,
                     onValueChange,
                     onValueChangeFinished,
@@ -1022,12 +1025,6 @@ private fun SliderImpl(
         val sliderHeight: Int
         val trackOffsetX: Int
         val trackOffsetY: Int
-        val thumbOffsetX: Int
-        var thumbOffsetY: Int
-        val valueAsFraction = state.coercedValueAsFraction
-        val isOnFirstOrLastStep =
-            valueAsFraction == state.tickFractions.firstOrNull() ||
-                valueAsFraction == state.tickFractions.lastOrNull()
         val trackCornerSize =
             trackPlaceable[CornerSizeAlignmentLine].let {
                 if (it != AlignmentLine.Unspecified) it else 0
@@ -1041,40 +1038,52 @@ private fun SliderImpl(
             sliderHeight = thumbCoreHeight + trackPlaceable.height
             trackOffsetX = (sliderWidth - trackPlaceable.width) / 2
             trackOffsetY = thumbCoreHeight / 2
-            thumbOffsetX = (sliderWidth - thumbPlaceable.width) / 2
-            val fractionOffset =
-                if (state.steps > 0 && !isOnFirstOrLastStep) {
-                    ((trackPlaceable.height - trackCornerSize * 2) * valueAsFraction).roundToInt() +
-                        trackCornerSize
-                } else {
-                    (trackPlaceable.height * valueAsFraction).roundToInt()
-                }
-            thumbOffsetY =
-                if (reverseVerticalDirection) {
-                    trackPlaceable.height - fractionOffset
-                } else {
-                    fractionOffset
-                }
-            thumbOffsetY += trackOffsetY - thumbPlaceable.height / 2
         } else {
             sliderWidth = thumbCoreWidth + trackPlaceable.width
             sliderHeight = max(trackPlaceable.height, thumbCoreHeight)
             trackOffsetX = thumbCoreWidth / 2
             trackOffsetY = (sliderHeight - trackPlaceable.height) / 2
-            val fractionOffset =
-                if (state.steps > 0 && !isOnFirstOrLastStep) {
-                    ((trackPlaceable.width - trackCornerSize * 2) * valueAsFraction).roundToInt() +
-                        trackCornerSize
-                } else {
-                    (trackPlaceable.width * valueAsFraction).roundToInt()
-                }
-            thumbOffsetX = fractionOffset + trackOffsetX - thumbPlaceable.width / 2
-            thumbOffsetY = (sliderHeight - thumbPlaceable.height) / 2
         }
 
         state.updateDimensions(newTotalWidth = sliderWidth, newTotalHeight = sliderHeight)
 
         layout(sliderWidth, sliderHeight) {
+            val valueAsFraction = state.coercedValueAsFraction
+            val isOnFirstOrLastStep =
+                valueAsFraction == state.tickFractions.firstOrNull() ||
+                    valueAsFraction == state.tickFractions.lastOrNull()
+
+            val thumbOffsetX: Int
+            var thumbOffsetY: Int
+
+            if (orientation == Vertical) {
+                thumbOffsetX = (sliderWidth - thumbPlaceable.width) / 2
+                val fractionOffset =
+                    if (state.steps > 0 && !isOnFirstOrLastStep) {
+                        ((trackPlaceable.height - trackCornerSize * 2) * valueAsFraction)
+                            .roundToInt() + trackCornerSize
+                    } else {
+                        (trackPlaceable.height * valueAsFraction).roundToInt()
+                    }
+                thumbOffsetY =
+                    if (reverseVerticalDirection) {
+                        trackPlaceable.height - fractionOffset
+                    } else {
+                        fractionOffset
+                    }
+                thumbOffsetY += trackOffsetY - thumbPlaceable.height / 2
+            } else {
+                val fractionOffset =
+                    if (state.steps > 0 && !isOnFirstOrLastStep) {
+                        ((trackPlaceable.width - trackCornerSize * 2) * valueAsFraction)
+                            .roundToInt() + trackCornerSize
+                    } else {
+                        (trackPlaceable.width * valueAsFraction).roundToInt()
+                    }
+                thumbOffsetX = fractionOffset + trackOffsetX - thumbPlaceable.width / 2
+                thumbOffsetY = (sliderHeight - thumbPlaceable.height) / 2
+            }
+
             trackPlaceable.placeRelative(trackOffsetX, trackOffsetY)
             thumbPlaceable.placeRelative(thumbOffsetX, thumbOffsetY)
         }
@@ -1083,17 +1092,18 @@ private fun SliderImpl(
 
 private fun Modifier.slideOnKeyEvents(
     enabled: Boolean,
-    steps: Int,
-    trackRange: ClosedFloatingPointRange<Float>,
-    value: Float,
+    state: SliderState,
     reverseDirection: Boolean,
     onValueChangeState: (Float) -> Unit,
     onValueChangeFinishedState: (() -> Unit)?,
     isVertical: Boolean,
 ): Modifier {
-    require(steps >= 0) { "steps should be >= 0" }
+    require(state.steps >= 0) { "steps should be >= 0" }
     return this.onKeyEvent {
         if (!enabled) return@onKeyEvent false
+        val steps = state.steps
+        val trackRange = state.trackRange
+        val value = state.value
         when (it.type) {
             KeyEventType.KeyDown -> {
                 val rangeLength = abs(trackRange.endInclusive - trackRange.start)
@@ -1216,18 +1226,19 @@ private fun Modifier.slideOnKeyEvents(
 
 private fun Modifier.rangeSliderOnKeyEvents(
     enabled: Boolean,
-    steps: Int,
-    trackRange: ClosedFloatingPointRange<Float>,
-    valueStart: Float,
-    valueEnd: Float,
+    state: RangeSliderState,
     isStartThumb: Boolean,
     reverseDirection: Boolean,
     onValueChangeState: (SliderRange) -> Unit,
     onValueChangeFinishedState: (() -> Unit)?,
 ): Modifier {
-    require(steps >= 0) { "steps should be >= 0" }
+    require(state.steps >= 0) { "steps should be >= 0" }
     return this.onKeyEvent {
         if (!enabled) return@onKeyEvent false
+        val steps = state.steps
+        val trackRange = state.trackRange
+        val valueStart = state.startValue
+        val valueEnd = state.endValue
         when (it.type) {
             KeyEventType.KeyDown -> {
                 val rangeLength = abs(trackRange.endInclusive - trackRange.start)
@@ -1498,10 +1509,7 @@ private fun RangeSliderImpl(
                         }
                         .rangeSliderOnKeyEvents(
                             enabled,
-                            state.steps,
-                            state.trackRange,
-                            state.startValue,
-                            state.endValue,
+                            state,
                             true,
                             state.isRtl,
                             onRangeValueChange,
@@ -1537,10 +1545,7 @@ private fun RangeSliderImpl(
                         }
                         .rangeSliderOnKeyEvents(
                             enabled,
-                            state.steps,
-                            state.trackRange,
-                            state.startValue,
-                            state.endValue,
+                            state,
                             false,
                             state.isRtl,
                             onRangeValueChange,
@@ -1601,44 +1606,47 @@ private fun RangeSliderImpl(
 
         state.updateMinMaxPx()
 
-        val startValueAsFraction = state.coercedStartValueAsFraction
-        val isStartOnFirstOrLastStep =
-            startValueAsFraction == state.tickFractions.firstOrNull() ||
-                startValueAsFraction == state.tickFractions.lastOrNull()
-        val endValueAsFraction = state.coercedEndValueAsFraction
-        val isEndOnFirstOrLastStep =
-            endValueAsFraction == state.tickFractions.firstOrNull() ||
-                endValueAsFraction == state.tickFractions.lastOrNull()
         val trackOffsetX = startThumbPlaceable.width / 2 - startTrackPadding
         val trackCornerSize =
             trackPlaceable[CornerSizeAlignmentLine].let {
                 if (it != AlignmentLine.Unspecified) it else 0
             }
 
-        val startThumbOffsetX =
-            if (state.steps > 0 && !isStartOnFirstOrLastStep) {
-                ((trackPlaceable.width - trackCornerSize * 2) * startValueAsFraction).roundToInt() +
-                    trackCornerSize
-            } else {
-                (trackPlaceable.width * startValueAsFraction).roundToInt()
-            }
         // When start thumb and end thumb have different widths,
         // we need to add a correction for the centering of the slider.
         val startThumbCoreWidth = startThumbPlaceable.width - 2 * startTrackPadding
         val endThumbCoreWidth = endThumbPlaceable.width - 2 * endTrackPadding
         val endCorrection = (startThumbCoreWidth - endThumbCoreWidth) / 2
-        val endThumbOffsetX =
-            if (state.steps > 0 && !isEndOnFirstOrLastStep) {
-                ((trackPlaceable.width - trackCornerSize * 2) * endValueAsFraction + endCorrection)
-                    .roundToInt() + trackCornerSize
-            } else {
-                (trackPlaceable.width * endValueAsFraction + endCorrection).roundToInt()
-            }
         val trackOffsetY = (sliderHeight - trackPlaceable.height) / 2
         val startThumbOffsetY = (sliderHeight - startThumbPlaceable.height) / 2
         val endThumbOffsetY = (sliderHeight - endThumbPlaceable.height) / 2
 
         layout(sliderWidth, sliderHeight) {
+            val startValueAsFraction = state.coercedStartValueAsFraction
+            val isStartOnFirstOrLastStep =
+                startValueAsFraction == state.tickFractions.firstOrNull() ||
+                    startValueAsFraction == state.tickFractions.lastOrNull()
+            val endValueAsFraction = state.coercedEndValueAsFraction
+            val isEndOnFirstOrLastStep =
+                endValueAsFraction == state.tickFractions.firstOrNull() ||
+                    endValueAsFraction == state.tickFractions.lastOrNull()
+
+            val startThumbOffsetX =
+                if (state.steps > 0 && !isStartOnFirstOrLastStep) {
+                    ((trackPlaceable.width - trackCornerSize * 2) * startValueAsFraction)
+                        .roundToInt() + trackCornerSize
+                } else {
+                    (trackPlaceable.width * startValueAsFraction).roundToInt()
+                }
+            val endThumbOffsetX =
+                if (state.steps > 0 && !isEndOnFirstOrLastStep) {
+                    ((trackPlaceable.width - trackCornerSize * 2) * endValueAsFraction +
+                            endCorrection)
+                        .roundToInt() + trackCornerSize
+                } else {
+                    (trackPlaceable.width * endValueAsFraction + endCorrection).roundToInt()
+                }
+
             trackPlaceable.placeRelative(trackOffsetX, trackOffsetY)
             startThumbPlaceable.placeRelative(
                 startThumbOffsetX - startTrackPadding,
@@ -1786,8 +1794,6 @@ public object SliderDefaults {
      *   not respond to user input, and it will appear visually disabled and disabled to
      *   accessibility services.
      * @param thumbSize the size of the thumb.
-     *
-     * @material3expressive
      */
     @Deprecated(
         "Maintained for binary compatibility. Use the overload that takes isVertical instead.",
@@ -2778,10 +2784,20 @@ private fun snapValueToTick(
     minPx: Float,
     maxPx: Float,
 ): Float {
-    // target is a closest anchor to the `current`, if exists
-    return tickFractions
-        .minByOrNull { abs(lerp(minPx, maxPx, it) - current) }
-        ?.run { lerp(minPx, maxPx, this) } ?: current
+    if (tickFractions.isEmpty()) return current
+    val totalSteps = tickFractions.size - 1
+    var closestValue = current
+    var minDistance = Float.POSITIVE_INFINITY
+    for (i in tickFractions.indices) {
+        val tickValue =
+            (minPx.toDouble() + (maxPx.toDouble() - minPx.toDouble()) * i / totalSteps).toFloat()
+        val distance = abs(tickValue - current)
+        if (distance < minDistance) {
+            minDistance = distance
+            closestValue = tickValue
+        }
+    }
+    return closestValue
 }
 
 private suspend fun AwaitPointerEventScope.awaitSlop(
@@ -2805,25 +2821,6 @@ private fun stepsToTickFractions(steps: Int): FloatArray {
 private fun scale(a1: Float, b1: Float, x1: Float, a2: Float, b2: Float) =
     lerp(a2, b2, calcFraction(a1, b1, x1))
 
-// Scale x.start, x.endInclusive from a1..b1 range to a2..b2 range
-private fun scale(
-    isStart: Boolean,
-    a1: Float,
-    b1: Float,
-    x: SliderRange,
-    a2: Float,
-    b2: Float,
-): SliderRange {
-    val start = scale(a1, b1, x.start, a2, b2)
-    val end = scale(a1, b1, x.endInclusive, a2, b2)
-
-    return if (isStart) {
-        SliderRange(start.coerceAtMost(end), end)
-    } else {
-        SliderRange(start, end.coerceAtLeast(start))
-    }
-}
-
 // Calculate the 0..1 fraction that `pos` value represents between `a` and `b`
 private fun calcFraction(a: Float, b: Float, pos: Float) =
     (if (b - a == 0f) 0f else (pos - a) / (b - a)).coerceIn(0f, 1f)
@@ -2836,7 +2833,9 @@ private fun Modifier.sliderSemantics(
 ): Modifier {
     return semantics {
             if (!enabled) disabled()
-            stateDescription = state.value.formatForSemantics()
+            if (state.trackRange.start < 0f) {
+                stateDescription = state.value.formatForSemantics()
+            }
             setProgress(
                 action = { targetValue ->
                     var newValue =
@@ -2873,6 +2872,12 @@ private fun Modifier.sliderSemantics(
                     }
                 }
             )
+            progressBarRangeInfo =
+                ProgressBarRangeInfo(
+                    state.value.coerceIn(state.trackRange.start, state.trackRange.endInclusive),
+                    state.trackRange.start..state.trackRange.endInclusive,
+                    state.steps,
+                )
         }
         .then(
             if (state.orientation == Vertical) {
@@ -2880,11 +2885,6 @@ private fun Modifier.sliderSemantics(
             } else {
                 IncreaseHorizontalSemanticsBounds
             }
-        )
-        .progressSemantics(
-            state.value,
-            state.trackRange.start..state.trackRange.endInclusive,
-            state.steps,
         )
 }
 
@@ -2894,13 +2894,20 @@ private fun Modifier.rangeSliderStartThumbSemantics(
     onValueChange: (SliderRange) -> Unit,
     onValueChangeFinished: (() -> Unit)?,
 ): Modifier {
-    val trackRange = state.trackRange.start..state.endValue
     return semantics {
+            val trackRange = state.trackRange.start..state.endValue
             if (!enabled) disabled()
-            stateDescription = state.startValue.formatForSemantics()
+            if (state.trackRange.start < 0f) {
+                stateDescription = state.startValue.formatForSemantics()
+            }
             setProgress(
                 action = { targetValue ->
-                    var newValue = targetValue.coerceIn(trackRange.start, trackRange.endInclusive)
+                    val currentTrackRange = state.trackRange.start..state.endValue
+                    var newValue =
+                        targetValue.coerceIn(
+                            currentTrackRange.start,
+                            currentTrackRange.endInclusive,
+                        )
                     val originalVal = newValue
                     val resolvedValue =
                         if (state.startSteps > 0) {
@@ -2908,8 +2915,8 @@ private fun Modifier.rangeSliderStartThumbSemantics(
                             for (i in 0..state.startSteps + 1) {
                                 val stepValue =
                                     lerp(
-                                        trackRange.start,
-                                        trackRange.endInclusive,
+                                        currentTrackRange.start,
+                                        currentTrackRange.endInclusive,
                                         i.toFloat() / (state.startSteps + 1),
                                     )
                                 if (abs(stepValue - originalVal) <= distance) {
@@ -2937,9 +2944,14 @@ private fun Modifier.rangeSliderStartThumbSemantics(
                     }
                 }
             )
+            progressBarRangeInfo =
+                ProgressBarRangeInfo(
+                    state.startValue.coerceIn(trackRange.start, trackRange.endInclusive),
+                    trackRange,
+                    state.startSteps,
+                )
         }
         .then(IncreaseHorizontalSemanticsBounds)
-        .progressSemantics(state.startValue, trackRange, state.startSteps)
 }
 
 private fun Modifier.rangeSliderEndThumbSemantics(
@@ -2948,13 +2960,20 @@ private fun Modifier.rangeSliderEndThumbSemantics(
     onValueChange: (SliderRange) -> Unit,
     onValueChangeFinished: (() -> Unit)?,
 ): Modifier {
-    val trackRange = state.startValue..state.trackRange.endInclusive
     return semantics {
+            val trackRange = state.startValue..state.trackRange.endInclusive
             if (!enabled) disabled()
-            stateDescription = state.endValue.formatForSemantics()
+            if (state.trackRange.start < 0f) {
+                stateDescription = state.endValue.formatForSemantics()
+            }
             setProgress(
                 action = { targetValue ->
-                    var newValue = targetValue.coerceIn(trackRange.start, trackRange.endInclusive)
+                    val currentTrackRange = state.startValue..state.trackRange.endInclusive
+                    var newValue =
+                        targetValue.coerceIn(
+                            currentTrackRange.start,
+                            currentTrackRange.endInclusive,
+                        )
                     val originalVal = newValue
                     val resolvedValue =
                         if (state.endSteps > 0) {
@@ -2962,8 +2981,8 @@ private fun Modifier.rangeSliderEndThumbSemantics(
                             for (i in 0..state.endSteps + 1) {
                                 val stepValue =
                                     lerp(
-                                        trackRange.start,
-                                        trackRange.endInclusive,
+                                        currentTrackRange.start,
+                                        currentTrackRange.endInclusive,
                                         i.toFloat() / (state.endSteps + 1),
                                     )
                                 if (abs(stepValue - originalVal) <= distance) {
@@ -2991,9 +3010,14 @@ private fun Modifier.rangeSliderEndThumbSemantics(
                     }
                 }
             )
+            progressBarRangeInfo =
+                ProgressBarRangeInfo(
+                    state.endValue.coerceIn(trackRange.start, trackRange.endInclusive),
+                    trackRange,
+                    state.endSteps,
+                )
         }
         .then(IncreaseHorizontalSemanticsBounds)
-        .progressSemantics(state.endValue, trackRange, state.endSteps)
 }
 
 private fun Float.formatForSemantics() = "${(this * 100).roundToInt() / 100f}"
@@ -3071,6 +3095,7 @@ private fun Modifier.rangeSliderPressDragModifier(
 
                 try {
                     val down = awaitFirstDown(requireUnconsumed = false)
+                    state.updateMinMaxPx()
 
                     val posX =
                         if (state.isRtl) state.totalWidth - down.position.x else down.position.x
@@ -3098,6 +3123,10 @@ private fun Modifier.rangeSliderPressDragModifier(
                     )
 
                     if (drag != null && abs(overSlop.x) > abs(overSlop.y)) {
+                        // Consume the change that crossed the slop so that parent containers
+                        // (e.g. a horizontalScroll) do not also pick up this gesture as a scroll.
+                        drag.consume()
+
                         // The press is converted to a drag, so we cancel the press interaction
                         press?.let {
                             launch { interactionSource.emit(PressInteraction.Cancel(it)) }
@@ -3105,9 +3134,19 @@ private fun Modifier.rangeSliderPressDragModifier(
 
                         press = null
 
+                        val shouldUpdateCapturedThumb =
+                            abs(state.rawOffsetEnd - posX) < pointerSlop &&
+                                abs(state.rawOffsetStart - posX) < pointerSlop
+                        if (shouldUpdateCapturedThumb) {
+                            val dir = overSlop.x
+                            draggingStart = if (state.isRtl) dir >= 0f else dir < 0f
+                        }
+
+                        val dragInteractionSource =
+                            rangeSliderLogic.activeInteraction(draggingStart)
                         val interaction = DragInteraction.Start()
                         activeDragInteraction = interaction
-                        launch { interactionSource.emit(interaction) }
+                        launch { dragInteractionSource.emit(interaction) }
 
                         // Apply the slop from the initial drag detection
                         val initialOffset =
@@ -3138,7 +3177,7 @@ private fun Modifier.rangeSliderPressDragModifier(
                                 DragInteraction.Cancel(interaction)
                             }
                         currentOnValueChangeFinished.value?.invoke()
-                        launch { interactionSource.emit(finishInteraction) }
+                        launch { dragInteractionSource.emit(finishInteraction) }
                         activeDragInteraction = null
                     } else if (drag?.pressed == false) {
                         // The press is completed, so emit a release.
@@ -3416,6 +3455,7 @@ public class SliderPositions(
  * @param trackRange range of values that Slider values can take. [value] will be coerced to this
  *   range.
  */
+@Stable
 public class SliderState
 @RememberInComposition
 public constructor(
@@ -3479,8 +3519,8 @@ public constructor(
         }
         rawOffset = (rawOffset + delta + pressOffset)
         pressOffset = 0f
-        val offsetInTrack = snapValueToTick(rawOffset, tickFractions, minPx, maxPx)
-        val scaledUserValue = scaleToUserValue(minPx, maxPx, offsetInTrack)
+        val offsetInTrack = rawOffset.coerceIn(minPx, maxPx)
+        val scaledUserValue = calculateSnappedValue(scaleToUserValue(minPx, maxPx, offsetInTrack))
         if (scaledUserValue != this.value) {
             if (onValueChange != null) {
                 onValueChange(scaledUserValue)
@@ -3636,6 +3676,7 @@ public fun rememberSliderState(
  *   defines the absolute boundaries/constraints of the slider (from minimum to maximum), and the
  *   individual thumb values ([startValue] and [endValue]) are coerced to this range.
  */
+@Stable
 public class RangeSliderState
 @RememberInComposition
 public constructor(
@@ -3703,23 +3744,34 @@ public constructor(
         offset: Float,
         onValueChange: ((SliderRange) -> Unit)? = null,
     ) {
-        val offsetRange =
+        val scaledUserValue =
             if (isStart) {
                 rawOffsetStart = (rawOffsetStart + offset)
                 rawOffsetEnd = scaleToOffset(minPx, maxPx, endValue)
                 val offsetEnd = rawOffsetEnd
-                var offsetStart = rawOffsetStart.coerceIn(minPx, offsetEnd)
-                offsetStart = snapValueToTick(offsetStart, tickFractions, minPx, maxPx)
-                SliderRange(offsetStart.coerceAtMost(offsetEnd), offsetEnd)
+                val offsetStart = rawOffsetStart.coerceIn(minPx, offsetEnd)
+                val userStart =
+                    snapValueToTick(
+                        scaleToUserValue(minPx, maxPx, offsetStart),
+                        tickFractions,
+                        trackRange.start,
+                        trackRange.endInclusive,
+                    )
+                SliderRange(userStart.coerceAtMost(endValue), endValue)
             } else {
                 rawOffsetEnd = (rawOffsetEnd + offset)
                 rawOffsetStart = scaleToOffset(minPx, maxPx, startValue)
                 val offsetStart = rawOffsetStart
-                var offsetEnd = rawOffsetEnd.coerceIn(offsetStart, maxPx)
-                offsetEnd = snapValueToTick(offsetEnd, tickFractions, minPx, maxPx)
-                SliderRange(offsetStart, offsetEnd.coerceAtLeast(offsetStart))
+                val offsetEnd = rawOffsetEnd.coerceIn(offsetStart, maxPx)
+                val userEnd =
+                    snapValueToTick(
+                        scaleToUserValue(minPx, maxPx, offsetEnd),
+                        tickFractions,
+                        trackRange.start,
+                        trackRange.endInclusive,
+                    )
+                SliderRange(startValue, userEnd.coerceAtLeast(startValue))
             }
-        val scaledUserValue = scaleToUserValue(isStart, minPx, maxPx, offsetRange)
         if (scaledUserValue != SliderRange(startValue, endValue)) {
             if (onValueChange != null) {
                 onValueChange(scaledUserValue)
@@ -3742,13 +3794,9 @@ public constructor(
     internal val endSteps
         get() = floor(steps * (1f - coercedStartValueAsFraction)).toInt()
 
-    // scales range offset from within minPx..maxPx to within trackRange.start..trackRange.end
-    private fun scaleToUserValue(
-        isStart: Boolean,
-        minPx: Float,
-        maxPx: Float,
-        offset: SliderRange,
-    ) = scale(isStart, minPx, maxPx, offset, trackRange.start, trackRange.endInclusive)
+    // scales offset from within minPx..maxPx to within trackRange.start..trackRange.end
+    private fun scaleToUserValue(minPx: Float, maxPx: Float, offset: Float) =
+        scale(minPx, maxPx, offset, trackRange.start, trackRange.endInclusive)
 
     // scales float userValue within trackRange.start..trackRange.end to within minPx..maxPx
     private fun scaleToOffset(minPx: Float, maxPx: Float, userValue: Float) =
@@ -3757,7 +3805,7 @@ public constructor(
     internal fun updateMinMaxPx() {
         val newMaxPx = max(totalWidth - endThumbWidth / 2, 0f)
         val newMinPx = min(startThumbWidth / 2, newMaxPx)
-        if (!isDragging && (minPx != newMinPx || maxPx != newMaxPx || startValue != endValue)) {
+        if (!isDragging) {
             minPx = newMinPx
             maxPx = newMaxPx
             rawOffsetStart = scaleToOffset(minPx, maxPx, startValue)

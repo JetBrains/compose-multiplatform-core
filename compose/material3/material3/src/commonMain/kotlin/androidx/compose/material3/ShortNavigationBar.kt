@@ -18,13 +18,13 @@ package androidx.compose.material3
 
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material3.MaterialTheme.LocalMaterialTheme
 import androidx.compose.material3.ShortNavigationBarDefaults.containerColor
 import androidx.compose.material3.internal.systemBarsForVisualComponents
 import androidx.compose.material3.tokens.NavigationBarHorizontalItemTokens
@@ -108,44 +108,6 @@ public fun ShortNavigationBar(
         contentColor = contentColor,
         windowInsets = windowInsets,
         arrangement = arrangement,
-        containerHeight = NavigationBarTokens.ContainerHeight,
-        content = content,
-    )
-}
-
-// Note that we cannot name this function as ShortNavigationBar as it will cause overload resolution
-// ambiguity. We will come back to this problem when we need to publish it.
-@Composable
-internal fun StyleableShortNavigationBar(
-    modifier: Modifier = Modifier,
-    windowInsets: WindowInsets? = null,
-    arrangement: ShortNavigationBarArrangement? = null,
-    style: NavigationBarStyle? = null,
-    content: @Composable () -> Unit,
-) {
-    val localTheme = LocalMaterialTheme.current
-    val styleScope = NavigationBarStyleScope(localTheme)
-    with(style ?: localTheme.componentProperties.navigationBarProperties.style) {
-        styleScope.applyStyle()
-    }
-    val arrangement =
-        arrangement ?: localTheme.componentProperties.navigationBarProperties.arrangement
-    val themeWindowInsets = localTheme.componentProperties.navigationBarProperties.windowInsets
-    val windowInsets =
-        windowInsets
-            ?: if (themeWindowInsets == WindowInsets.Unspecified) {
-                ShortNavigationBarDefaults.windowInsets
-            } else {
-                themeWindowInsets
-            }
-
-    ShortNavigationBarImpl(
-        modifier = modifier,
-        containerColor = styleScope.containerColor,
-        contentColor = styleScope.contentColor,
-        windowInsets = windowInsets,
-        arrangement = arrangement,
-        containerHeight = styleScope.containerHeight,
         content = content,
     )
 }
@@ -157,14 +119,13 @@ private fun ShortNavigationBarImpl(
     contentColor: Color,
     windowInsets: WindowInsets,
     arrangement: ShortNavigationBarArrangement,
-    containerHeight: Dp,
     content: @Composable () -> Unit,
 ) {
     Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
         Layout(
             modifier =
                 Modifier.windowInsetsPadding(windowInsets)
-                    .defaultMinSize(minHeight = containerHeight)
+                    .defaultMinSize(minHeight = NavigationBarTokens.ContainerHeight)
                     .selectableGroup(),
             content = content,
             measurePolicy =
@@ -284,77 +245,16 @@ public fun ShortNavigationBarItem(
         labelTextStyle = NavigationBarTokens.LabelTextFont.value,
         indicatorShape = NavigationBarTokens.ItemActiveIndicatorShape.value,
         indicatorWidth = NavigationBarVerticalItemTokens.ActiveIndicatorWidth,
-        indicatorHorizontalPadding = indicatorHorizontalPadding,
-        indicatorVerticalPadding = indicatorVerticalPadding,
+        indicatorPadding = PaddingValues(indicatorHorizontalPadding, indicatorVerticalPadding),
         indicatorToLabelVerticalPadding = TopIconIndicatorToLabelPadding,
         startIconToLabelHorizontalPadding = StartIconToLabelPadding,
-        topIconItemVerticalPadding = TopIconItemVerticalPadding,
+        topIconItemPadding =
+            if (label != null) PaddingValues(vertical = TopIconItemVerticalPadding)
+            else PaddingValues(0.dp),
+        startIconItemPadding = PaddingValues(0.dp),
         textColor = colors.textColor(selected, enabled, isIconPositionTop),
         iconColor = colors.iconColor(selected, enabled),
         indicatorColor = colors.selectedIndicatorColor,
-        modifier = modifier,
-        enabled = enabled,
-        label = label,
-        iconPosition = iconPosition,
-        interactionSource = interactionSource,
-    )
-}
-
-// Note that we cannot name this function as ShortNavigationBarItem as it will cause overload
-// resolution ambiguity. We will come back to this problem when we need to publish it.
-@Composable
-internal fun StyleableShortNavigationBarItem(
-    selected: Boolean,
-    onClick: () -> Unit,
-    icon: @Composable () -> Unit,
-    label: @Composable (() -> Unit)?,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    iconPosition: NavigationItemIconPosition = NavigationItemIconPosition.Top,
-    style: NavigationBarItemStyle? = null,
-    interactionSource: MutableInteractionSource? = null,
-) {
-    @Suppress("NAME_SHADOWING")
-    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
-    val localTheme = LocalMaterialTheme.current
-    val isIconPositionTop = iconPosition == NavigationItemIconPosition.Top
-    val styleScope =
-        NavigationBarItemStyleScope(
-            localTheme,
-            ComponentState.selected(selected).enabled(enabled).orientation(isIconPositionTop),
-        )
-    with(style ?: localTheme.componentProperties.navigationBarItemProperties.style) {
-        styleScope.applyStyle()
-    }
-
-    val indicatorHorizontalPadding =
-        if (isIconPositionTop) {
-            TopIconIndicatorHorizontalPadding
-        } else {
-            StartIconIndicatorHorizontalPadding
-        }
-    val indicatorVerticalPadding =
-        if (isIconPositionTop) {
-            TopIconIndicatorVerticalPadding
-        } else {
-            StartIconIndicatorVerticalPadding
-        }
-
-    NavigationItem(
-        selected = selected,
-        onClick = onClick,
-        icon = icon,
-        labelTextStyle = NavigationBarTokens.LabelTextFont.value,
-        indicatorShape = NavigationBarTokens.ItemActiveIndicatorShape.value,
-        indicatorWidth = NavigationBarVerticalItemTokens.ActiveIndicatorWidth,
-        indicatorHorizontalPadding = indicatorHorizontalPadding,
-        indicatorVerticalPadding = indicatorVerticalPadding,
-        indicatorToLabelVerticalPadding = TopIconIndicatorToLabelPadding,
-        startIconToLabelHorizontalPadding = StartIconToLabelPadding,
-        topIconItemVerticalPadding = TopIconItemVerticalPadding,
-        textColor = styleScope.textColor,
-        iconColor = styleScope.iconColor,
-        indicatorColor = styleScope.indicatorColor,
         modifier = modifier,
         enabled = enabled,
         label = label,

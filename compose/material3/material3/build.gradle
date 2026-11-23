@@ -32,7 +32,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(37) }
+        compileSdk { version = release(37) { minorApiLevel = 1 } }
         namespace = "androidx.compose.material3"
         androidResources.enable = true
     }
@@ -44,18 +44,19 @@ androidXMultiplatform {
     sourceSets {
         commonMain.dependencies {
             // Keep pinned unless there is a need for tip of tree behavior
-            implementation("androidx.collection:collection:1.4.5")
-            // unpinning to use `Style`, will pin to next Alpha.
-            implementation("androidx.compose.animation:animation-core:1.12.0")
-            implementation("androidx.compose.ui:ui-util:1.12.0")
-            api("androidx.compose.foundation:foundation-layout:1.12.0")
-            api("androidx.compose.material:material-ripple:1.12.0")
+            implementation("androidx.collection:collection:1.7.0")
+            implementation("androidx.compose.animation:animation-core:1.13.0-alpha03")
+            api("androidx.compose.animation:animation:1.13.0-alpha03")
+            api("androidx.navigationevent:navigationevent:1.1.2")
+            implementation("androidx.compose.ui:ui-util:1.13.0-alpha03")
+            api("androidx.compose.foundation:foundation-layout:1.13.0-alpha03")
+            api("androidx.compose.material:material-ripple:1.13.0-alpha03")
             implementation(project(":compose:material3:material3-ripple"))
-            api("androidx.compose.runtime:runtime:1.12.0")
-            api("androidx.compose.ui:ui:1.12.0")
-            api("androidx.compose.foundation:foundation:1.12.0")
-            api("androidx.compose.ui:ui-text:1.12.0")
-            api("androidx.graphics:graphics-shapes:1.0.1")
+            api("androidx.compose.runtime:runtime:1.13.0-alpha03")
+            api("androidx.compose.ui:ui:1.13.0-alpha03")
+            api(project(":compose:foundation:foundation"))
+            api("androidx.compose.ui:ui-text:1.13.0-alpha03")
+            api("androidx.graphics:graphics-shapes:1.1.0")
         }
 
         androidMain.dependencies {

@@ -124,6 +124,8 @@ import kotlinx.coroutines.launch
  * @param verticalAlignment The vertical alignment of the button group's children.
  * @param content the content displayed in the button group, expected to use a composable that i s
  *   tagged with [ButtonGroupScope.animateWidth].
+ *
+ * @material3expressive
  */
 @Composable
 public fun ButtonGroup(
@@ -708,8 +710,16 @@ private class ButtonGroupMeasurePolicy(
                 mainSpace += arrangementSpacingInt * lastItem
                 shownItemSpace += arrangementSpacingInt * lastItem
 
+                // Reset minWidth: the incoming constraints may have a fixed width (e.g. from
+                // Modifier.fillMaxWidth()) that is larger than the space available for the
+                // overflow indicator.
                 overflowMeasurables.fastMap {
-                    it.measure(constraints.copy(maxWidth = remainingSpace + overflowWidth))
+                    it.measure(
+                        constraints.copy(
+                            minWidth = 0,
+                            maxWidth = (remainingSpace + overflowWidth).coerceAtLeast(0),
+                        )
+                    )
                 }
             }
 

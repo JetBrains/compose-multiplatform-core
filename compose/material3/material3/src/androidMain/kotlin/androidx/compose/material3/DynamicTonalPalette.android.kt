@@ -19,165 +19,12 @@
 package androidx.compose.material3
 
 import android.content.Context
-import android.content.res.TypedArray
 import android.os.Build
-import androidx.annotation.FloatRange
+import androidx.annotation.ColorRes
 import androidx.annotation.RequiresApi
-import androidx.annotation.StyleRes
-import androidx.annotation.StyleableRes
 import androidx.compose.material3.internal.colorUtil.Cam
-import androidx.compose.material3.internal.colorUtil.CamUtils
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-
-/** Dynamic colors in Material. */
-@RequiresApi(31)
-internal fun dynamicTonalPalette(context: Context): TonalPalette {
-    return context.obtainStyledAttributesSafe(R.style.mc3_palette, R.styleable.mc3_palette) {
-        typedArray ->
-        TonalPalette(
-            // The primary tonal range from the generated dynamic color palette
-            primary100 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_100),
-            primary99 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_99),
-            primary95 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_95),
-            primary90 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_90),
-            primary80 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_80),
-            primary70 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_70),
-            primary60 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_60),
-            primary50 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_50),
-            primary40 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_40),
-            primary30 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_30),
-            primary20 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_20),
-            primary10 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_10),
-            primary0 = typedArray.getColor(R.styleable.mc3_palette_mc3_primary_0),
-
-            // The secondary tonal range from the generated dynamic color palette
-            secondary100 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_100),
-            secondary99 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_99),
-            secondary95 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_95),
-            secondary90 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_90),
-            secondary80 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_80),
-            secondary70 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_70),
-            secondary60 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_60),
-            secondary50 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_50),
-            secondary40 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_40),
-            secondary30 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_30),
-            secondary20 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_20),
-            secondary10 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_10),
-            secondary0 = typedArray.getColor(R.styleable.mc3_palette_mc3_secondary_0),
-
-            // The tertiary tonal range from the generated dynamic color palette
-            tertiary100 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_100),
-            tertiary99 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_99),
-            tertiary95 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_95),
-            tertiary90 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_90),
-            tertiary80 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_80),
-            tertiary70 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_70),
-            tertiary60 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_60),
-            tertiary50 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_50),
-            tertiary40 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_40),
-            tertiary30 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_30),
-            tertiary20 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_20),
-            tertiary10 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_10),
-            tertiary0 = typedArray.getColor(R.styleable.mc3_palette_mc3_tertiary_0),
-
-            // The neutral tonal range from the generated dynamic color palette
-            neutral100 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_100),
-            neutral99 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_99),
-            neutral98 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(98f),
-            neutral96 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(96f),
-            neutral95 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_95),
-            neutral94 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(94f),
-            neutral92 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(92f),
-            neutral90 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_90),
-            neutral87 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(87f),
-            neutral80 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_80),
-            neutral70 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_70),
-            neutral60 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_60),
-            neutral50 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_50),
-            neutral40 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40),
-            neutral30 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_30),
-            neutral24 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(24f),
-            neutral22 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(22f),
-            neutral20 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_20),
-            neutral17 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(17f),
-            neutral12 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(12f),
-            neutral10 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_10),
-            neutral6 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(6f),
-            neutral4 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_40).setLuminance(4f),
-            neutral0 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_0),
-
-            // The neutral variant tonal range
-            neutralVariant100 =
-                typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_100),
-            neutralVariant99 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_99),
-            neutralVariant98 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(98f),
-            neutralVariant96 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(96f),
-            neutralVariant95 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_95),
-            neutralVariant94 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(94f),
-            neutralVariant92 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(92f),
-            neutralVariant90 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_90),
-            neutralVariant87 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(87f),
-            neutralVariant80 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_80),
-            neutralVariant70 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_70),
-            neutralVariant60 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_60),
-            neutralVariant50 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_50),
-            neutralVariant40 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_40),
-            neutralVariant30 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_30),
-            neutralVariant24 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(24f),
-            neutralVariant22 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(22f),
-            neutralVariant20 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_20),
-            neutralVariant17 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(17f),
-            neutralVariant12 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(12f),
-            neutralVariant10 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_10),
-            neutralVariant6 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(6f),
-            neutralVariant4 =
-                typedArray
-                    .getColor(R.styleable.mc3_palette_mc3_neutral_variant_40)
-                    .setLuminance(4f),
-            neutralVariant0 = typedArray.getColor(R.styleable.mc3_palette_mc3_neutral_variant_0),
-        )
-    }
-}
 
 /**
  * Creates a light dynamic color scheme.
@@ -194,10 +41,7 @@ public fun dynamicLightColorScheme(context: Context): ColorScheme {
         // SDKs 34 and greater return appropriate Chroma6 values for neutral palette
         dynamicLightColorScheme34(context)
     } else {
-        // SDKs 31-33 return Chroma4 values for neutral palette, we instead leverage neutral
-        // variant which provides chroma8 for less grey tones.
-        val tonalPalette = dynamicTonalPalette(context)
-        dynamicLightColorScheme31(tonalPalette)
+        dynamicLightColorScheme31(context)
     }
 }
 
@@ -216,268 +60,419 @@ public fun dynamicDarkColorScheme(context: Context): ColorScheme {
         // SDKs 34 and greater return appropriate Chroma6 values for neutral palette
         dynamicDarkColorScheme34(context)
     } else {
-        // SDKs 31-33 return Chroma4 values for neutral palette, we instead leverage neutral
-        // variant which provides chroma8 for less grey tones.
-        val tonalPalette = dynamicTonalPalette(context)
-        dynamicDarkColorScheme31(tonalPalette)
+        dynamicDarkColorScheme31(context)
+    }
+}
+
+private object ColorResourceHelper {
+    fun getColor(context: Context, @ColorRes id: Int): Color {
+        return Color(context.resources.getColor(id, context.theme))
     }
 }
 
 /**
- * Set the luminance(tone) of this color. Chroma may decrease because chroma has a different maximum
- * for any given hue and luminance.
- *
- * @param newLuminance 0 <= newLuminance <= 100; invalid values are corrected.
+ * Returns the hue and chroma of the system neutral variant tone 40. SDKs 31-33 don't provide all
+ * the neutral variant tones used by the color schemes, so the missing tones are generated from it.
  */
-internal fun Color.setLuminance(@FloatRange(from = 0.0, to = 100.0) newLuminance: Float): Color {
-    if ((newLuminance < 0.0001) or (newLuminance > 99.9999)) {
-        return Color(CamUtils.argbFromLstar(newLuminance.toDouble()))
-    }
+@RequiresApi(31)
+private fun neutralVariantKeyColor(context: Context): Cam =
+    Cam.fromInt(ColorResourceHelper.getColor(context, android.R.color.system_neutral2_600).toArgb())
 
-    val baseCam: Cam = Cam.fromInt(this.toArgb())
-    val baseColor = Cam.getInt(baseCam.hue, baseCam.chroma, newLuminance)
+/** Returns the color with this hue and chroma, and the given [tone] (L* in L*a*b*). */
+private fun Cam.toColor(tone: Float): Color = Color(Cam.getInt(hue, chroma, tone))
 
-    return Color(baseColor)
+/**
+ * Creates a light dynamic color scheme from the system tonal palettes on SDKs 31-33.
+ *
+ * Only the tones used by the scheme are resolved. SDKs 31-33 return Chroma4 values for the neutral
+ * palette, so the neutral variant palette, which provides Chroma8 values, is used instead for less
+ * grey tones.
+ */
+@RequiresApi(31)
+internal fun dynamicLightColorScheme31(context: Context): ColorScheme {
+    val neutralVariantKeyColor = neutralVariantKeyColor(context)
+    val primary100 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_0)
+    val primary90 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_100)
+    val primary80 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_200)
+    val primary40 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_600)
+    val primary30 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_700)
+    val primary10 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_900)
+    val secondary100 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_0)
+    val secondary90 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_100)
+    val secondary80 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_200)
+    val secondary40 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_600)
+    val secondary30 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_700)
+    val secondary10 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_900)
+    val tertiary100 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_0)
+    val tertiary90 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_100)
+    val tertiary80 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_200)
+    val tertiary40 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_600)
+    val tertiary30 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_700)
+    val tertiary10 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_900)
+    val neutralVariant100 = ColorResourceHelper.getColor(context, android.R.color.system_neutral2_0)
+    val neutralVariant98 = neutralVariantKeyColor.toColor(tone = 98f)
+    val neutralVariant96 = neutralVariantKeyColor.toColor(tone = 96f)
+    val neutralVariant95 = ColorResourceHelper.getColor(context, android.R.color.system_neutral2_50)
+    val neutralVariant94 = neutralVariantKeyColor.toColor(tone = 94f)
+    val neutralVariant92 = neutralVariantKeyColor.toColor(tone = 92f)
+    val neutralVariant90 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_100)
+    val neutralVariant87 = neutralVariantKeyColor.toColor(tone = 87f)
+    val neutralVariant80 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_200)
+    val neutralVariant50 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_500)
+    val neutralVariant30 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_700)
+    val neutralVariant20 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_800)
+    val neutralVariant10 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_900)
+    val neutralVariant0 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_1000)
+    return lightColorScheme(
+        primary = primary40,
+        onPrimary = primary100,
+        primaryContainer = primary90,
+        onPrimaryContainer = primary10,
+        inversePrimary = primary80,
+        secondary = secondary40,
+        onSecondary = secondary100,
+        secondaryContainer = secondary90,
+        onSecondaryContainer = secondary10,
+        tertiary = tertiary40,
+        onTertiary = tertiary100,
+        tertiaryContainer = tertiary90,
+        onTertiaryContainer = tertiary10,
+        background = neutralVariant98,
+        onBackground = neutralVariant10,
+        surface = neutralVariant98,
+        onSurface = neutralVariant10,
+        surfaceVariant = neutralVariant90,
+        onSurfaceVariant = neutralVariant30,
+        inverseSurface = neutralVariant20,
+        inverseOnSurface = neutralVariant95,
+        outline = neutralVariant50,
+        outlineVariant = neutralVariant80,
+        scrim = neutralVariant0,
+        surfaceBright = neutralVariant98,
+        surfaceDim = neutralVariant87,
+        surfaceContainer = neutralVariant94,
+        surfaceContainerHigh = neutralVariant92,
+        surfaceContainerHighest = neutralVariant90,
+        surfaceContainerLow = neutralVariant96,
+        surfaceContainerLowest = neutralVariant100,
+        surfaceTint = primary40,
+        primaryFixed = primary90,
+        primaryFixedDim = primary80,
+        onPrimaryFixed = primary10,
+        onPrimaryFixedVariant = primary30,
+        secondaryFixed = secondary90,
+        secondaryFixedDim = secondary80,
+        onSecondaryFixed = secondary10,
+        onSecondaryFixedVariant = secondary30,
+        tertiaryFixed = tertiary90,
+        tertiaryFixedDim = tertiary80,
+        onTertiaryFixed = tertiary10,
+        onTertiaryFixedVariant = tertiary30,
+    )
 }
 
-@RequiresApi(31)
-internal fun dynamicLightColorScheme31(tonalPalette: TonalPalette) =
+@RequiresApi(34)
+internal fun dynamicLightColorScheme34(context: Context) =
     lightColorScheme(
-        primary = tonalPalette.primary40,
-        onPrimary = tonalPalette.primary100,
-        primaryContainer = tonalPalette.primary90,
-        onPrimaryContainer = tonalPalette.primary10,
-        inversePrimary = tonalPalette.primary80,
-        secondary = tonalPalette.secondary40,
-        onSecondary = tonalPalette.secondary100,
-        secondaryContainer = tonalPalette.secondary90,
-        onSecondaryContainer = tonalPalette.secondary10,
-        tertiary = tonalPalette.tertiary40,
-        onTertiary = tonalPalette.tertiary100,
-        tertiaryContainer = tonalPalette.tertiary90,
-        onTertiaryContainer = tonalPalette.tertiary10,
-        background = tonalPalette.neutralVariant98,
-        onBackground = tonalPalette.neutralVariant10,
-        surface = tonalPalette.neutralVariant98,
-        onSurface = tonalPalette.neutralVariant10,
-        surfaceVariant = tonalPalette.neutralVariant90,
-        onSurfaceVariant = tonalPalette.neutralVariant30,
-        inverseSurface = tonalPalette.neutralVariant20,
-        inverseOnSurface = tonalPalette.neutralVariant95,
-        outline = tonalPalette.neutralVariant50,
-        outlineVariant = tonalPalette.neutralVariant80,
-        scrim = tonalPalette.neutralVariant0,
-        surfaceBright = tonalPalette.neutralVariant98,
-        surfaceDim = tonalPalette.neutralVariant87,
-        surfaceContainer = tonalPalette.neutralVariant94,
-        surfaceContainerHigh = tonalPalette.neutralVariant92,
-        surfaceContainerHighest = tonalPalette.neutralVariant90,
-        surfaceContainerLow = tonalPalette.neutralVariant96,
-        surfaceContainerLowest = tonalPalette.neutralVariant100,
-        surfaceTint = tonalPalette.primary40,
-        primaryFixed = tonalPalette.primary90,
-        primaryFixedDim = tonalPalette.primary80,
-        onPrimaryFixed = tonalPalette.primary10,
-        onPrimaryFixedVariant = tonalPalette.primary30,
-        secondaryFixed = tonalPalette.secondary90,
-        secondaryFixedDim = tonalPalette.secondary80,
-        onSecondaryFixed = tonalPalette.secondary10,
-        onSecondaryFixedVariant = tonalPalette.secondary30,
-        tertiaryFixed = tonalPalette.tertiary90,
-        tertiaryFixedDim = tonalPalette.tertiary80,
-        onTertiaryFixed = tonalPalette.tertiary10,
-        onTertiaryFixedVariant = tonalPalette.tertiary30,
+        primary = ColorResourceHelper.getColor(context, android.R.color.system_primary_light),
+        onPrimary = ColorResourceHelper.getColor(context, android.R.color.system_on_primary_light),
+        primaryContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_primary_container_light),
+        onPrimaryContainer =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_on_primary_container_light,
+            ),
+        inversePrimary = ColorResourceHelper.getColor(context, android.R.color.system_primary_dark),
+        secondary = ColorResourceHelper.getColor(context, android.R.color.system_secondary_light),
+        onSecondary =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_secondary_light),
+        secondaryContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_secondary_container_light),
+        onSecondaryContainer =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_on_secondary_container_light,
+            ),
+        tertiary = ColorResourceHelper.getColor(context, android.R.color.system_tertiary_light),
+        onTertiary =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_tertiary_light),
+        tertiaryContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_tertiary_container_light),
+        onTertiaryContainer =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_on_tertiary_container_light,
+            ),
+        background = ColorResourceHelper.getColor(context, android.R.color.system_background_light),
+        onBackground =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_background_light),
+        surface = ColorResourceHelper.getColor(context, android.R.color.system_surface_light),
+        onSurface = ColorResourceHelper.getColor(context, android.R.color.system_on_surface_light),
+        surfaceVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_surface_variant_light),
+        onSurfaceVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_surface_variant_light),
+        inverseSurface = ColorResourceHelper.getColor(context, android.R.color.system_surface_dark),
+        inverseOnSurface =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_surface_dark),
+        outline = ColorResourceHelper.getColor(context, android.R.color.system_outline_light),
+        outlineVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_outline_variant_light),
+        // scrim
+        surfaceBright =
+            ColorResourceHelper.getColor(context, android.R.color.system_surface_bright_light),
+        surfaceDim =
+            ColorResourceHelper.getColor(context, android.R.color.system_surface_dim_light),
+        surfaceContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_surface_container_light),
+        surfaceContainerHigh =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_surface_container_high_light,
+            ),
+        surfaceContainerHighest =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_surface_container_highest_light,
+            ),
+        surfaceContainerLow =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_surface_container_low_light,
+            ),
+        surfaceContainerLowest =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_surface_container_lowest_light,
+            ),
+        surfaceTint = ColorResourceHelper.getColor(context, android.R.color.system_primary_light),
+        primaryFixed = ColorResourceHelper.getColor(context, android.R.color.system_primary_fixed),
+        primaryFixedDim =
+            ColorResourceHelper.getColor(context, android.R.color.system_primary_fixed_dim),
+        onPrimaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_primary_fixed),
+        onPrimaryFixedVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_primary_fixed_variant),
+        secondaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_secondary_fixed),
+        secondaryFixedDim =
+            ColorResourceHelper.getColor(context, android.R.color.system_secondary_fixed_dim),
+        onSecondaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_secondary_fixed),
+        onSecondaryFixedVariant =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_on_secondary_fixed_variant,
+            ),
+        tertiaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_tertiary_fixed),
+        tertiaryFixedDim =
+            ColorResourceHelper.getColor(context, android.R.color.system_tertiary_fixed_dim),
+        onTertiaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_tertiary_fixed),
+        onTertiaryFixedVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_tertiary_fixed_variant),
     )
 
-@RequiresApi(34)
-internal fun dynamicLightColorScheme34(context: Context): ColorScheme {
-    return context.obtainStyledAttributesSafe(R.style.mc3_light_scheme, R.styleable.mc3_scheme) {
-        typedArray ->
-        lightColorScheme(
-            primary = typedArray.getColor(R.styleable.mc3_scheme_mc3_primary),
-            onPrimary = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_primary),
-            primaryContainer = typedArray.getColor(R.styleable.mc3_scheme_mc3_primary_container),
-            onPrimaryContainer =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_primary_container),
-            inversePrimary = typedArray.getColor(R.styleable.mc3_scheme_mc3_inverse_primary),
-            secondary = typedArray.getColor(R.styleable.mc3_scheme_mc3_secondary),
-            onSecondary = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_secondary),
-            secondaryContainer =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_secondary_container),
-            onSecondaryContainer =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_secondary_container),
-            tertiary = typedArray.getColor(R.styleable.mc3_scheme_mc3_tertiary),
-            onTertiary = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_tertiary),
-            tertiaryContainer = typedArray.getColor(R.styleable.mc3_scheme_mc3_tertiary_container),
-            onTertiaryContainer =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_tertiary_container),
-            background = typedArray.getColor(R.styleable.mc3_scheme_mc3_background),
-            onBackground = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_background),
-            surface = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface),
-            onSurface = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_surface),
-            surfaceVariant = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_variant),
-            onSurfaceVariant = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_surface_variant),
-            inverseSurface = typedArray.getColor(R.styleable.mc3_scheme_mc3_inverse_surface),
-            inverseOnSurface = typedArray.getColor(R.styleable.mc3_scheme_mc3_inverse_on_surface),
-            outline = typedArray.getColor(R.styleable.mc3_scheme_mc3_outline),
-            outlineVariant = typedArray.getColor(R.styleable.mc3_scheme_mc3_outline_variant),
-            surfaceBright = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_bright),
-            surfaceDim = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_dim),
-            surfaceContainer = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container),
-            surfaceContainerHigh =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container_high),
-            surfaceContainerHighest =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container_highest),
-            surfaceContainerLow =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container_low),
-            surfaceContainerLowest =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container_lowest),
-            surfaceTint = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_tint),
-            primaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_primary_fixed),
-            primaryFixedDim = typedArray.getColor(R.styleable.mc3_scheme_mc3_primary_fixed_dim),
-            onPrimaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_primary_fixed),
-            onPrimaryFixedVariant =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_primary_fixed_variant),
-            secondaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_secondary_fixed),
-            secondaryFixedDim = typedArray.getColor(R.styleable.mc3_scheme_mc3_secondary_fixed_dim),
-            onSecondaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_secondary_fixed),
-            onSecondaryFixedVariant =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_secondary_fixed_variant),
-            tertiaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_tertiary_fixed),
-            tertiaryFixedDim = typedArray.getColor(R.styleable.mc3_scheme_mc3_tertiary_fixed_dim),
-            onTertiaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_tertiary_fixed),
-            onTertiaryFixedVariant =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_tertiary_fixed_variant),
-        )
-    }
-}
-
+/**
+ * Creates a dark dynamic color scheme from the system tonal palettes on SDKs 31-33.
+ *
+ * Only the tones used by the scheme are resolved. SDKs 31-33 return Chroma4 values for the neutral
+ * palette, so the neutral variant palette, which provides Chroma8 values, is used instead for less
+ * grey tones.
+ */
 @RequiresApi(31)
-internal fun dynamicDarkColorScheme31(tonalPalette: TonalPalette) =
-    darkColorScheme(
-        primary = tonalPalette.primary80,
-        onPrimary = tonalPalette.primary20,
-        primaryContainer = tonalPalette.primary30,
-        onPrimaryContainer = tonalPalette.primary90,
-        inversePrimary = tonalPalette.primary40,
-        secondary = tonalPalette.secondary80,
-        onSecondary = tonalPalette.secondary20,
-        secondaryContainer = tonalPalette.secondary30,
-        onSecondaryContainer = tonalPalette.secondary90,
-        tertiary = tonalPalette.tertiary80,
-        onTertiary = tonalPalette.tertiary20,
-        tertiaryContainer = tonalPalette.tertiary30,
-        onTertiaryContainer = tonalPalette.tertiary90,
-        background = tonalPalette.neutralVariant6,
-        onBackground = tonalPalette.neutralVariant90,
-        surface = tonalPalette.neutralVariant6,
-        onSurface = tonalPalette.neutralVariant90,
-        surfaceVariant = tonalPalette.neutralVariant30,
-        onSurfaceVariant = tonalPalette.neutralVariant80,
-        inverseSurface = tonalPalette.neutralVariant90,
-        inverseOnSurface = tonalPalette.neutralVariant20,
-        outline = tonalPalette.neutralVariant60,
-        outlineVariant = tonalPalette.neutralVariant30,
-        scrim = tonalPalette.neutralVariant0,
-        surfaceBright = tonalPalette.neutralVariant24,
-        surfaceDim = tonalPalette.neutralVariant6,
-        surfaceContainer = tonalPalette.neutralVariant12,
-        surfaceContainerHigh = tonalPalette.neutralVariant17,
-        surfaceContainerHighest = tonalPalette.neutralVariant22,
-        surfaceContainerLow = tonalPalette.neutralVariant10,
-        surfaceContainerLowest = tonalPalette.neutralVariant4,
-        surfaceTint = tonalPalette.primary80,
-        primaryFixed = tonalPalette.primary90,
-        primaryFixedDim = tonalPalette.primary80,
-        onPrimaryFixed = tonalPalette.primary10,
-        onPrimaryFixedVariant = tonalPalette.primary30,
-        secondaryFixed = tonalPalette.secondary90,
-        secondaryFixedDim = tonalPalette.secondary80,
-        onSecondaryFixed = tonalPalette.secondary10,
-        onSecondaryFixedVariant = tonalPalette.secondary30,
-        tertiaryFixed = tonalPalette.tertiary90,
-        tertiaryFixedDim = tonalPalette.tertiary80,
-        onTertiaryFixed = tonalPalette.tertiary10,
-        onTertiaryFixedVariant = tonalPalette.tertiary30,
+internal fun dynamicDarkColorScheme31(context: Context): ColorScheme {
+    val neutralVariantKeyColor = neutralVariantKeyColor(context)
+    val primary90 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_100)
+    val primary80 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_200)
+    val primary40 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_600)
+    val primary30 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_700)
+    val primary20 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_800)
+    val primary10 = ColorResourceHelper.getColor(context, android.R.color.system_accent1_900)
+    val secondary90 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_100)
+    val secondary80 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_200)
+    val secondary30 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_700)
+    val secondary20 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_800)
+    val secondary10 = ColorResourceHelper.getColor(context, android.R.color.system_accent2_900)
+    val tertiary90 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_100)
+    val tertiary80 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_200)
+    val tertiary30 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_700)
+    val tertiary20 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_800)
+    val tertiary10 = ColorResourceHelper.getColor(context, android.R.color.system_accent3_900)
+    val neutralVariant90 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_100)
+    val neutralVariant80 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_200)
+    val neutralVariant60 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_400)
+    val neutralVariant30 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_700)
+    val neutralVariant24 = neutralVariantKeyColor.toColor(tone = 24f)
+    val neutralVariant22 = neutralVariantKeyColor.toColor(tone = 22f)
+    val neutralVariant20 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_800)
+    val neutralVariant17 = neutralVariantKeyColor.toColor(tone = 17f)
+    val neutralVariant12 = neutralVariantKeyColor.toColor(tone = 12f)
+    val neutralVariant10 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_900)
+    val neutralVariant6 = neutralVariantKeyColor.toColor(tone = 6f)
+    val neutralVariant4 = neutralVariantKeyColor.toColor(tone = 4f)
+    val neutralVariant0 =
+        ColorResourceHelper.getColor(context, android.R.color.system_neutral2_1000)
+    return darkColorScheme(
+        primary = primary80,
+        onPrimary = primary20,
+        primaryContainer = primary30,
+        onPrimaryContainer = primary90,
+        inversePrimary = primary40,
+        secondary = secondary80,
+        onSecondary = secondary20,
+        secondaryContainer = secondary30,
+        onSecondaryContainer = secondary90,
+        tertiary = tertiary80,
+        onTertiary = tertiary20,
+        tertiaryContainer = tertiary30,
+        onTertiaryContainer = tertiary90,
+        background = neutralVariant6,
+        onBackground = neutralVariant90,
+        surface = neutralVariant6,
+        onSurface = neutralVariant90,
+        surfaceVariant = neutralVariant30,
+        onSurfaceVariant = neutralVariant80,
+        inverseSurface = neutralVariant90,
+        inverseOnSurface = neutralVariant20,
+        outline = neutralVariant60,
+        outlineVariant = neutralVariant30,
+        scrim = neutralVariant0,
+        surfaceBright = neutralVariant24,
+        surfaceDim = neutralVariant6,
+        surfaceContainer = neutralVariant12,
+        surfaceContainerHigh = neutralVariant17,
+        surfaceContainerHighest = neutralVariant22,
+        surfaceContainerLow = neutralVariant10,
+        surfaceContainerLowest = neutralVariant4,
+        surfaceTint = primary80,
+        primaryFixed = primary90,
+        primaryFixedDim = primary80,
+        onPrimaryFixed = primary10,
+        onPrimaryFixedVariant = primary30,
+        secondaryFixed = secondary90,
+        secondaryFixedDim = secondary80,
+        onSecondaryFixed = secondary10,
+        onSecondaryFixedVariant = secondary30,
+        tertiaryFixed = tertiary90,
+        tertiaryFixedDim = tertiary80,
+        onTertiaryFixed = tertiary10,
+        onTertiaryFixedVariant = tertiary30,
     )
+}
 
 @RequiresApi(34)
-internal fun dynamicDarkColorScheme34(context: Context): ColorScheme {
-    return context.obtainStyledAttributesSafe(R.style.mc3_dark_scheme, R.styleable.mc3_scheme) {
-        typedArray ->
-        darkColorScheme(
-            primary = typedArray.getColor(R.styleable.mc3_scheme_mc3_primary),
-            onPrimary = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_primary),
-            primaryContainer = typedArray.getColor(R.styleable.mc3_scheme_mc3_primary_container),
-            onPrimaryContainer =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_primary_container),
-            inversePrimary = typedArray.getColor(R.styleable.mc3_scheme_mc3_inverse_primary),
-            secondary = typedArray.getColor(R.styleable.mc3_scheme_mc3_secondary),
-            onSecondary = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_secondary),
-            secondaryContainer =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_secondary_container),
-            onSecondaryContainer =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_secondary_container),
-            tertiary = typedArray.getColor(R.styleable.mc3_scheme_mc3_tertiary),
-            onTertiary = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_tertiary),
-            tertiaryContainer = typedArray.getColor(R.styleable.mc3_scheme_mc3_tertiary_container),
-            onTertiaryContainer =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_tertiary_container),
-            background = typedArray.getColor(R.styleable.mc3_scheme_mc3_background),
-            onBackground = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_background),
-            surface = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface),
-            onSurface = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_surface),
-            surfaceVariant = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_variant),
-            onSurfaceVariant = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_surface_variant),
-            inverseSurface = typedArray.getColor(R.styleable.mc3_scheme_mc3_inverse_surface),
-            inverseOnSurface = typedArray.getColor(R.styleable.mc3_scheme_mc3_inverse_on_surface),
-            outline = typedArray.getColor(R.styleable.mc3_scheme_mc3_outline),
-            outlineVariant = typedArray.getColor(R.styleable.mc3_scheme_mc3_outline_variant),
-            surfaceBright = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_bright),
-            surfaceDim = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_dim),
-            surfaceContainer = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container),
-            surfaceContainerHigh =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container_high),
-            surfaceContainerHighest =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container_highest),
-            surfaceContainerLow =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container_low),
-            surfaceContainerLowest =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_container_lowest),
-            surfaceTint = typedArray.getColor(R.styleable.mc3_scheme_mc3_surface_tint),
-            primaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_primary_fixed),
-            primaryFixedDim = typedArray.getColor(R.styleable.mc3_scheme_mc3_primary_fixed_dim),
-            onPrimaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_primary_fixed),
-            onPrimaryFixedVariant =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_primary_fixed_variant),
-            secondaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_secondary_fixed),
-            secondaryFixedDim = typedArray.getColor(R.styleable.mc3_scheme_mc3_secondary_fixed_dim),
-            onSecondaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_secondary_fixed),
-            onSecondaryFixedVariant =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_secondary_fixed_variant),
-            tertiaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_tertiary_fixed),
-            tertiaryFixedDim = typedArray.getColor(R.styleable.mc3_scheme_mc3_tertiary_fixed_dim),
-            onTertiaryFixed = typedArray.getColor(R.styleable.mc3_scheme_mc3_on_tertiary_fixed),
-            onTertiaryFixedVariant =
-                typedArray.getColor(R.styleable.mc3_scheme_mc3_on_tertiary_fixed_variant),
-        )
-    }
-}
-
-private inline fun <R> Context.obtainStyledAttributesSafe(
-    @StyleRes resId: Int,
-    @StyleableRes attrs: IntArray,
-    block: (TypedArray) -> R,
-): R {
-    val safeTheme = theme ?: resources.newTheme()
-    val typedArray = safeTheme.obtainStyledAttributes(resId, attrs)
-    return try {
-        block(typedArray)
-    } finally {
-        typedArray.recycle()
-    }
-}
-
-private fun TypedArray.getColor(@StyleableRes index: Int): Color {
-    return Color(getColor(index, 0))
-}
+internal fun dynamicDarkColorScheme34(context: Context) =
+    darkColorScheme(
+        primary = ColorResourceHelper.getColor(context, android.R.color.system_primary_dark),
+        onPrimary = ColorResourceHelper.getColor(context, android.R.color.system_on_primary_dark),
+        primaryContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_primary_container_dark),
+        onPrimaryContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_primary_container_dark),
+        inversePrimary =
+            ColorResourceHelper.getColor(context, android.R.color.system_primary_light),
+        secondary = ColorResourceHelper.getColor(context, android.R.color.system_secondary_dark),
+        onSecondary =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_secondary_dark),
+        secondaryContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_secondary_container_dark),
+        onSecondaryContainer =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_on_secondary_container_dark,
+            ),
+        tertiary = ColorResourceHelper.getColor(context, android.R.color.system_tertiary_dark),
+        onTertiary = ColorResourceHelper.getColor(context, android.R.color.system_on_tertiary_dark),
+        tertiaryContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_tertiary_container_dark),
+        onTertiaryContainer =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_on_tertiary_container_dark,
+            ),
+        background = ColorResourceHelper.getColor(context, android.R.color.system_background_dark),
+        onBackground =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_background_dark),
+        surface = ColorResourceHelper.getColor(context, android.R.color.system_surface_dark),
+        onSurface = ColorResourceHelper.getColor(context, android.R.color.system_on_surface_dark),
+        surfaceVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_surface_variant_dark),
+        onSurfaceVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_surface_variant_dark),
+        inverseSurface =
+            ColorResourceHelper.getColor(context, android.R.color.system_surface_light),
+        inverseOnSurface =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_surface_light),
+        outline = ColorResourceHelper.getColor(context, android.R.color.system_outline_dark),
+        outlineVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_outline_variant_dark),
+        // scrim
+        surfaceBright =
+            ColorResourceHelper.getColor(context, android.R.color.system_surface_bright_dark),
+        surfaceDim = ColorResourceHelper.getColor(context, android.R.color.system_surface_dim_dark),
+        surfaceContainer =
+            ColorResourceHelper.getColor(context, android.R.color.system_surface_container_dark),
+        surfaceContainerHigh =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_surface_container_high_dark,
+            ),
+        surfaceContainerHighest =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_surface_container_highest_dark,
+            ),
+        surfaceContainerLow =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_surface_container_low_dark,
+            ),
+        surfaceContainerLowest =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_surface_container_lowest_dark,
+            ),
+        surfaceTint = ColorResourceHelper.getColor(context, android.R.color.system_primary_dark),
+        primaryFixed = ColorResourceHelper.getColor(context, android.R.color.system_primary_fixed),
+        primaryFixedDim =
+            ColorResourceHelper.getColor(context, android.R.color.system_primary_fixed_dim),
+        onPrimaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_primary_fixed),
+        onPrimaryFixedVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_primary_fixed_variant),
+        secondaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_secondary_fixed),
+        secondaryFixedDim =
+            ColorResourceHelper.getColor(context, android.R.color.system_secondary_fixed_dim),
+        onSecondaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_secondary_fixed),
+        onSecondaryFixedVariant =
+            ColorResourceHelper.getColor(
+                context,
+                android.R.color.system_on_secondary_fixed_variant,
+            ),
+        tertiaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_tertiary_fixed),
+        tertiaryFixedDim =
+            ColorResourceHelper.getColor(context, android.R.color.system_tertiary_fixed_dim),
+        onTertiaryFixed =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_tertiary_fixed),
+        onTertiaryFixedVariant =
+            ColorResourceHelper.getColor(context, android.R.color.system_on_tertiary_fixed_variant),
+    )

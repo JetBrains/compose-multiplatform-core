@@ -40,6 +40,9 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsProperties.SelectableGroup
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.FontScale
+import androidx.compose.ui.test.Locales
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsMatcher.Companion.expectValue
 import androidx.compose.ui.test.SemanticsMatcher.Companion.keyIsDefined
@@ -56,6 +59,7 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelectable
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasAnyAncestor
@@ -88,7 +92,10 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.then
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -486,6 +493,53 @@ class TimePickerTest {
         rule.waitForIdle()
 
         rule.onNodeWithText("20").assertIsSelected()
+        // Old hour on the clock face should no longer be selected
+        rule
+            .onNodeWithTimeValue(
+                number = 14,
+                selection = TimePickerSelectionMode.Hour,
+                is24Hour = true,
+            )
+            .assertIsNotSelected()
+    }
+
+    @Test
+    fun timePicker_selectHour_toggleAmPm_selectMinute_updatesClockFace() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 0, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) { TimePicker(state) }
+
+        // 1. Toggle AM to PM while in Hour mode, then select hour 6 on the clock face
+        rule.onNodeWithText("PM").performClick()
+        rule.waitForIdle()
+        assertThat(state.hour).isEqualTo(22)
+
+        rule
+            .onNodeWithTimeValue(number = 6, selection = TimePickerSelectionMode.Hour)
+            .performClick()
+        rule.waitForIdle()
+        assertThat(state.hour).isEqualTo(18)
+        if (state.selection == TimePickerSelectionMode.Hour) {
+            rule.onNodeWithText("00").performClick()
+            rule.waitForIdle()
+        }
+        assertThat(state.selection).isEqualTo(TimePickerSelectionMode.Minute)
+
+        // 2. Toggle PM back to AM while in Minute mode
+        rule.onNodeWithText("AM").performClick()
+        rule.waitForIdle()
+        assertThat(state.hour).isEqualTo(6)
+
+        // 3. Select minute 30 on the clock face and verify the clock face selector moved off 00
+        rule
+            .onNodeWithTimeValue(number = 30, selection = TimePickerSelectionMode.Minute)
+            .performClick()
+        rule.waitForIdle()
+
+        assertThat(state.minute).isEqualTo(30)
+        rule
+            .onNodeWithTimeValue(number = 0, selection = TimePickerSelectionMode.Minute)
+            .assertIsNotSelected()
     }
 
     @Test
@@ -1582,6 +1636,86 @@ class TimePickerTest {
         rule.onNodeWithText("PM").performClick()
         rule.onNodeWithText("PM").assertIsSelected()
         rule.onNodeWithText("AM").assertIsNotSelected()
+    }
+
+    @Test
+    fun timeInput_periodToggle_largeFont_noTextOverflow() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 30, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Locales(LocaleList("en-GB"))
+                    .then(DeviceConfigurationOverride.FontScale(2f))
+            ) {
+                TimeInput(state = state)
+            }
+        }
+
+        val amResults = mutableListOf<TextLayoutResult>()
+        rule
+            .onNodeWithText("a.m.")
+            .assertIsDisplayed()
+            .assertIsSelected()
+            .assertWidthIsEqualTo(52.dp)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(amResults) }
+
+        assertThat(amResults).hasSize(1)
+        assertThat(amResults[0].lineCount).isEqualTo(1)
+        assertThat(amResults[0].didOverflowWidth).isFalse()
+        assertThat(amResults[0].didOverflowHeight).isFalse()
+
+        val pmResults = mutableListOf<TextLayoutResult>()
+        rule
+            .onNodeWithText("p.m.")
+            .assertIsDisplayed()
+            .assertIsNotSelected()
+            .assertWidthIsEqualTo(52.dp)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(pmResults) }
+
+        assertThat(pmResults).hasSize(1)
+        assertThat(pmResults[0].lineCount).isEqualTo(1)
+        assertThat(pmResults[0].didOverflowWidth).isFalse()
+        assertThat(pmResults[0].didOverflowHeight).isFalse()
+    }
+
+    @Test
+    fun timePicker_periodToggle_largeFont_noTextOverflow() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 30, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Locales(LocaleList("en-GB"))
+                    .then(DeviceConfigurationOverride.FontScale(2f))
+            ) {
+                TimePicker(state = state, layoutType = TimePickerLayoutType.Vertical)
+            }
+        }
+
+        val amResults = mutableListOf<TextLayoutResult>()
+        rule
+            .onNodeWithText("a.m.")
+            .assertIsDisplayed()
+            .assertIsSelected()
+            .assertWidthIsEqualTo(52.dp)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(amResults) }
+
+        assertThat(amResults).hasSize(1)
+        assertThat(amResults[0].lineCount).isEqualTo(1)
+        assertThat(amResults[0].didOverflowWidth).isFalse()
+        assertThat(amResults[0].didOverflowHeight).isFalse()
+
+        val pmResults = mutableListOf<TextLayoutResult>()
+        rule
+            .onNodeWithText("p.m.")
+            .assertIsDisplayed()
+            .assertIsNotSelected()
+            .assertWidthIsEqualTo(52.dp)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(pmResults) }
+
+        assertThat(pmResults).hasSize(1)
+        assertThat(pmResults[0].lineCount).isEqualTo(1)
+        assertThat(pmResults[0].didOverflowWidth).isFalse()
+        assertThat(pmResults[0].didOverflowHeight).isFalse()
     }
 }
 
