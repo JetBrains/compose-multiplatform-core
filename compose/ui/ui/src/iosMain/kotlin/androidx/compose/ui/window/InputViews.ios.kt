@@ -859,6 +859,7 @@ internal class OverlayInputView(
                 it.hitTest(inputPoint, withEvent)
             }
         }
+        setDragDropGesturesEnabled(nativeTextInputViewHitTest == null)
         if (nativeTextInputViewHitTest != null) {
             return nativeTextInputViewHitTest
         }
@@ -907,6 +908,7 @@ internal class OverlayInputView(
 
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
+        setDragDropGesturesEnabled = {}
         canIgnoreDragGesture = { false }
         onKeyboardPresses = {}
         onOutsidePointerEvent = {}

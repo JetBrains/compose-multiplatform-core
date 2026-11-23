@@ -137,7 +137,6 @@ class TextFieldDecorationTapTest {
                     trailingContent = {
                         Button(
                             onClick = {
-                                println("Tapping the button")
                                 buttonClicks++
                             },
                             modifier = Modifier.testTag(BUTTON_TAG)
@@ -148,14 +147,9 @@ class TextFieldDecorationTapTest {
                 )
                 LaunchedEffect(Unit) { focusRequester.requestFocus() }
             }
-            // delay(2000)
-            println("Sel 1 - button clicked: ${state.selection}")
 
             findNodeWithTag(BUTTON_TAG).tap()
             waitForIdle()
-
-            // delay(2000)
-            println("Sel 2 - button clicked: ${state.selection}")
 
             assertEquals(1, buttonClicks, "Tapping the button decoration must trigger the button")
             assertEquals(
