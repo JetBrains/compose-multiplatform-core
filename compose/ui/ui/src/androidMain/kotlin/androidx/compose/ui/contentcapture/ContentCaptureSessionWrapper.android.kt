@@ -19,7 +19,6 @@ package androidx.compose.ui.contentcapture
 import android.view.ViewStructure
 import android.view.autofill.AutofillId
 import androidx.annotation.RestrictTo
-import androidx.compose.ui.platform.coreshims.ViewStructureCompat
 
 /**
  * Interface for content capture sessions.
@@ -31,6 +30,7 @@ import androidx.compose.ui.platform.coreshims.ViewStructureCompat
  * The methods in this interface are expected to delegate to the underlying platform's
  * [android.view.contentcapture.ContentCaptureSession].
  */
+@Suppress("BanRestrictTo")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface ContentCaptureSessionWrapper {
     /**
@@ -45,7 +45,7 @@ public interface ContentCaptureSessionWrapper {
      *
      * @see android.view.contentcapture.ContentCaptureSession.newVirtualViewStructure
      */
-    public fun newVirtualViewStructure(parentId: AutofillId, virtualId: Long): ViewStructureCompat?
+    public fun newVirtualViewStructure(parentId: AutofillId, virtualId: Long): ViewStructure?
 
     /**
      * Notifies the Content Capture Service that a node has been added to the view structure.

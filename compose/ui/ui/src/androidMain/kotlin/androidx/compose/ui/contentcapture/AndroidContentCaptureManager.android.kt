@@ -21,6 +21,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.LongSparseArray
 import android.view.View
+import android.view.ViewStructure
 import android.view.translation.TranslationRequestValue
 import android.view.translation.ViewTranslationRequest
 import android.view.translation.ViewTranslationResponse
@@ -35,8 +36,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.SemanticsNodeCopy
-import androidx.compose.ui.platform.coreshims.ViewCompatShims
-import androidx.compose.ui.platform.coreshims.ViewStructureCompat
 import androidx.compose.ui.platform.getTextLayoutResult
 import androidx.compose.ui.platform.toLegacyClassName
 import androidx.compose.ui.semantics.AdjustedSemanticsNode
@@ -50,6 +49,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.util.trace
+import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -61,7 +61,10 @@ import kotlinx.coroutines.delay
 // TODO(b/318748747): Add an interface for ContentCaptureManager to the common module, and then this
 //  would be the AndroidImplementation. When we create a LocalContentCaptureManager in the future,
 //  we would expose the interface but not this implementation.
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(
+    ExperimentalComposeUiApi::class,
+    androidx.compose.ui.platform.ExperimentalComposeUiHostApi::class,
+)
 internal class AndroidContentCaptureManager(
     val view: AndroidComposeView,
     var onContentCaptureSession: () -> ContentCaptureSessionWrapper?,
@@ -293,9 +296,7 @@ internal class AndroidContentCaptureManager(
 
             // Content capture requires events to be sent when an item is added/removed.
             if (oldNode == null) {
-                newNode.unmergedConfig.props.forEachKey { key ->
-                    @Suppress("LABEL_NAME_CLASH")
-                    if (key != SemanticsProperties.Text) return@forEachKey
+                if (SemanticsProperties.Text in newNode.unmergedConfig) {
                     val newText =
                         newNode.unmergedConfig.getOrNull(SemanticsProperties.Text)?.firstOrNull()
                     sendContentCaptureTextUpdateEvent(newNode.id, newText.toString())
@@ -303,21 +304,13 @@ internal class AndroidContentCaptureManager(
                 return@forEachKey
             }
 
-            newNode.unmergedConfig.props.forEachKey { key ->
-                when (key) {
-                    SemanticsProperties.Text -> {
-                        val oldText =
-                            oldNode.unmergedConfig
-                                .getOrNull(SemanticsProperties.Text)
-                                ?.firstOrNull()
-                        val newText =
-                            newNode.unmergedConfig
-                                .getOrNull(SemanticsProperties.Text)
-                                ?.firstOrNull()
-                        if (oldText != newText) {
-                            sendContentCaptureTextUpdateEvent(newNode.id, newText.toString())
-                        }
-                    }
+            if (SemanticsProperties.Text in newNode.unmergedConfig) {
+                val oldText =
+                    oldNode.unmergedConfig.getOrNull(SemanticsProperties.Text)?.firstOrNull()
+                val newText =
+                    newNode.unmergedConfig.getOrNull(SemanticsProperties.Text)?.firstOrNull()
+                if (oldText != newText) {
+                    sendContentCaptureTextUpdateEvent(newNode.id, newText.toString())
                 }
             }
         }
@@ -349,13 +342,13 @@ internal class AndroidContentCaptureManager(
         boundsUpdateChannel.trySend(Unit)
     }
 
-    private fun SemanticsNode.toViewStructure(index: Int): ViewStructureCompat? {
+    private fun SemanticsNode.toViewStructure(index: Int): ViewStructure? {
         val session = contentCaptureSession ?: return null
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             return null
         }
 
-        val rootAutofillId = ViewCompatShims.getAutofillId(view) ?: return null
+        val rootAutofillId = ViewCompat.getAutofillId(view) ?: return null
         val parentNode = parent
         val parentAutofillId =
             if (parentNode != null) {
@@ -437,10 +430,7 @@ internal class AndroidContentCaptureManager(
         }
     }
 
-    private fun bufferContentCaptureViewAppeared(
-        virtualId: Int,
-        viewStructure: ViewStructureCompat?,
-    ) {
+    private fun bufferContentCaptureViewAppeared(virtualId: Int, viewStructure: ViewStructure?) {
         if (viewStructure == null) {
             return
         }
@@ -476,9 +466,7 @@ internal class AndroidContentCaptureManager(
             bufferedEvents.fastForEach { event ->
                 when (event.type) {
                     ContentCaptureEventType.VIEW_APPEAR -> {
-                        event.structureCompat?.let { node ->
-                            session.notifyViewAppeared(node.toViewStructure())
-                        }
+                        event.structureCompat?.let { node -> session.notifyViewAppeared(node) }
                     }
                     ContentCaptureEventType.VIEW_DISAPPEAR -> {
                         session.newAutofillId(event.id.toLong())?.let { autofillId ->
@@ -610,10 +598,6 @@ internal class AndroidContentCaptureManager(
             contentCaptureManager: AndroidContentCaptureManager,
             response: LongSparseArray<ViewTranslationResponse?>,
         ) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                return
-            }
-
             // TODO(mnuzen): move post into `AndroidComposeView`
             // This callback can be invoked from non UI thread.
             if (Looper.getMainLooper().thread == Thread.currentThread()) {
@@ -684,5 +668,5 @@ private data class ContentCaptureEvent(
     val id: Int,
     val timestamp: Long,
     val type: ContentCaptureEventType,
-    val structureCompat: ViewStructureCompat?,
+    val structureCompat: ViewStructure?,
 )

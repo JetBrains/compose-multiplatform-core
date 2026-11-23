@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalComposeUiHostApi::class)
+
 package androidx.compose.ui.node
 
 import androidx.collection.MutableObjectIntMap
@@ -57,6 +59,7 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.isImportantForAccessibility
 import androidx.compose.ui.unit.Constraints
@@ -73,7 +76,7 @@ import androidx.compose.ui.util.fastIsFinite
 
 /** Measurable and Placeable type that has a position. */
 internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
-    LookaheadCapablePlaceable(), Measurable, LayoutCoordinates, OwnerScope {
+    LookaheadCapablePlaceable(), Measurable, LayoutCoordinates, ObservationTarget {
 
     internal var forcePlaceWithLookaheadOffset: Boolean = false
     internal var forceMeasureWithLookaheadConstraints: Boolean = false
@@ -177,6 +180,16 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             placeAt(position, zIndex, explicitLayer)
         } else {
             placeAt(position, zIndex, layerBlock)
+        }
+    }
+
+    override fun onCoordinatesUsedWhilePlacingForAlignment() {
+        val layoutDelegate = layoutNode.layoutDelegate
+        if (child == null) {
+            layoutDelegate.coordinatesAccessedDuringPlacement = true
+        } else {
+            layoutDelegate.coordinatesAccessedDuringModifierPlacement = true
+            alignmentLinesOwner.requestLayout()
         }
     }
 
@@ -378,6 +391,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         crossinline block: () -> Placeable,
     ): Placeable {
         measurementConstraints = constraints
+        layoutPendingForAlignment = true
         return block()
     }
 
@@ -700,7 +714,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
 
     private var explicitLayer: GraphicsLayer? = null
 
-    override val isValidOwnerScope: Boolean
+    override val isObservationValid: Boolean
         get() = layer != null && !released && layoutNode.isAttached
 
     val minimumTouchTargetSize: Size
@@ -1016,7 +1030,10 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
     }
 
     /** Returns the bounds of this [NodeCoordinator], including the minimum touch target. */
-    fun touchBoundsInRoot(): Rect {
+    fun touchBoundsInRoot(): Rect =
+        touchBoundsInRoot(clipToParentIfLargerThanMinTouchTarget = false)
+
+    internal fun touchBoundsInRoot(clipToParentIfLargerThanMinTouchTarget: Boolean): Rect {
         if (!isAttached) {
             return Rect.Zero
         }
@@ -1041,6 +1058,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
                 bounds,
                 clipBounds = false,
                 clipToMinimumTouchTargetSize = true,
+                clipToParentIfLargerThanMinTouchTarget = clipToParentIfLargerThanMinTouchTarget,
             )
             if (bounds.isEmpty) {
                 return Rect.Zero
@@ -1181,6 +1199,16 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         sourceCoordinates: LayoutCoordinates,
         clipBounds: Boolean,
     ): Rect {
+        val bounds = rectCache
+        localBoundingBoxOf(sourceCoordinates, bounds, clipBounds)
+        return bounds.toRect()
+    }
+
+    internal fun localBoundingBoxOf(
+        sourceCoordinates: LayoutCoordinates,
+        bounds: MutableRect,
+        clipBounds: Boolean = true,
+    ) {
         checkPrecondition(isAttached) { ExpectAttachedLayoutCoordinates }
         checkPrecondition(sourceCoordinates.isAttached) {
             "LayoutCoordinates $sourceCoordinates is not attached!"
@@ -1189,7 +1217,6 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         srcCoordinator.onCoordinatesUsed()
         val commonAncestor = findCommonAncestor(srcCoordinator)
 
-        val bounds = rectCache
         bounds.left = 0f
         bounds.top = 0f
         bounds.right = sourceCoordinates.size.width.toFloat()
@@ -1199,14 +1226,14 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         while (coordinator !== commonAncestor) {
             coordinator.rectInParent(bounds, clipBounds)
             if (bounds.isEmpty) {
-                return Rect.Zero
+                bounds.set(0f, 0f, 0f, 0f)
+                return
             }
 
             coordinator = coordinator.wrappedBy!!
         }
 
         ancestorToLocal(commonAncestor, bounds, clipBounds)
-        return bounds.toRect()
     }
 
     private fun ancestorToLocal(
@@ -1352,6 +1379,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         bounds: MutableRect,
         clipBounds: Boolean,
         clipToMinimumTouchTargetSize: Boolean = false,
+        clipToParentIfLargerThanMinTouchTarget: Boolean = false,
     ) {
         val layer = layer
         if (layer != null) {
@@ -1367,7 +1395,31 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
                             height + minTouch.height,
                             maxOf(height.toFloat(), top + minTouch.height),
                         )
-                    bounds.intersect(left, top, right, bottom)
+                    val clipLeft =
+                        if (clipToParentIfLargerThanMinTouchTarget && width >= minTouch.width) {
+                            0f
+                        } else {
+                            left
+                        }
+                    val clipTop =
+                        if (clipToParentIfLargerThanMinTouchTarget && height >= minTouch.height) {
+                            0f
+                        } else {
+                            top
+                        }
+                    val clipRight =
+                        if (clipToParentIfLargerThanMinTouchTarget && width >= minTouch.width) {
+                            width.toFloat()
+                        } else {
+                            right
+                        }
+                    val clipBottom =
+                        if (clipToParentIfLargerThanMinTouchTarget && height >= minTouch.height) {
+                            height.toFloat()
+                        } else {
+                            bottom
+                        }
+                    bounds.intersect(clipLeft, clipTop, clipRight, clipBottom)
                 } else if (clipBounds) {
                     bounds.intersect(0f, 0f, size.width.toFloat(), size.height.toFloat())
                 }
@@ -1436,7 +1488,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         if (layer != null) {
             layer.invalidate()
         } else {
-            wrappedBy?.invalidateLayer()
+            wrappedBy?.invalidateLayer() ?: layoutNode.owner?.invalidateRootLayer()
         }
     }
 
@@ -1546,14 +1598,16 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             if (underWidth > 0) {
                 childLeft - underWidth
             } else {
-                childLeft.coerceAtLeast(-mttWidth / 2f)
+                maxOf(childLeft, minOf(0f, childRect.right - mttWidth))
+                    .coerceAtLeast(-mttWidth / 2f)
             }
         val underHeight = (mttHeight - childRect.height) / 2f
         val top =
             if (underHeight > 0) {
                 childTop - underHeight
             } else {
-                childTop.coerceAtLeast(-mttHeight / 2f)
+                maxOf(childTop, minOf(0f, childRect.bottom - mttHeight))
+                    .coerceAtLeast(-mttHeight / 2f)
             }
         return Offset(left, top)
     }
@@ -1646,7 +1700,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         const val UnmeasuredError = "Asking for measurement result of unmeasured layout modifier"
         private val onCommitAffectingLayerParams: (NodeCoordinator) -> Unit = { coordinator ->
             withComposeStackTrace(coordinator.layoutNode) {
-                if (coordinator.isValidOwnerScope) {
+                if (coordinator.isObservationValid) {
                     coordinator.updateLayerParameters()
                 }
             }
@@ -1719,12 +1773,12 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
                         isInLayer,
                     )
 
+                @OptIn(ExperimentalComposeUiApi::class, ExperimentalComposeUiHostApi::class)
                 override fun shouldHitTest(node: Modifier.Node): Boolean {
-                    @OptIn(ExperimentalComposeUiApi::class)
                     if (!ComposeUiFlags.isSkipNonImportantSemanticsNodesHitTestEnabled) return true
 
                     return SemanticsNode(node.requireLayoutNode(), mergingEnabled = false)
-                        .isImportantForAccessibility()
+                        .isImportantForAccessibility
                 }
 
                 override fun shareWithSiblings(

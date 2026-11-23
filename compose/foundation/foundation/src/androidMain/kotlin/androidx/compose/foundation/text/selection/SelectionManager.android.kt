@@ -16,16 +16,24 @@
 
 package androidx.compose.foundation.text.selection
 
+import android.content.Context
+import android.os.Build
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MagnifierNode
 import androidx.compose.foundation.PlatformMagnifierFactory
 import androidx.compose.foundation.isPlatformMagnifierSupported
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.KeyCommand
 import androidx.compose.foundation.text.TextContextMenuItems
 import androidx.compose.foundation.text.TextContextMenuItems.Copy
+import androidx.compose.foundation.text.TextContextMenuItems.LookUp
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
+import androidx.compose.foundation.text.canShowLookUp
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
 import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
 import androidx.compose.foundation.text.platformDefaultKeyMapping
+import androidx.compose.foundation.text.startLookUpActivity
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,39 +42,63 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 
 internal actual fun isCopyKeyEvent(keyEvent: KeyEvent) =
     platformDefaultKeyMapping.map(keyEvent) == KeyCommand.COPY
 
-// We use composed{} to read a local, but don't provide inspector info because the underlying
-// magnifier modifier provides more meaningful inspector info.
+@OptIn(ExperimentalFoundationApi::class)
 internal actual fun Modifier.selectionMagnifier(manager: SelectionManager): Modifier {
     // Avoid tracking animation state on older Android versions that don't support magnifiers.
     if (!isPlatformMagnifierSupported()) {
         return this
     }
 
-    return composed {
-        val density = LocalDensity.current
-        var magnifierSize by remember { mutableStateOf(IntSize.Zero) }
-        animatedSelectionMagnifier(
-            magnifierCenter = { calculateSelectionMagnifierCenterAndroid(manager, magnifierSize) },
-            platformMagnifier = { center ->
-                Modifier.magnifier(
+    if (ComposeFoundationFlags.isNewTextFieldModifierImplementationEnabled) {
+        return animatedSelectionMagnifier(
+            magnifierCenter = { magnifierSize ->
+                calculateSelectionMagnifierCenterAndroid(manager, magnifierSize)
+            },
+            platformMagnifier = { center, onSizeChanged ->
+                MagnifierNode(
                     sourceCenter = { center() },
                     onSizeChanged = { size ->
-                        magnifierSize =
-                            with(density) {
+                        onSizeChanged(
+                            with(requireDensity()) {
                                 IntSize(size.width.roundToPx(), size.height.roundToPx())
                             }
+                        )
                     },
                     useTextDefault = true,
                     platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform(),
                 )
             },
         )
+    } else {
+        return composed {
+            val density = LocalDensity.current
+            var magnifierSize by remember { mutableStateOf(IntSize.Zero) }
+            animatedSelectionMagnifierLegacy(
+                magnifierCenter = {
+                    calculateSelectionMagnifierCenterAndroid(manager, magnifierSize)
+                },
+                platformMagnifier = { center ->
+                    Modifier.magnifier(
+                        sourceCenter = { center() },
+                        onSizeChanged = { size ->
+                            magnifierSize =
+                                with(density) {
+                                    IntSize(size.width.roundToPx(), size.height.roundToPx())
+                                }
+                        },
+                        useTextDefault = true,
+                        platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform(),
+                    )
+                },
+            )
+        }
     }
 }
 
@@ -101,6 +133,11 @@ internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
                     onRelease()
                 }
             }
+            if (Build.VERSION.SDK_INT >= 37) {
+                selectionContainerItem(LookUp, enabled = canShowLookUpMenuItem(context)) {
+                    lookUp(context)
+                }
+            }
             selectionContainerItem(
                 item = SelectAll,
                 enabled = !isEntireContainerSelected(),
@@ -111,4 +148,15 @@ internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
             separator()
         }
     }
+}
+
+internal fun SelectionManager.canShowLookUpMenuItem(context: Context): Boolean {
+    if (!isNonEmptySelection()) return false
+    val selectedText = getSelectedText()?.text ?: return false
+    return canShowLookUp(context, selectedText)
+}
+
+internal fun SelectionManager.lookUp(context: Context) {
+    val selectedText = getSelectedText()?.text ?: return
+    startLookUpActivity(context, selectedText)
 }

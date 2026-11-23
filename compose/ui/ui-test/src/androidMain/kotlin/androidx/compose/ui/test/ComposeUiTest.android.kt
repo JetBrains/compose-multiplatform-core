@@ -22,6 +22,7 @@ import android.os.Build
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RestrictTo
@@ -34,6 +35,7 @@ import androidx.compose.ui.node.RootForTest.UncaughtExceptionHandler
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.platform.WindowRecomposerPolicy
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.ComposeRootRegistry.OnRegistrationChangedListener
 import androidx.compose.ui.test.failure.FailurePipelineRunner
 import androidx.compose.ui.unit.Density
@@ -400,6 +402,7 @@ public sealed interface AndroidComposeUiTest<A : ComponentActivity> :
      * Sets the [ComposeAccessibilityValidator] to perform the accessibility checks with. Providing
      * `null` means disabling the accessibility checks
      */
+    @Suppress("BanRestrictTo")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun setComposeAccessibilityValidator(validator: ComposeAccessibilityValidator?)
 }
@@ -722,6 +725,7 @@ internal constructor(
     }
 
     /** Checks if there are any pending uncaught coroutine or recomposition exceptions. */
+    @Suppress("BanRestrictTo")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun checkPendingExceptions() {
         throwPendingException()
@@ -733,6 +737,7 @@ internal constructor(
      *
      * @param throwable error that caused the test failure
      */
+    @Suppress("BanRestrictTo")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun handleTestFailureAndRethrow(throwable: Throwable): Nothing {
         failurePipelineRunner.runPipeline(
@@ -903,11 +908,13 @@ internal constructor(
                 }
                 block()
             } finally {
-                // Stop the recomposer:
-                recomposer.cancel()
-                // Cancel our scope to ensure there are no active coroutines when
-                // cleanupTestCoroutines is called in the CleanupCoroutinesStatement
-                recomposerCoroutineScope.cancel()
+                runOnUiThread {
+                    // Stop the recomposer:
+                    recomposer.cancel()
+                    // Cancel our scope to ensure there are no active coroutines when
+                    // cleanupTestCoroutines is called in the CleanupCoroutinesStatement
+                    recomposerCoroutineScope.cancel()
+                }
                 // Remove the exception handler installer
                 composeRootRegistry.removeOnRegistrationChangedListener(rootRegistrationListener)
 
@@ -922,8 +929,10 @@ internal constructor(
         } finally {
             // runTest {} as the last step -
             // to replace deprecated TestCoroutineScope.cleanupTestCoroutines
-            frameClockCoroutineScope.runTest {}
-            frameClockCoroutineScope.cancel()
+            runOnUiThread {
+                frameClockCoroutineScope.runTest {}
+                frameClockCoroutineScope.cancel()
+            }
             coroutineExceptionHandler.throwUncaught()
         }
     }
@@ -1058,13 +1067,30 @@ internal constructor(
 
             runOnUiThread { currentActivity.setContent(recomposer, composable) }
 
-            // Synchronizing from the UI thread when we can't leads to a dead lock
-            if (
-                HasRobolectricFingerprint ||
-                    ComposeUiTestFlags.isMainThreadTestSynchronizationEnabledForDeviceTests
-            ) {
-                waitForIdle()
-            }
+            waitForIdle()
+            // Gaining focus can change the input mode and isWindowFocused, so settle again.
+            if (waitForInitialWindowFocus()) waitForIdle()
+        }
+
+        /**
+         * Before API 33, ViewRootImpl re-applies the system touch mode when a window gains focus.
+         * If that happens after setContent returns, a test already in keyboard mode loses key
+         * focus. Waits (best effort) for a focusable compose root to gain window focus, and returns
+         * whether it had to wait and focus arrived.
+         */
+        private fun waitForInitialWindowFocus(): Boolean =
+            Build.VERSION.SDK_INT < 33 &&
+                !focusableRootHasWindowFocus() &&
+                pollOnUiThread { focusableRootHasWindowFocus() }
+
+        private fun focusableRootHasWindowFocus(): Boolean = runOnUiThread {
+            val roots =
+                composeRootRegistry.getRegisteredComposeRoots().filter {
+                    val flags =
+                        (it.view.rootView.layoutParams as? WindowManager.LayoutParams)?.flags ?: 0
+                    (flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) == 0
+                }
+            roots.isEmpty() || roots.any { it.view.hasWindowFocus() }
         }
 
         override fun hasPendingWork(): Boolean {
@@ -1095,7 +1121,19 @@ internal constructor(
     }
 
     private inner class AndroidTestOwner : TestOwner {
+        /**
+         * Inside [ComposeUiTest.runWithoutImplicitWait] the UI is expected to be stable, so node
+         * queries reuse the collected semantics nodes instead of walking the semantics trees for
+         * every query. The cache is cleared when the suppression state changes or due tasks are
+         * run, as both can change the semantics trees.
+         */
+        private val semanticsNodesCache = SemanticsNodesCache(mainClockImpl)
+
         override var isImplicitWaitSuppressed: Boolean = false
+            set(value) {
+                field = value
+                semanticsNodesCache.clear()
+            }
 
         override val mainClock: MainTestClock
             get() = mainClockImpl
@@ -1109,8 +1147,20 @@ internal constructor(
             return composeRootRegistry.getRegisteredComposeRoots()
         }
 
+        override fun getSemanticsNodes(
+            roots: Set<RootForTest>,
+            useUnmergedTree: Boolean,
+            skipDeactivatedNodes: Boolean,
+        ): List<SemanticsNode> =
+            if (isImplicitWaitSuppressed) {
+                semanticsNodesCache.getOrCollect(roots, useUnmergedTree, skipDeactivatedNodes)
+            } else {
+                collectSemanticsNodes(roots, useUnmergedTree, skipDeactivatedNodes)
+            }
+
         override fun runCurrent() {
             mainClockImpl.runCurrent()
+            semanticsNodesCache.clear()
         }
     }
 
@@ -1158,6 +1208,7 @@ internal class BeginningOfCascadingComposeErrors() : RuntimeException(MESSAGE) {
  * A validator that is used to run accessibility checks before every action through
  * [tryPerformAccessibilityChecks]
  */
+@Suppress("BanRestrictTo")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface ComposeAccessibilityValidator {
     public fun check(view: View)
@@ -1191,6 +1242,7 @@ internal interface TestOwnerProvider {
  * [androidx.compose.ui.test.accessibility.disableAccessibilityChecks] to manage accessibility
  * checks in your tests. Passing `null` here disables the checks.
  */
+@Suppress("BanRestrictTo")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun ComposeUiTest.setComposeAccessibilityValidator(
     validator: ComposeAccessibilityValidator?

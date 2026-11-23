@@ -19,21 +19,28 @@ package androidx.compose.ui.layout
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidatePlacement
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.math.min
+import kotlin.math.roundToInt
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -517,6 +524,67 @@ class AlignmentLineTest {
             assertEquals(2, layouts)
             assertEquals(2, childMeasures)
         }
+    }
+
+    @Test
+    fun readingAlignmentAfterModifierPlacementInvalidatedWhileLayoutPending() {
+        val offsetNode = PlainOffsetNode(offsetY = 10)
+        var remeasureTrigger by mutableIntStateOf(0)
+        var firstBaseline = -1
+        var secondBaseline = -1
+        rule.setContent {
+            Layout(
+                content = {
+                    Layout(modifier = PlainOffsetElement(offsetNode)) { _, _ ->
+                        // Remeasure the child together with the parent, which leaves the child
+                        // with layout pending while the parent queries alignment lines.
+                        remeasureTrigger
+                        layout(50, 50, mapOf(FirstBaseline to 0)) {}
+                    }
+                }
+            ) { measurables, constraints ->
+                val placeable = measurables.first().measure(constraints)
+                firstBaseline = placeable[FirstBaseline]
+                if (remeasureTrigger > 0) {
+                    offsetNode.offsetY = 20
+                    offsetNode.invalidatePlacement()
+                }
+                secondBaseline = placeable[FirstBaseline]
+                layout(100, 100) { placeable.place(0, 0) }
+            }
+        }
+
+        rule.runOnIdle {
+            assertEquals(10, firstBaseline)
+            assertEquals(10, secondBaseline)
+            remeasureTrigger = 1
+        }
+
+        rule.runOnIdle {
+            assertEquals(10, firstBaseline)
+            assertEquals(20, secondBaseline)
+        }
+    }
+
+    private class PlainOffsetNode(var offsetY: Int) : Modifier.Node(), LayoutModifierNode {
+        override fun MeasureScope.measure(
+            measurable: Measurable,
+            constraints: Constraints,
+        ): MeasureResult {
+            val placeable = measurable.measure(constraints)
+            return layout(placeable.width, placeable.height) { placeable.place(0, offsetY) }
+        }
+    }
+
+    private class PlainOffsetElement(val node: PlainOffsetNode) :
+        ModifierNodeElement<PlainOffsetNode>() {
+        override fun create() = node
+
+        override fun update(node: PlainOffsetNode) {}
+
+        override fun hashCode() = node.hashCode()
+
+        override fun equals(other: Any?) = other is PlainOffsetElement && other.node === node
     }
 
     @Test
@@ -1267,4 +1335,231 @@ class AlignmentLineTest {
             val placeable = measurable.measure(constraints)
             layout(placeable.width, placeable.height, alignmentLines()) { placeable.place(0, 0) }
         }
+
+    @Test
+    fun readingAlignmentAndThenPlacingWithNonZeroOffsetShouldntCauseExtraRemeasure() {
+        var measureCount = 0
+        rule.setContent {
+            Layout(
+                content = {
+                    Layout { _, _ ->
+                        layout(
+                            50,
+                            50,
+                            mapOf(FirstBaseline to 0),
+                        ) {}
+                    }
+                }
+            ) { measurables, constraints ->
+                measureCount++
+                val placeable = measurables.first().measure(constraints)
+                placeable[FirstBaseline]
+                layout(placeable.width, placeable.height) {
+                    placeable.place(10, 10)
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertEquals(1, measureCount)
+        }
+    }
+
+    @Test
+    fun readingAlignmentAndThenPlacingWithNonZeroOffsetInLookaheadShouldntCauseExtraRemeasure() {
+        var lookaheadMeasureCount = 0
+        var approachMeasureCount = 0
+        rule.setContent {
+            LookaheadScope {
+                Layout(
+                    content = {
+                        Layout { _, _ ->
+                            layout(
+                                50,
+                                50,
+                                mapOf(FirstBaseline to 0),
+                            ) {}
+                        }
+                    }
+                ) { measurables, constraints ->
+                    if (isLookingAhead) {
+                        lookaheadMeasureCount++
+                    } else {
+                        approachMeasureCount++
+                    }
+                    val placeable = measurables.first().measure(constraints)
+                    placeable[FirstBaseline]
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(10, 10)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertEquals(1, lookaheadMeasureCount)
+            assertEquals(1, approachMeasureCount)
+        }
+    }
+
+    @Test
+    fun readingAlignmentWithMultipleModifiersAndDynamicOffset() {
+        var measureCount = 0
+        var lastBaseline = -1
+        var dynamicOffset by mutableIntStateOf(10)
+        val fixedPaddingDp = with(rule.density) { 5.toDp() }
+        rule.setContent {
+            Layout(
+                content = {
+                    Layout(
+                        modifier =
+                            Modifier.offset { IntOffset(0, dynamicOffset) }
+                                .padding(top = fixedPaddingDp)
+                    ) { _, _ ->
+                        layout(50, 50, mapOf(FirstBaseline to 0)) {}
+                    }
+                }
+            ) { measurables, constraints ->
+                measureCount++
+                val placeable = measurables.first().measure(constraints)
+                lastBaseline = placeable[FirstBaseline]
+                layout(100, 100) {
+                    placeable.place(10, 10)
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertEquals(1, measureCount)
+            assertEquals(15, lastBaseline)
+            dynamicOffset = 25
+        }
+
+        rule.runOnIdle {
+            assertEquals(2, measureCount)
+            assertEquals(30, lastBaseline)
+        }
+    }
+
+    @Test
+    fun readingAlignmentWhenPlacementMovesGrandchildViaCoordinates() {
+        var parentMeasureCount = 0
+        var lastBaseline = -1
+        rule.setContent {
+            // Ancestor places Parent at (10, 20), while Parent places Child at (0, 0).
+            Layout(
+                content = {
+                    Layout(
+                        content = {
+                            Layout(
+                                content = {
+                                    Layout { _, _ ->
+                                        layout(10, 10, mapOf(FirstBaseline to 0)) {}
+                                    }
+                                }
+                            ) { measurables, constraints ->
+                                val grandchild = measurables.first().measure(constraints)
+                                layout(50, 50) {
+                                    val offset =
+                                        coordinates?.positionInRoot()?.round() ?: IntOffset.Zero
+                                    grandchild.place(offset)
+                                }
+                            }
+                        }
+                    ) { measurables, constraints ->
+                        parentMeasureCount++
+                        val child = measurables.first().measure(constraints)
+                        lastBaseline = child[FirstBaseline]
+                        layout(100, 100) {
+                            child.place(0, 0)
+                        }
+                    }
+                }
+            ) { measurables, constraints ->
+                val parent = measurables.first().measure(constraints)
+                layout(200, 200) {
+                    parent.place(10, 20)
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertEquals(2, parentMeasureCount)
+            assertEquals(20, lastBaseline)
+        }
+    }
+
+    @Test
+    fun readingAlignmentWhenPlacementMovesGrandchildViaRuler() {
+        val ruler = HorizontalRuler()
+        var lastBaseline = -1
+        rule.setContent {
+            Layout(
+                content = {
+                    Layout(
+                        content = {
+                            Layout { _, _ ->
+                                layout(10, 10, mapOf(FirstBaseline to 0)) {}
+                            }
+                        }
+                    ) { measurables, constraints ->
+                        val grandchild = measurables.first().measure(constraints)
+                        layout(50, 50) {
+                            val y = ruler.current(0f).roundToInt()
+                            grandchild.place(0, y)
+                        }
+                    }
+                }
+            ) { measurables, constraints ->
+                val child = measurables.first().measure(constraints)
+                lastBaseline = child[FirstBaseline]
+                layout(100, 100, rulers = { ruler provides 25f }) {
+                    child.place(0, 5)
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertEquals(20, lastBaseline)
+        }
+    }
+
+    @Test
+    fun readingAlignmentWhenModifierMovesChildViaCoordinatesOnRemeasure() {
+        var childHeight by mutableIntStateOf(50)
+        var lastBaseline = -1
+        rule.setContent {
+            Layout(
+                content = {
+                    Layout(
+                        modifier =
+                            Modifier.layout { measurable, constraints ->
+                                val p = measurable.measure(constraints)
+                                layout(p.width, p.height) {
+                                    val y = coordinates?.positionInParent()?.y?.roundToInt() ?: 0
+                                    p.place(0, y)
+                                }
+                            }
+                    ) { _, _ ->
+                        layout(50, childHeight, mapOf(FirstBaseline to 0)) {}
+                    }
+                }
+            ) { measurables, constraints ->
+                val child = measurables.first().measure(constraints)
+                lastBaseline = child[FirstBaseline]
+                layout(100, 100) {
+                    child.place(0, 15)
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertEquals(15, lastBaseline)
+            childHeight = 60
+        }
+
+        rule.runOnIdle {
+            assertEquals(15, lastBaseline)
+        }
+    }
 }

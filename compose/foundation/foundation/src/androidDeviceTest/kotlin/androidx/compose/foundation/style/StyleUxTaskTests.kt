@@ -48,6 +48,7 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -77,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -87,6 +89,7 @@ class StyleUxTaskTests {
     @get:Rule val rule = createComposeRule()
 
     @Test
+    @Suppress("DEPRECATION")
     fun task1() = task {
         val boxStyle = Style {
             border(3.dp, Color.Magenta)
@@ -96,28 +99,32 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task1_n() = interactiveTask {
         val boxStyle = Style {
             border(3.dp, Color.Magenta)
             contentPadding(10.dp)
         }
-        val styleResolver = remember { StyleResolver(boxStyle.toCommonStyle()) }
+        val styleResolver = rememberStyleResolver(boxStyle.toCommonStyle())
         Box(modifier = Modifier.styleable(styleResolver)) { Text_n("Box with style") }
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task2() = task {
         Box(modifier = Modifier.styleable { background(Color.Red) }) { Text("Red box") }
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task2_n() = task {
         val boxStyle = Style { background(Color.Red) }
-        val styleResolver = remember { StyleResolver(boxStyle.toCommonStyle()) }
+        val styleResolver = rememberStyleResolver(boxStyle.toCommonStyle())
         Box(modifier = Modifier.styleable(styleResolver)) { Text_n("Red box") }
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task3() = task {
         Box(
             modifier =
@@ -131,16 +138,18 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task3_n() = task {
         val boxStyle = Style {
             contentPadding(20.dp)
             size(100.dp)
         }
-        val styleResolver = remember { StyleResolver(boxStyle.toCommonStyle()) }
+        val styleResolver = rememberStyleResolver(boxStyle.toCommonStyle())
         Box(modifier = Modifier.styleable(styleResolver)) { Text("Padded box") }
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task4() = task {
         Box(
             modifier =
@@ -154,6 +163,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task4_n() = task {
         val boxStyle = Style {
             shape(CircleShape)
@@ -161,11 +171,12 @@ class StyleUxTaskTests {
             background(Color.LightGray)
             size(100.dp)
         }
-        val styleResolver = remember { StyleResolver(boxStyle.toCommonStyle()) }
+        val styleResolver = rememberStyleResolver(boxStyle.toCommonStyle())
         Box(modifier = Modifier.styleable(styleResolver))
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task5() = task {
         Box(
             modifier =
@@ -180,6 +191,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task5_n() = task {
         val style = Style {
             contentPadding(12.dp)
@@ -188,12 +200,13 @@ class StyleUxTaskTests {
             border(1.dp, Color.Black)
             size(150.dp)
         }
-        val styleResolver = remember { StyleResolver(style.toCommonStyle()) }
+        val styleResolver = rememberStyleResolver(style.toCommonStyle())
 
         Box(modifier = Modifier.styleable(styleResolver))
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task6() = task {
         Column(
             modifier =
@@ -209,12 +222,13 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task6_n() = interactiveTask {
         val style = Style {
             background(Color.Gray)
             contentPadding(16.dp)
         }
-        val styleResolver = remember { StyleResolver(style.toCommonStyle()) }
+        val styleResolver = rememberStyleResolver(style.toCommonStyle())
         Column(
             modifier = Modifier.height(200.dp).styleable(styleResolver),
             verticalArrangement = Arrangement.SpaceEvenly,
@@ -225,6 +239,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task7() = interactiveTask {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -240,13 +255,14 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task7_n() = interactiveTask {
         val style = Style {
             background(Color.Blue)
             contentPadding(16.dp)
             contentColor(Color.White)
         }
-        val styleResolver = remember { StyleResolver(style.toCommonStyle()) }
+        val styleResolver = rememberStyleResolver(style.toCommonStyle())
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.width(200.dp).styleable(styleResolver),
@@ -257,6 +273,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task7_a() = interactiveTask {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -273,6 +290,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task8() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
@@ -292,6 +310,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task8_n() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = rememberUpdatedStyleState(mis)
@@ -304,7 +323,7 @@ class StyleUxTaskTests {
                 contentColor(Color.White)
             }
         }
-        val styleResolver = remember { StyleResolver(style.toCommonStyle(), styleState) }
+        val styleResolver = rememberStyleResolver(style.toCommonStyle(), styleState)
         Box(
             modifier = Modifier.clickableStyleable(styleResolver) {},
             contentAlignment = Alignment.Center,
@@ -314,12 +333,13 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task9() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {
-            delay(500)
+            delay(500.milliseconds)
             focusRequester.requestFocus()
         }
         Box(
@@ -340,6 +360,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task9_n() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
@@ -352,10 +373,10 @@ class StyleUxTaskTests {
                 background(Color.Yellow)
             }
         }
-        val styleResolver = remember { StyleResolver(style.toCommonStyle(), styleState) }
+        val styleResolver = rememberStyleResolver(style.toCommonStyle(), styleState)
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {
-            delay(500)
+            delay(500.milliseconds)
             focusRequester.requestFocus()
         }
         Box(
@@ -367,6 +388,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task10() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
@@ -388,6 +410,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task10_n() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
@@ -406,7 +429,7 @@ class StyleUxTaskTests {
             focused { border(2.dp, Color.Red) }
             focused { hovered { border(6.dp, Color.Red) } }
         }
-        val styleResolver = remember { StyleResolver(style.toCommonStyle(), styleState) }
+        val styleResolver = rememberStyleResolver(style.toCommonStyle(), styleState)
         val focusRequester = remember { FocusRequester() }
         Box(
             modifier =
@@ -417,6 +440,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task11() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
@@ -432,6 +456,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task11_n() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
@@ -440,11 +465,12 @@ class StyleUxTaskTests {
             size(100.dp)
             pressed { animate { background(Color.Blue) } }
         }
-        val styleResolver = remember { StyleResolver(style.toCommonStyle(), styleState) }
+        val styleResolver = rememberStyleResolver(style.toCommonStyle(), styleState)
         Box(modifier = Modifier.clickableStyleable(styleResolver) {})
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task12() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
@@ -471,6 +497,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task12_n() = interactiveTask {
         val mis = remember { MutableInteractionSource() }
         val styleState = remember(mis) { MutableStyleState(mis) }
@@ -487,7 +514,7 @@ class StyleUxTaskTests {
                 }
             }
         }
-        val styleResolver = remember { StyleResolver(style.toCommonStyle(), styleState) }
+        val styleResolver = rememberStyleResolver(style.toCommonStyle(), styleState)
         Box(
             modifier = Modifier.clickableStyleable(styleResolver) {},
             contentAlignment = Alignment.Center,
@@ -543,6 +570,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task17() {
         val sizeStyle = Style {
             size(100.dp)
@@ -560,6 +588,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun task17_n() {
         val sizeStyle = Style {
             size(100.dp)
@@ -574,7 +603,7 @@ class StyleUxTaskTests {
         val mergedStyle = Style(sizeStyle, colorStyle)
 
         interactiveTask {
-            val styleResolver = remember { StyleResolver(mergedStyle.toCommonStyle()) }
+            val styleResolver = rememberStyleResolver(mergedStyle.toCommonStyle())
             Box(modifier = Modifier.styleable(styleResolver))
         }
     }
@@ -634,6 +663,7 @@ class StyleUxTaskTests {
     }
 
     @Test // 479217116
+    @Suppress("DEPRECATION")
     fun translation_in_animation_block() {
         interactiveTask {
             val interactionSource = remember { MutableInteractionSource() }
@@ -651,6 +681,7 @@ class StyleUxTaskTests {
     }
 
     @Test // 481222410
+    @Suppress("DEPRECATION")
     fun animating_font_weight() {
         interactiveTask {
             BaseStyleableButton(
@@ -678,6 +709,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun rounded_corner_shape_border_and_background() {
         interactiveTask {
             BaseStyleableButton(
@@ -699,6 +731,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun animating_background_press() {
         interactiveTask {
             BaseStyleableButton(
@@ -734,6 +767,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun style_modifier_equivalence_border() {
         interactiveTask {
             Column {
@@ -749,6 +783,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun style_modifier_equivalence_border_background_contentPadding() {
         interactiveTask {
             Column {
@@ -776,6 +811,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun style_modifier_equivalence_externalPadding() {
         interactiveTask {
             Column {
@@ -809,6 +845,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun style_color_brush_animations() {
         interactiveTask {
             @Composable
@@ -877,6 +914,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun button_from_io_talk() {
         interactiveTask {
             val colors =
@@ -1103,6 +1141,7 @@ class StyleUxTaskTests {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun clip_path_animation() {
         interactiveTask {
             StyledButton(
@@ -1122,6 +1161,54 @@ class StyleUxTaskTests {
                 },
             ) {
                 Text("Press me!")
+            }
+        }
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun indirect_captured_read_animates() {
+        val sizeProperty = stylePropertyOf("size") { 0.dp }
+        val backgroundProperty = stylePropertyOf("background") { Color.Yellow }
+
+        @Composable
+        fun Case(value: Int) {
+            val style = CommonStyle {
+                animate(tween(500)) {
+                    sizeProperty.provide(value.dp)
+                }
+            }
+            val styleResolver = rememberStyleResolver(style)
+            Box(
+                Modifier.styleResolver(styleResolver)
+                    .placement {
+                        styleResolver.resolve {
+                            val breadth = Breadth(sizeProperty.value)
+                            width = breadth
+                            height = breadth
+                        }
+                    }
+                    .appearance {
+                        styleResolver.resolve {
+                            background = Fill(backgroundProperty.value)
+                        }
+                    }
+            )
+        }
+
+        var size by mutableIntStateOf(10)
+
+        interactiveTask {
+            Column {
+                Row {
+                    StyledButton({ size += 10 }) {
+                        Text_n("+")
+                    }
+                    StyledButton({ size -= 10 }) {
+                        Text_n("-")
+                    }
+                }
+                Case(size)
             }
         }
     }
@@ -1158,6 +1245,7 @@ class StyleUxTaskTests {
 
 @ExperimentalFoundationStyleApi
 @Composable
+@Suppress("DEPRECATION")
 private fun Text_n(
     text: String,
     modifier: Modifier = Modifier,
@@ -1169,7 +1257,7 @@ private fun Text_n(
     minLines: Int = 1,
     autoSize: TextAutoSize? = null,
 ) {
-    val styleResolver = remember { StyleResolver(style.toCommonStyle()) }
+    val styleResolver = rememberStyleResolver(style.toCommonStyle())
     BasicText(
         text = text,
         modifier = modifier.styleResolver(styleResolver),
@@ -1178,13 +1266,28 @@ private fun Text_n(
         softWrap = softWrap,
         maxLines = maxLines,
         minLines = minLines,
-        color = { styleResolver.resolve { contentColor } },
+        styleProvider = {
+            styleResolver.resolve {
+                setTextAlign(textAlignLocal.value)
+                setTextDirection(textDirectionLocal.value)
+                setFontFamily(fontFamilyLocal.value)
+                setFontWeight(fontWeightLocal.value)
+                setFontStyle(fontStyleLocal.value)
+                setFontSynthesis(fontSynthesisLocal.value)
+                setFontSize(fontSizeLocal.value)
+                setLineHeight(lineHeightLocal.value)
+                setLetterSpacing(letterSpacingLocal.value)
+                setTextMotion(textMotionLocal.value)
+                setColor(contentColor)
+            }
+        },
         autoSize = autoSize,
     )
 }
 
 @ExperimentalFoundationStyleApi
 @Composable
+@Suppress("DEPRECATION")
 private fun Text(
     text: String,
     modifier: Modifier = Modifier,
@@ -1214,6 +1317,7 @@ private val pressShade = SolidColor(Color.Black.copy(alpha = 0.3f))
 private val hoverShade = SolidColor(Color.Black.copy(alpha = 0.15f))
 
 @OptIn(ExperimentalFoundationStyleApi::class)
+@Suppress("DEPRECATION")
 private val baseButtonStyle = Style {
     shape(RoundedCornerShape(4.dp))
     background(Color.Blue)
@@ -1228,6 +1332,7 @@ private val baseButtonStyle = Style {
 }
 
 @OptIn(ExperimentalFoundationStyleApi::class)
+@Suppress("DEPRECATION")
 private val styledSwitchBaseStyle = Style {
     background(Color.Cyan)
     border(2.dp, Color.Black)
@@ -1242,6 +1347,7 @@ private val blackText = TextStyle(color = Color.Black)
 
 @ExperimentalFoundationStyleApi
 @Composable
+@Suppress("DEPRECATION")
 private fun StyledButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1262,6 +1368,7 @@ private fun StyledButton(
 
 @ExperimentalFoundationStyleApi
 @Composable
+@Suppress("DEPRECATION")
 private fun StyledSwitch(
     checked: Boolean,
     enabled: Boolean,
@@ -1294,6 +1401,7 @@ private fun StyledSwitch(
 
 @ExperimentalFoundationStyleApi
 @Composable
+@Suppress("DEPRECATION")
 private fun StyledButton_n(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1305,8 +1413,7 @@ private fun StyledButton_n(
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val styleState = rememberUpdatedStyleState(interactionSource) { it.isEnabled = enabled }
     val mergedStyle = baseButtonStyle then style
-    val styleResolver =
-        remember(mergedStyle, styleState) { StyleResolver(mergedStyle.toCommonStyle(), styleState) }
+    val styleResolver = rememberStyleResolver(mergedStyle.toCommonStyle(), styleState)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -1322,6 +1429,7 @@ private fun StyledButton_n(
 
 @ExperimentalFoundationStyleApi
 @Composable
+@Suppress("DEPRECATION")
 private fun StyledSwitch_n(
     checked: Boolean,
     enabled: Boolean,
@@ -1337,8 +1445,7 @@ private fun StyledSwitch_n(
             it.isChecked = checked
         }
     val mergedStyle = styledSwitchBaseStyle then style
-    val styleResolver =
-        remember(mergedStyle, styleState) { StyleResolver(mergedStyle.toCommonStyle(), styleState) }
+    val styleResolver = rememberStyleResolver(mergedStyle.toCommonStyle(), styleState)
     Row(
         modifier =
             modifier
@@ -1398,11 +1505,13 @@ private var MutableStyleState.sampleLoadingState: SampleLoadingState
     }
 
 @OptIn(ExperimentalFoundationStyleApi::class)
+@Suppress("DEPRECATION")
 private fun StyleScope.loading(block: () -> Unit) {
     state(SampleLoadingStateKey, block) { key, state -> state[key] == SampleLoadingState.Loading }
 }
 
 @OptIn(ExperimentalFoundationStyleApi::class)
+@Suppress("DEPRECATION")
 private fun StyleScope.error(block: () -> Unit) {
     state(SampleLoadingStateKey, block) { key, state -> state[key] == SampleLoadingState.Error }
 }

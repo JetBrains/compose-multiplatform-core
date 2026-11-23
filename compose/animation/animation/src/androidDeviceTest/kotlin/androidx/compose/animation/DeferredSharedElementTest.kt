@@ -16,25 +16,38 @@
 
 package androidx.compose.animation
 
+import androidx.annotation.RequiresApi
+import androidx.compose.animation.SharedTransitionScope.DeferredTransitionBehavior
 import androidx.compose.animation.core.DeferredTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
@@ -43,10 +56,15 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,6 +74,41 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalSharedTransitionApi::class)
 class DeferredSharedElementTest {
     @get:Rule val rule = createComposeRule()
+
+    @Before
+    fun setUp() {
+        testTimeSource = { rule.mainClock.currentTime }
+    }
+
+    @After
+    fun tearDown() {
+        testTimeSource = null
+    }
+
+    /**
+     * Returns the bounds of the red pixels in the "scope" node, or [IntRect.Zero] if there are
+     * none.
+     */
+    @RequiresApi(26)
+    private fun getBounds(): IntRect {
+        val pixelMap = rule.onNodeWithTag("scope").captureToImage().toPixelMap()
+        var minX = pixelMap.width
+        var maxX = -1
+        var minY = pixelMap.height
+        var maxY = -1
+        for (y in 0 until pixelMap.height) {
+            for (x in 0 until pixelMap.width) {
+                val color = pixelMap[x, y]
+                if (color.red > 0.5f && color.green < 0.1f) {
+                    minX = minOf(minX, x)
+                    maxX = maxOf(maxX, x)
+                    minY = minOf(minY, y)
+                    maxY = maxOf(maxY, y)
+                }
+            }
+        }
+        return if (maxX == -1) IntRect.Zero else IntRect(minX, minY, maxX + 1, maxY + 1)
+    }
 
     @SdkSuppress(minSdkVersion = 26)
     @Test
@@ -93,7 +146,8 @@ class DeferredSharedElementTest {
                                         rememberSharedContentState(
                                             "shared",
                                             SharedContentConfig(
-                                                permitTransformDuringDeferredTransition = false
+                                                deferredTransitionBehavior =
+                                                    DeferredTransitionBehavior.Static
                                             ),
                                         ),
                                         animatedVisibilityScope = this@DeferredAnimatedContent,
@@ -109,7 +163,8 @@ class DeferredSharedElementTest {
                                         rememberSharedContentState(
                                             "shared",
                                             SharedContentConfig(
-                                                permitTransformDuringDeferredTransition = false
+                                                deferredTransitionBehavior =
+                                                    DeferredTransitionBehavior.Static
                                             ),
                                         ),
                                         animatedVisibilityScope = this@DeferredAnimatedContent,
@@ -328,7 +383,7 @@ class DeferredSharedElementTest {
                 myState = state
                 val transition = rememberDeferredTransition(state)
                 val mutableTransform =
-                    remember(state.pendingTargetState, previewScale) {
+                    remember(state.pendingTargetState) {
                         MutableContentTransform {
                             if (state.pendingTargetState != null) {
                                 initialContentTransform {
@@ -372,8 +427,10 @@ class DeferredSharedElementTest {
         rule.waitForIdle()
 
         // Switch to A, but hold in preview
-        myState?.defer("A")
-        previewScale = 0.5f // Scale the parent AnimatedContent down by half
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewScale = 0.5f // Scale the parent AnimatedContent down by half
+        }
         rule.waitForIdle()
 
         // Scale 0.5 with origin (150, 150): (75, 75) to (175, 175)
@@ -641,8 +698,6 @@ class DeferredSharedElementTest {
     @SdkSuppress(minSdkVersion = 26)
     @Test
     fun testHandoffVelocity() {
-        testTimeSource = { rule.mainClock.currentTime }
-
         var myState: DeferredTransitionState<String>? = null
         val targetState = "B"
         var previewScale by mutableStateOf(1f)
@@ -680,7 +735,7 @@ class DeferredSharedElementTest {
                 myState = state
                 val transition = rememberDeferredTransition(state)
                 val mutableTransform =
-                    remember(state.pendingTargetState, previewScale) {
+                    remember(state.pendingTargetState) {
                         MutableContentTransform {
                             if (state.pendingTargetState != null) {
                                 initialContentTransform { scale = previewScale }
@@ -741,8 +796,8 @@ class DeferredSharedElementTest {
                     listOf(0.9f, 0.8f, 0.7f, 0.6f, 0.5f)
                 }
             for (s in steps) {
-                previewScale = s
                 rule.mainClock.advanceTimeByFrame()
+                rule.runOnIdle { previewScale = s }
                 rule.waitForIdle()
             }
 
@@ -758,10 +813,12 @@ class DeferredSharedElementTest {
 
         // Reset state
         rule.mainClock.autoAdvance = true
-        rule.runOnIdle { myState!!.animateTo("B") }
+        rule.runOnIdle {
+            previewScale = 1f
+            myState!!.animateTo("B")
+        }
         rule.waitForIdle()
         rule.mainClock.autoAdvance = false
-        previewScale = 1f
 
         // Scenario 2: Fast gesture
         val boundsFast = simulateGesture(isFast = true)
@@ -771,8 +828,6 @@ class DeferredSharedElementTest {
             "Expected $boundsFast to be smaller than $boundsSlow",
             boundsFast.width < boundsSlow.width && boundsFast.height < boundsSlow.height,
         )
-
-        testTimeSource = null
     }
 
     @SdkSuppress(minSdkVersion = 26)
@@ -1021,7 +1076,8 @@ class DeferredSharedElementTest {
                                         rememberSharedContentState(
                                             "shared",
                                             SharedContentConfig(
-                                                permitTransformDuringDeferredTransition = false
+                                                deferredTransitionBehavior =
+                                                    DeferredTransitionBehavior.Static
                                             ),
                                         ),
                                         animatedVisibilityScope = this@DeferredAnimatedContent,
@@ -1039,7 +1095,8 @@ class DeferredSharedElementTest {
                                         rememberSharedContentState(
                                             "shared",
                                             SharedContentConfig(
-                                                permitTransformDuringDeferredTransition = false
+                                                deferredTransitionBehavior =
+                                                    DeferredTransitionBehavior.Static
                                             ),
                                         ),
                                         animatedVisibilityScope = this@DeferredAnimatedContent,
@@ -1063,7 +1120,7 @@ class DeferredSharedElementTest {
 
         // Since renderInOverlayDuringTransition = false, the shared element is physically inside
         // the parent. It SHOULD scale down by 50% even though
-        // permitTransformDuringDeferredTransition = false.
+        // deferredTransitionBehavior = Static.
         // It starts at size 200x200 with offset (50, 50). So unscaled bounds are (50, 50) to (250,
         // 250).
         // With 50% scale around (0,0), it should visually be 100x100 at (25, 25).
@@ -1166,8 +1223,10 @@ class DeferredSharedElementTest {
         rule.waitForIdle()
 
         // Switch to A, but hold in preview
-        myState?.defer("A")
-        previewScale = 0.5f // Scale the parent AnimatedContent down by half
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewScale = 0.5f // Scale the parent AnimatedContent down by half
+        }
         rule.waitForIdle()
 
         val handoffBounds = getBounds()
@@ -1397,5 +1456,1044 @@ class DeferredSharedElementTest {
             "Detail bounds left after cancellation should be 0, but was ${detailBoundsAfterCancel.left}",
             detailBoundsAfterCancel.left == 0,
         )
+    }
+
+    @Test
+    fun testSharedElementNestedUnderAnimateEnterExit_preservesDeferredTransformAtHandoff() {
+        val state = DeferredTransitionState("A")
+        val scale = mutableFloatStateOf(1f)
+
+        rule.setContent {
+            val px20 = with(LocalDensity.current) { 20.toDp() }
+            val px40 = with(LocalDensity.current) { 40.toDp() }
+            val px60 = with(LocalDensity.current) { 60.toDp() }
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+
+            val transition = rememberDeferredTransition(state)
+            SharedTransitionLayout(Modifier.size(px200)) {
+                transition.DeferredAnimatedContent(
+                    transitionSpec = { EnterTransition.None togetherWith ExitTransition.None },
+                    mutableTransformSpec = {
+                        MutableContentTransform {
+                            initialContentTransform { this.scale = scale.floatValue }
+                        }
+                    },
+                ) { target ->
+                    Box(
+                        Modifier.fillMaxSize()
+                            .animateEnterExit(fadeIn(tween(300)), fadeOut(tween(300)))
+                    ) {
+                        Box(
+                            Modifier.offset(
+                                    x = if (target == "A") px20 else px60,
+                                    y = if (target == "A") px60 else px100,
+                                )
+                                .sharedElement(
+                                    sharedContentState = rememberSharedContentState("shared"),
+                                    animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    boundsTransform = { _, _ -> tween(300) },
+                                )
+                                .size(px40)
+                                .testTag("shared-$target")
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+
+        // 1. Enter deferred phase and scale outgoing content to 0.5x around center (100, 100).
+        // Untransformed A is at (20, 60) with size 40x40:
+        //   left = (20 - 100) * 0.5 + 100 = 60
+        //   top = (60 - 100) * 0.5 + 100 = 80
+        //   width = 40 * 0.5 = 20
+        rule.runOnIdle {
+            state.defer("B")
+            scale.floatValue = 0.5f
+        }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        val deferredBoundsA = rule.onNodeWithTag("shared-A").fetchSemanticsNode().boundsInRoot
+        assertEquals(60f, deferredBoundsA.left, 1f)
+        assertEquals(80f, deferredBoundsA.top, 1f)
+        assertEquals(20f, deferredBoundsA.width, 1f)
+
+        // 2. Commit transition to B and verify handoff starts from the transformed bounds (60, 80)
+        // with width 20, rather than snapping back to untransformed (20, 60) with width 40.
+        rule.runOnIdle { state.animateTo("B") }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        val commitBoundsA = rule.onNodeWithTag("shared-A").fetchSemanticsNode().boundsInRoot
+        val commitBoundsB = rule.onNodeWithTag("shared-B").fetchSemanticsNode().boundsInRoot
+        assertEquals(60f, commitBoundsA.left, 1f)
+        assertEquals(80f, commitBoundsA.top, 1f)
+        assertEquals(20f, commitBoundsA.width, 1f)
+        assertEquals(60f, commitBoundsB.left, 1f)
+        assertEquals(80f, commitBoundsB.top, 1f)
+        assertEquals(20f, commitBoundsB.width, 1f)
+    }
+
+    @Test
+    fun testSharedElementNestedUnderSharedBounds_preservesDeferredTransformAtHandoff() {
+        val state = DeferredTransitionState("A")
+        val scale = mutableFloatStateOf(1f)
+
+        rule.setContent {
+            val px20 = with(LocalDensity.current) { 20.toDp() }
+            val px40 = with(LocalDensity.current) { 40.toDp() }
+            val px60 = with(LocalDensity.current) { 60.toDp() }
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+
+            val transition = rememberDeferredTransition(state)
+            SharedTransitionLayout(Modifier.size(px200)) {
+                transition.DeferredAnimatedContent(
+                    transitionSpec = { EnterTransition.None togetherWith ExitTransition.None },
+                    mutableTransformSpec = {
+                        MutableContentTransform {
+                            initialContentTransform { this.scale = scale.floatValue }
+                        }
+                    },
+                ) { target ->
+                    Box(
+                        Modifier.fillMaxSize()
+                            .sharedBounds(
+                                sharedContentState = rememberSharedContentState("bounds"),
+                                animatedVisibilityScope = this@DeferredAnimatedContent,
+                                enter = fadeIn(tween(300)),
+                                exit = fadeOut(tween(300)),
+                                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+                            )
+                    ) {
+                        Box(
+                            Modifier.offset(
+                                    x = if (target == "A") px20 else px60,
+                                    y = if (target == "A") px60 else px100,
+                                )
+                                .sharedElement(
+                                    sharedContentState = rememberSharedContentState("shared"),
+                                    animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    boundsTransform = { _, _ -> tween(300) },
+                                )
+                                .size(px40)
+                                .testTag("shared-$target")
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+
+        // 1. Enter deferred phase and scale outgoing content to 0.5x around center (100, 100).
+        // Untransformed A is at (20, 60) with size 40x40:
+        //   left = (20 - 100) * 0.5 + 100 = 60
+        //   top = (60 - 100) * 0.5 + 100 = 80
+        //   width = 40 * 0.5 = 20
+        rule.runOnIdle {
+            state.defer("B")
+            scale.floatValue = 0.5f
+        }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        val deferredBoundsA = rule.onNodeWithTag("shared-A").fetchSemanticsNode().boundsInRoot
+        assertEquals(60f, deferredBoundsA.left, 1f)
+        assertEquals(80f, deferredBoundsA.top, 1f)
+        assertEquals(20f, deferredBoundsA.width, 1f)
+
+        // 2. Commit transition to B and verify handoff starts from the transformed bounds (60, 80)
+        // with width 20, rather than snapping back to untransformed (20, 60) with width 40.
+        rule.runOnIdle { state.animateTo("B") }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        val commitBoundsA = rule.onNodeWithTag("shared-A").fetchSemanticsNode().boundsInRoot
+        val commitBoundsB = rule.onNodeWithTag("shared-B").fetchSemanticsNode().boundsInRoot
+        assertEquals(60f, commitBoundsA.left, 1f)
+        assertEquals(80f, commitBoundsA.top, 1f)
+        assertEquals(20f, commitBoundsA.width, 1f)
+        assertEquals(60f, commitBoundsB.left, 1f)
+        assertEquals(80f, commitBoundsB.top, 1f)
+        assertEquals(20f, commitBoundsB.width, 1f)
+    }
+
+    private class IncomingMovableContentTestState {
+        var deferredState: DeferredTransitionState<String>? = null
+        var useMutableTransform by mutableStateOf(false)
+        var previewScale by mutableFloatStateOf(1f)
+        var isTransitionActive = false
+    }
+
+    /**
+     * Sets up a deferred transition from B to A. The shared element is 100x100 at x = 100..200 in B
+     * and 50x50 at x = 0..50 in A, followed by "sibling-A". The shared element's content is a
+     * [movableContentOf] that is only composed in the incoming (or visible) content. The shared
+     * element opts out of deferred transforms (`DeferredTransitionBehavior.Static`).
+     */
+    private fun setUpIncomingMovableContent(): IncomingMovableContentTestState {
+        val testState = IncomingMovableContentTestState()
+        rule.setContent {
+            val px50 = with(LocalDensity.current) { 50.toDp() }
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px300 = with(LocalDensity.current) { 300.toDp() }
+
+            val movableContent = remember {
+                movableContentOf { Box(Modifier.fillMaxSize().background(Color.Red)) }
+            }
+
+            SharedTransitionLayout(Modifier.size(px300).testTag("scope").background(Color.White)) {
+                val state = remember { DeferredTransitionState("B") }
+                testState.deferredState = state
+                val transition = rememberDeferredTransition(state)
+                testState.isTransitionActive = isTransitionActive
+                val mutableTransform = remember {
+                    MutableContentTransform {
+                        initialContentTransform {
+                            if (state.pendingTargetState != null) {
+                                scale = testState.previewScale
+                            }
+                        }
+                    }
+                }
+                transition.DeferredAnimatedContent(
+                    mutableTransformSpec = {
+                        if (testState.useMutableTransform) mutableTransform else null
+                    },
+                    transitionSpec = { fadeIn(tween(100)) togetherWith fadeOut(tween(100)) },
+                ) { target ->
+                    val isIncomingOrVisible =
+                        (this.transition.pendingTargetState ?: this.transition.targetState) ==
+                            EnterExitState.Visible
+                    Row(Modifier.fillMaxSize()) {
+                        if (target == "B") {
+                            Box(Modifier.size(px100))
+                        }
+                        Box(
+                            Modifier.sharedElement(
+                                    rememberSharedContentState(
+                                        "shared",
+                                        SharedContentConfig(
+                                            deferredTransitionBehavior =
+                                                SharedTransitionScope.DeferredTransitionBehavior
+                                                    .Static
+                                        ),
+                                    ),
+                                    animatedVisibilityScope = this@DeferredAnimatedContent,
+                                )
+                                .size(if (target == "B") px100 else px50)
+                        ) {
+                            if (isIncomingOrVisible) {
+                                movableContent()
+                            }
+                        }
+                        if (target == "A") {
+                            Box(Modifier.weight(1f).fillMaxSize().testTag("sibling-A"))
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        return testState
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testSharedElement_deferredPhase_doesNotActivateTransitionScope() {
+        val testState = setUpIncomingMovableContent()
+
+        rule.runOnIdle { testState.deferredState?.defer("A") }
+        rule.waitForIdle()
+        assertFalse(
+            "Expected SharedTransitionScope.isTransitionActive to be false during deferred phase " +
+                "when mutableTransformSpec is null",
+            testState.isTransitionActive,
+        )
+
+        rule.runOnIdle {
+            testState.useMutableTransform = true
+            testState.previewScale = 0.5f
+        }
+        rule.waitForIdle()
+        assertFalse(
+            "Expected SharedTransitionScope.isTransitionActive to remain false during deferred " +
+                "phase when deferredTransitionBehavior is Static",
+            testState.isTransitionActive,
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testSharedElement_rendersIncomingMovableContentAtOutgoingBoundsDuringDeferredPhase() {
+        val testState = setUpIncomingMovableContent()
+
+        // Defer transition from B to A, initially with mutableTransformSpec returning null.
+        rule.runOnIdle { testState.deferredState?.defer("A") }
+        rule.waitForIdle()
+
+        // 1. Incoming sibling in A should already be laid out next to A's 50px placeholder
+        // (left = 50, width = 250), rather than taking up the full 300px viewport.
+        val siblingBoundsDuringDefer =
+            rule.onNodeWithTag("sibling-A").fetchSemanticsNode().boundsInRoot
+        assertEquals(50f, siblingBoundsDuringDefer.left, 1f)
+        assertEquals(250f, siblingBoundsDuringDefer.width, 1f)
+
+        // 2. Even when mutableTransformSpec is null, the incoming content renders in the overlay
+        // with outgoing B's position and size (x = 100..200, y = 0..100), rather than with A's
+        // 50x50 bounds or vanishing inside A's hidden PreEnter container.
+        assertEquals(IntRect(100, 0, 200, 100), getBounds())
+
+        // 3. Enable mutableTransform scaling and verify the shared element still remains at
+        // outgoing B's unscaled bounds.
+        rule.runOnIdle {
+            testState.useMutableTransform = true
+            testState.previewScale = 0.5f
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(100, 0, 200, 100), getBounds())
+
+        // 4. Commit to A and verify it settles at A's bounds (x = 0..50, y = 0..50) with no
+        // sibling layout jump.
+        rule.runOnIdle { testState.deferredState?.animateTo("A") }
+        rule.waitForIdle()
+
+        val siblingBoundsAfterCommit =
+            rule.onNodeWithTag("sibling-A").fetchSemanticsNode().boundsInRoot
+        assertEquals(50f, siblingBoundsAfterCommit.left, 1f)
+        assertEquals(250f, siblingBoundsAfterCommit.width, 1f)
+        assertEquals(IntRect(0, 0, 50, 50), getBounds())
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testInterruptionHandoff_holdUntilForwardFinishesAndRepeat_noJump() {
+        var myState: DeferredTransitionState<String>? = null
+        var previewOffset by mutableStateOf(IntOffset.Zero)
+
+        rule.setContent {
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+            val px400 = with(LocalDensity.current) { 400.toDp() }
+
+            SharedTransitionLayout(Modifier.size(px400).testTag("scope").background(Color.White)) {
+                val state = remember { DeferredTransitionState("A") }
+                myState = state
+                val transition = rememberDeferredTransition(state)
+                val mutableTransform = remember {
+                    MutableContentTransform {
+                        initialContentTransform {
+                            if (state.pendingTargetState == "A") {
+                                offset = previewOffset
+                            }
+                        }
+                    }
+                }
+                transition.DeferredAnimatedContent(
+                    mutableTransformSpec = { mutableTransform },
+                    transitionSpec = {
+                        slideInHorizontally(tween(300)) { -it / 2 } togetherWith
+                            slideOutHorizontally(tween(300)) { it / 2 }
+                    },
+                ) { state ->
+                    Box(Modifier.fillMaxSize()) {
+                        if (state == "A") {
+                            Box(
+                                Modifier.sharedBounds(
+                                        rememberSharedContentState("shared"),
+                                        animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    )
+                                    .size(px100)
+                                    .background(Color.Red)
+                            )
+                        } else {
+                            Box(
+                                Modifier.offset(px200, px200)
+                                    .sharedBounds(
+                                        rememberSharedContentState("shared"),
+                                        animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    )
+                                    .size(px100)
+                                    .background(Color.Red)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+
+        // First gesture cycle: navigate to B, then defer and commit back to A so B is disposed
+        rule.runOnIdle { myState?.animateTo("B") }
+        rule.waitForIdle()
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewOffset = IntOffset(50, 50)
+        }
+        rule.waitForIdle()
+        rule.runOnIdle { myState?.animateTo("A") }
+        rule.waitForIdle()
+        rule.runOnIdle { previewOffset = IntOffset.Zero }
+
+        // Second gesture cycle: start forward transition A -> B, interrupt mid-flight with
+        // defer("A"), hold until A -> B finishes, then commit animateTo("A").
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { myState?.animateTo("B") }
+        rule.mainClock.advanceTimeBy(100)
+        rule.waitForIdle()
+
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewOffset = IntOffset(100, 100)
+        }
+        // Hold deferred gesture while forward A -> B transition finishes
+        rule.mainClock.advanceTimeBy(2000)
+        rule.waitForIdle()
+
+        val boundsAtEndOfHold = getBounds()
+        assertEquals(IntRect(300, 300, 400, 400), boundsAtEndOfHold)
+
+        // Commit back gesture B -> A and verify no jump on the handoff frame
+        rule.runOnIdle { myState?.animateTo("A") }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        val boundsAfterCommit = getBounds()
+        assertEquals(boundsAtEndOfHold, boundsAfterCommit)
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 100, 100), getBounds())
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testSharedElement_verticalScrollDuringDeferredPhaseAndCancel_tracksMfrOffset() {
+        var myState: DeferredTransitionState<String>? = null
+        var scrollState: ScrollState? = null
+        var previewOffset by mutableStateOf(IntOffset.Zero)
+
+        rule.setContent {
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+            val px400 = with(LocalDensity.current) { 400.toDp() }
+            val px600 = with(LocalDensity.current) { 600.toDp() }
+
+            val scroll = rememberScrollState(initial = 40)
+            scrollState = scroll
+
+            SharedTransitionLayout(Modifier.size(px400).testTag("scope").background(Color.White)) {
+                val state = remember { DeferredTransitionState("B") }
+                myState = state
+                val transition = rememberDeferredTransition(state)
+                val mutableTransform = remember {
+                    MutableContentTransform {
+                        initialContentTransform {
+                            if (state.pendingTargetState == "A") {
+                                offset = previewOffset
+                            }
+                        }
+                    }
+                }
+                transition.DeferredAnimatedContent(
+                    mutableTransformSpec = { mutableTransform },
+                    transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+                ) { target ->
+                    if (target == "B") {
+                        Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
+                            Spacer(Modifier.size(px200))
+                            Box(
+                                Modifier.sharedElement(
+                                        rememberSharedContentState("shared"),
+                                        animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    )
+                                    .size(px100)
+                                    .background(Color.Red)
+                            )
+                            Spacer(Modifier.size(px600))
+                        }
+                    } else {
+                        Box(Modifier.fillMaxSize()) {
+                            Box(
+                                Modifier.sharedElement(
+                                        rememberSharedContentState("shared"),
+                                        animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    )
+                                    .size(px100)
+                                    .background(Color.Red)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+
+        // Initial position on B with scroll = 40: y = 200 - 40 = 160..260
+        assertEquals(IntRect(0, 160, 100, 260), getBounds())
+
+        // Start deferred transition to A while already scrolled (initial MFR = -40)
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewOffset = IntOffset(20, 0)
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(20, 160, 120, 260), getBounds())
+
+        // Continue scrolling B's column during the deferred phase (scroll 40 -> 90, delta = +50)
+        rule.runOnIdle { scrollState?.dispatchRawDelta(50f) }
+        rule.waitForIdle()
+        assertEquals(90, scrollState?.value)
+        // Overlay should immediately reflect the 50px MFR scroll delta: y = 160 - 50 = 110..210
+        assertEquals(IntRect(20, 110, 120, 210), getBounds())
+
+        // Cancel the gesture back to B and verify there is no vertical jump from MFR mismatch
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { myState?.animateTo("B") }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        val boundsOnCancelFrame = getBounds()
+        assertEquals(110, boundsOnCancelFrame.top)
+        assertEquals(210, boundsOnCancelFrame.bottom)
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 110, 100, 210), getBounds())
+
+        // Defer again, scroll during the deferred phase (scroll 90 -> 140, delta = +50), then
+        // commit to A and verify the handoff frame does not double-apply the MFR delta.
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewOffset = IntOffset(20, 0)
+        }
+        rule.waitForIdle()
+        rule.runOnIdle { scrollState?.dispatchRawDelta(50f) }
+        rule.waitForIdle()
+        assertEquals(IntRect(20, 60, 120, 160), getBounds())
+
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { myState?.animateTo("A") }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+        assertEquals(IntRect(20, 60, 120, 160), getBounds())
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 100, 100), getBounds())
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testDetachedSeekingWithProgress() {
+        var myState: DeferredTransitionState<String>? = null
+        var previewProgress by mutableFloatStateOf(0f)
+
+        rule.setContent {
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+            val px300 = with(LocalDensity.current) { 300.toDp() }
+
+            SharedTransitionLayout(Modifier.size(px300).testTag("scope").background(Color.White)) {
+                val state = remember { DeferredTransitionState("B") }
+                myState = state
+                val transition = rememberDeferredTransition(state)
+                val mutableTransform = remember {
+                    MutableContentTransform {
+                        sharedElementProgress { previewProgress }
+                        initialContentTransform {
+                            if (state.pendingTargetState != null) {
+                                scale = 0.5f
+                            }
+                        }
+                    }
+                }
+                transition.DeferredAnimatedContent(
+                    mutableTransformSpec = { mutableTransform },
+                    transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+                ) { target ->
+                    Box(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier.sharedBounds(
+                                    rememberSharedContentState(
+                                        "shared",
+                                        SharedContentConfig(
+                                            deferredTransitionBehavior =
+                                                DeferredTransitionBehavior.SeekToTarget
+                                        ),
+                                    ),
+                                    animatedVisibilityScope = this@DeferredAnimatedContent,
+                                )
+                                .size(if (target == "A") px100 else px200)
+                                .background(Color.Red)
+                        )
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+
+        // Start deferred transition B (200x200) -> A (100x100) and seek to 25% -> 175x175
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewProgress = 0.25f
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 175, 175), getBounds())
+
+        // Seek to 50% on a subsequent frame -> 150x150 (must not compound-lerp)
+        rule.runOnIdle { previewProgress = 0.5f }
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 150, 150), getBounds())
+
+        // Cancel back to B and verify it returns to B's resting bounds (200x200)
+        rule.runOnIdle { myState?.animateTo("B") }
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 200, 200), getBounds())
+
+        // Defer again to A, seek to 50%, then commit to A and verify handoff starts from 150x150
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewProgress = 0.5f
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 150, 150), getBounds())
+
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { myState?.animateTo("A") }
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 150, 150), getBounds())
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 100, 100), getBounds())
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testStaticBehaviorIgnoresSharedElementProgress() {
+        var myState: DeferredTransitionState<String>? = null
+        var previewProgress by mutableFloatStateOf(0f)
+
+        rule.setContent {
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+            val px300 = with(LocalDensity.current) { 300.toDp() }
+
+            SharedTransitionLayout(Modifier.size(px300).testTag("scope").background(Color.White)) {
+                val state = remember { DeferredTransitionState("B") }
+                myState = state
+                val transition = rememberDeferredTransition(state)
+                val mutableTransform = remember {
+                    MutableContentTransform {
+                        sharedElementProgress { previewProgress }
+                        initialContentTransform {
+                            if (state.pendingTargetState != null) {
+                                scale = 0.5f
+                            }
+                        }
+                    }
+                }
+                transition.DeferredAnimatedContent(
+                    mutableTransformSpec = { mutableTransform },
+                    transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+                ) { target ->
+                    Box(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier.sharedBounds(
+                                    rememberSharedContentState(
+                                        "shared",
+                                        SharedContentConfig(
+                                            deferredTransitionBehavior =
+                                                DeferredTransitionBehavior.Static
+                                        ),
+                                    ),
+                                    animatedVisibilityScope = this@DeferredAnimatedContent,
+                                )
+                                .size(if (target == "A") px100 else px200)
+                                .background(Color.Red)
+                        )
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+
+        // Start deferred transition B (200x200) -> A (100x100) with progress = 0.5f.
+        // Because deferredTransitionBehavior is Static (not SeekToTarget), it must stay at 200x200.
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewProgress = 0.5f
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 200, 200), getBounds())
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testSharedElementSeeking_changesBothSizeAndPosition() {
+        var myState: DeferredTransitionState<String>? = null
+        var previewProgress by mutableFloatStateOf(0f)
+
+        rule.setContent {
+            val px0 = with(LocalDensity.current) { 0.toDp() }
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+            val px300 = with(LocalDensity.current) { 300.toDp() }
+
+            SharedTransitionLayout(Modifier.size(px300).testTag("scope").background(Color.White)) {
+                val state = remember { DeferredTransitionState("B") }
+                myState = state
+                val transition = rememberDeferredTransition(state)
+                val mutableTransform = remember {
+                    MutableContentTransform {
+                        sharedElementProgress { previewProgress }
+                        initialContentTransform {
+                            if (state.pendingTargetState != null) {
+                                scale = 0.5f
+                            }
+                        }
+                    }
+                }
+                transition.DeferredAnimatedContent(
+                    mutableTransformSpec = { mutableTransform },
+                    transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+                ) { target ->
+                    Box(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier.offset(
+                                    x = if (target == "A") px100 else px0,
+                                    y = if (target == "A") px100 else px0,
+                                )
+                                .sharedElement(
+                                    rememberSharedContentState(
+                                        "shared",
+                                        SharedContentConfig(
+                                            deferredTransitionBehavior =
+                                                DeferredTransitionBehavior.SeekToTarget
+                                        ),
+                                    ),
+                                    animatedVisibilityScope = this@DeferredAnimatedContent,
+                                )
+                                .size(if (target == "A") px100 else px200)
+                                .background(Color.Red)
+                        )
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 200, 200), getBounds())
+
+        // Start deferred transition B ((0, 0) 200x200) -> A ((100, 100) 100x100) and seek to 25%:
+        // topLeft = (25, 25), size = 175x175 -> IntRect(25, 25, 200, 200)
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewProgress = 0.25f
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(25, 25, 200, 200), getBounds())
+
+        // Seek to 50% on a subsequent frame -> topLeft = (50, 50), size = 150x150
+        rule.runOnIdle { previewProgress = 0.5f }
+        rule.waitForIdle()
+        assertEquals(IntRect(50, 50, 200, 200), getBounds())
+
+        // Cancel back to B and verify it returns to B's resting bounds ((0, 0) 200x200)
+        rule.runOnIdle { myState?.animateTo("B") }
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 200, 200), getBounds())
+
+        // Defer again to A, seek to 50%, then commit to A and verify handoff starts from
+        // (50, 50) 150x150 and settles at (100, 100) 100x100
+        rule.runOnIdle {
+            myState?.defer("A")
+            previewProgress = 0.5f
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(50, 50, 200, 200), getBounds())
+
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { myState?.animateTo("A") }
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+        assertEquals(IntRect(50, 50, 200, 200), getBounds())
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertEquals(IntRect(100, 100, 200, 200), getBounds())
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testDetachedSeekingHandoffVelocity() {
+        var myState: DeferredTransitionState<String>? = null
+        var previewProgress by mutableFloatStateOf(0f)
+
+        try {
+            rule.setContent {
+                val px0 = with(LocalDensity.current) { 0.toDp() }
+                val px50 = with(LocalDensity.current) { 50.toDp() }
+                val px100 = with(LocalDensity.current) { 100.toDp() }
+                val px200 = with(LocalDensity.current) { 200.toDp() }
+                val px300 = with(LocalDensity.current) { 300.toDp() }
+
+                SharedTransitionLayout(
+                    Modifier.size(px300).testTag("scope").background(Color.White)
+                ) {
+                    val state = remember { DeferredTransitionState("B") }
+                    myState = state
+                    val transition = rememberDeferredTransition(state)
+                    val mutableTransform = remember {
+                        MutableContentTransform { sharedElementProgress { previewProgress } }
+                    }
+                    transition.DeferredAnimatedContent(
+                        mutableTransformSpec = { mutableTransform },
+                        transitionSpec = {
+                            fadeIn(tween(1000)) togetherWith
+                                fadeOut(
+                                    spring(
+                                        stiffness = Spring.StiffnessVeryLow,
+                                        visibilityThreshold = null,
+                                    )
+                                )
+                        },
+                    ) { target ->
+                        Box(Modifier.fillMaxSize()) {
+                            Box(
+                                Modifier.offset(
+                                        x = if (target == "A") px50 else px0,
+                                        y = if (target == "A") px50 else px0,
+                                    )
+                                    .sharedBounds(
+                                        rememberSharedContentState(
+                                            "shared",
+                                            SharedContentConfig(
+                                                deferredTransitionBehavior =
+                                                    DeferredTransitionBehavior.SeekToTarget
+                                            ),
+                                        ),
+                                        animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    )
+                                    .size(if (target == "A") px100 else px200)
+                                    .background(Color.Red)
+                            )
+                        }
+                    }
+                }
+            }
+            rule.waitForIdle()
+            rule.mainClock.autoAdvance = false
+
+            fun simulateSeekGesture(isFast: Boolean): IntRect {
+                rule.runOnIdle { myState?.defer("A") }
+                rule.mainClock.advanceTimeByFrame()
+                rule.waitForIdle()
+
+                val steps =
+                    if (isFast) {
+                        listOf(0.1f, 0.3f, 0.5f)
+                    } else {
+                        listOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f)
+                    }
+                for (p in steps) {
+                    previewProgress = p
+                    rule.mainClock.advanceTimeByFrame()
+                    rule.waitForIdle()
+                }
+
+                rule.runOnIdle { myState!!.animateTo("A") }
+                repeat(3) { rule.mainClock.advanceTimeByFrame() }
+                rule.waitForIdle()
+
+                return getBounds()
+            }
+
+            // Scenario 1: Slow seek gesture from B (0, 0, 200, 200) toward A (50, 50, 150, 150)
+            val boundsSlow = simulateSeekGesture(isFast = false)
+
+            // Reset state back to B
+            rule.mainClock.autoAdvance = true
+            rule.runOnIdle { myState!!.animateTo("B") }
+            rule.waitForIdle()
+            rule.mainClock.autoAdvance = false
+            previewProgress = 0f
+
+            // Scenario 2: Fast seek gesture
+            val boundsFast = simulateSeekGesture(isFast = true)
+
+            // With higher progress velocity toward A (50, 50, 150, 150), all four edges
+            // should have moved further toward A's bounds at t+3 frames.
+            assertTrue(
+                "Expected $boundsFast to be further toward (50, 50, 150, 150) than $boundsSlow",
+                boundsFast.left > boundsSlow.left &&
+                    boundsFast.top > boundsSlow.top &&
+                    boundsFast.right < boundsSlow.right &&
+                    boundsFast.bottom < boundsSlow.bottom,
+            )
+        } finally {
+            rule.mainClock.autoAdvance = true
+        }
+    }
+
+    @Test
+    fun testSharedElementInPlace_deferredScaleUpdate_doesNotDoubleApplyTransform() {
+        val state = DeferredTransitionState("A")
+        val scale = mutableFloatStateOf(1f)
+        val placedPositionsInParent = mutableListOf<Offset>()
+
+        rule.setContent {
+            val px20 = with(LocalDensity.current) { 20.toDp() }
+            val px40 = with(LocalDensity.current) { 40.toDp() }
+            val px60 = with(LocalDensity.current) { 60.toDp() }
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+
+            val transition = rememberDeferredTransition(state)
+            SharedTransitionLayout(Modifier.size(px200)) {
+                transition.DeferredAnimatedContent(
+                    transitionSpec = { EnterTransition.None togetherWith ExitTransition.None },
+                    mutableTransformSpec = {
+                        MutableContentTransform {
+                            initialContentTransform { this.scale = scale.floatValue }
+                        }
+                    },
+                ) { target ->
+                    Box(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier.offset(
+                                    x = if (target == "A") px20 else px60,
+                                    y = if (target == "A") px60 else px100,
+                                )
+                                .sharedElement(
+                                    sharedContentState = rememberSharedContentState("shared"),
+                                    animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    boundsTransform = { _, _ -> tween(300) },
+                                )
+                                .onPlaced { coords ->
+                                    if (target == "A") {
+                                        placedPositionsInParent.add(coords.positionInParent())
+                                    }
+                                }
+                                .size(px40)
+                                .testTag("shared-$target")
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+
+        placedPositionsInParent.clear()
+        rule.runOnIdle {
+            state.defer("B")
+            scale.floatValue = 0.5f
+        }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        // While rendered in place inside the 0.5x scaled container, the shared element's local
+        // position inside the container must stay at (20, 60) on every placement pass so the
+        // container's graphics layer scales it once to (60, 80) in root coordinates (rather than
+        // placing it at local (60, 80) against a stale 1.0x layer and scaling it twice).
+        assertTrue(placedPositionsInParent.isNotEmpty())
+        for (pos in placedPositionsInParent) {
+            assertEquals(20f, pos.x, 1f)
+            assertEquals(60f, pos.y, 1f)
+        }
+
+        val boundsInRoot = rule.onNodeWithTag("shared-A").fetchSemanticsNode().boundsInRoot
+        assertEquals(60f, boundsInRoot.left, 1f)
+        assertEquals(80f, boundsInRoot.top, 1f)
+        assertEquals(20f, boundsInRoot.width, 1f)
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testSharedElement_interruptedDeferralToUnmatchedState_remainsVisible() {
+        var deferredState: DeferredTransitionState<String>? = null
+
+        rule.setContent {
+            val px100 = with(LocalDensity.current) { 100.toDp() }
+            val px200 = with(LocalDensity.current) { 200.toDp() }
+            val px300 = with(LocalDensity.current) { 300.toDp() }
+
+            SharedTransitionLayout(Modifier.size(px300).testTag("scope").background(Color.White)) {
+                val state = remember { DeferredTransitionState("A") }
+                deferredState = state
+                val transition = rememberDeferredTransition(state)
+                transition.DeferredAnimatedContent(
+                    transitionSpec = { fadeIn(tween(1000)) togetherWith fadeOut(tween(1000)) }
+                ) { target ->
+                    Box(Modifier.fillMaxSize()) {
+                        // C has no matching shared element.
+                        if (target != "C") {
+                            val offsetDp = if (target == "B") px200 else 0.dp
+                            Box(
+                                Modifier.offset(offsetDp, offsetDp)
+                                    .sharedElement(
+                                        rememberSharedContentState("shared"),
+                                        animatedVisibilityScope = this@DeferredAnimatedContent,
+                                    )
+                                    .size(px100)
+                                    .background(Color.Red)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertEquals(IntRect(0, 0, 100, 100), getBounds())
+
+        try {
+            rule.mainClock.autoAdvance = false
+            rule.runOnIdle { deferredState?.animateTo("B") }
+            rule.mainClock.advanceTimeBy(100)
+            rule.waitForIdle()
+            val boundsMidFlight = getBounds()
+            assertTrue(
+                "Expected $boundsMidFlight to be in flight between A and B",
+                boundsMidFlight.left in 1..199,
+            )
+
+            // Deferring to C (no matching shared element) while A -> B is in flight must keep the
+            // outgoing B entry rendering and continuing its bounds animation toward B rather than
+            // disappearing or snapping to its final position.
+            rule.runOnIdle { deferredState?.defer("C") }
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+            val boundsDuringDefer = getBounds()
+            assertTrue(
+                "Expected $boundsDuringDefer to remain visible and mid-flight from $boundsMidFlight",
+                boundsDuringDefer != IntRect.Zero &&
+                    boundsDuringDefer.left in boundsMidFlight.left..199,
+            )
+
+            rule.mainClock.advanceTimeBy(100)
+            rule.waitForIdle()
+            val boundsLaterInDefer = getBounds()
+            assertTrue(
+                "Expected $boundsLaterInDefer to continue animating toward B from $boundsDuringDefer",
+                boundsLaterInDefer.left > boundsDuringDefer.left &&
+                    boundsLaterInDefer.top > boundsDuringDefer.top,
+            )
+        } finally {
+            rule.mainClock.autoAdvance = true
+        }
+        rule.runOnIdle { deferredState?.animateTo("B") }
+        rule.waitForIdle()
+        assertEquals(IntRect(200, 200, 300, 300), getBounds())
     }
 }

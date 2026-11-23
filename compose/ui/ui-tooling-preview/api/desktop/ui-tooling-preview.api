@@ -39,6 +39,12 @@ public final class androidx/compose/ui/tooling/preview/Devices {
 	public static final field NEXUS_9 Ljava/lang/String;
 	public static final field PHONE Ljava/lang/String;
 	public static final field PIXEL Ljava/lang/String;
+	public static final field PIXEL_10 Ljava/lang/String;
+	public static final field PIXEL_10A Ljava/lang/String;
+	public static final field PIXEL_10_PRO Ljava/lang/String;
+	public static final field PIXEL_10_PRO_FOLD Ljava/lang/String;
+	public static final field PIXEL_10_PRO_XL Ljava/lang/String;
+	public static final field PIXEL_11_PRO_FOLD Ljava/lang/String;
 	public static final field PIXEL_2 Ljava/lang/String;
 	public static final field PIXEL_2_XL Ljava/lang/String;
 	public static final field PIXEL_3 Ljava/lang/String;
@@ -59,6 +65,7 @@ public final class androidx/compose/ui/tooling/preview/Devices {
 	public static final field PIXEL_8A Ljava/lang/String;
 	public static final field PIXEL_8_PRO Ljava/lang/String;
 	public static final field PIXEL_9 Ljava/lang/String;
+	public static final field PIXEL_9A Ljava/lang/String;
 	public static final field PIXEL_9_PRO Ljava/lang/String;
 	public static final field PIXEL_9_PRO_FOLD Ljava/lang/String;
 	public static final field PIXEL_9_PRO_XL Ljava/lang/String;

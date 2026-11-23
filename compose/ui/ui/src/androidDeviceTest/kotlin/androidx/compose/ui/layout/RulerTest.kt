@@ -35,9 +35,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateRulers
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.filters.MediumTest
@@ -563,6 +567,89 @@ class RulerTest(val useIndividualRulers: Boolean) {
         assertThat(vertRead).isEqualTo(!useIndividualRulers)
     }
 
+    @Test
+    fun repeatedReadsWithoutValueChange_stillInvalidateOnChange() {
+        val verticalKeylineValues = mutableFloatListOf()
+        var vertValue by mutableFloatStateOf(35f)
+        var replaceTrigger by mutableIntStateOf(0)
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(100.toDp(), 150.toDp())
+                        .provideRulers(horz = { 53f }, vert = { vertValue })
+                ) {
+                    Box(
+                        Modifier.align(AbsoluteAlignment.TopLeft)
+                            .offset(x = 25.toDp(), y = 50.toDp())
+                            .requiredSize(50.toDp())
+                            .layout { measurable, constraints ->
+                                val p = measurable.measure(constraints)
+                                layout(p.width, p.height) {
+                                    replaceTrigger // re-place without changing the ruler value
+                                    verticalKeylineValues += verticalRuler.current(0f)
+                                    p.place(0, 0)
+                                }
+                            }
+                    )
+                }
+            }
+        }
+        rule.waitForIdle()
+        repeat(20) {
+            replaceTrigger++
+            rule.waitForIdle()
+        }
+        assertThat(verticalKeylineValues.size).isEqualTo(21)
+        assertThat(verticalKeylineValues.last()).isEqualTo(10f)
+
+        // A single value change re-places the reader exactly once with the new value.
+        vertValue = 34f
+        rule.waitForIdle()
+        assertThat(verticalKeylineValues.size).isEqualTo(22)
+        assertThat(verticalKeylineValues.last()).isEqualTo(9f)
+
+        // The reader is re-registered and observes subsequent changes.
+        vertValue = 33f
+        rule.waitForIdle()
+        assertThat(verticalKeylineValues.size).isEqualTo(23)
+        assertThat(verticalKeylineValues.last()).isEqualTo(8f)
+    }
+
+    @Test
+    fun removedReader_notReplacedOnValueChange() {
+        var readerPlacements = 0
+        var vertValue by mutableFloatStateOf(35f)
+        var showReader by mutableStateOf(true)
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(100.toDp(), 150.toDp())
+                        .provideRulers(horz = { 53f }, vert = { vertValue })
+                ) {
+                    if (showReader) {
+                        Box(
+                            Modifier.requiredSize(50.toDp()).layout { measurable, constraints ->
+                                val p = measurable.measure(constraints)
+                                layout(p.width, p.height) {
+                                    readerPlacements++
+                                    verticalRuler.current(0f)
+                                    p.place(0, 0)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertThat(readerPlacements).isEqualTo(1)
+        showReader = false
+        rule.waitForIdle()
+        vertValue = 34f
+        rule.waitForIdle()
+        assertThat(readerPlacements).isEqualTo(1)
+    }
+
     fun Modifier.provideRulers(horz: Float = 53f, vert: Float = 35f) =
         if (useIndividualRulers) {
             layout { measurable, constraints ->
@@ -901,6 +988,151 @@ class RulerTest(val useIndividualRulers: Boolean) {
 
         // 8. Verify C is updated to 40 (meaning it was invalidated and re-evaluated)
         assertThat(readValueC).isEqualTo(40f)
+    }
+
+    @Test
+    fun invalidateRulersRecalculatesNonStateValue() {
+        val node = NonStateRulerNode(verticalRuler, useIndividualRulers)
+        node.rulerValue = 10f
+        val readValues = mutableFloatListOf()
+        rule.setContent {
+            Box(Modifier.then(NonStateRulerElement(node))) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                        val p = measurable.measure(constraints)
+                        layout(p.width, p.height) {
+                            readValues += verticalRuler.current(Float.NaN)
+                            p.place(0, 0)
+                        }
+                    }
+                )
+            }
+        }
+        rule.waitForIdle()
+        assertThat(readValues.size).isEqualTo(1)
+        assertThat(readValues[0]).isEqualTo(10f)
+
+        // Changing a non-state value is not observed, so nothing is relaid out.
+        rule.runOnIdle { node.rulerValue = 20f }
+        rule.waitForIdle()
+        assertThat(readValues.size).isEqualTo(1)
+
+        rule.runOnIdle { node.invalidateRulers() }
+        rule.waitForIdle()
+        assertThat(readValues.size).isEqualTo(2)
+        assertThat(readValues[1]).isEqualTo(20f)
+    }
+
+    @Test
+    fun invalidateRulersWhenDetachedDoesNotCrash() {
+        val node = NonStateRulerNode(verticalRuler, useIndividualRulers)
+        node.invalidateRulers()
+    }
+
+    @Test
+    fun invalidateRulersUnchangedValueDoesNotRelayoutReaders() {
+        // Provided rulers are lazily calculated, so readers are always relaid out.
+        if (useIndividualRulers) return
+
+        val node = NonStateRulerNode(verticalRuler, useIndividualRulers)
+        node.rulerValue = 10f
+        val readValues = mutableFloatListOf()
+        rule.setContent {
+            Box(Modifier.then(NonStateRulerElement(node))) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                        val p = measurable.measure(constraints)
+                        layout(p.width, p.height) {
+                            readValues += verticalRuler.current(Float.NaN)
+                            p.place(0, 0)
+                        }
+                    }
+                )
+            }
+        }
+        rule.waitForIdle()
+        assertThat(readValues.size).isEqualTo(1)
+
+        rule.runOnIdle { node.invalidateRulers() }
+        rule.waitForIdle()
+        assertThat(readValues.size).isEqualTo(1)
+    }
+
+    @Test
+    fun invalidateRulersInLookaheadScope() {
+        val node = NonStateRulerNode(verticalRuler, useIndividualRulers)
+        node.rulerValue = 10f
+        val lookaheadValues = mutableFloatListOf()
+        val readValues = mutableFloatListOf()
+        rule.setContent {
+            LookaheadScope {
+                Box(Modifier.then(NonStateRulerElement(node))) {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                            val p = measurable.measure(constraints)
+                            val lookingAhead = isLookingAhead
+                            layout(p.width, p.height) {
+                                val value = verticalRuler.current(Float.NaN)
+                                if (lookingAhead) {
+                                    lookaheadValues += value
+                                } else {
+                                    readValues += value
+                                }
+                                p.place(0, 0)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertThat(lookaheadValues.size).isAtLeast(1)
+        assertThat(lookaheadValues.last()).isEqualTo(10f)
+        assertThat(readValues.size).isAtLeast(1)
+        assertThat(readValues.last()).isEqualTo(10f)
+
+        rule.runOnIdle { node.rulerValue = 20f }
+        rule.waitForIdle()
+        assertThat(lookaheadValues.last()).isEqualTo(10f)
+        assertThat(readValues.last()).isEqualTo(10f)
+
+        rule.runOnIdle { node.invalidateRulers() }
+        rule.waitForIdle()
+        assertThat(lookaheadValues.last()).isEqualTo(20f)
+        assertThat(readValues.last()).isEqualTo(20f)
+    }
+
+    private class NonStateRulerNode(val ruler: VerticalRuler, val useIndividualRulers: Boolean) :
+        Modifier.Node(), LayoutModifierNode {
+        var rulerValue = 0f
+
+        override fun MeasureScope.measure(
+            measurable: Measurable,
+            constraints: Constraints,
+        ): MeasureResult {
+            val p = measurable.measure(constraints)
+            return if (useIndividualRulers) {
+                layout(
+                    p.width,
+                    p.height,
+                    isRulerProvided = { it == ruler },
+                    rulerProvider = { ruler.provides(rulerValue) },
+                ) {
+                    p.place(0, 0)
+                }
+            } else {
+                layout(p.width, p.height, rulers = { ruler.provides(rulerValue) }) {
+                    p.place(0, 0)
+                }
+            }
+        }
+    }
+
+    private data class NonStateRulerElement(val node: NonStateRulerNode) :
+        ModifierNodeElement<NonStateRulerNode>() {
+        override fun create(): NonStateRulerNode = node
+
+        override fun update(node: NonStateRulerNode) {}
     }
 
     companion object {

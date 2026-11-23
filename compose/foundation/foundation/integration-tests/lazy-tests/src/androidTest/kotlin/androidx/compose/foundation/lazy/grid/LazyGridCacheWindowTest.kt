@@ -17,11 +17,13 @@
 package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.R
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
+import androidx.compose.foundation.lazy.layout.TestPrefetchScheduler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
@@ -31,9 +33,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
@@ -62,6 +66,8 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
 
     private val viewportWindow = LazyLayoutCacheWindow(aheadFraction = 1f, behindFraction = 1f)
 
+    private val scheduler = TestPrefetchScheduler()
+
     @Test
     fun prefetchingForwardInitially() {
         composeGrid(cacheWindow = viewportWindow)
@@ -81,6 +87,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         composeGrid(cacheWindow = viewportWindow)
         val preFetchIndex = 4
         rule.runOnIdle { runBlocking { state.scrollBy(5f) } }
+        waitForPrefetch()
 
         // the viewport fits 1.5 lines, we start with indices 0, 1, 2 and 3 visible.
         // line 1 is halfway in the window, we will be able to fit 1 extra line.
@@ -98,6 +105,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         composeGrid(firstItem = 6, itemOffset = 10, cacheWindow = viewportWindow)
 
         rule.runOnIdle { runBlocking { state.scrollBy(-5f) } }
+        waitForPrefetch()
 
         rule.onNodeWithTag("5").assertExists()
         rule.onNodeWithTag("4").assertExists()
@@ -111,6 +119,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
     fun scrollForward_shouldNotDisposeItemsInWindow() {
         composeGrid(firstItem = 6, cacheWindow = viewportWindow)
         rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx * 2.5f) } }
+        waitForPrefetch()
         // Starting on line 3 and moving 2.5 lines, we will end up on line 5.
         // This means item 10-13 will be visible, item 14-17 will be in the window.
         // On the other side, items 6-9 will be in the window.
@@ -146,6 +155,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("15").assertExists()
 
         rule.runOnIdle { runBlocking { state.scrollBy(-itemsSizePx * 2.5f) } }
+        waitForPrefetch()
         // We will scroll 2.5 line sizes back. This means that we will line up item 10 and then move
         // two lines to item 6 (4 items). Now item 6-9 will be visible. We will prefetch 2 lines
         // forward, items 2-5. We will keep around 1 line of items, 10 an 12.
@@ -153,6 +163,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
             assertThat(state.firstVisibleItemIndex).isEqualTo(6)
             remeasure.forceRemeasure()
         }
+        waitForPrefetch()
 
         rule.onNodeWithTag("0").assertDoesNotExist() // line 0
         rule.onNodeWithTag("1").assertDoesNotExist()
@@ -183,6 +194,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("99").assertExists()
 
         rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx.toFloat()) } }
+        waitForPrefetch()
 
         /**
          * At this point items 96-99 are on the visible window there is still space left on the
@@ -193,7 +205,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("100").assertDoesNotExist()
 
         rule.runOnIdle { numItems.value = 200 }
-        rule.waitForIdle()
+        waitForPrefetch()
 
         rule.onNodeWithTag("100").assertExists() // window is not full
         rule.onNodeWithTag("101").assertExists() // window is not full
@@ -210,6 +222,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("95").assertIsDisplayed()
 
         rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx.toFloat()) } }
+        waitForPrefetch()
 
         /**
          * At this point items 94-97 are on the visible window and 98-99 are in the cache window.
@@ -225,10 +238,24 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("101").assertDoesNotExist()
 
         rule.runOnIdle { numItems.value = 200 }
-        rule.waitForIdle()
+        waitForPrefetch()
 
         rule.onNodeWithTag("100").assertDoesNotExist() // window is full
         rule.onNodeWithTag("101").assertDoesNotExist() // window is full
+    }
+
+    @Test
+    fun prefetchedLineSize_usesTallestItemInLine() {
+        val aheadWindow = with(rule.density) { (itemsSizePx * 5 / 6).toDp() }
+        composeGrid(
+            cacheWindow = LazyLayoutCacheWindow(ahead = aheadWindow),
+            itemSize = { index -> if (index % 2 == 0) itemsSizeDp else itemsSizeDp / 6 },
+        )
+
+        rule.onNodeWithTag("4").assertExists()
+        rule.onNodeWithTag("5").assertExists()
+        rule.onNodeWithTag("6").assertDoesNotExist()
+        rule.onNodeWithTag("7").assertDoesNotExist()
     }
 
     private val activeNodes = mutableSetOf<Int>()
@@ -255,8 +282,10 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
         reverseLayout: Boolean = false,
         numItems: State<Int> = mutableStateOf(100),
         contentPadding: PaddingValues = PaddingValues(0.dp),
+        itemSize: (index: Int) -> Dp = { itemsSizeDp },
     ) {
         rule.setContent {
+            LocalView.current.setTag(R.id.compose_prefetch_scheduler, scheduler)
             state =
                 rememberState(
                     cacheWindow = cacheWindow,
@@ -283,7 +312,7 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
                         onDispose { activeNodes.remove(it) }
                     }
                     Spacer(
-                        Modifier.mainAxisSize(itemsSizeDp).testTag("$it").layout {
+                        Modifier.mainAxisSize(itemSize(it)).testTag("$it").layout {
                             measurable,
                             constraints ->
                             val placeable = measurable.measure(constraints)
@@ -293,5 +322,10 @@ class LazyGridCacheWindowTest(orientation: Orientation) :
                 }
             }
         }
+        waitForPrefetch()
+    }
+
+    private fun waitForPrefetch() {
+        rule.runOnIdle { scheduler.executeActiveRequests() }
     }
 }

@@ -17,8 +17,10 @@
 package androidx.compose.ui.platform.accessibility
 
 import androidx.collection.MutableIntObjectMap
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.containsImportantForAccessibility
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 
@@ -90,6 +92,7 @@ internal fun List<SemanticsNode>.flattenA11YWrappers(
  * "Wrapper" here means a structural semantics node that contains children but exposes nothing
  * meaningful to accessibility itself
  */
+@OptIn(ExperimentalComposeUiHostApi::class)
 private fun SemanticsNode.isA11YWrapper(): Boolean =
     !isFake &&
         !unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false } &&

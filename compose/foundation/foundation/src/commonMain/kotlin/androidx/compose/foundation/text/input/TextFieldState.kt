@@ -19,6 +19,8 @@
 package androidx.compose.foundation.text.input
 
 import androidx.annotation.VisibleForTesting
+import androidx.collection.MutableObjectList
+import androidx.collection.mutableObjectListOf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.foundation.text.input.internal.TextStyleBuffer
@@ -26,10 +28,9 @@ import androidx.compose.foundation.text.input.internal.undo.TextFieldEditUndoBeh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.annotation.RememberInComposition
-import androidx.compose.runtime.collection.MutableVector
-import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver as ComposeSaver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -60,13 +61,62 @@ internal constructor(
     initialSelection: TextRange,
     initialTextUndoManager: TextUndoManager,
     initialTextStyles: TextFieldTextStylesImpl?,
+    onTextChanged: ((CharSequence) -> Unit)?,
 ) {
 
     @RememberInComposition
     public constructor(
         initialText: String = "",
         initialSelection: TextRange = TextRange(initialText.length),
-    ) : this(initialText, initialSelection, TextUndoManager(), null)
+    ) : this(initialText, initialSelection, TextUndoManager(), null, null)
+
+    /**
+     * Creates a [TextFieldState] that calls [onTextChanged] when its text changes.
+     *
+     * [onTextChanged] is called after each commit that changes the text. This includes user input,
+     * [edit] and its helpers such as [setTextAndPlaceCursorAtEnd] and [clearText], and undo/redo.
+     * It is not called when only the [selection], the [composition], or the [textStyles] change.
+     *
+     * [onTextChanged] runs on the thread that made the edit, before the edit call returns. When
+     * [onTextChanged] runs, [text] and [selection] show the new value, the undo entry is recorded,
+     * and the IME has been notified.
+     *
+     * [onTextChanged] must not change this state. Calling [edit], its helpers, or [UndoState.undo]
+     * and [UndoState.redo] on this state from [onTextChanged] throws an [IllegalStateException]. To
+     * intercept and modify user input, use [InputTransformation].
+     *
+     * The [CharSequence] passed to [onTextChanged] is provided for convenience and has the same
+     * text content as [TextFieldState.text]. To read the selection, read [selection] inside the
+     * callback.
+     *
+     * A state restored by [Saver] has no [onTextChanged]. Use `TextFieldState.Saver(onTextChanged)`
+     * to restore the state with the callback. [rememberTextFieldState] does this.
+     *
+     * @param initialText The initial text state.
+     * @param initialSelection The initial selection state.
+     * @param onTextChanged Called after each commit that changes the text, receiving the new text
+     *   with the same content as [TextFieldState.text].
+     * @sample androidx.compose.foundation.samples.TextFieldStateOnTextChangedSample
+     */
+    @RememberInComposition
+    public constructor(
+        initialText: String = "",
+        initialSelection: TextRange = TextRange(initialText.length),
+        onTextChanged: ((CharSequence) -> Unit)?,
+    ) : this(initialText, initialSelection, TextUndoManager(), null, onTextChanged)
+
+    /**
+     * Callback invoked by [dispatchOnTextChanged] after each committed change that alters the text
+     * content. Backed by snapshot state so [rememberTextFieldState] can update it directly in
+     * composition, and reassigned by [Saver] on restoration.
+     */
+    internal var onTextChanged: ((CharSequence) -> Unit)? by mutableStateOf(onTextChanged)
+
+    private val unobservedOnTextChanged: ((CharSequence) -> Unit)?
+        get() = Snapshot.withoutReadObservation { onTextChanged }
+
+    /** True while [onTextChanged] runs. See [checkNotInOnTextChanged]. */
+    private var isInOnTextChanged: Boolean = false
 
     /** Manages the history of edit operations that happen in this [TextFieldState]. */
     internal val textUndoManager: TextUndoManager = initialTextUndoManager
@@ -231,6 +281,7 @@ internal constructor(
     @Suppress("ShowingMemberInHiddenClass")
     @PublishedApi
     internal fun startEdit(): TextFieldBuffer {
+        checkNotInOnTextChanged()
         val isEditingFreeze = Snapshot.withoutReadObservation { isEditing }
         checkPrecondition(!isEditingFreeze) {
             "TextFieldState does not support concurrent or nested editing."
@@ -263,6 +314,15 @@ internal constructor(
             newValue.canCallAddStyle = true
         }
 
+        val valueTextChanged =
+            if (!textChanged) {
+                false
+            } else if (unobservedOnTextChanged != null) {
+                hasTextChanged(value, newValue.asCharSequence(), newValue.changes)
+            } else {
+                null
+            }
+
         if (textChanged) {
             // programmatic edits contribute to undo history without merging
             // developers can use TextFieldState.UndoState.clearHistory to clear the undo stack
@@ -278,6 +338,7 @@ internal constructor(
             textChanged = textChanged,
             selectionChanged = selectionChanged,
             styleChanged = styleChanged,
+            valueTextChanged = valueTextChanged,
         )
     }
 
@@ -315,6 +376,7 @@ internal constructor(
         undoBehavior: TextFieldEditUndoBehavior = TextFieldEditUndoBehavior.MergeIfPossible,
         block: TextFieldBuffer.() -> Unit,
     ) {
+        checkNotInOnTextChanged()
         mainBuffer.changeTracker.clearChanges()
         mainBuffer.block()
 
@@ -341,12 +403,19 @@ internal constructor(
         mainBuffer.changeTracker.clearChanges()
         mainBuffer.block()
 
+        val beforeEditValue = value
         val afterEditValue = mainBuffer.toTextFieldCharSequence()
 
         updateValueAndNotifyListeners(
-            oldValue = value,
+            oldValue = beforeEditValue,
             newValue = afterEditValue,
             restartImeIfContentChanges = true,
+            textChanged =
+                if (unobservedOnTextChanged != null) {
+                    hasTextChanged(beforeEditValue, afterEditValue, mainBuffer.changeTracker)
+                } else {
+                    null
+                },
         )
     }
 
@@ -370,7 +439,11 @@ internal constructor(
             if (
                 beforeEditValue.composition != mainBuffer.composition ||
                     beforeEditValue.highlight != mainBuffer.highlight ||
-                    beforeEditValue.composingAnnotations != mainBuffer.composingAnnotations
+                    !composingAnnotationsUnchanged(
+                        current = beforeEditValue.composingAnnotations,
+                        composition = mainBuffer.composition,
+                        annotationList = mainBuffer.composingAnnotations,
+                    )
             ) {
                 // edit operation caused no change to text content or selection
                 // No need to run an existing InputTransformation, or record an undo. Only update
@@ -391,6 +464,7 @@ internal constructor(
                             textFieldTextStyles = beforeEditValue.textFieldTextStyles,
                         ),
                     restartImeIfContentChanges = restartImeIfContentChanges,
+                    textChanged = false,
                 )
             }
             return
@@ -421,8 +495,18 @@ internal constructor(
                 textFieldTextStyles = mainBuffer.getTextFieldTextStyles(),
             )
 
+        // Undo history is recorded before the value is updated and listeners are notified, so that
+        // undoState already includes this commit when onTextChanged runs, and the entry is kept if
+        // onTextChanged throws.
+
         // if there's no filter; just record the undo, update the snapshot value, end.
         if (inputTransformation == null) {
+            recordEditForUndo(
+                previousValue = beforeEditValue,
+                postValue = afterEditValue,
+                changes = mainBuffer.changeTracker,
+                undoBehavior = undoBehavior,
+            )
             updateValueAndNotifyListeners(
                 oldValue = beforeEditValue,
                 newValue = afterEditValue,
@@ -431,12 +515,14 @@ internal constructor(
                 // possibility of content changing. Since false value is a string indicator,
                 // this added logic works.
                 restartImeIfContentChanges = contentMayHaveChanged && restartImeIfContentChanges,
-            )
-            recordEditForUndo(
-                previousValue = beforeEditValue,
-                postValue = afterEditValue,
-                changes = mainBuffer.changeTracker,
-                undoBehavior = undoBehavior,
+                textChanged =
+                    if (!contentMayHaveChanged) {
+                        false
+                    } else if (unobservedOnTextChanged != null) {
+                        hasTextChanged(beforeEditValue, afterEditValue, mainBuffer.changeTracker)
+                    } else {
+                        null
+                    },
             )
             return
         }
@@ -458,32 +544,49 @@ internal constructor(
         val selectionChangedByFilter = textFieldBuffer.selection != afterEditValue.selection
         val styleChangedByFilter =
             textFieldBuffer.textStyleBuffer != afterEditValue.textFieldTextStyles?.textStyleBuffer
-        if (textChangedByFilter || selectionChangedByFilter || styleChangedByFilter) {
+        val changedByFilter =
+            textChangedByFilter || selectionChangedByFilter || styleChangedByFilter
+        val postValue =
+            if (changedByFilter) {
+                textFieldBuffer.toTextFieldCharSequence()
+            } else {
+                // If neither the text nor the selection changed by the filter, we want to preserve
+                // the composition. Otherwise, the IME will reset it anyway.
+                textFieldBuffer.toTextFieldCharSequence(composition = afterEditValue.composition)
+            }
+        // textFieldBuffer contains all the changes from both the user and the filter.
+        recordEditForUndo(
+            previousValue = beforeEditValue,
+            postValue = postValue,
+            changes = textFieldBuffer.changes,
+            undoBehavior = undoBehavior,
+        )
+        val valueTextChanged =
+            if (!contentMayHaveChanged && !textChangedByFilter) {
+                false
+            } else if (!contentMayHaveChanged && textChangedByFilter) {
+                true
+            } else if (unobservedOnTextChanged != null) {
+                hasTextChanged(beforeEditValue, postValue, textFieldBuffer.changes)
+            } else {
+                null
+            }
+        if (changedByFilter) {
             syncMainBufferToTemporaryBuffer(
                 temporaryBuffer = textFieldBuffer,
                 textChanged = textChangedByFilter,
                 selectionChanged = selectionChangedByFilter,
                 styleChanged = styleChangedByFilter,
+                valueTextChanged = valueTextChanged,
             )
         } else {
             updateValueAndNotifyListeners(
                 oldValue = beforeEditValue,
-                // If neither the text nor the selection changed by the filter, we want to preserve
-                // the composition. Otherwise, the IME will reset it anyway.
-                newValue =
-                    textFieldBuffer.toTextFieldCharSequence(
-                        composition = afterEditValue.composition
-                    ),
+                newValue = postValue,
                 restartImeIfContentChanges = restartImeIfContentChanges,
+                textChanged = valueTextChanged,
             )
         }
-        // textFieldBuffer contains all the changes from both the user and the filter.
-        recordEditForUndo(
-            previousValue = beforeEditValue,
-            postValue = value,
-            changes = textFieldBuffer.changes,
-            undoBehavior = undoBehavior,
-        )
     }
 
     /**
@@ -495,14 +598,23 @@ internal constructor(
      * Eventually all changes, no matter the source, should be committed to [value]. Also, they have
      * to trigger the content change listeners.
      *
-     * Finally notifies the listeners in [notifyImeListeners] that the contents of this
-     * [TextFieldState] has changed.
+     * Notifies the listeners in [notifyImeListeners] that the contents of this [TextFieldState] has
+     * changed, then runs [onTextChanged] if the text content differs from the previous [value].
+     *
+     * @param oldValue The value the IME is synchronized with. On the [InputTransformation] path
+     *   this is the buffer after user changes but before the transformation, not the previous
+     *   [value]. [onTextChanged] therefore compares against [value] read before the update.
+     * @param textChanged Whether the text content of [newValue] differs from the previous [value],
+     *   if already known by the caller. When `null`, [dispatchOnTextChanged] compares the text
+     *   content directly.
      */
     private fun updateValueAndNotifyListeners(
         oldValue: TextFieldCharSequence,
         newValue: TextFieldCharSequence,
         restartImeIfContentChanges: Boolean,
+        textChanged: Boolean? = null,
     ) {
+        val previousValue = value
         // value must be set before notifyImeListeners are called. Even though we are sending the
         // previous and current values, a system callback may request the latest state e.g. IME
         // restartInput call is handled before notifyImeListeners return.
@@ -523,6 +635,80 @@ internal constructor(
 
         // After notifying listeners, reset the state as the next action may not be user-enacted.
         userCommit = false
+
+        dispatchOnTextChanged(
+            previousValue = previousValue,
+            newValue = newValue,
+            textChanged = textChanged,
+        )
+    }
+
+    /**
+     * Runs [onTextChanged] when the text content of [newValue] differs from [previousValue].
+     *
+     * The callback runs last in the commit sequence: [value] is already updated, the IME is already
+     * notified, and undo history is already recorded. While [onTextChanged] runs,
+     * [isInOnTextChanged] is true and every attempt to change this state throws.
+     */
+    private fun dispatchOnTextChanged(
+        previousValue: TextFieldCharSequence,
+        newValue: TextFieldCharSequence,
+        textChanged: Boolean? = null,
+    ) {
+        val listener = unobservedOnTextChanged ?: return
+        val didTextChange =
+            textChanged
+                ?: (previousValue.length != newValue.length ||
+                    !previousValue.contentEquals(newValue))
+        if (!didTextChange) return
+
+        isInOnTextChanged = true
+        try {
+            listener(newValue.text)
+        } finally {
+            isInOnTextChanged = false
+        }
+    }
+
+    /**
+     * Determines whether [newValue] differs in text content from [previousValue] using [changes]
+     * recorded against [previousValue], avoiding a full O(length) character comparison when no
+     * edits occurred, when the length changed, or when a single range was replaced in place.
+     */
+    private fun hasTextChanged(
+        previousValue: TextFieldCharSequence,
+        newValue: CharSequence,
+        changes: TextFieldBuffer.ChangeList,
+    ): Boolean {
+        if (changes.changeCount == 0) return false
+        if (previousValue.length != newValue.length) return true
+        if (changes.changeCount == 1) {
+            val originalRange = changes.getOriginalRange(0)
+            val newRange = changes.getRange(0)
+            if (
+                originalRange == newRange &&
+                    originalRange.min >= 0 &&
+                    originalRange.max <= previousValue.length
+            ) {
+                for (i in originalRange.min until originalRange.max) {
+                    if (previousValue[i] != newValue[i]) return true
+                }
+                return false
+            }
+        }
+        return !previousValue.contentEquals(newValue)
+    }
+
+    /**
+     * Throws an [IllegalStateException] if [onTextChanged] is running. Called by every entry point
+     * that changes this state: [startEdit], [editAsUser], and [UndoState.undo] and
+     * [UndoState.redo].
+     */
+    internal fun checkNotInOnTextChanged() {
+        checkPrecondition(!isInOnTextChanged) {
+            "TextFieldState cannot be edited from its onTextChanged callback. Use an " +
+                "InputTransformation to intercept and modify user input."
+        }
     }
 
     /**
@@ -618,6 +804,7 @@ internal constructor(
         textChanged: Boolean,
         selectionChanged: Boolean,
         styleChanged: Boolean,
+        valueTextChanged: Boolean? = null,
     ) {
         val oldValue = mainBuffer.toTextFieldCharSequence()
 
@@ -655,19 +842,23 @@ internal constructor(
             oldValue = oldValue,
             newValue = finalValue,
             restartImeIfContentChanges = true,
+            textChanged = valueTextChanged,
         )
     }
 
-    private val notifyImeListeners = mutableVectorOf<NotifyImeListener>()
+    private val notifyImeListeners = mutableObjectListOf<NotifyImeListener>()
 
     /**
      * Saves and restores a [TextFieldState] for [rememberSaveable].
+     *
+     * A restored state has no `onTextChanged` callback. To restore a state that was created with
+     * `onTextChanged`, use the [Saver] returned by `TextFieldState.Saver(onTextChanged)`.
      *
      * @see rememberTextFieldState
      */
     // Preserve nullability since this is public API.
     @Suppress("RedundantNullableReturnType")
-    public object Saver : androidx.compose.runtime.saveable.Saver<TextFieldState, Any> {
+    public object Saver : ComposeSaver<TextFieldState, Any> {
 
         override fun SaverScope.save(value: TextFieldState): Any? {
             val textStylesImpl = value.value.textFieldTextStyles
@@ -684,7 +875,43 @@ internal constructor(
             )
         }
 
-        override fun restore(value: Any): TextFieldState? {
+        override fun restore(value: Any): TextFieldState? = restore(value, onTextChanged = null)
+
+        /**
+         * Returns a [Saver][ComposeSaver] that saves a [TextFieldState] the same way as [Saver] and
+         * passes [onTextChanged] to the restored state.
+         *
+         * A lambda cannot be saved, so a state restored by [Saver] has no `onTextChanged`. Use this
+         * function to save a state that was created with `onTextChanged`, for example with
+         * `rememberSaveable(saver = TextFieldState.Saver(onTextChanged))`. [rememberTextFieldState]
+         * does this.
+         *
+         * [onTextChanged] is called after each commit that changes the text of the restored state:
+         * user input, [TextFieldState.edit] and its helpers, and undo/redo. It is not called when
+         * only the selection, composition, or styles change. [onTextChanged] runs on the thread
+         * that made the edit, before the edit call returns. When [onTextChanged] runs,
+         * [TextFieldState.text] and [TextFieldState.selection] show the new value, the undo entry
+         * is recorded, and the IME has been notified.
+         *
+         * [onTextChanged] must not change the state. Calling [TextFieldState.edit], its helpers, or
+         * [UndoState.undo] and [UndoState.redo] on the state from [onTextChanged] throws an
+         * [IllegalStateException]. To intercept and modify user input, use [InputTransformation].
+         *
+         * The [CharSequence] passed to [onTextChanged] is provided for convenience and has the same
+         * text content as [TextFieldState.text].
+         *
+         * @param onTextChanged Called after each commit that changes the text of the restored
+         *   state, receiving the new text with the same content as [TextFieldState.text].
+         */
+        public operator fun invoke(
+            onTextChanged: ((CharSequence) -> Unit)?
+        ): ComposeSaver<TextFieldState, Any> =
+            ComposeSaver(
+                save = { with(Saver) { save(it) } },
+                restore = { restore(it, onTextChanged) },
+            )
+
+        private fun restore(value: Any, onTextChanged: ((CharSequence) -> Unit)?): TextFieldState? {
             val list = value as List<*>
             val text = list[0] as String
             val selectionStart = list[1] as Int
@@ -703,6 +930,7 @@ internal constructor(
                 initialTextUndoManager =
                     with(TextUndoManager.Companion.Saver) { restore(savedTextUndoManager!!) }!!,
                 initialTextStyles = textStyles,
+                onTextChanged = onTextChanged,
             )
         }
     }
@@ -728,6 +956,58 @@ public fun rememberTextFieldState(
     initialSelection: TextRange = TextRange(initialText.length),
 ): TextFieldState =
     rememberSaveable(saver = TextFieldState.Saver) { TextFieldState(initialText, initialSelection) }
+
+/**
+ * Create and remember a [TextFieldState] that calls [onTextChanged] when its text changes. The
+ * state is remembered using [rememberSaveable] and so will be saved and restored with the
+ * composition.
+ *
+ * [onTextChanged] is called after each commit that changes the text. This includes user input,
+ * [TextFieldState.edit] and its helpers, and undo/redo. It is not called when only the selection,
+ * composition, or styles change.
+ *
+ * [onTextChanged] runs on the thread that made the edit, before the edit call returns. When
+ * [onTextChanged] runs, [TextFieldState.text] and [TextFieldState.selection] show the new value,
+ * the undo entry is recorded, and the IME has been notified.
+ *
+ * [onTextChanged] must not change the state. Calling [TextFieldState.edit], its helpers, or
+ * [UndoState.undo] and [UndoState.redo] on the state from [onTextChanged] throws an
+ * [IllegalStateException]. To intercept and modify user input, use [InputTransformation].
+ *
+ * The [CharSequence] passed to [onTextChanged] is provided for convenience and has the same text
+ * content as [TextFieldState.text]. To read the selection, read [TextFieldState.selection] inside
+ * the callback.
+ *
+ * The latest [onTextChanged] passed to this function is used after each recomposition. It is also
+ * passed to the state when the state is restored.
+ *
+ * If you need to store a [TextFieldState] in another object, use
+ * `TextFieldState.Saver(onTextChanged)` to manually save and restore the state.
+ *
+ * @param initialText The initial text state. If a different value is passed in a subsequent
+ *   recomposition, the value of the state will _not_ be updated. To update the state after it's
+ *   initialized, call methods on [TextFieldState].
+ * @param initialSelection The initial selection state. If a different value is passed in a
+ *   subsequent recomposition, the value of the state will _not_ be updated. To update the state
+ *   after it's initialized, call methods on [TextFieldState].
+ * @param onTextChanged Called after each commit that changes the text, receiving the new text with
+ *   the same content as [TextFieldState.text].
+ * @sample androidx.compose.foundation.samples.RememberTextFieldStateOnTextChangedSample
+ */
+@Composable
+public fun rememberTextFieldState(
+    initialText: String = "",
+    initialSelection: TextRange = TextRange(initialText.length),
+    onTextChanged: ((CharSequence) -> Unit)?,
+): TextFieldState =
+    rememberSaveable(saver = TextFieldState.Saver(onTextChanged)) {
+            TextFieldState(
+                initialText = initialText,
+                initialSelection = initialSelection,
+                onTextChanged = onTextChanged,
+            )
+        }
+        .apply { this.onTextChanged = onTextChanged }
 
 /**
  * Sets the text in this [TextFieldState] to [text], replacing any text that was previously there,
@@ -807,19 +1087,19 @@ public fun TextFieldState.clearText() {
 @Suppress("ListIterator")
 private fun finalizeComposingAnnotations(
     composition: TextRange?,
-    annotationList: MutableVector<PlacedAnnotation>?,
+    annotationList: MutableObjectList<PlacedAnnotation>?,
 ): List<PlacedAnnotation> =
     when {
         annotationList != null && annotationList.isNotEmpty() -> {
             // it is important to freeze the mutable list into an immutable list because
             // mutable list is sustained inside the EditingBuffer and TextFieldCharSequence
             // must be read-only.
-            annotationList.asMutableList().toList()
+            List(annotationList.size) { annotationList[it] }
         }
         composition != null && !composition.collapsed -> {
             listOf(
                 AnnotatedString.Range(
-                    SpanStyle(textDecoration = TextDecoration.Underline),
+                    DefaultComposingStyle,
                     start = composition.min,
                     end = composition.max,
                 )
@@ -827,6 +1107,60 @@ private fun finalizeComposingAnnotations(
         }
         else -> emptyList()
     }
+
+/** Style used for the composing region when the IME does not provide any composing annotations. */
+private val DefaultComposingStyle = SpanStyle(textDecoration = TextDecoration.Underline)
+
+/**
+ * Returns true if [current] is equal to what [finalizeComposingAnnotations] would return for
+ * [composition] and [annotationList], or if both [current] and [annotationList] are null. Does not
+ * allocate.
+ *
+ * `TextFieldState.commitEditAsUser` uses this to decide whether an edit that changed neither the
+ * text nor the selection still has to publish a new value. Comparing [current] with the result of
+ * [finalizeComposingAnnotations] would give the same answer, but would allocate a list on every
+ * such IME call. Each branch below matches the branch of [finalizeComposingAnnotations] with the
+ * same condition.
+ */
+private fun composingAnnotationsUnchanged(
+    current: List<PlacedAnnotation>?,
+    composition: TextRange?,
+    annotationList: MutableObjectList<PlacedAnnotation>?,
+): Boolean {
+    // finalizeComposingAnnotations never returns null, so a null [current] comes from a value that
+    // was not created by commitEditAsUser, for example the initial value or a programmatic edit.
+    // Treat it as unchanged only when the buffer has no IME annotations either. This is what the
+    // previous check did: it compared the two nullable references, so it skipped only when both
+    // were null.
+    if (current == null) return annotationList == null
+    return when {
+        // The IME provided composing annotations. finalizeComposingAnnotations would copy them
+        // into a new list, so compare them one by one instead.
+        annotationList != null && annotationList.isNotEmpty() -> {
+            if (current.size != annotationList.size) return false
+            for (i in current.indices) {
+                if (current[i] != annotationList[i]) return false
+            }
+            true
+        }
+        // No IME annotations, but there is a non-empty composing region.
+        // finalizeComposingAnnotations would return a single underline range over the
+        // composition, created with the 3-argument AnnotatedString.Range constructor, whose tag
+        // is "". Check each field of that range.
+        composition != null && !composition.collapsed -> {
+            current.size == 1 &&
+                current[0].let {
+                    it.item == DefaultComposingStyle &&
+                        it.start == composition.min &&
+                        it.end == composition.max &&
+                        it.tag.isEmpty()
+                }
+        }
+        // No IME annotations and no composing region: finalizeComposingAnnotations would return
+        // an empty list.
+        else -> current.isEmpty()
+    }
+}
 
 /**
  * Creates a temporary, mutable [TextFieldBuffer] representing the current state of this

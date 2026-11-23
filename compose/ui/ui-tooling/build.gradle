@@ -31,7 +31,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(37) { minorApiLevel = 1 } }
+        compileSdk { version = release(37) { minorApiLevel = 2 } }
         namespace = "androidx.compose.ui.tooling"
         androidResources.enable = true
     }
@@ -60,6 +60,13 @@ androidXMultiplatform {
             // kotlin-reflect and tooling-animation-internal are provided by Studio at runtime
             compileOnly(project(":compose:animation:animation-tooling-internal"))
             compileOnly(libs.kotlinReflect)
+        }
+
+        androidHostTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.truth)
+            implementation(libs.kotlinReflect)
+            implementation(project(":compose:animation:animation-tooling-internal"))
         }
 
         androidDeviceTest.dependencies {
