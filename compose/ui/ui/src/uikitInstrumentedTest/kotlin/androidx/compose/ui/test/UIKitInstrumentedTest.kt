@@ -138,7 +138,6 @@ import platform.UIKit.UIInterfaceOrientationMaskPortraitUpsideDown
 import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIKeyModifierFlags
-import platform.UIKit.UIPanGestureRecognizer
 import platform.UIKit.UIPressType
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIScreen
@@ -276,18 +275,12 @@ internal class UIKitInstrumentedTest(
          * Increased animation speed for tests that checks animation, but no constraints to have it
          * real one-to-one speed.
          */
-        internal const val IncreasedAnimationSpeed = 3f
+        internal const val IncreasedAnimationSpeed = 2f
 
         /**
          * Real animation speed for tests that require one-to-one animations.
          */
         internal const val RealAnimationSpeed = 1f
-
-        /**
-         * Animation speed for tests that sample individual keyboard animation frames. It is
-         * faster than real speed but leaves enough frames for reliable sampling.
-         */
-        internal const val KeyboardFrameAnimationSpeed = 2f
 
         /**
          * The default duration of drag gestures in instrumented tests.
