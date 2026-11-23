@@ -114,8 +114,8 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
 
         Lists accept spaces or commas. Only --target, --tests, and --modes accept all; use it alone.
         Web targets require --browser. iOS uses the first booted simulator, or boots the first available one.
-        Physical iPhones require explicit --ios-target selection. Missing or ambiguous matches are errors.
-        Names require discovery of both simulators and physical iPhones; use an ID if either discovery fails.
+        Physical iOS devices require explicit --ios-target selection. Missing or ambiguous matches are errors.
+        Names require discovery of both simulators and physical iOS devices; use an ID if either discovery fails.
         Compose defaults to local when a core checkout is configured, otherwise to the version catalog.
         Local core sources use their own Kotlin version; --kotlin-version applies to the benchmarks project.
     """.trimIndent()
@@ -189,12 +189,12 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
 
     private val iosTarget by option(
         "--ios-target",
-        help = "iOS only: simulator UUID, physical iPhone UDID/CoreDevice UUID, or unique name; default: first booted iOS simulator, otherwise boot the first available one",
+        help = "iOS only: simulator UUID, physical iOS device UDID/CoreDevice UUID, or unique name; default: first booted iOS simulator, otherwise boot the first available one",
         metavar = "ID_OR_NAME"
     )
     private val xcodeDevelopmentTeam by option(
         "--apple-development-team",
-        help = "Apple development team ID for physical iPhone signing only; default: Xcode project settings",
+        help = "Apple development team ID for physical iOS device signing only; default: Xcode project settings",
         metavar = "TEAM_ID"
     )
 
@@ -328,11 +328,11 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             val selectedIosTarget = if (target == "ios") selectIosTarget(iosTarget, processes) else null
             val targetIosDevice = selectedIosTarget as? IosDevice
             val targetIosSimulator = selectedIosTarget as? IosSimulator
-            if (targetIosDevice != null) println("iPhone: ${targetIosDevice.name} (${targetIosDevice.udid})")
+            if (targetIosDevice != null) println("iOS device: ${targetIosDevice.name} (${targetIosDevice.udid})")
             if (targetIosSimulator != null) println("Simulator: ${targetIosSimulator.name} (${targetIosSimulator.id})")
             val reportHost = if (targetIosDevice != null) iosCollectorHost(processes) else "127.0.0.1"
             val collectorUrl = "http://$reportHost:$port"
-            if (targetIosDevice != null) println("Collector: $collectorUrl (must be reachable from the iPhone)")
+            if (targetIosDevice != null) println("Collector: $collectorUrl (must be reachable from the iOS device)")
             val browserPath = if (target in listOf("js", "wasmJs")) executable(
                 requireNotNull(browser),
                 processes
@@ -381,7 +381,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                 root.resolve("benchmarks-collector/build/install/benchmarks-collector/bin/$collectorScript").toString(),
                 port.toString(), reports.toString()
             ) + if (targetIosDevice != null) {
-                // A physical iPhone reaches the collector over LAN, so bind to all interfaces;
+                // A physical iOS device reaches the collector over LAN, so bind to all interfaces;
                 // simulator and other local runs keep the default loopback-only binding.
                 listOf("0.0.0.0")
             } else {

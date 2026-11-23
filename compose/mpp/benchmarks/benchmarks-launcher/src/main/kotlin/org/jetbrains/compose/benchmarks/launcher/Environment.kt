@@ -21,7 +21,9 @@ import java.lang.management.ManagementFactory
 import java.nio.file.Path
 import java.time.Instant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 
 @Serializable
 internal data class LauncherEnvironment(
@@ -31,8 +33,7 @@ internal data class LauncherEnvironment(
     val coreCommit: String? = null,
     val coreDirty: Boolean? = null,
     val browserVersion: String? = null,
-    val simulator: IosSimulator? = null,
-    val device: IosDevice? = null,
+    val iosTarget: IosTarget? = null,
     val host: HostEnvironment? = null,
     val xcodeVersion: String? = null,
     val sdkVersion: String? = null,
@@ -84,13 +85,13 @@ internal fun collectLauncherEnvironment(
                 bundle.resolve("Contents/Info.plist").toString())
         } else command(it.toString(), "--version")
     } }
-    val simulator = (iosTarget as? IosSimulator)?.let { selected -> read("simulatorRuntime") {
+    val iosSimulator = (iosTarget as? IosSimulator)?.let { selected -> read("simulatorRuntime") {
         val runtimes = Json.parseToJsonElement(command("xcrun", "simctl", "list", "runtimes", "--json"))
             .jsonObject.getValue("runtimes").jsonArray.map { it.jsonObject }
         val runtime = runtimes.first { it.text("identifier") == selected.runtimeIdentifier }
         selected.copy(runtimeVersion = runtime.text("version"), runtimeBuild = runtime.text("buildversion"))
     } ?: selected }
-    val host = if (simulator != null) read("host") {
+    val host = if (iosSimulator != null) read("host") {
         HostEnvironment(
             System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"),
             read("host.cpuModel") { command("/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string") },
@@ -106,7 +107,7 @@ internal fun collectLauncherEnvironment(
             "js", "wasmJs" -> "Kotlin production executable / webpack production"
             else -> "Kotlin/Native release optimizations"
         },
-        coreCommit = commit, coreDirty = dirty, browserVersion = browserVersion, simulator = simulator, device = iosTarget as? IosDevice, host = host,
+        coreCommit = commit, coreDirty = dirty, browserVersion = browserVersion, iosTarget = iosSimulator ?: iosTarget, host = host,
         xcodeVersion = if (target in listOf("ios", "macos")) read("xcodeVersion") { command("xcodebuild", "-version") } else null,
         sdkVersion = if (target in listOf("ios", "macos")) read("sdkVersion") {
             command("xcrun", "--sdk", if (target == "ios") { if (iosTarget is IosDevice) "iphoneos" else "iphonesimulator" } else "macosx", "--show-sdk-version")

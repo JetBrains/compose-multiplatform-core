@@ -16,13 +16,13 @@
 
 package org.jetbrains.compose.benchmarks.launcher
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.name
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 internal const val bundleId = "org.jetbrains.compose.benchmarks.app.BenchmarksIosApp"
 internal val isMac = System.getProperty("os.name").startsWith("Mac")
@@ -77,41 +77,6 @@ internal fun browserKind(browser: Path): String {
         else -> error("cannot determine browser family from executable name: $browser")
     }
 }
-
-@Serializable
-internal data class IosSimulator(
-    override val id: String,
-    val state: String,
-    val name: String,
-    val deviceTypeIdentifier: String?,
-    val runtimeIdentifier: String,
-    val runtimeVersion: String? = null,
-    val runtimeBuild: String? = null,
-) : IosTarget
-
-internal fun listIosSimulators(processes: Processes): List<IosSimulator> {
-    val data = Json.parseToJsonElement(
-        processes.capture(
-            listOf(
-                "xcrun", "simctl", "list", "devices", "available", "--json",
-            )
-        )
-    ).jsonObject.getValue("devices").jsonObject
-    return listIosSimulators(data)
-}
-
-internal fun listIosSimulators(data: JsonObject): List<IosSimulator> =
-    data.filterKeys { it.startsWith("com.apple.CoreSimulator.SimRuntime.iOS-") }
-        .flatMap { (runtime, devices) ->
-            devices.jsonArray.map { JsonObject(it.jsonObject + ("runtimeIdentifier" to JsonPrimitive(runtime))) }
-        }
-        .filter { it["isAvailable"]?.jsonPrimitive?.booleanOrNull == true }
-        .map { device ->
-            IosSimulator(
-                device.text("udid"), device.text("state"), device.text("name"),
-                device["deviceTypeIdentifier"]?.jsonPrimitive?.contentOrNull, device.text("runtimeIdentifier"),
-            )
-        }
 
 internal fun JsonObject.text(key: String): String = getValue(key).jsonPrimitive.content
 

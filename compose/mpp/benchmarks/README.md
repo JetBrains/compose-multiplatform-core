@@ -58,7 +58,7 @@ it started and keeps collected results.
 Main options:
 
 - `--target` — required list of targets, separated by spaces or commas: `jvm`, `macos` (ARM64),
-  `js`, `wasmJs`, or `ios` (physical ARM64 iPhone or ARM64 Simulator). `all` selects all targets.
+  `js`, `wasmJs`, or `ios` (physical ARM64 iOS device or ARM64 Simulator). `all` selects all targets.
   Duplicate entries are ignored.
 - `--compose-version` — a list of published Compose versions and/or `local`; defaults to `local`
   using the current core checkout (`composeCorePath=../../..` in `gradle.properties`). Specify a
@@ -83,9 +83,9 @@ Main options:
   launcher location by default.
 - `--compose-core-path` — core checkout for `local` Compose; defaults to the configured
   `composeCorePath`, otherwise `../../..` relative to the benchmarks project.
-- `--ios-target` — iOS simulator UUID, physical iPhone UDID/CoreDevice UUID, or unique name.
+- `--ios-target` — iOS simulator UUID, physical iOS device UDID/CoreDevice UUID, or unique name.
   Defaults to the first booted iOS simulator, otherwise boots the first available one. Ignored for other targets.
-- `--apple-development-team` — Apple development team ID for physical iPhone signing; defaults to Xcode
+- `--apple-development-team` — Apple development team ID for physical iOS device signing; defaults to Xcode
   project settings. Ignored for simulator and non-iOS targets.
 
 Only `--target`, `--tests`, and `--modes` accept `all`; use it alone, not alongside individual values.
@@ -112,16 +112,16 @@ After an error or timeout, the current run is failed without a retry, and the ne
 browser session.
 
 For iOS, the launcher uses the first booted iOS simulator, or boots the first available one.
-Physical iPhones are never selected automatically. Use `--ios-target ID_OR_NAME` to select
-an available simulator by UUID or unique name, or a physical iPhone by UDID, CoreDevice UUID,
+Physical iOS devices are never selected automatically. Use `--ios-target ID_OR_NAME` to select
+an available simulator by UUID or unique name, or a physical iOS device by UDID, CoreDevice UUID,
 or unique name. An explicit selection must match exactly one target across both types;
 missing or ambiguous matches fail without fallback. If discovery of one target type fails,
 only an explicit ID can select a target of the other type; names require successful discovery of both.
 
-Physical iPhones require Xcode 15+, pairing, Developer Mode, and an unlocked screen. Pass
+Physical iOS devices require Xcode 15+, pairing, Developer Mode, and an unlocked screen. Pass
 `--apple-development-team TEAM_ID` for signing without saving the team in the Xcode project.
-The collector address is detected automatically; the iPhone must be able to reach the Mac over
-the local network. Allow local-network access on iPhone and incoming collector connections on Mac.
+The collector address is detected automatically; the iOS device must be able to reach the Mac over
+the local network. Allow local-network access on iOS device and incoming collector connections on Mac.
 
 ### Example: JVM
 
