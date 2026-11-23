@@ -28,7 +28,6 @@ dependencies {
 
 application {
     mainClass.set("org.jetbrains.compose.benchmarks.launcher.MainKt")
-    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 tasks.named<JavaExec>("run") {
