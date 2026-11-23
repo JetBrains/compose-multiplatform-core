@@ -94,6 +94,10 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-util"))
         }
 
+        // jbVerifyForkDependencies: suppress
+        jvmAndAndroidMain.dependencies {
+        }
+
         def lifecycleVersion = project.redirectVersions.get('androidx.lifecycle')
         // TODO: Align naming: nonAndroidMain
         skikoMain {
