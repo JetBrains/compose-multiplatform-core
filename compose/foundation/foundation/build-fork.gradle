@@ -197,7 +197,10 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
             "paste": "Paste",
             "cut": "Cut",
             "selectAll": "SelectAll",
-            "autofill": "Autofill"
+            "autofill": "Autofill",
+// TODO(Merge) it is missing in https://android.googlesource.com/platform/frameworks/bas
+//  androidMain picks it from own string androidx_compose_foundation_look_up
+//            "lookUp": "LookUp"
     ]
     // This is all the locales translated by Compose on Android in the ui module:
     // https://github.com/androidx/androidx/tree/androidx-main/compose/ui/ui/src/androidMain/res
