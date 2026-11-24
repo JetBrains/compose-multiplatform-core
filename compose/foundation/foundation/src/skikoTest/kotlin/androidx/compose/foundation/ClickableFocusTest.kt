@@ -34,15 +34,14 @@ import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ComposeUiDefaults
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.platform.testTag
@@ -278,12 +277,12 @@ class ClickableFocusTest {
         override fun equals(other: Any?) = super.equals(other)
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
+    @OptIn(InternalComposeUiApi::class)
     @Suppress("DEPRECATION")
     @Test
     fun mouseClickOutsideClearsFocusWithClearFocusOnMouseDownEnabled() {
-        val prevClearFocusOnMouseDownEnabled = ComposeUiFlags.isClearFocusOnMouseDownEnabled
-        ComposeUiFlags.isClearFocusOnMouseDownEnabled = true
+        val prevClearFocusOnMouseDownEnabled = ComposeUiDefaults.isClearFocusOnMouseDownEnabled
+        ComposeUiDefaults.isClearFocusOnMouseDownEnabled = true
         try {
             runComposeUiTest {
                 val focusRequester = FocusRequester()
@@ -308,7 +307,7 @@ class ClickableFocusTest {
                 onNode(isFocused()).assertDoesNotExist()
             }
         } finally {
-            ComposeUiFlags.isClearFocusOnMouseDownEnabled = prevClearFocusOnMouseDownEnabled
+            ComposeUiDefaults.isClearFocusOnMouseDownEnabled = prevClearFocusOnMouseDownEnabled
         }
     }
 }

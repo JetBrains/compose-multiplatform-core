@@ -16,9 +16,8 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ComposeUiDefaults
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.platform.FONT_FALLBACK_BASE_URL
 
 /** Controls when a Compose viewport exposes its accessibility tree. */
@@ -92,7 +91,7 @@ class ComposeViewportConfiguration internal constructor() {
      * Controls whether a mouse clicks on an unfocused element clears focus.
      * It's clearing focus on mouse down by default.
      */
-    var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+    var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiDefaults.isClearFocusOnMouseDownEnabled
 
     /**
      * Controls whether the Compose scene handles system window insets (status bar, navigation bar,

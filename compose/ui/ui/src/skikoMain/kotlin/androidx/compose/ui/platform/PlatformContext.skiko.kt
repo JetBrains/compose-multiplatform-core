@@ -19,13 +19,13 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ComposeUiDefaults
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.UiMediaScope
+import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
@@ -35,7 +35,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.OutOfFrameExecutor
 import androidx.compose.ui.node.OwnedLayer
@@ -213,7 +212,7 @@ interface PlatformContext {
      * Returns whether mouse-down on an unfocusable element clears focus.
      */
     val isClearFocusOnMouseDownEnabled: Boolean
-        get() = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+        get() = ComposeUiDefaults.isClearFocusOnMouseDownEnabled
 
     /**
      * Schedules work that should be deferred out of the current
