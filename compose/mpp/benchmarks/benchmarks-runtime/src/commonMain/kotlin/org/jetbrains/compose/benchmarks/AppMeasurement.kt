@@ -70,18 +70,21 @@ internal fun MeasureRealFrames(
     content()
 
     LaunchedEffect(frameCount, warmupCount) {
-        // Skip the initial partial frame interval.
-        withFrameNanos { }
+        // Sample inside callbacks, not after the measuring coroutine resumes.
+        // Establish a baseline, skipping the initial partial interval and warmup.
+        var previousCallbackTime = withFrameNanos { Monotonic.markNow() }
 
-        repeat(warmupCount) { withFrameNanos { } }
-
-        val start = Monotonic.markNow()
-        repeat(frameCount) { index ->
-            val frameStart = Monotonic.markNow()
-            withFrameNanos { }
-            frames[index] = frameStart.elapsedNow()
+        repeat(warmupCount) {
+            previousCallbackTime = withFrameNanos { Monotonic.markNow() }
         }
-        val totalDuration = start.elapsedNow()
+
+        val start = previousCallbackTime
+        repeat(frameCount) { index ->
+            val callbackTime = withFrameNanos { Monotonic.markNow() }
+            frames[index] = callbackTime - previousCallbackTime
+            previousCallbackTime = callbackTime
+        }
+        val totalDuration = previousCallbackTime - start
         currentOnComplete(RealFramesResult(frames.filterNotNull(), totalDuration))
     }
 }

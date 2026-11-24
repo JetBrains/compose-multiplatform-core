@@ -48,6 +48,35 @@
             || event.clientY < bounds.top || event.clientY > bounds.bottom)) infoDialog.close();
     });
 
+    const expectedFpsControl = element('div', null, charts.parentElement, 'control-row');
+    document.getElementById('kotlin-versions').parentElement.before(expectedFpsControl);
+    expectedFpsControl.hidden = true;
+    const expectedFpsLabel = element('label', 'Expected FPS ', expectedFpsControl);
+    expectedFpsLabel.htmlFor = 'expected-fps';
+    const expectedFpsInput = element('input', null, expectedFpsControl);
+    expectedFpsInput.id = 'expected-fps';
+    expectedFpsInput.type = 'number';
+    expectedFpsInput.min = '1';
+    expectedFpsInput.step = '1';
+    expectedFpsInput.value = '60';
+    expectedFpsInput.required = true;
+    let expectedFps = 60;
+    expectedFpsInput.addEventListener('change', () => {
+        const value = expectedFpsInput.valueAsNumber;
+        if (!expectedFpsInput.reportValidity() || !Number.isFinite(value)) return;
+        expectedFps = value;
+        render();
+    });
+
+    function realFrameDistributionScale(title, datasets) {
+        const expectedValue = title === 'Frame rate' ? expectedFps : 1000 / expectedFps;
+        const maximum = datasets.reduce((maximum, dataset) =>
+            dataset.data.reduce((maximum, point) =>
+                Number.isFinite(point.y) ? Math.max(maximum, point.y) : maximum, maximum),
+            2 * expectedValue);
+        return { type: 'linear', min: 0, max: maximum };
+    }
+
     function higherIsBetter(metric) {
         return ['Throughput', 'Frame rate', 'Frame FPS', 'Average frame FPS'].includes(metric.split(' — ')[0]);
     }
@@ -59,10 +88,10 @@
             'Main to first frame': 'Elapsed time from main entry to the first observed frame callback.',
             'Total duration': 'Wall-clock time for the measured frame-loop intervals. Compare runs with the same frame count.',
             'Throughput': 'Measured frame count divided by total wall-clock duration, in FPS.',
-            'Frame time': 'Wall-clock intervals between frame-loop callbacks, including synchronization waits and scheduling delays; not CPU render time or presentation timestamps.',
-            'Frame rate': '1000 / frame interval in milliseconds, using only positive, finite frame-loop intervals; not measured display FPS.',
-            'Over-budget intervals': 'Percentage of positive, finite frame-loop intervals longer than 17.5 ms: a fixed 60 Hz budget (1000/60 ms) plus 5% tolerance.',
-            'Estimated missed VSync': 'Estimated missed slots / total slots × 100, using positive, finite frame-loop intervals. Slots = max(1, ceil(interval / (1000/60 ms) − 0.05)). Assumes 60 Hz with 5% tolerance, not measured presentation events; scheduling jitter can inflate this estimate.',
+            'Frame time': 'Callback intervals: elapsed monotonic time between consecutive withFrameNanos callbacks, sampled inside each callback; not CPU render time or presentation timestamps. Historical reports may instead contain frame-clock timestamp differences or wall-clock waits for callbacks; regenerating HTML does not change collected measurements.',
+            'Frame rate': '1000 / callback interval in milliseconds, using only positive, finite intervals; not measured display FPS. Historical reports use the interval measurement method of the runtime that collected them.',
+            'Over-budget intervals': 'Percentage of positive, finite callback intervals longer than 17.5 ms: a fixed 60 Hz budget (1000/60 ms) plus 5% tolerance. Callback delays do not prove missed presentation deadlines. Expected FPS only controls distribution scales, not this metric.',
+            'Estimated missed VSync': 'Estimated missed slots / total slots × 100, using positive, finite callback intervals. Slots = max(1, ceil(interval / (1000/60 ms) − 0.05)). Assumes a fixed 60 Hz budget with 5% tolerance, not measured VSync or presentation events; callback scheduling jitter can inflate this estimate. Expected FPS only controls distribution scales, not this metric.',
             'CPU time': 'Per-frame offscreen elapsed time minus the GPU-completion wait. Includes CPU work and other elapsed overhead, not CPU utilization.',
             'GPU time': 'Per-frame wall-clock time waiting for GPU completion during offscreen rendering; not GPU timestamp timing.',
             'Frame FPS': 'Reciprocal of per-frame offscreen elapsed time, including the GPU-completion wait; not display FPS.',
@@ -79,9 +108,12 @@
                 : `Uses ${statistic.toUpperCase()} of finite frame samples in each run, with linear interpolation between sorted values.`);
         }
         if (distribution) {
-            paragraphs.push('X: percentile P0–P100 (minimum to maximum). Y: metric value on a logarithmic scale. '
+            const logarithmic = mode.dataset.value !== 'realFrames';
+            paragraphs.push(`X: percentile P0–P100 (minimum to maximum). Y: metric value on a ${logarithmic ? 'logarithmic' : 'linear'} scale. `
                 + 'Frame samples from repeated runs are pooled per Compose version and Kotlin version. '
-                + 'Percentiles use linear interpolation; non-positive percentile values are omitted.');
+                + 'Percentiles use linear interpolation.'
+                + (logarithmic ? ' Non-positive percentile values are omitted.'
+                    : ` Y starts at zero; its upper bound is twice the expected value (${expectedFps} FPS or ${1000 / expectedFps} ms), expanded if needed to include outliers. Expected FPS only controls the chart scale, not the benchmark or display refresh rate.`));
         } else {
             paragraphs.push('X: Compose version. Y: metric value. Each line is a Kotlin version; points average the per-run values, '
                 + 'and whiskers show the minimum–maximum across repeated runs, not across individual frames. '
@@ -449,6 +481,7 @@
     }
 
     function render() {
+        expectedFpsControl.hidden = mode.dataset.value !== 'realFrames';
         hideValueTooltip();
         instances.forEach(chart => chart.destroy());
         instances = [];
@@ -557,6 +590,7 @@
     }
 
     function renderDistributions(runs, section) {
+        const logarithmic = mode.dataset.value !== 'realFrames';
         const titles = distinct(runs.flatMap(run => (run.distributions ?? []).map(metric => metric.title)));
         if (!titles.length) return;
         element('h2', 'Per-frame percentiles', section);
@@ -581,7 +615,7 @@
                         const low = sorted[Math.floor(index)];
                         const high = sorted[Math.ceil(index)];
                         const value = low + (high - low) * (index - Math.floor(index));
-                        return { x: percentile, y: value > 0 ? value : null };
+                        return { x: percentile, y: !logarithmic || value > 0 ? value : null };
                     });
                     return {
                         seriesKey: kotlin,
@@ -597,6 +631,8 @@
                         hidden: hidden.has(kotlin)
                     };
                 });
+                const yScale = logarithmic ? { type: 'logarithmic' }
+                    : realFrameDistributionScale(title, datasets);
                 const card = element('article', null, grid, 'chart-card');
                 card.hidden = hidden.has(kotlin);
                 distributionCards.push({ kotlin, card });
@@ -620,7 +656,7 @@
                         interaction: { mode: 'index', intersect: false },
                         scales: {
                             x: { type: 'linear', min: 0, max: 100, title: { display: true, text: 'Percentile' }, ticks: { stepSize: 10 } },
-                            y: { type: 'logarithmic', title: { display: true, text: `${title} (${unit})` } }
+                            y: { ...yScale, title: { display: true, text: `${title} (${unit})` } }
                         },
                         plugins: {
                             tooltip: {
