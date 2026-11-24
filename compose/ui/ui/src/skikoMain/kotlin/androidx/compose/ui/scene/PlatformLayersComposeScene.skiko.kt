@@ -181,7 +181,9 @@ private class PlatformLayersComposeSceneImpl(
     }
 
     override fun processPointerInputEvent(event: PointerInputEvent) =
-        mainOwner.onPointerInput(event)
+        mainOwner.onPointerInput(event).also {
+            mainOwner.performClearFocusOnMouseDown(composeSceneContext, event)
+        }
 
     override fun processCancelPointerInput() {
         mainOwner.onCancelPointerInput()
