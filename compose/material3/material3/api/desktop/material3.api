@@ -257,12 +257,17 @@ public final class androidx/compose/material3/ButtonGroupKt {
 
 public final class androidx/compose/material3/ButtonGroupMenuState {
 	public static final field $stable I
+	public static final field Companion Landroidx/compose/material3/ButtonGroupMenuState$Companion;
 	public fun <init> ()V
 	public fun <init> (Z)V
 	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun dismiss ()V
 	public final fun isShowing ()Z
 	public final fun show ()V
+}
+
+public final class androidx/compose/material3/ButtonGroupMenuState$Companion {
+	public final fun getSaver ()Landroidx/compose/runtime/saveable/Saver;
 }
 
 public abstract interface class androidx/compose/material3/ButtonGroupScope {
@@ -606,6 +611,7 @@ public final class androidx/compose/material3/ComposableSingletons$ListItemKt {
 	public fun <init> ()V
 	public final fun getLambda$-489887388$org_jetbrains_compose_material3_material3 ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$-546752734$org_jetbrains_compose_material3_material3 ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1221701246$org_jetbrains_compose_material3_material3 ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1572298241$org_jetbrains_compose_material3_material3 ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1629163587$org_jetbrains_compose_material3_material3 ()Lkotlin/jvm/functions/Function2;
 }
@@ -628,7 +634,7 @@ public final class androidx/compose/material3/ComposableSingletons$ScaffoldKt {
 public final class androidx/compose/material3/ComposableSingletons$SearchBarKt {
 	public static final field INSTANCE Landroidx/compose/material3/ComposableSingletons$SearchBarKt;
 	public fun <init> ()V
-	public final fun getLambda$-553641895$org_jetbrains_compose_material3_material3 ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1161786640$org_jetbrains_compose_material3_material3 ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1165377840$org_jetbrains_compose_material3_material3 ()Lkotlin/jvm/functions/Function2;
 }
 
@@ -986,9 +992,9 @@ public final class androidx/compose/material3/FabPosition$Companion {
 	public final fun getStart-ERTFSPs ()I
 }
 
-public final class androidx/compose/material3/FadeThroughNavigationTransition {
+public final class androidx/compose/material3/FadeThroughNavigationTransitions {
 	public static final field $stable I
-	public static final field INSTANCE Landroidx/compose/material3/FadeThroughNavigationTransition;
+	public static final field INSTANCE Landroidx/compose/material3/FadeThroughNavigationTransitions;
 	public final fun predictiveBackTransform (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/unit/Density;)Landroidx/compose/animation/MutableContentTransform;
 	public final fun transform ()Landroidx/compose/animation/ContentTransform;
 }
@@ -1220,9 +1226,9 @@ public final class androidx/compose/material3/FloatingToolbarVerticalFabPosition
 	public final fun getTop-dDJPGzU ()I
 }
 
-public final class androidx/compose/material3/HorizontalSharedAxisNavigationTransition {
+public final class androidx/compose/material3/HorizontalSharedAxisNavigationTransitions {
 	public static final field $stable I
-	public static final field INSTANCE Landroidx/compose/material3/HorizontalSharedAxisNavigationTransition;
+	public static final field INSTANCE Landroidx/compose/material3/HorizontalSharedAxisNavigationTransitions;
 	public final fun backwardTransform ()Landroidx/compose/animation/ContentTransform;
 	public final fun forwardTransform ()Landroidx/compose/animation/ContentTransform;
 	public final fun getScrimColor (Landroidx/compose/runtime/Composer;I)J
@@ -2434,31 +2440,39 @@ public final class androidx/compose/material3/ShapeDefaults {
 	public final fun getExtraLarge ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getExtraLargeIncreased ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getExtraSmall ()Landroidx/compose/foundation/shape/CornerBasedShape;
+	public final fun getFull ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getLarge ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getLargeIncreased ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getMedium ()Landroidx/compose/foundation/shape/CornerBasedShape;
+	public final fun getNone ()Landroidx/compose/ui/graphics/Shape;
 	public final fun getSmall ()Landroidx/compose/foundation/shape/CornerBasedShape;
 }
 
 public final class androidx/compose/material3/Shapes {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun <init> (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;)V
+	public synthetic fun <init> (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;)V
 	public synthetic fun <init> (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;)V
+	public synthetic fun <init> (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;)V
 	public synthetic fun <init> (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun copy (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;)Landroidx/compose/material3/Shapes;
-	public final fun copy (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;)Landroidx/compose/material3/Shapes;
+	public fun <init> (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/ui/graphics/Shape;)V
+	public synthetic fun <init> (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/ui/graphics/Shape;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final synthetic fun copy (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;)Landroidx/compose/material3/Shapes;
+	public final synthetic fun copy (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;)Landroidx/compose/material3/Shapes;
+	public final fun copy (Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/ui/graphics/Shape;)Landroidx/compose/material3/Shapes;
 	public static synthetic fun copy$default (Landroidx/compose/material3/Shapes;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;ILjava/lang/Object;)Landroidx/compose/material3/Shapes;
 	public static synthetic fun copy$default (Landroidx/compose/material3/Shapes;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;ILjava/lang/Object;)Landroidx/compose/material3/Shapes;
+	public static synthetic fun copy$default (Landroidx/compose/material3/Shapes;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/foundation/shape/CornerBasedShape;Landroidx/compose/ui/graphics/Shape;ILjava/lang/Object;)Landroidx/compose/material3/Shapes;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getExtraExtraLarge ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getExtraLarge ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getExtraLargeIncreased ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getExtraSmall ()Landroidx/compose/foundation/shape/CornerBasedShape;
+	public final fun getFull ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getLarge ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getLargeIncreased ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public final fun getMedium ()Landroidx/compose/foundation/shape/CornerBasedShape;
+	public final fun getNone ()Landroidx/compose/ui/graphics/Shape;
 	public final fun getSmall ()Landroidx/compose/foundation/shape/CornerBasedShape;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;

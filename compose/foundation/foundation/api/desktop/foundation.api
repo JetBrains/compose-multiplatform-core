@@ -2580,9 +2580,11 @@ public final class androidx/compose/foundation/text/BasicTextKt {
 	public static final synthetic fun BasicText-BpD7jsM (Ljava/lang/String;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/text/TextStyle;Lkotlin/jvm/functions/Function1;IZILandroidx/compose/runtime/Composer;II)V
 	public static final fun BasicText-CL7eQgs (Landroidx/compose/ui/text/AnnotatedString;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/text/TextStyle;Lkotlin/jvm/functions/Function1;IZIILjava/util/Map;Landroidx/compose/ui/graphics/ColorProducer;Landroidx/compose/foundation/text/TextAutoSize;Landroidx/compose/runtime/Composer;III)V
 	public static final synthetic fun BasicText-RWo7tUw (Landroidx/compose/ui/text/AnnotatedString;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/text/TextStyle;Lkotlin/jvm/functions/Function1;IZIILjava/util/Map;Landroidx/compose/ui/graphics/ColorProducer;Landroidx/compose/runtime/Composer;II)V
+	public static final fun BasicText-RWo7tUw (Landroidx/compose/ui/text/AnnotatedString;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;IZIILjava/util/Map;Landroidx/compose/foundation/text/TextAutoSize;Landroidx/compose/runtime/Composer;II)V
 	public static final fun BasicText-RWo7tUw (Ljava/lang/String;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/text/TextStyle;Lkotlin/jvm/functions/Function1;IZIILandroidx/compose/ui/graphics/ColorProducer;Landroidx/compose/foundation/text/TextAutoSize;Landroidx/compose/runtime/Composer;II)V
 	public static final synthetic fun BasicText-VhcvRP8 (Landroidx/compose/ui/text/AnnotatedString;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/text/TextStyle;Lkotlin/jvm/functions/Function1;IZIILjava/util/Map;Landroidx/compose/runtime/Composer;II)V
 	public static final synthetic fun BasicText-VhcvRP8 (Ljava/lang/String;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/text/TextStyle;Lkotlin/jvm/functions/Function1;IZIILandroidx/compose/ui/graphics/ColorProducer;Landroidx/compose/runtime/Composer;II)V
+	public static final fun BasicText-VhcvRP8 (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;IZIILandroidx/compose/foundation/text/TextAutoSize;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class androidx/compose/foundation/text/ClickableTextKt {
@@ -2918,6 +2920,8 @@ public final class androidx/compose/foundation/text/input/TextFieldLineLimits$Si
 public final class androidx/compose/foundation/text/input/TextFieldState {
 	public static final field $stable I
 	public synthetic fun <init> (Ljava/lang/String;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JLkotlin/jvm/functions/Function1;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun commitEdit (Landroidx/compose/foundation/text/input/TextFieldBuffer;)V
 	public final fun edit (Lkotlin/jvm/functions/Function1;)V
@@ -2934,6 +2938,7 @@ public final class androidx/compose/foundation/text/input/TextFieldState {
 public final class androidx/compose/foundation/text/input/TextFieldState$Saver : androidx/compose/runtime/saveable/Saver {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/foundation/text/input/TextFieldState$Saver;
+	public final fun invoke (Lkotlin/jvm/functions/Function1;)Landroidx/compose/runtime/saveable/Saver;
 	public fun restore (Ljava/lang/Object;)Landroidx/compose/foundation/text/input/TextFieldState;
 	public synthetic fun restore (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun save (Landroidx/compose/runtime/saveable/SaverScope;Landroidx/compose/foundation/text/input/TextFieldState;)Ljava/lang/Object;
@@ -2942,6 +2947,7 @@ public final class androidx/compose/foundation/text/input/TextFieldState$Saver :
 
 public final class androidx/compose/foundation/text/input/TextFieldStateKt {
 	public static final fun clearText (Landroidx/compose/foundation/text/input/TextFieldState;)V
+	public static final fun rememberTextFieldState-JDhZC5Q (Ljava/lang/String;JLkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/text/input/TextFieldState;
 	public static final fun rememberTextFieldState-Le-punE (Ljava/lang/String;JLandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/text/input/TextFieldState;
 	public static final fun setTextAndPlaceCursorAtEnd (Landroidx/compose/foundation/text/input/TextFieldState;Ljava/lang/String;)V
 	public static final fun setTextAndSelectAll (Landroidx/compose/foundation/text/input/TextFieldState;Ljava/lang/String;)V
