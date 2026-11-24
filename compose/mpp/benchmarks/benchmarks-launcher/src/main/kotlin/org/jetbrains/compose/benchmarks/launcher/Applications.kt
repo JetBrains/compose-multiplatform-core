@@ -16,13 +16,13 @@
 
 package org.jetbrains.compose.benchmarks.launcher
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.name
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 internal const val bundleId = "org.jetbrains.compose.benchmarks.app.BenchmarksIosApp"
 internal val isMac = System.getProperty("os.name").startsWith("Mac")
@@ -76,50 +76,6 @@ internal fun browserKind(browser: Path): String {
 
         else -> error("cannot determine browser family from executable name: $browser")
     }
-}
-
-@Serializable
-internal data class Simulator(
-    val id: String,
-    val state: String,
-    val name: String,
-    val deviceTypeIdentifier: String?,
-    val runtimeIdentifier: String,
-    val runtimeVersion: String? = null,
-    val runtimeBuild: String? = null,
-)
-
-internal fun selectSimulator(selection: String?, processes: Processes): Simulator {
-    val data = Json.parseToJsonElement(
-        processes.capture(
-            listOf(
-                "xcrun", "simctl", "list", "devices", "available", "--json",
-            )
-        )
-    ).jsonObject.getValue("devices").jsonObject
-    return selectSimulator(selection, data)
-}
-
-internal fun selectSimulator(selection: String?, data: JsonObject): Simulator {
-    val devices = data.filterKeys { it.startsWith("com.apple.CoreSimulator.SimRuntime.iOS-") }
-        .flatMap { (runtime, devices) ->
-            devices.jsonArray.map { JsonObject(it.jsonObject + ("runtimeIdentifier" to JsonPrimitive(runtime))) }
-        }
-        .filter { it["isAvailable"]?.jsonPrimitive?.booleanOrNull == true }
-    val device = if (selection == null) {
-        val booted = devices.filter { it.text("state") == "Booted" }
-        check(booted.size <= 1) { "specify --simulator UUID, or boot exactly one iOS simulator before running" }
-        booted.singleOrNull() ?: devices.firstOrNull()
-            ?: error("no available iOS simulators; install an iOS runtime and create a simulator in Xcode")
-    } else {
-        val matches = devices.filter { selection in listOf(it.text("udid"), it.text("name")) }
-        check(matches.size == 1) { "specify --simulator UUID or a unique available iOS simulator name" }
-        matches.single()
-    }
-    return Simulator(
-        device.text("udid"), device.text("state"), device.text("name"),
-        device["deviceTypeIdentifier"]?.jsonPrimitive?.contentOrNull, device.text("runtimeIdentifier"),
-    )
 }
 
 internal fun JsonObject.text(key: String): String = getValue(key).jsonPrimitive.content
@@ -187,21 +143,30 @@ internal fun runApplication(
     processes: Processes,
     target: String,
     app: Path,
-    simulator: Simulator?,
+    iosTarget: IosTarget?,
     parameters: List<String>,
     log: Path,
     waitForReport: (Process) -> Unit,
 ) {
+    if (iosTarget is IosDevice) {
+        val command = listOf(
+            "xcrun", "devicectl", "device", "process", "launch", "--device", iosTarget.id,
+            "--console", "--terminate-existing", bundleId,
+        ) + parameters
+        // devicectl --console forwards SIGTERM to the app when ManagedProcess closes.
+        processes.start(command, log).use { waitForReport(it.process) }
+        return
+    }
     if (target == "ios") {
-        val device = requireNotNull(simulator).id
+        val simulatorId = requireNotNull(iosTarget as? IosSimulator).id
         try {
             val command = listOf(
-                "xcrun", "simctl", "launch", "--console", "--terminate-running-process", device, bundleId
+                "xcrun", "simctl", "launch", "--console", "--terminate-running-process", simulatorId, bundleId
             ) + parameters
             processes.start(command, log).use { waitForReport(it.process) }
         } finally {
             processes.run(
-                listOf("xcrun", "simctl", "terminate", device, bundleId),
+                listOf("xcrun", "simctl", "terminate", simulatorId, bundleId),
                 log,
                 10,
                 checkExit = false

@@ -339,7 +339,7 @@
             browser: 'Browser', kind: 'Family', executable: 'Executable',
             capturedAt: 'Launcher snapshot (UTC)', buildProfile: 'Build profile', optimization: 'Optimization',
             coreCommit: 'Core commit', coreDirty: 'Core has uncommitted changes', browserVersion: 'Browser version',
-            simulator: 'Simulator', host: 'Host', xcodeVersion: 'Xcode', sdkVersion: 'SDK version',
+            iosTarget: 'iOS target', type: 'Type', simulator: 'Simulator', host: 'Host', xcodeVersion: 'Xcode', sdkVersion: 'SDK version',
             osName: 'OS', osVersion: 'OS version',
             architecture: 'Process architecture', cpuModel: 'CPU', availableProcessors: 'Available logical processors',
             physicalMemoryBytes: 'Physical memory (process-reported)', id: 'ID', name: 'Name', state: 'Initial state',
