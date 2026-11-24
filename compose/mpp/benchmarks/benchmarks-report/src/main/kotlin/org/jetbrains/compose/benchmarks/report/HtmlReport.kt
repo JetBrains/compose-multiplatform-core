@@ -39,7 +39,7 @@ private const val realFramesBudgetTolerancePercent = 5
 private const val realFramesBudgetTolerance = realFramesBudgetTolerancePercent / 100.0
 private const val realFramesOverBudgetMs = realFramesBudgetMs * (1 + realFramesBudgetTolerance)
 
-/** How the expected value of a display-paced per-frame metric follows from the refresh rate. */
+/** Display-paced per-frame metrics use linear distribution scales. */
 @Serializable
 private enum class Pacing {
     /** Time between frames: 1000 / refresh rate, in milliseconds. */
@@ -96,8 +96,7 @@ private enum class Metric(
         "Percentage of positive, finite callback intervals longer than " +
             "${realFramesOverBudgetMs.toDescriptionText()} ms: a fixed $realFramesBudgetHz Hz budget " +
             "(1000/$realFramesBudgetHz ms) plus $realFramesBudgetTolerancePercent% tolerance. Callback delays " +
-            "do not prove missed presentation deadlines. Expected FPS only controls distribution scales, " +
-            "not this metric.",
+            "do not prove missed presentation deadlines.",
     ),
     ESTIMATED_MISSED_VSYNC(
         "estimatedMissedVsync", "Estimated missed VSync", "%",
@@ -105,8 +104,7 @@ private enum class Metric(
             "Slots = max(1, ceil(interval / (1000/$realFramesBudgetHz ms) − " +
             "${realFramesBudgetTolerance.toDescriptionText()})). Assumes a fixed $realFramesBudgetHz Hz budget " +
             "with $realFramesBudgetTolerancePercent% tolerance, not measured VSync or presentation events; " +
-            "callback scheduling jitter can inflate this estimate. Expected FPS only controls distribution " +
-            "scales, not this metric.",
+            "callback scheduling jitter can inflate this estimate.",
     ),
     TOTAL_DURATION(
         "totalDuration", "Total duration", "ms",
@@ -421,20 +419,6 @@ fun generateHtmlReport(session: Path): Path {
                         id = "test"
                         attributes["role"] = "radiogroup"
                         attributes["aria-labelledby"] = "test-label"
-                    }
-                }
-                div(classes = "control-row") {
-                    id = "expected-fps-control"
-                    attributes["hidden"] = ""
-                    label { htmlFor = "expected-fps"; +"Expected FPS" }
-                    input(type = InputType.number) {
-                        id = "expected-fps"
-                        min = "1"
-                        step = "1"
-                        value = "60"
-                        required = true
-                        // The page reads the default from here; do not let a reload restore a stale value.
-                        attributes["autocomplete"] = "off"
                     }
                 }
                 fieldSet(classes = "kotlin-filter") {

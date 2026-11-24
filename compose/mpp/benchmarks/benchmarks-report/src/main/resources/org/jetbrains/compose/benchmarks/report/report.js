@@ -66,8 +66,6 @@
     const MODES = ['startup', 'realFrames', 'averageFrame', 'fps'];
     /** Smallest change against the baseline, in percent, that marks a chart as a regression or an improvement. */
     const SIGNIFICANT_CHANGE = 5;
-    /** Expected value of a display-paced metric at a given refresh rate, by the metric's pacing. */
-    const EXPECTED_VALUE = { interval: fps => 1000 / fps, rate: fps => fps };
     /** Options shared by all charts. */
     const CHART_OPTIONS = {
         responsive: true,
@@ -553,16 +551,6 @@
         + `A red border means at least one visible Kotlin series regressed by ${SIGNIFICANT_CHANGE}% or more at the last Compose version. `
         + `Otherwise, a green border means at least one improved by ${SIGNIFICANT_CHANGE}% or more.`;
 
-    const expectedFpsInput = byId('expected-fps');
-    /** Refresh rate that the scales of display-paced distribution charts are built around. */
-    let expectedFps = expectedFpsInput.valueAsNumber;
-    expectedFpsInput.addEventListener('change', () => {
-        const value = expectedFpsInput.valueAsNumber;
-        if (!expectedFpsInput.reportValidity() || !Number.isFinite(value)) return;
-        expectedFps = value;
-        renderCharts();
-    });
-
     /** Kotlin versions unchecked in the filter. */
     const hiddenKotlin = new Set();
     /** Charts on the page. */
@@ -576,9 +564,7 @@
 
     function distributionReading(metric) {
         const scale = metric.pacing
-            ? `Y starts at zero; its upper bound is twice the expected value (${expectedFps} FPS or ${1000 / expectedFps} ms), `
-                + 'expanded if needed to include outliers. '
-                + 'Expected FPS only controls the chart scale, not the benchmark or display refresh rate.'
+            ? 'Y starts at zero; its upper bound is automatically adjusted to include all samples.'
             : 'Non-positive percentile values are omitted.';
         return `X: percentile P0–P100 (minimum to maximum). Y: metric value on a ${metric.pacing ? 'linear' : 'logarithmic'} scale. `
             + 'Frame samples from repeated runs are pooled per Compose version and Kotlin version. '
@@ -710,12 +696,10 @@
             },
         });
         card.hidden = hiddenKotlin.has(kotlin);
-        // Display-paced metrics get a linear scale from zero to twice the expected value, stretched to
-        // fit outliers. P100, the last point of a curve, is its maximum.
+        // Display-paced metrics get a linear scale from zero, automatically sized to fit the data.
         const yScale = logarithmic ? { type: 'logarithmic' } : {
             type: 'linear',
             min: 0,
-            max: Math.max(2 * EXPECTED_VALUE[metric.pacing](expectedFps), ...series.map(({ curve }) => curve.at(-1))),
         };
         return {
             card,
@@ -773,8 +757,6 @@
         charts = [];
         distributionCards = [];
         byId('charts').replaceChildren();
-        const expectedFpsControl = byId('expected-fps-control');
-        expectedFpsControl.hidden = true;
         const message = byId('message');
         if (test.value === null) {
             message.textContent = 'No measurements were collected in this session. See summary.json and logs for errors.';
@@ -791,7 +773,6 @@
         const failures = runs.filter(hasFailed);
         const trendIds = metricIdsIn(runs.map(run => run.measurements));
         const distributionIds = metricIdsIn(runs.map(run => run.distributions));
-        expectedFpsControl.hidden = !distributionIds.some(id => metrics[id].pacing);
 
         const trends = trendIds.map(id => trendChart(id, runs));
         // One grid of distribution charts per Kotlin version that has per-frame samples.
