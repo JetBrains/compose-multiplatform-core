@@ -39,13 +39,8 @@ Reloaded before every execution run.
 
   <!-- Dynamically replaced with <script> tags -->
   %SCRIPTS%
-  <script type="module">
-    import {api} from "/base/kotlin/js-skiko-reexport-symbols.mjs";
-
-    // Start tests only after the Skiko runtime is initialized.
-    api.awaitSkiko
-      .then(() => window.__karma__.start())
-      .catch(error => window.__karma__.error(error));
+  <script type="text/javascript">
+    window.__karma__.start();
   </script>
 </body>
 </html>
