@@ -233,7 +233,7 @@ internal class DetachedTextEditingDelegate(
 ) : NativeTextEditingDelegate {
     override val isInteractive: Boolean = false
 
-    override val isEditable: Boolean = false
+    override val isEditable: Boolean = true
 
     override fun onFocus() = Unit
 
