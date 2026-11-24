@@ -118,6 +118,10 @@ typedef struct {
     [CMPActiveTouchesHolder.shared.touches removeAllObjects];
 }
 
++ (NSArray<UITouch *> *)activeTouches {
+    return [CMPActiveTouchesHolder.shared.touches copy];
+}
+
 - (id)initAtPoint:(CGPoint)point
          withType:(UITouchType)type
          inWindow:(UIWindow *)window

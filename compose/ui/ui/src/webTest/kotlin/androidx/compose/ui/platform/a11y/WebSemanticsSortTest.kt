@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.node.NodeCoordinator
@@ -50,7 +51,7 @@ class WebSemanticsSortTest : OnCanvasTests {
             nodes[tag] = SemanticsNode((it as NodeCoordinator).layoutNode, false)
         }
         var direction by mutableStateOf(LayoutDirection.Ltr)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             CompositionLocalProvider(LocalLayoutDirection provides direction) {
                 Box(Modifier.fillMaxSize().record("parent"), contentAlignment = AbsoluteAlignment.TopLeft) {
                     Box(Modifier.size(20.dp).record("a"))

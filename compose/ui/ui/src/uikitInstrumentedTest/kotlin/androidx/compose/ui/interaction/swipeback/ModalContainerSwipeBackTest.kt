@@ -76,7 +76,7 @@ internal abstract class ModalContainerSwipeBackTest(
 
         waitUntil("modal container should be presented") { presented }
 
-        val swipeBack = swipeFromLeftEdge().hold()
+        val swipeBack = dragFromLeftEdge().hold()
 
         waitUntil("back swipe should be in progress in a modal container") {
             transitionState is InProgress
@@ -132,7 +132,7 @@ internal abstract class ModalContainerSwipeBackTest(
 
         waitUntil("modal container should be presented") { presented }
 
-        val swipeBack = swipeFromRightEdge().hold()
+        val swipeBack = dragFromRightEdge().hold()
 
         waitUntil("back swipe should be in progress in a modal container") {
             transitionState is InProgress
