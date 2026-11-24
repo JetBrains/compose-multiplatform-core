@@ -159,18 +159,26 @@ internal fun runApplication(
     }
     if (target == "ios") {
         val simulatorId = requireNotNull(iosTarget as? IosSimulator).id
-        try {
-            val command = listOf(
-                "xcrun", "simctl", "launch", "--console", "--terminate-running-process", simulatorId, bundleId
-            ) + parameters
-            processes.start(command, log).use { waitForReport(it.process) }
-        } finally {
-            processes.run(
-                listOf("xcrun", "simctl", "terminate", simulatorId, bundleId),
-                log,
-                10,
-                checkExit = false
-            )
+        // --console can fail on stale launch_console FIFOs; use a PTY instead.
+        val command = listOf(
+            "xcrun", "simctl", "launch", "--console-pty", "--terminate-running-process", simulatorId, bundleId
+        ) + parameters
+        processes.start(command, log).use { child ->
+            try {
+                waitForReport(child.process)
+            } finally {
+                // Stop the app before closing its console process so simctl can clean up normally.
+                processes.run(
+                    listOf("xcrun", "simctl", "terminate", simulatorId, bundleId),
+                    log,
+                    10,
+                    checkExit = false
+                )
+                if (!child.process.waitFor(3, TimeUnit.SECONDS)) {
+                    appendLog(log, "simctl console did not exit after app termination; forcing cleanup\n")
+                }
+                // ManagedProcess.close is the fallback if the console is still running.
+            }
         }
         return
     }
