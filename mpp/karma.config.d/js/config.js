@@ -38,6 +38,15 @@ config.customContextFile = path.resolve(staticFilesDir, "compose_context.html");
 config.client.mocha = config.client.mocha || {};
 config.client.mocha.timeout = 10000;
 
+// Bundle the initialization hook with the tests so both use the same Skiko instance.
+const skikoInitFile = path.resolve(configPath, "bootstrap", "skiko-init.js");
+config.files.push({pattern: skikoInitFile, included: true, served: true, watched: false});
+config.preprocessors[skikoInitFile] = ["webpack"];
+// Let the hook's require("skiko.mjs") resolve to the same file used by the Kotlin tests,
+// searching their generated kotlin directory before node_modules.
+config.webpack.resolve.modules.unshift(path.resolve(basePath, "kotlin"));
+
+
 function KarmaWebpackOutputFramework(config) {
     // This controller is instantiated and set during the preprocessor phase by the karma-webpack plugin
     const controller = config.__karmaWebpackController;
@@ -75,7 +84,7 @@ config.frameworks.push("webpack-output");
 
 config.files.push(
     {pattern: path.resolve(basePath, "kotlin", "skiko.wasm"), included: false, served: true, watched: false},
-    {pattern: path.resolve(basePath, "kotlin", "skiko.mjs"), included: true, served: true, watched: false, type: 'module'},
+    {pattern: path.resolve(basePath, "kotlin", "skiko.mjs"), included: false, served: true, watched: false, type: 'module'},
     {pattern: path.resolve(basePath, "kotlin", "js-skiko-reexport-symbols.mjs"), included: false, served: true, watched: false, type: 'module'},
 );
 
