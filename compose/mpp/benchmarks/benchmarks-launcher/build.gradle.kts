@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.clikt)
     implementation(libs.kotlinSerializationJson)
     implementation(libs.selenium.java)
+    testImplementation(kotlin("test"))
 }
 
 application {

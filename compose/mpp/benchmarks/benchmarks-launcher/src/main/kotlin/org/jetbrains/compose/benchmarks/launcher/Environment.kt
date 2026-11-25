@@ -105,6 +105,7 @@ internal fun collectLauncherEnvironment(
         optimization = when (target) {
             "jvm" -> "ProGuard (release uber JAR)"
             "js", "wasmJs" -> "Kotlin production executable / webpack production"
+            "wasmD8" -> "Kotlin/Wasm optimized production executable / D8 --expose-gc / null surface"
             else -> "Kotlin/Native release optimizations"
         },
         coreCommit = commit, coreDirty = dirty, browserVersion = browserVersion, iosTarget = iosSimulator ?: iosTarget, host = host,

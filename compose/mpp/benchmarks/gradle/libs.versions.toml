@@ -17,6 +17,7 @@ compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-mu
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
 compose-material = { module = "org.jetbrains.compose.material:material", version.ref = "compose-multiplatform" }
 compose-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose-multiplatform" }
+kotlinCoroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinCoroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlinSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
 kotlinSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
