@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.jetbrains.compose.benchmarks.skiko
 
-internal actual fun initGraphicsContext() = Unit
+internal actual fun initGraphicsContext() {
+    initNonJvmGraphicsContext()
+}
+
+internal expect fun initNonJvmGraphicsContext()
