@@ -124,7 +124,7 @@ internal class ContentMeasurement(
         surface.canvas.clear(Color.TRANSPARENT)
         surface.canvas.drawPicture(picture)
         picture.close()
-        surface.flushAndSubmit()
+        graphicsContext.flushAndSubmit(surface)
         return measureTime { graphicsContext.awaitGPUCompletion() }
     }
 

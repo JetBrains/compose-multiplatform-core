@@ -72,6 +72,10 @@ private class DirectXGraphicsContext : GraphicsContext {
             }
         }
 
+    override fun flushAndSubmit(surface: Surface) {
+        surface.flushAndSubmit()
+    }
+
     override suspend fun awaitGPUCompletion() {
         texture?.waitForCompletion()
     }

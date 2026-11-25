@@ -10,7 +10,7 @@ requires JDK 17 or newer. Apple targets require macOS with Xcode.
 
 - `benchmarks-app` — an application with Compose benchmark cases.
 - `benchmarks-runtime` — runs measurements and sends results.
-- `benchmarks-compose-init-1-12` / `benchmarks-compose-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
+- `benchmarks-compose-init-1-12` / `benchmarks-compose-init-1-13` / `benchmarks-compose-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
 - `benchmarks-data` — shared report models and benchmark case IDs.
 - `benchmarks-report` — a JVM library that generates a static HTML report from a session directory.
 - `benchmarks-collector` — receives reports over HTTP and saves them as JSON files.
@@ -166,19 +166,24 @@ Build core sources and use Kotlin 2.4.20 for the benchmark project:
 ## Compose and Skiko compatibility
 
 `benchmarks-runtime` owns the scene and exposes configuration hooks without depending on any init
-module. Both init modules provide the same `org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko()` function.
-The app calls it at startup to configure `onBenchmarkComposeSceneInit` and, on JVM,
-`getJvmGraphicsContext`. No reflection or service loading is needed.
+module. All init modules provide the same `org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko()` function.
+The app calls it at startup to configure scene initialization and JVM/Apple graphics context providers.
+Surface flushing is a `GraphicsContext` method implemented with the matching Skiko API in each init
+module. No reflection or service loading is needed.
 
-The app declares `benchmarks-compose-init-current` in `commonMain`. When the Compose version is
-exactly `1.12.2`, Gradle substitutes `benchmarks-compose-init-1-12` on all targets. The version comes
-from `benchmarkComposeVersion` or the catalog default. Other versions and local core builds keep
-current initialization. Skiko and its native libraries come from Compose and are not overridden.
+The app declares `benchmarks-compose-init-current` in `commonMain`. For published Compose versions,
+Gradle substitutes `benchmarks-compose-init-1-12` for `1.12.x` and `benchmarks-compose-init-1-13` for
+`1.13.0`–`1.13.9` (including prereleases) on all targets. Compose `1.13.10` and later use `current`.
+The version comes from `benchmarkComposeVersion` or the catalog default. Local core builds always
+keep `current`, regardless of the catalog version. Other versions also keep `current`.
+Skiko and its native libraries come from Compose and are not overridden.
 
-Current initialization supports Metal/OpenGL/DirectX offscreen contexts on JVM. Legacy initialization
-for Compose `1.12.2` uses DirectX on Windows and null-rendering on macOS/Linux, as in the original
-multiplatform benchmarks, and leaves the scene initialization hook as a no-op. Offscreen GPU results
-from different backends are not directly comparable. Other old Compose versions are not supported.
+The `1-13` module preserves initialization for the Skiko APIs shipped with Compose `1.13.0`–`1.13.9`;
+`current` uses the new Ganesh extension APIs. Both support Metal/OpenGL/DirectX offscreen contexts on JVM.
+Legacy initialization for Compose `1.12.2` uses DirectX on Windows and null-rendering on macOS/Linux,
+as in the original multiplatform benchmarks, and leaves the scene initialization hook as a no-op.
+Offscreen GPU results from different backends are not directly comparable. Other old Compose versions
+are not supported.
 
 ## Launcher results
 
