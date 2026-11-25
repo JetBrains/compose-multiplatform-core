@@ -18,6 +18,11 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.test.utils.activeHoverEvents
+import androidx.compose.test.utils.activePinchEvents
+import androidx.compose.test.utils.activePresses
+import androidx.compose.test.utils.activeScrollEvents
+import androidx.compose.test.utils.activeTouches
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
@@ -36,9 +41,9 @@ import androidx.compose.ui.test.utils.beginKeyPress
 import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.dragSelectionHandleImpl
 import androidx.compose.ui.test.utils.endPinch
 import androidx.compose.ui.test.utils.endScroll
-import androidx.compose.ui.test.utils.dragSelectionHandleImpl
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.hold
@@ -46,14 +51,14 @@ import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.leftCenter
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
+import androidx.compose.ui.test.utils.offsetBy
 import androidx.compose.ui.test.utils.pinchBy
 import androidx.compose.ui.test.utils.pinchEventAt
-import androidx.compose.ui.test.utils.offsetBy
 import androidx.compose.ui.test.utils.release
-import androidx.compose.ui.test.utils.resetTouches
+import androidx.compose.ui.test.utils.resetAllGestures
+import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.scrollBy
 import androidx.compose.ui.test.utils.scrollEventAt
-import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
@@ -68,11 +73,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.toDpOffset
-import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.toDpOffset
+import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.ceil
@@ -106,6 +111,7 @@ import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
 import platform.UIKit.UIContentSizeCategory
 import platform.UIKit.UIDevice
+import platform.UIKit.UIEvent
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
 import platform.UIKit.UIGraphicsGetCurrentContext
@@ -122,12 +128,12 @@ import platform.UIKit.UIInterfaceOrientationMaskPortrait
 import platform.UIKit.UIInterfaceOrientationMaskPortraitUpsideDown
 import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
-import platform.UIKit.UIScreen
-import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UIKeyModifierFlags
 import platform.UIKit.UIPanGestureRecognizer
-import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIPressType
+import platform.UIKit.UIPressesEvent
+import platform.UIKit.UIScreen
+import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UITouch
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UITraitEnvironmentLayoutDirection
@@ -257,7 +263,12 @@ internal class UIKitInstrumentedTest(
         /**
          * The default duration of swipe gestures in instrumented tests.
          */
-        internal val DefaultSwipeDuration = 0.1.seconds
+        internal val DefaultSwipeDuration = 0.05.seconds
+
+        /**
+         * The default duration of edge gestures in instrumented tests.
+         */
+        internal val DefaultEdgeGestureDuration = 0.05.seconds
 
         /**
          * The maximum distance a touch moves within a single touch event during drag gestures.
@@ -471,6 +482,17 @@ internal class UIKitInstrumentedTest(
     fun tearDown() {
         clearComposeContainerReferencesIfDetached()
 
+        // A test must finish every artificial gesture it started: a session that is never
+        // completed is only dropped from the holders by the cleanup below, without the
+        // gesture end ever being delivered. Capture the unfinished sessions before the
+        // cleanup drops them, and fail the test only after the cleanup restored the
+        // environment for the next one — a failure must not leak sessions further.
+        val unfinishedTouches = UITouch.activeTouches()
+        val unfinishedScrollEvents = UIEvent.activeScrollEvents()
+        val unfinishedPinchEvents = UIEvent.activePinchEvents()
+        val unfinishedHoverEvents = UIEvent.activeHoverEvents()
+        val unfinishedPresses = UIPressesEvent.activePresses()
+
         // Stop text editing and hide keyboard if any
         attachedViewController?.view?.endEditing(force = true)
         try {
@@ -485,6 +507,17 @@ internal class UIKitInstrumentedTest(
         } finally {
             AccessibilityNotification.onNotificationPostedForTests = null
             appDelegate.cleanUp()
+        }
+
+        val unfinishedGestures = buildList {
+            if (unfinishedTouches.isNotEmpty()) add("${unfinishedTouches.size} touch(es)")
+            if (unfinishedScrollEvents.isNotEmpty()) add("${unfinishedScrollEvents.size} scroll/pan session(s)")
+            if (unfinishedPinchEvents.isNotEmpty()) add("${unfinishedPinchEvents.size} pinch/zoom session(s)")
+            if (unfinishedHoverEvents.isNotEmpty()) add("${unfinishedHoverEvents.size} hover session(s)")
+            if (unfinishedPresses.isNotEmpty()) add("${unfinishedPresses.size} key press(es)")
+        }
+        if (unfinishedGestures.isNotEmpty()) {
+            fail("Test finished with unfinished artificial gesture(s): " + unfinishedGestures.joinToString())
         }
     }
 
@@ -553,10 +586,8 @@ internal class UIKitInstrumentedTest(
         return getTargetWindow(position, window).touchDown(position, fromEdge)
     }
 
-    private val EdgeSwipeDuration = 0.1.seconds
-
-    fun swipeFromLeftEdge(
-        duration: Duration = EdgeSwipeDuration,
+    fun dragFromLeftEdge(
+        duration: Duration = DefaultEdgeGestureDuration,
     ): UITouch {
         val fromPosition = screenBounds.leftCenter()
         val toPosition = screenBounds.rightCenter().offsetBy(dx = (-16).dp)
@@ -565,8 +596,8 @@ internal class UIKitInstrumentedTest(
             .dragTo(toPosition, duration = duration)
     }
 
-    fun swipeFromRightEdge(
-        duration: Duration = EdgeSwipeDuration,
+    fun dragFromRightEdge(
+        duration: Duration = DefaultEdgeGestureDuration,
     ): UITouch {
         val fromPosition = screenBounds.rightCenter().offsetBy(dx = (-1).dp)
         val toPosition = screenBounds.leftCenter().offsetBy(dx = 16.dp)
@@ -574,6 +605,10 @@ internal class UIKitInstrumentedTest(
         return touchDown(fromPosition, fromEdge = true)
             .dragTo(toPosition, duration = duration)
     }
+
+    fun swipeFromLeftEdge() = dragFromLeftEdge().up()
+
+    fun swipeFromRightEdge() = dragFromRightEdge().up()
 
     /**
      * Simulates a mouse-down event at the specified position on the screen.
@@ -964,15 +999,15 @@ internal class UIKitInstrumentedTest(
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
     }
 
-     private fun AccessibilityTestNode.drag(
-         fromPosition: DpRect.() -> DpOffset = { center() },
-         toPosition: DpRect.() -> DpOffset = { center() },
-         duration: Duration
-     ): UITouch {
-         val frame = frame ?: fail("frame is null")
-         return touchDown(position = frame.fromPosition())
-             .dragTo(frame.toPosition(), duration = duration)
-     }
+    private fun AccessibilityTestNode.drag(
+        fromPosition: DpRect.() -> DpOffset = { center() },
+        toPosition: DpRect.() -> DpOffset = { center() },
+        duration: Duration
+    ): UITouch {
+        val frame = frame ?: fail("frame is null")
+        return touchDown(position = frame.fromPosition())
+            .dragTo(frame.toPosition(), duration = duration)
+    }
 
     fun AccessibilityTestNode.dragRight(
         duration: Duration = DefaultDragDuration
@@ -993,32 +1028,27 @@ internal class UIKitInstrumentedTest(
     fun AccessibilityTestNode.swipe(
         fromPosition: DpRect.() -> DpOffset = { center() },
         toPosition: DpRect.() -> DpOffset = { center() },
-        fromEdge: Boolean = false,
         duration: Duration = DefaultSwipeDuration
     ) {
         val frame = frame ?: error("Internal error. Frame is missing.")
-        return touchDown(frame.fromPosition(), fromEdge = fromEdge)
+        return touchDown(frame.fromPosition())
             .dragTo(frame.toPosition(), duration)
             .up()
     }
 
     fun AccessibilityTestNode.swipeRight(
-        fromEdge: Boolean = false,
         duration: Duration = DefaultSwipeDuration
     ) = swipe(
         fromPosition = { leftCenter().offsetBy(dx = 16.dp) },
         toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
-        fromEdge = fromEdge,
         duration = duration
     )
 
     fun AccessibilityTestNode.swipeLeft(
-        fromEdge: Boolean = false,
         duration: Duration = DefaultSwipeDuration
     ) = swipe(
         fromPosition = { rightCenter().offsetBy(dx = (-16).dp) },
         toPosition = { leftCenter().offsetBy(dx = 16.dp) },
-        fromEdge = fromEdge,
         duration = duration
     )
 }
@@ -1096,7 +1126,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             window.resignKeyWindow()
         }
 
-        _window?.resetTouches()
+        _window?.resetAllGestures()
         _window?.resignKeyWindow()
         _window?.windowScene = null
         _window?.rootViewController = UIViewController()

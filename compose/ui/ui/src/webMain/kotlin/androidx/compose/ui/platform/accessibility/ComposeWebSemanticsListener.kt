@@ -20,9 +20,13 @@ import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableScatterMap
 import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectListOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -32,6 +36,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
+import androidx.compose.ui.window.findFirstEligibleA11YElementToFocus
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
@@ -47,6 +52,7 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
+
 
 internal class ComposeWebSemanticsListener(
     val webSemanticsRoot: HTMLElement,
@@ -66,7 +72,23 @@ internal class ComposeWebSemanticsListener(
     private var hasStopped = false
     private val startJob = Job()
 
+    // The focus request is processed in syncSemanticsWithWebA11Y();
+    // Also see applyActivationFocus()
+    private var hasPendingActivationFocusRequest = false
+
+    internal fun onUserActivationRequested() {
+        hasPendingActivationFocusRequest = true
+        // Before a11y is activated, `pointer-events: none` lets pointer events
+        // pass through the a11y tree to the canvas below.
+        // TalkBack (Android) touch exploration (moving a finger over the UI) requires the a11y
+        // elements to participate in hit testing so it can announce their descriptions.
+        // Remove the override to let the browser target those elements:
+        webSemanticsRoot.style.removeProperty("pointer-events")
+    }
+
     /**
+     * Starts the sync loop, which keeps the a11y tree in sync with the Compose semantics.
+     *
      * @param coroutineScope The [CoroutineScope] used to run this listener,
      * typically the composition scope so the listener follows the composition lifecycle.
      */
@@ -169,6 +191,20 @@ internal class ComposeWebSemanticsListener(
         invalidationChannel.trySend(Unit)
     }
 
+    /**
+     * Once the A11Y is activated, the activation button is removed and users expect to start
+     * interacting with the app. We have to focus the appropriate a11y node.
+     */
+    private fun applyActivationFocus() {
+        val element = findFirstEligibleA11YElementToFocus(
+            webSemanticsRoot = webSemanticsRoot,
+            a11yNodeToSemanticsNode = a11yNodeToSemanticsNode
+        ) ?: return
+
+        if (!element.hasAttribute("tabindex")) element.tabIndex = -1
+        focusExt(element, true)
+    }
+
     // Three array deques for dfs traversal / tree sync:
     private val dfsSemanticsNodes = ArrayDeque<SemanticsNode>()
     private val dfsA11YParents = ArrayDeque<HTMLElement>()
@@ -268,6 +304,11 @@ internal class ComposeWebSemanticsListener(
 
         // Once the sync completes, restore the focus if necessary:
         a11YFocusRecovery.onSyncFinished()
+
+        if (hasPendingActivationFocusRequest) {
+            applyActivationFocus()
+            hasPendingActivationFocusRequest = false
+        }
     }
 
     // The last (top) root is never inert.
@@ -759,11 +800,19 @@ internal class ComposeWebSemanticsListener(
     }
 
     internal fun stop() {
-        if (!hasStarted || hasStopped) return
+        if (hasStopped) return
+        hasStopped = true
 
         webSemanticsRoot.removeEventListener("keydown", onKeyDown)
-        a11YScrollController.clear()
+        semanticsOwners.clear()
+        invalidationChannel.close()
+        syncTriggerChannel.close()
+        startJob.cancel()
+        clearTree()
+    }
 
+    private fun clearTree() {
+        a11YScrollController.clear()
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
         dfsA11YReachabilities.clear()
@@ -772,12 +821,6 @@ internal class ComposeWebSemanticsListener(
         a11yNodeToSemanticsNode.clear()
         targetParentToChildren.clear()
         targetChildToParent.clear()
-
-        invalidationChannel.close()
-        syncTriggerChannel.close()
-        startJob.cancel()
-
         removeAllChildrenOf(webSemanticsRoot)
-        hasStopped = true
     }
 }

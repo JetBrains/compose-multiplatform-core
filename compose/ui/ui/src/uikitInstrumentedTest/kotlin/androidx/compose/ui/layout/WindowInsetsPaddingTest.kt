@@ -51,13 +51,18 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.uikit.utils.CMPLayoutRegion
+import androidx.compose.ui.uikit.utils.CMPLayoutRegionAdaptivityAxisVertical
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.ComposeUIView
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.UIKit.UIColor
+import platform.UIKit.UIEdgeInsets
+import platform.UIKit.UIView
 import platform.UIKit.UIInterfaceOrientationLandscapeLeft
 import platform.UIKit.UIInterfaceOrientationLandscapeRight
 import platform.UIKit.UIInterfaceOrientationPortrait
@@ -112,7 +117,7 @@ class WindowInsetsPaddingTest {
             DpRect(
                 DpOffset.Zero,
                 DpSize(
-                    screenSize.width - viewController.view.safeAreaInsets.useContents { right }.dp,
+                    screenSize.width - viewController.view.safeAreaLayoutRegionInsets.useContents { right }.dp,
                     screenSize.height
                 )
             ),
@@ -142,7 +147,7 @@ class WindowInsetsPaddingTest {
 
         assertEquals(
             DpRect(
-                left = viewController.view.safeAreaInsets.useContents { left }.dp,
+                left = viewController.view.safeAreaLayoutRegionInsets.useContents { left }.dp,
                 top = 0.dp,
                 right = screenSize.width,
                 bottom = screenSize.height
@@ -180,7 +185,7 @@ class WindowInsetsPaddingTest {
         assertEquals(
             DpRect(
                 left = 0.dp,
-                top = viewController.view.safeAreaInsets.useContents { top }.dp,
+                top = viewController.view.safeAreaLayoutRegionInsets.useContents { top }.dp,
                 right = screenSize.width,
                 bottom = screenSize.height
             ),
@@ -302,6 +307,13 @@ class WindowInsetsPaddingTest {
         )
     }
 }
+
+@OptIn(ExperimentalForeignApi::class)
+private val UIView.safeAreaLayoutRegionInsets: CValue<UIEdgeInsets>
+    get() = CMPLayoutRegion
+        .safeAreaWithCornerAdaptation(CMPLayoutRegionAdaptivityAxisVertical)
+        .edgeInsetsInView(this)
+
 
 @Composable
 private fun InnerContent(modifier: Modifier, state: MutableState<Boolean>) {

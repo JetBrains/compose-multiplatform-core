@@ -18,14 +18,27 @@ package androidx.compose.ui.text
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.clearSkikoComposeImplementation
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.font.createFontFamilyResolver
-import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.platform.FontCache
 import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,6 +57,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
+import org.jetbrains.skia.Surface
+import org.jetbrains.skia.paragraph.ParagraphBuilder
+import org.jetbrains.skia.paragraph.ParagraphStyle as SkParagraphStyle
+import org.jetbrains.skia.paragraph.TextStyle as SkTextStyle
 
 // Adopted tests from text/text/src/androidTest/java/androidx/compose/ui/text/android/selection/WordBoundaryTest.kt
 @OptIn(InternalComposeUiApi::class)
@@ -591,9 +608,9 @@ class SkikoParagraphTest {
 
         // The default draw style is null, while painters pass Fill; both are painted the same
         layouter.setDrawStyle(Fill)
-        assertFalse(layouter.updateForeground)
+        assertFalse(layouter.needsForegroundUpdate)
         layouter.setDrawStyle(null)
-        assertFalse(layouter.updateForeground)
+        assertFalse(layouter.needsForegroundUpdate)
     }
 
     @Test
@@ -601,7 +618,176 @@ class SkikoParagraphTest {
         val layouter = simpleLayouter()
 
         layouter.setDrawStyle(Stroke(width = 2f))
-        assertTrue(layouter.updateForeground)
+        assertTrue(layouter.needsForegroundUpdate)
+    }
+
+    @Test
+    fun setBrush_sameBrushAndNaNAlpha_doesNotRequireRelayout() {
+        val layouter = simpleLayouter()
+        val brush = Brush.verticalGradient(listOf(Color.Blue, Color.Red))
+        val size = Size(100f, 100f)
+
+        // NaN is the default alpha, e.g. of TextStyle(brush = ...)
+        layouter.setBrush(brush, size, alpha = Float.NaN)
+        layouter.layoutParagraph(maxWidthConstraint.toFloat())
+        layouter.setBrush(brush, size, alpha = Float.NaN)
+        assertFalse(layouter.needsForegroundUpdate)
+    }
+
+    @Test
+    fun setBrush_alphaChangedFromNaN_requiresRelayout() {
+        val layouter = simpleLayouter()
+        val brush = Brush.verticalGradient(listOf(Color.Blue, Color.Red))
+        val size = Size(100f, 100f)
+
+        layouter.setBrush(brush, size, alpha = Float.NaN)
+        layouter.layoutParagraph(maxWidthConstraint.toFloat())
+        layouter.setBrush(brush, size, alpha = 0.5f)
+        assertTrue(layouter.needsForegroundUpdate)
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-8959
+    @Test
+    fun paintWithNewColor_changesTextDecorationColor() {
+        val paragraph = decoratedParagraph()
+
+        assertTrue(
+            paragraph.paintedImage(Color.Red).anyPixel { it.isPainted },
+            "Nothing was painted"
+        )
+        val image = paragraph.paintedImage(Color.Blue)
+        assertTrue(image.anyPixel { it.isPainted }, "Nothing was painted")
+        assertFalse(
+            image.anyPixel { it.hasRed },
+            "Some pixels are still painted with the old color"
+        )
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-8959
+    @Test
+    fun paintWithNewSolidColorBrush_changesTextDecorationColor() {
+        val paragraph = decoratedParagraph()
+
+        assertTrue(
+            paragraph.paintedImage(SolidColor(Color.Red)).anyPixel { it.isPainted },
+            "Nothing was painted"
+        )
+        val image = paragraph.paintedImage(SolidColor(Color.Blue))
+        assertTrue(image.anyPixel { it.isPainted }, "Nothing was painted")
+        assertFalse(
+            image.anyPixel { it.hasRed },
+            "Some pixels are still painted with the old color"
+        )
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-8959
+    @Test
+    fun setShaderBrush_onDecoratedText_doesNotRequireRelayout() {
+        val layouter =
+            (simpleIntrinsics("Lorem ipsum", TextStyle(textDecoration = TextDecoration.Underline))
+                as SkikoParagraphIntrinsics).layouter()
+        val size = Size(100f, 100f)
+
+        // Skia only paints decorations with a solid color, and with a ShaderBrush that color
+        // doesn't depend on the brush, so changing the brush doesn't need to update them
+        val gradient1 = Brush.verticalGradient(listOf(Color.Blue, Color.Red))
+        val gradient2 = Brush.verticalGradient(listOf(Color.Green, Color.Red))
+        layouter.setBrush(gradient1, size, alpha = 1f)
+        layouter.layoutParagraph(maxWidthConstraint.toFloat())
+        layouter.setBrush(gradient2, size, alpha = 0.5f)
+        assertTrue(layouter.needsForegroundUpdate)
+    }
+
+    private fun decoratedParagraph() = simpleParagraph(
+        text = "Hello",
+        textStyle = TextStyle(
+            fontSize = 20.sp,
+            color = Color.Red,
+            textDecoration = TextDecoration.Underline + TextDecoration.LineThrough
+        )
+    )
+
+    private fun Paragraph.paintedImage(color: Color): ImageBitmap {
+        val image = ImageBitmap(width = 200, height = 40)
+        paint(
+            canvas = Canvas(image),
+            color = color,
+            shadow = null,
+            textDecoration = TextDecoration.Underline + TextDecoration.LineThrough,
+            drawStyle = null,
+            blendMode = DrawScope.DefaultBlendMode
+        )
+        return image
+    }
+
+    private fun Paragraph.paintedImage(brush: Brush): ImageBitmap {
+        val image = ImageBitmap(width = 200, height = 40)
+        paint(
+            canvas = Canvas(image),
+            brush = brush,
+            alpha = Float.NaN,
+            shadow = null,
+            textDecoration = TextDecoration.Underline + TextDecoration.LineThrough,
+            drawStyle = null,
+            blendMode = DrawScope.DefaultBlendMode
+        )
+        return image
+    }
+
+    private fun ImageBitmap.anyPixel(predicate: (Color) -> Boolean): Boolean {
+        val pixelMap = toPixelMap()
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                if (predicate(pixelMap[x, y])) return true
+            }
+        }
+        return false
+    }
+
+    // The canvas is fully transparent, and antialiasing only changes a pixel's alpha, so a pixel
+    // painted pure blue has no red at all, and one painted pure red does
+    private val Color.isPainted get() = alpha > 0f
+    private val Color.hasRed get() = red > 0f
+
+    // https://youtrack.jetbrains.com/issue/CMP-10337
+    @Test
+    fun textStyleLocaleList_selectsLocaleSpecificGlyphs() {
+        if (!hasLocaleSpecificCjkGlyphs) return
+
+        fun paintedPixels(localeList: LocaleList) =
+            paintedPixels(HAN_TEXT, TextStyle(localeList = localeList))
+
+        val japanese = paintedPixels(LocaleList("ja"))
+        val simplifiedChinese = paintedPixels(LocaleList("zh-Hans"))
+
+        assertTrue(
+            japanese.contentEquals(paintedPixels(LocaleList("ja"))),
+            "The same locale must render identically"
+        )
+        assertFalse(
+            japanese.contentEquals(simplifiedChinese),
+            "Japanese and Simplified Chinese glyphs must differ"
+        )
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-10337
+    @Test
+    fun spanStyleLocaleList_selectsLocaleSpecificGlyphs() {
+        if (!hasLocaleSpecificCjkGlyphs) return
+
+        fun text(localeList: LocaleList) = buildAnnotatedString {
+            withStyle(SpanStyle(localeList = localeList)) {
+                append(HAN_TEXT)
+            }
+        }
+
+        val japanese = paintedPixels(text(LocaleList("ja")), TextStyle())
+        val simplifiedChinese = paintedPixels(text(LocaleList("zh-Hans")), TextStyle())
+
+        assertFalse(
+            japanese.contentEquals(simplifiedChinese),
+            "Japanese and Simplified Chinese glyphs must differ"
+        )
     }
 
     private fun simpleLayouter() =
@@ -623,4 +809,74 @@ class SkikoParagraphTest {
         density = defaultDensity,
         fontFamilyResolver = fontFamilyResolver
     )
+
+    /** Paints [text] and returns its pixels, checking that some text has actually been painted. */
+    private fun paintedPixels(text: AnnotatedString, textStyle: TextStyle): IntArray {
+        val paragraph = Paragraph(
+            text = text.text,
+            style = textStyle.merge(fontSize = 32.sp, color = Color.Black),
+            constraints = Constraints(maxWidth = CANVAS_WIDTH),
+            density = defaultDensity,
+            fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList("en-US"),
+            spanStyles = text.spanStyles,
+        )
+        val image = ImageBitmap(CANVAS_WIDTH, CANVAS_HEIGHT)
+        paragraph.paint(
+            canvas = Canvas(image),
+            color = Color.Unspecified,
+            shadow = null,
+            textDecoration = null,
+            drawStyle = null,
+            blendMode = DrawScope.DefaultBlendMode
+        )
+        val pixels = image.toPixelMap().buffer
+        assertTrue(pixels.any { it != 0 }, "No text was painted")
+        return pixels
+    }
+
+    private fun paintedPixels(text: String, textStyle: TextStyle) =
+        paintedPixels(AnnotatedString(text), textStyle)
+
+    private companion object {
+        // Ideographs whose glyph shapes differ between the Japanese and Chinese conventions
+        const val HAN_TEXT = "直海角骨"
+
+        // The size of the canvas the locale tests paint [HAN_TEXT] on
+        const val CANVAS_WIDTH = 400
+        const val CANVAS_HEIGHT = 60
+
+        /**
+         * Whether the host's fonts have locale-specific glyph variants for [HAN_TEXT].
+         *
+         * Checked by drawing the text with Skia directly, bypassing Compose's text styles, in
+         * Japanese and in Simplified Chinese, using the same font fallback setup as Compose. Hosts
+         * without such fonts (e.g. Linux machines without CJK fonts) draw both the same way, or not
+         * at all. Computed once, as it can't change during a test run.
+         */
+        val hasLocaleSpecificCjkGlyphs: Boolean by lazy {
+            val fonts = FontCache().fonts
+
+            fun skiaPixels(locale: String): IntArray {
+                val style = SkTextStyle()
+                    .setFontSize(32f)
+                    .setColor(Color.Black.toArgb())
+                    .setLocale(locale)
+                val paragraph = ParagraphBuilder(SkParagraphStyle(), fonts)
+                    .pushStyle(style)
+                    .addText(HAN_TEXT)
+                    .build()
+                    .layout(CANVAS_WIDTH.toFloat())
+                val surface = Surface.makeRasterN32Premul(CANVAS_WIDTH, CANVAS_HEIGHT)
+                try {
+                    paragraph.paint(surface.canvas, 0f, 0f)
+                    return surface.makeImageSnapshot().toComposeImageBitmap().toPixelMap().buffer
+                } finally {
+                    surface.close()
+                }
+            }
+
+            !skiaPixels("ja").contentEquals(skiaPixels("zh-Hans"))
+        }
+    }
 }

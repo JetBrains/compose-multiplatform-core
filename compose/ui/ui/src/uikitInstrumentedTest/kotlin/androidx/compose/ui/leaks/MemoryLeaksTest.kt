@@ -54,7 +54,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import platform.CoreGraphics.CGRectMake
@@ -375,9 +374,8 @@ class MemoryLeaksTest {
                 controller.waitForIdle()
             }
 
-            val layersViewController = appDelegate.findLayersViewController()
             collectComposeSubviewsRecursively(
-                layersViewController.view,
+                appDelegate.findLayersViewController().view,
                 subviewsReferences
             )
 
@@ -431,6 +429,8 @@ class MemoryLeaksTest {
         view: UIView,
         result: MutableList<WeakReference<UIView>>
     ) {
+        if (view.isExcludedSystemView) return
+
         if (view::class != UIView::class) {
             result.add(WeakReference(view))
         }
@@ -443,6 +443,18 @@ class MemoryLeaksTest {
         }
     }
 
+    // UIKit may add private implementation views to the hierarchy. Ignore only the known
+    // system-managed subtrees, so unexpected custom views are still collected.
+    private val UIView.isExcludedSystemView: Boolean
+        get() {
+            val excludedSystemViewSimpleNames = setOf(
+                "ScrollEdgeEffectView",
+                "_UITouchPassthroughView",
+            )
+            val simpleName = this::class.simpleName
+            return simpleName != null && simpleName in excludedSystemViewSimpleNames
+        }
+
     private suspend fun runApplicationLoop(duration: Duration) {
         NSRunLoop.currentRunLoop().runUntilDate(
             limitDate = NSDate.dateWithTimeIntervalSinceNow(
@@ -452,7 +464,6 @@ class MemoryLeaksTest {
         delay(duration)
     }
 
-    @OptIn(ExperimentalForeignApi::class)
     private fun startFakeTextInputSession() {
         val input = UITextField()
         UIApplication.sharedApplication.keyWindow?.rootViewController?.view?.addSubview(input)

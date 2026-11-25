@@ -27,17 +27,14 @@ import kotlinx.cinterop.autoreleasepool
 import kotlinx.cinterop.objcPtr
 import kotlinx.cinterop.rawValue
 import kotlinx.cinterop.useContents
-import org.jetbrains.skia.BackendRenderTarget
 import org.jetbrains.skia.Canvas
-import org.jetbrains.skia.ColorSpace
-import org.jetbrains.skia.DirectContext
 import org.jetbrains.skia.Picture
 import org.jetbrains.skia.PictureRecorder
-import org.jetbrains.skia.PixelGeometry
 import org.jetbrains.skia.Surface
-import org.jetbrains.skia.SurfaceColorFormat
-import org.jetbrains.skia.SurfaceOrigin
-import org.jetbrains.skia.SurfaceProps
+import org.jetbrains.skia.gpu.GpuContext
+import org.jetbrains.skia.gpu.makeMetalContext
+import org.jetbrains.skia.gpu.makeMetalTexture
+import org.jetbrains.skiko.ExperimentalSkikoApi
 import platform.Foundation.NSLock
 import platform.Foundation.NSThread
 import platform.IOSurface.IOSurfaceGetHeight
@@ -70,7 +67,8 @@ internal class SurfaceMetalRedrawer(
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
     private val queue = getCachedCommandQueue(device)
     // Created for the first frame, and again after releaseRenderingResources closed it.
-    private var context: DirectContext? = null
+    @OptIn(ExperimentalSkikoApi::class)
+    private var context: GpuContext? = null
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
 
@@ -157,12 +155,14 @@ internal class SurfaceMetalRedrawer(
      * Drains the drawables and closes the Skia context, which keeps GPU memory (offscreen layer
      * textures, glyph atlases) for as long as it lives. The next frame creates a new context.
      */
+    @OptIn(ExperimentalSkikoApi::class)
     fun releaseRenderingResources() {
         drainSkiaSurfaces()
         context?.close()
         context = null
     }
 
+    @OptIn(ExperimentalSkikoApi::class)
     override fun dispose() {
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
@@ -337,31 +337,25 @@ internal class SurfaceMetalRedrawer(
         }
     }
 
+    @OptIn(ExperimentalSkikoApi::class)
     private fun getSkiaSurface(drawable: CMPDrawable): Surface? {
         (drawable.associatedSkiaSurface as? Surface)
             ?.takeIf { !it.isClosed }
             ?.let { return it }
 
-        val renderTarget = BackendRenderTarget.makeMetal(
+        val context = context
+            ?: makeMetalContext(device.objcPtr(), queue.objcPtr()).also { this.context = it }
+
+        val texture = makeMetalTexture(
             width = IOSurfaceGetWidth(drawable.surface).toInt(),
             height = IOSurfaceGetHeight(drawable.surface).toInt(),
             texturePtr = drawable.drawableTexture().rawValue,
         )
 
-        val context = context
-            ?: DirectContext.makeMetal(device.objcPtr(), queue.objcPtr()).also { this.context = it }
-
-        val surface = Surface.makeFromBackendRenderTarget(
-            context,
-            renderTarget,
-            SurfaceOrigin.TOP_LEFT,
-            SurfaceColorFormat.BGRA_8888,
-            ColorSpace.sRGB,
-            SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
-        )
+        val surface = context.makeSurface(texture)
 
         if (surface == null) {
-            renderTarget.close()
+            texture.close()
             return null
         }
 
@@ -369,7 +363,7 @@ internal class SurfaceMetalRedrawer(
 
         activeDrawableAssociatedResourcesDisposes.add {
             surface.close()
-            renderTarget.close()
+            texture.close()
         }
 
         return surface
@@ -387,6 +381,7 @@ internal class SurfaceMetalRedrawer(
         }
     }
 
+    @OptIn(ExperimentalSkikoApi::class)
     private fun renderAndPresentFrame(frame: Frame) {
         disposeDrawableAssociatedResources(generation = metalLayer.drawablesGeneration.toInt())
 
@@ -409,7 +404,7 @@ internal class SurfaceMetalRedrawer(
 
         surface.canvas.drawPicture(frame.picture)
         frame.dispose()
-        surface.flushAndSubmit()
+        context?.submit()
 
         val commandBuffer = queue.commandBuffer()
         if (commandBuffer == null) {

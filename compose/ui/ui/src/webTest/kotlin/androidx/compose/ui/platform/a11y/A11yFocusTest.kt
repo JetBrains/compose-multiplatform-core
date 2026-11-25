@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.createEagerAccessibilityWindow
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
@@ -52,7 +53,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusMovesToNewPageWhenFocusedA11yNodeIsRemoved() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             NavigationPages(page, onNavigate = { page = it })
         }
         awaitA11YChanges()
@@ -80,7 +81,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun navigationDoesNotTakeFocusFromOutsideCompose() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             NavigationPages(page, onNavigate = { page = it })
         }
         awaitA11YChanges()
@@ -105,7 +106,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun navigationPreservesExplicitFocusMoveInsideCompose() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Button(onClick = {}, modifier = Modifier.testTag("destination")) {
                     Text("Keep focus here")
@@ -134,7 +135,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoveryUsesNearestSurvivingContainer() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Button(onClick = {}, modifier = Modifier.testTag("unrelated")) {
                     Text("Outside the navigation container")
@@ -163,7 +164,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun semanticsUpdatePreservesFocusOnSurvivingNode() = runApplicationTest {
         var label by mutableStateOf("Before update")
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(onClick = {}, modifier = Modifier.testTag("survivor")) {
                 Text(label)
             }
@@ -183,7 +184,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoverySkipsFullyClippedInertNode() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (page == 1) {
                 Button(onClick = { page = 2 }, modifier = Modifier.testTag("next")) {
                     Text("Next")
@@ -226,7 +227,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun navigationInsideDialogKeepsFocusInDialogOwner() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Button(onClick = {}, modifier = Modifier.testTag("background")) {
                 Text("Background")
             }
@@ -262,7 +263,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoverySkipsDisabledAndHiddenNodes() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (page == 1) {
                 Button(onClick = { page = 2 }, modifier = Modifier.testTag("next")) {
                     Text("Next")
@@ -302,7 +303,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoveryLeavesFocusAloneWhenNoSuitableTargetExists() = runApplicationTest {
         var showButton by mutableStateOf(true)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (showButton) {
                 Button(onClick = { showButton = false }, modifier = Modifier.testTag("next")) {
                     Text("Next")
@@ -326,7 +327,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoveryPrefersContentLeafOverLabelledPageContainer() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (page == 1) {
                 Button(onClick = { page = 2 }, modifier = Modifier.testTag("next")) {
                     Text("Next")
@@ -357,7 +358,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoveryKeepsButtonWithTextChildrenAsWholeTarget() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (page == 1) {
                 Button(onClick = { page = 2 }, modifier = Modifier.testTag("next")) {
                     Text("Next")
@@ -393,7 +394,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoveryKeepsMergedSemanticsAsWholeTarget() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             if (page == 1) {
                 Button(onClick = { page = 2 }, modifier = Modifier.testTag("next")) {
                     Text("Next")
@@ -432,7 +433,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoveryFallsBackToFartherAncestorWhenNearestContainerHasNoTarget() = runApplicationTest {
         var showButton by mutableStateOf(true)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Column(Modifier.testTag("navigation").semantics { isTraversalGroup = true }) {
                     if (showButton) {
@@ -468,7 +469,7 @@ class A11yFocusTest : OnCanvasTests {
     @Test
     fun focusRecoverySkipsSurvivingContainerInsideHiddenContainer() = runApplicationTest {
         var page by mutableStateOf(1)
-        createComposeWindow {
+        createEagerAccessibilityWindow {
             Column {
                 Column(Modifier.testTag("hidden").semantics {
                     isTraversalGroup = true

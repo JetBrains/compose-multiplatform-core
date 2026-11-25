@@ -40,12 +40,10 @@ import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.offsetBy
 import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.up
-import androidx.compose.ui.test.utils.wait
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.fail
 import kotlin.time.Duration.Companion.milliseconds
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
@@ -115,7 +113,7 @@ internal class UIKitNavigationSwipeBackTest {
             TestHorizontalPager(currentPage = mutableIntStateOf(1))
         }
 
-        swipeFromLeftEdge().up()
+        swipeFromLeftEdge()
 
         waitForPopped(viewControllerHostingCompose)
     }
@@ -174,7 +172,7 @@ internal class UIKitNavigationSwipeBackTest {
             TestHorizontalPager(currentPage = currentPage)
         }
 
-        swipeFromLeftEdge().up()
+        swipeFromLeftEdge()
 
         waitForPopped(viewControllerHostingCompose)
     }

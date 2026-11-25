@@ -640,6 +640,7 @@ public final class androidx/compose/ui/awt/ComposePanel : javax/swing/JLayeredPa
 	public fun getMaximumSize ()Ljava/awt/Dimension;
 	public fun getMinimumSize ()Ljava/awt/Dimension;
 	public fun getPreferredSize ()Ljava/awt/Dimension;
+	public final fun getRedispatchUnconsumedMouseWheelEvents ()Z
 	public final fun getRenderApi ()Lorg/jetbrains/skiko/GraphicsApi;
 	public fun getSemanticsOwners ()Ljava/util/Collection;
 	public fun hasFocus ()Z
@@ -662,6 +663,7 @@ public final class androidx/compose/ui/awt/ComposePanel : javax/swing/JLayeredPa
 	public fun setMaximumSize (Ljava/awt/Dimension;)V
 	public fun setMinimumSize (Ljava/awt/Dimension;)V
 	public fun setPreferredSize (Ljava/awt/Dimension;)V
+	public final fun setRedispatchUnconsumedMouseWheelEvents (Z)V
 	public fun setRequestFocusEnabled (Z)V
 }
 
@@ -711,7 +713,7 @@ public final class androidx/compose/ui/awt/SwingDialog_desktopKt {
 
 public final class androidx/compose/ui/awt/SwingPanel_desktopKt {
 	public static final fun SwingPanel (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
-	public static final fun SwingPanel-euL9pac (JLkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun SwingPanel-euL9pac (JLkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final fun getNoOpUpdate ()Lkotlin/jvm/functions/Function1;
 }
 

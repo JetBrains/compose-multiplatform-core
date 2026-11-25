@@ -37,4 +37,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ * The artificial presses that were started and have not ended or been
+ * cancelled yet. Used by the test teardown to verify that every started
+ * gesture was completed.
+ */
+@interface UIPressesEvent (CMPActivePresses)
+
++ (NSArray<UIPressesEvent *> *)activePresses;
+
+/** Drops all unfinished presses without delivering their end or cancel events. */
++ (void)endAllPresses;
+
+@end
+
 NS_ASSUME_NONNULL_END
