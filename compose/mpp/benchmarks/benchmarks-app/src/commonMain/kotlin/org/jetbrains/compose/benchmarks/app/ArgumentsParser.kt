@@ -60,7 +60,8 @@ internal fun parseBenchmarkArguments(args: Array<String>): BenchmarkArguments =
         id = args[1],
     )
 
-internal fun benchmarkContent(testName: String): @Composable () -> Unit = when (
+// Public for execution from the D8 environment.
+fun benchmarkContent(testName: String): @Composable () -> Unit = when (
     BenchmarkCase.entries.firstOrNull { it.id == testName }
         ?: error("Unknown benchmark case: $testName")
 ) {
