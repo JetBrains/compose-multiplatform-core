@@ -167,11 +167,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
             return nil;
         }
 
-        if (isMainThread) {
-            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:kDrawablePollingInterval]];
-        } else {
-            [NSThread sleepForTimeInterval:kDrawablePollingInterval];
-        }
+        [NSThread sleepForTimeInterval:kDrawablePollingInterval];
 
         if (_disableDrawableAcquisitionRetries) {
             return nil;
