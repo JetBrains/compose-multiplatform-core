@@ -20,6 +20,11 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
 }
 
+configurations.configureEach {
+    // Keep the published Compose and matching Skiko API, even when local core is included.
+    resolutionStrategy.useGlobalDependencySubstitutionRules = false
+}
+
 kotlin {
     jvm()
     iosArm64()
@@ -32,7 +37,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            compileOnly(libs.compose.ui)
+            compileOnly("org.jetbrains.compose.ui:ui") {
+                version { strictly("1.13.0-beta02") } //todo migrate on the stable 1.13
+            }
             implementation(project(":benchmarks-runtime"))
         }
         val nonJvmMain by creating {
