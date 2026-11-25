@@ -19,7 +19,7 @@ package androidx.compose.ui.text
 import androidx.collection.MutableFloatList
 import androidx.compose.ui.graphics.Path
 
-// TODO(Merge) Major, Implement after merging 676490de054f88a3fc1c469c1d8dbe177e67b211
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11183) Major, Implement after merging 676490de054f88a3fc1c469c1d8dbe177e67b211
 // Add non-Android paragraph box extraction and Path construction; until then, the range APIs
 // produce empty geometry on non-Android targets.
 internal actual fun Paragraph.fillRangeBoundingBoxes(
