@@ -155,7 +155,6 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
 
 - (nullable CMPDrawable *)nextDrawable {
     NSTimeInterval startTime = CACurrentMediaTime();
-    BOOL isMainThread = [NSThread isMainThread];
 
     while (true) {
         CMPDrawable *drawable = [self findNextDrawable];
