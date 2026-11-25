@@ -16,4 +16,5 @@
 
 package androidx.compose.foundation
 
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11187) Verify the generic border drawing path on Skiko.
 internal actual fun shouldUseGraphicsLayerForGenericBorder(): Boolean = true

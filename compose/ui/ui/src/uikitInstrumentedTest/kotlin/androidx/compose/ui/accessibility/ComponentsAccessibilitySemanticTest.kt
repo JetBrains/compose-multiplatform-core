@@ -1486,6 +1486,7 @@ class ComponentsAccessibilitySemanticTest {
         }
     }
 
+    // TODO(https://youtrack.jetbrains.com/issue/CMP-11182) Verify accessible bounds for inline links on iOS.
     @Test
     fun testTextLinks() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         setContent(layoutDirection = layoutDirection) {

@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation
 
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11186) QA the shared Compose flags on Desktop.
+
 import java.awt.Component
 import java.awt.event.MouseWheelEvent
 

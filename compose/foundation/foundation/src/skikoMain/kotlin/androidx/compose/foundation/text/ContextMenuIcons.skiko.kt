@@ -31,6 +31,7 @@ internal actual value class ContextMenuIcons actual constructor(actual val value
             get() = ContextMenuIcons(2)
         actual inline val ActionModeSelectAllDrawable: ContextMenuIcons
             get() = ContextMenuIcons(3)
+        // TODO(https://youtrack.jetbrains.com/issue/CMP-11185) Keep the Skiko Look Up icon and string actuals in sync.
         actual inline val ActionModeLookUpDrawable: ContextMenuIcons
             get() = ContextMenuIcons(4)
         actual inline val ID_NULL: ContextMenuIcons
