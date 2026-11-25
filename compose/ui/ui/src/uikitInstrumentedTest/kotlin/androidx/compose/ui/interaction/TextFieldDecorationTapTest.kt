@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.interaction
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -40,6 +39,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.utils.BasicTextFieldType
+import androidx.compose.ui.test.utils.TestHandle
 import androidx.compose.ui.test.utils.TestTextField
 import androidx.compose.ui.test.utils.TestTextFieldState
 import androidx.compose.ui.test.utils.runTextFieldTest
@@ -160,6 +160,53 @@ class TextFieldDecorationTapTest {
             )
         }
 
+    @Test
+    fun tapDecorationBetweenSelectionHandleDragsShouldUpdateSelection() =
+        runTextFieldTest(usingNativeTextInput = true) { _, usingNativeTextInput, textFieldType ->
+            val state = TestTextFieldState(text = FIELD_TEXT, textFieldType = textFieldType)
+            val focusRequester = FocusRequester()
+
+            setContent {
+                DecoratedTextField(
+                    state = state,
+                    usingNativeTextInput = usingNativeTextInput,
+                    modifier = Modifier.focusRequester(focusRequester),
+                    trailingContent = {
+                        Button(
+                            onClick = { state.updateSelection(TextRange(0, FIELD_TEXT.length)) },
+                            modifier = Modifier.testTag(SELECT_ALL_TAG)
+                        ) {
+                            Text("Select All")
+                        }
+                    }
+                )
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
+            }
+
+            // Select all text
+            findNodeWithTag(SELECT_ALL_TAG).tap()
+            waitForIdle()
+            assertEquals(TextRange(0, FIELD_TEXT.length), state.selection)
+
+            // Drag to the end
+            findNodeWithTag(FIELD_TAG).dragSelectionHandle(
+                TestHandle.SelectionStart,
+                toOffset = FIELD_TEXT.length
+            )
+            waitForIdle()
+            assertEquals(TextRange(FIELD_TEXT.length), state.selection)
+
+            // Select all text
+            findNodeWithTag(SELECT_ALL_TAG).tap()
+            waitForIdle()
+            assertEquals(TextRange(0, FIELD_TEXT.length), state.selection)
+
+            // Drag to start
+            findNodeWithTag(FIELD_TAG).dragSelectionHandle(TestHandle.SelectionEnd, toOffset = 0)
+            waitForIdle()
+            assertEquals(TextRange(0), state.selection)
+        }
+
     @Composable
     private fun DecoratedTextField(
         state: TestTextFieldState,
@@ -175,6 +222,7 @@ class TextFieldDecorationTapTest {
                 modifier = Modifier
                     .align(Alignment.Center)
                     .width(FIELD_WIDTH)
+                    .testTag(FIELD_TAG)
                     .then(modifier),
                 keyboardOptions = KeyboardOptions(
                     platformImeOptions = PlatformImeOptions {
@@ -183,22 +231,22 @@ class TextFieldDecorationTapTest {
                 ),
                 decorationBox = { innerTextField ->
                     Row {
-                        Box(
-                            Modifier.weight(1f)
-                        ) {
+                        Box(modifier = Modifier.weight(1f)) {
                             innerTextField()
                         }
                         trailingContent()
                     }
-                },
+                }
             )
         }
     }
 
     companion object {
-        private const val FIELD_TEXT = "0123"
+        private const val FIELD_TEXT = "0123456789"
         private const val DECORATION_TAG = "decoration"
         private const val BUTTON_TAG = "button"
+        private const val FIELD_TAG = "textField"
+        private const val SELECT_ALL_TAG = "selectAll"
         private val FIELD_WIDTH = 280.dp
     }
 }
