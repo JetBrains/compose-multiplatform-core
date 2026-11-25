@@ -30,6 +30,7 @@ import org.jetbrains.skia.Color
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect
 import org.jetbrains.skia.Surface
+import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
 
 internal class ContentMeasurement(
     private val width: Int,
