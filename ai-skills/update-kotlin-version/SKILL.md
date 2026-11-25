@@ -19,7 +19,9 @@ Before starting, ask the user for:
 
 ## Update Process
 
-Perform the following steps in order:
+Apply each step to both the AOSP and fork copies listed below. Fork mode is the default and reads
+`gradle/libs-fork.versions.toml` and the files under `buildSrc-fork/` through `settings-fork.gradle` and
+`buildSrc/settings-fork.gradle`.
 
 ### 1. Update `gradle/libs.versions.toml`
 
@@ -78,13 +80,15 @@ If this is just a patch update (e.g., 2.3.10 → 2.3.20), no changes are needed 
 
 ### 4. Verify the Changes
 
-After making all updates:
-1. Confirm that `JETBRAINS_COMPILE_KOTLIN_VERSION` is set to the previous major.minor version, not the latest
-2. Verify that all three version entries in `libs.versions.toml` are updated consistently
-3. If a new major.minor version was added, confirm the `KotlinTarget` enum includes it
+Check both copies after making the updates.
+
+1. Confirm that `JETBRAINS_COMPILE_KOTLIN_VERSION` is set to the previous major.minor version.
+2. Verify that all three version entries match across the two version catalogs.
+3. For a new major.minor version, confirm that both `KotlinTarget` enums include it and that `LATEST` points to it.
 
 ## Key Files
 
 - `gradle/libs.versions.toml` - Version catalog with Kotlin versions
 - `buildSrc/public/src/main/kotlin/org/jetbrains/androidx/build/JetBrainsCompatibilityVersions.kt` - Compatibility version settings
 - `buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt` - Kotlin target configuration (updated only for new major.minor versions)
+- `gradle/libs-fork.versions.toml` and the same paths under `buildSrc-fork/` - fork-mode copies of the files above
