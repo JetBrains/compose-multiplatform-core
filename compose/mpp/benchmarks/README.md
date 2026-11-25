@@ -58,25 +58,40 @@ it started and keeps collected results.
 Main options:
 
 - `--target` — required list of targets, separated by spaces or commas: `jvm`, `macos` (ARM64),
-  `js`, `wasmJs`, or `ios` (ARM64 Simulator). Duplicate entries are ignored.
+  `js`, `wasmJs`, or `ios` (physical ARM64 iOS device or ARM64 Simulator). `all` selects all targets.
+  Duplicate entries are ignored.
 - `--compose-version` — a list of published Compose versions and/or `local`; defaults to `local`
   using the current core checkout (`composeCorePath=../../..` in `gradle.properties`). Specify a
   published version explicitly to benchmark it instead.
-- `--kotlin-version` — a list of Kotlin and matching Compose Compiler versions; defaults to one catalog version.
-- `--tests` — test names separated by spaces or commas; defaults to all tests.
+- `--kotlin-version` — a list of published Kotlin and matching Compose Compiler versions for the
+  benchmarks project; defaults to one catalog version. Local core sources use their own Kotlin version.
+- `--tests` — test names separated by spaces or commas, or `all`; defaults to all tests.
 - `--modes` — measurement modes; defaults to all four:
   - `startup` — startup time to the first frames;
   - `realFrames` — frame measurements in a real UI;
   - `averageFrame` — average offscreen rendering measurements;
   - `fps` — per-frame offscreen rendering measurements.
 - `--repeat` — repetitions of each test/mode pair; default: `1`.
-- `--timeout` — timeout per test in seconds, excluding build time; default: `300`.
-- `--port` — a free port for the collector; default: `8090`.
-- `--output-dir` — the base directory for results; it can already exist. Each invocation creates a new
-  timestamped subdirectory for the whole version matrix.
+- `--timeout` — report timeout in seconds for each test run and environment collection, excluding
+  build time; default: `300`.
+- `--port` — collector TCP port (`1`–`65535`), which must be free; default: `8090`.
+- `--web-port` — static HTTP server port for JS/WasmJS (`0`–`65535`); default: `0` selects a free port.
+- `--output-dir` — the base directory for results; it can already exist. Defaults to
+  `$OUT_DIR/benchmark-reports` when `OUT_DIR` is set, otherwise `<project>/out/benchmark-reports`.
+  Each invocation creates a new timestamped subdirectory for the whole version matrix.
+- `--project-dir` — standalone benchmarks project directory; detected from the working directory or
+  launcher location by default.
+- `--compose-core-path` — core checkout for `local` Compose; defaults to the configured
+  `composeCorePath`, otherwise `../../..` relative to the benchmarks project.
+- `--ios-target` — iOS simulator UUID, physical iOS device UDID/CoreDevice UUID, or unique name.
+  Defaults to the first booted iOS simulator, otherwise boots the first available one. Ignored for other targets.
+- `--apple-development-team` — Apple development team ID for physical iOS device signing; defaults to Xcode
+  project settings. Ignored for simulator and non-iOS targets.
+
+Only `--target`, `--tests`, and `--modes` accept `all`; use it alone, not alongside individual values.
 
 Browser targets require `--browser` with a list of executable paths, commands on `PATH`, or macOS
-`.app` bundles, separated by spaces or commas. Quote paths containing spaces. Duplicate entries are
+`.app` bundles, separated by spaces or commas; `--browser` can also be repeated. Quote paths containing spaces. Duplicate entries are
 ignored. Each selected browser runs on each selected web target; non-web targets ignore this list.
 Chromium, Firefox, and Safari are detected from the executable name. ChromeDriver/GeckoDriver launch
 the selected Chromium/Firefox executable with a temporary profile for each session. Rendering runs
@@ -96,11 +111,17 @@ WebDriver does not wait for the page's `load` event; the collector report determ
 After an error or timeout, the current run is failed without a retry, and the next run starts a new
 browser session.
 
-For iOS, select an available iOS simulator with `--simulator UUID` (or a unique name). Without
-this option, the launcher uses the single booted iOS simulator. If none are booted, it selects
-the first available iOS simulator in `simctl list devices available --json` order and boots it
-automatically. Multiple booted iOS simulators require an explicit selection. The launcher waits
-for the selected simulator to finish booting before installing the app.
+For iOS, the launcher uses the first booted iOS simulator, or boots the first available one.
+Physical iOS devices are never selected automatically. Use `--ios-target ID_OR_NAME` to select
+an available simulator by UUID or unique name, or a physical iOS device by UDID, CoreDevice UUID,
+or unique name. An explicit selection must match exactly one target across both types;
+missing or ambiguous matches fail without fallback. If discovery of one target type fails,
+only an explicit ID can select a target of the other type; names require successful discovery of both.
+
+Physical iOS devices require Xcode 15+, pairing, Developer Mode, and an unlocked screen. Pass
+`--apple-development-team TEAM_ID` for signing without saving the team in the Xcode project.
+The collector address is detected automatically; the iOS device must be able to reach the Mac over
+the local network. Allow local-network access on iOS device and incoming collector connections on Mac.
 
 ### Example: JVM
 
@@ -263,7 +284,7 @@ and generates an HTML report. There is no need to build the application or start
 separately. Use `--compose-version local` instead to investigate changes in a core checkout.
 
 After the first successful run, check the other relevant modes (`startup`, `averageFrame`, and
-`fps`) and platforms. For iOS, use `--target ios --simulator <simulator-uuid>` on macOS; for web,
+`fps`) and platforms. For iOS, use `--target ios --ios-target <simulator-uuid>` on macOS; for web,
 select `--target js` or `--target wasmJs` and add `--browser`. Offscreen modes (`averageFrame` and
 `fps`) must work without a platform window or user interaction.
 
