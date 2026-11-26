@@ -60,7 +60,7 @@ internal interface KeyboardVisibilitySubscriber {
     )
 }
 
-internal object KeyboardVisibilityListener {
+internal object KeyboardVisibilityListener : KeyboardGeometrySource {
     private val observer = KeyboardVisibilityNotificationObserver()
     private var initOnce = false
     fun initialize() {
@@ -73,7 +73,7 @@ internal object KeyboardVisibilityListener {
 
     fun removeSubscriber(subscriber: KeyboardVisibilitySubscriber) = this.observer.subscribers.remove(subscriber)
 
-    val keyboardFrame: CValue<CGRect> get() = observer.keyboardFrame
+    override val keyboardFrame: CValue<CGRect> get() = observer.keyboardFrame
 }
 
 private class KeyboardVisibilityNotificationObserver : NSObject() {

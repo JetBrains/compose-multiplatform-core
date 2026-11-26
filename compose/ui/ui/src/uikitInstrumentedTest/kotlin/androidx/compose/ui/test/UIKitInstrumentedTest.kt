@@ -16,7 +16,14 @@
 
 package androidx.compose.ui.test
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.test.utils.activeHoverEvents
 import androidx.compose.test.utils.activePinchEvents
@@ -25,6 +32,7 @@ import androidx.compose.test.utils.activeScrollEvents
 import androidx.compose.test.utils.activeTouches
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
@@ -95,6 +103,7 @@ import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -129,7 +138,6 @@ import platform.UIKit.UIInterfaceOrientationMaskPortraitUpsideDown
 import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIKeyModifierFlags
-import platform.UIKit.UIPanGestureRecognizer
 import platform.UIKit.UIPressType
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIScreen
@@ -224,6 +232,25 @@ internal fun runUIKitInstrumentedTest(
 }
 
 /**
+ * Remembers a bottom-sheet state and a focus requester, then requests focus once the sheet is expanded.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun rememberFocusedBottomSheetState(): Pair<FocusRequester, SheetState> {
+    val focusRequester = remember { FocusRequester() }
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
+    LaunchedEffect(sheetState) {
+        snapshotFlow { sheetState.currentValue }
+            .first { it == SheetValue.Expanded }
+        focusRequester.requestFocus()
+    }
+    return focusRequester to sheetState
+}
+
+/**
  * A class designed for instrumented testing of UIKit-related functionality. It provides methods for setting
  * content, simulating user interactions, and managing application lifecycle during testing scenarios.
  *
@@ -248,7 +275,7 @@ internal class UIKitInstrumentedTest(
          * Increased animation speed for tests that checks animation, but no constraints to have it
          * real one-to-one speed.
          */
-        internal const val IncreasedAnimationSpeed = 3f
+        internal const val IncreasedAnimationSpeed = 2f
 
         /**
          * Real animation speed for tests that require one-to-one animations.
@@ -750,6 +777,11 @@ internal class UIKitInstrumentedTest(
         tap(frame.center())
         delay(50)
         return tap(frame.center())
+    }
+
+    fun AccessibilityTestNode.warmUpMultiTap() {
+        tap(pointInNode(xFraction = 0.9f, yFraction = 0.5f))
+        waitForIdle()
     }
 
     /**

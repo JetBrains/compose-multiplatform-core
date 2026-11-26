@@ -531,6 +531,7 @@ class TextFieldEditMenuTest {
             }
         }
 
+        findNodeWithTag("TextField").warmUpMultiTap()
         openToolbar(textFieldTag = "TextField")
 
         findNodeWithLabel("Custom Action").let {
