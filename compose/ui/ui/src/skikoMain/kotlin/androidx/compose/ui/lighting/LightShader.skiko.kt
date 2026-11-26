@@ -36,7 +36,7 @@ internal actual fun LightShader(
     throw UnsupportedOperationException("Lighting is not supported on this platform")
 
 internal actual val LightShader.Companion.MaxLightsAllowed: Int
-    get() = 4
+    get() = throw UnsupportedOperationException("Lighting is not supported on this platform")
 
 internal actual fun createFlatNormalShader(outline: Outline): Shader =
     throw UnsupportedOperationException("Lighting is not supported on this platform")
