@@ -288,19 +288,19 @@ public infix fun EnterTransition.togetherWith(exit: ExitTransition): ContentTran
     ContentTransform(this, exit)
 
 /** Contains default values used throughout [AnimatedContent]. */
-internal object AnimatedContentDefaults {
+public object AnimatedContentDefaults {
     /** Default animation spec used for size animation in [SizeTransform]. */
-    internal val SizeAnimationSpec: FiniteAnimationSpec<IntSize> =
+    public val SizeAnimationSpec: FiniteAnimationSpec<IntSize> =
         spring(
             stiffness = Spring.StiffnessMediumLow,
             visibilityThreshold = IntSize.VisibilityThreshold,
         )
 
     /** Default [SizeTransform] used in [ContentTransform]. */
-    internal val SizeTransform: SizeTransform = SizeTransform()
+    public val SizeTransform: SizeTransform = SizeTransform()
 
     /** Default [ContentTransform] used in [AnimatedContent] if none is specified. */
-    internal val ContentTransform: ContentTransform =
+    public val ContentTransform: ContentTransform =
         (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
                 scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
             .togetherWith(fadeOut(animationSpec = tween(90)))
@@ -822,23 +822,29 @@ private const val MaxInterruptionRetention = 3
  * An object that allows manual manipulation of both entering and exiting content during the
  * deferred phase (initiated by [DeferredTransitionState.defer]) of an [AnimatedContent] transition.
  *
- * Use [initialContentTransform] to define transformations for the exiting (initial) content and
- * [targetContentTransform] for the entering (target) content.
+ * Use [initialContentTransform] to define transformations for the exiting (initial) content,
+ * [targetContentTransform] for the entering (target) content, and [sharedElementProgress] to
+ * interpolate detached shared elements between their initial and target bounds.
  *
+ * @param initialTransform The [MutableTransform] applied to the exiting (initial) content.
+ * @param targetTransform The [MutableTransform] applied to the entering (target) content.
  * @see MutableTransform
  */
-public class MutableContentTransform
-@PublishedApi
-internal constructor(
-    initialVeilMatchParentSize: Boolean,
-    targetVeilMatchParentSize: Boolean,
-    initialOffsetVelocityProvider: (() -> Offset)?,
-    targetOffsetVelocityProvider: (() -> Offset)?,
+public class MutableContentTransform(
+    internal val initialTransform: MutableTransform,
+    internal val targetTransform: MutableTransform,
 ) {
-    internal val targetTransform: MutableTransform =
-        MutableTransform(targetVeilMatchParentSize, targetOffsetVelocityProvider)
-    internal val initialTransform: MutableTransform =
-        MutableTransform(initialVeilMatchParentSize, initialOffsetVelocityProvider)
+    @PublishedApi
+    internal constructor(
+        initialVeilMatchParentSize: Boolean,
+        targetVeilMatchParentSize: Boolean,
+        initialOffsetVelocityProvider: (() -> Offset)?,
+        targetOffsetVelocityProvider: (() -> Offset)?,
+    ) : this(
+        initialTransform =
+            MutableTransform(initialVeilMatchParentSize, initialOffsetVelocityProvider),
+        targetTransform = MutableTransform(targetVeilMatchParentSize, targetOffsetVelocityProvider),
+    )
 
     /**
      * Define the manual transformation to apply to the exiting content during the deferred phase.
@@ -856,6 +862,22 @@ internal constructor(
      */
     public fun targetContentTransform(block: TransformScope.(fullSize: IntSize) -> Unit) {
         targetTransform.update(block)
+    }
+
+    /**
+     * Configures the interpolation progress for shared elements configured with
+     * [SharedTransitionScope.DeferredTransitionBehavior.SeekToTarget] via
+     * [SharedTransitionScope.SharedContentConfig.deferredTransitionBehavior].
+     *
+     * During the deferred phase, these shared elements interpolate their bounds between their
+     * initial (`0f`) and target (`1f`) bounds based on [progress] (clamped to `0f..1f`), rather
+     * than remaining at their initial bounds (`0f`).
+     *
+     * @param progress lambda returning the current interpolation progress between `0f` and `1f`
+     */
+    public fun sharedElementProgress(progress: () -> Float) {
+        initialTransform.sharedElementProgress(progress)
+        targetTransform.sharedElementProgress(progress)
     }
 }
 
@@ -1010,14 +1032,15 @@ public fun <S> Transition<S>.AnimatedContent(
  *   the deferred phase (e.g., for predictive back gestures) before the main transition begins. This
  *   is only active if the [Transition] was created using [rememberDeferredTransition] with
  *   [DeferredTransitionState]. By default, this returns `null`, meaning no manual transformations
- *   are applied.
+ *   are applied and properties remain at the transition's initial values during the deferred phase.
  *
  *   **Lifecycle:** The deferred phase starts when [DeferredTransitionState.defer] is called. It
  *   ends and the automatic transition begins when [DeferredTransitionState.animateTo] is called.
  *
  *   **Transformations:** During this phase, you can manually manipulate the entering and exiting
- *   content's transformations (via [MutableContentTransform]). Properties that are not manually set
- *   default to the transition's initial values during the deferred phase.
+ *   content's transformations (via [MutableContentTransform]). When a [MutableContentTransform] is
+ *   provided, properties that are not manually set default to their resting values during the
+ *   deferred phase.
  *
  * **Handoff:** Once the transition starts, the manually applied transformations are seamlessly
  * handed off to the configured [transitionSpec]. For exiting content, a "sustain unless specified"

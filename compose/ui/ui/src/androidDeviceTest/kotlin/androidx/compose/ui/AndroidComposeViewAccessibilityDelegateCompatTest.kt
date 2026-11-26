@@ -18,6 +18,7 @@ package androidx.compose.ui
 
 import android.content.Context
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Region
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
@@ -30,16 +31,20 @@ import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityEvent.CONTENT_CHANGE_TYPE_TEXT
 import android.view.accessibility.AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED
 import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_RENDERING_INFO_KEY
+import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH
+import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,11 +62,15 @@ import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -88,12 +97,14 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testClipEntry
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.InputTextSuggestionState
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.RoleFakeNodeIdOffset
 import androidx.compose.ui.semantics.ScrollAxisRange
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
@@ -102,6 +113,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.copyText
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.cutText
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.dismiss
@@ -170,6 +182,7 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_EXPAN
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_PASTE
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.RangeInfoCompat.RANGE_TYPE_FLOAT
+import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
@@ -178,11 +191,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Correspondence
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.junit.Assume.assumeTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -434,9 +445,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         // Arrange.
         rule.setContentWithAccessibilityEnabled {
             val clipboard = LocalClipboard.current
-            rememberCoroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {
-                clipboard.setClipEntry(testClipEntry("test"))
-            }
+            LaunchedEffect(clipboard) { clipboard.setClipEntry(testClipEntry("test")) }
             Box(
                 Modifier.size(10.dp).semantics(mergeDescendants = true) {
                     testTag = tag
@@ -954,6 +963,41 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     }
                 )
             assertThat(info2.liveRegion).isEqualTo(ViewCompat.ACCESSIBILITY_LIVE_REGION_ASSERTIVE)
+        }
+    }
+
+    @Test
+    fun sendContentChange_whenMergingNodeDeletesPropertyStillSetByChild() {
+        // Arrange.
+        var parentHasDescription by mutableStateOf(true)
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp).semantics(mergeDescendants = true) {
+                    testTag = tag
+                    if (parentHasDescription) contentDescription = "parent"
+                }
+            ) {
+                Box(Modifier.size(5.dp).semantics { contentDescription = "child" })
+            }
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+        dispatchedAccessibilityEvents.clear()
+
+        // Act: the merged configuration still has a content description (from the child), but the
+        // node's own configuration no longer does.
+        rule.runOnIdle { parentHasDescription = false }
+        rule.runOnIdle { rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(
+                    dispatchedAccessibilityEvents.any {
+                        it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
+                            it.contentChangeTypes == CONTENT_CHANGE_TYPE_UNDEFINED
+                    }
+                )
+                .isTrue()
         }
     }
 
@@ -1797,9 +1841,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         // Arrange.
         rule.setContentWithAccessibilityEnabled {
             val clipboard = LocalClipboard.current
-            rememberCoroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {
-                clipboard.setClipEntry(testClipEntry("test"))
-            }
+            LaunchedEffect(clipboard) { clipboard.setClipEntry(testClipEntry("test")) }
             Box(
                 Modifier.size(10.dp).semantics(mergeDescendants = true) {
                     testTag = tag
@@ -1827,9 +1869,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         // Arrange.
         rule.setContentWithAccessibilityEnabled {
             val clipboard = LocalClipboard.current
-            rememberCoroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {
-                clipboard.setClipEntry(testClipEntry("test"))
-            }
+            LaunchedEffect(clipboard) { clipboard.setClipEntry(testClipEntry("test")) }
             Box(
                 Modifier.size(10.dp).semantics(mergeDescendants = true) {
                     testTag = tag
@@ -2413,7 +2453,6 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
     }
 
     @Test
-    @Ignore("b/553677028")
     fun textChanged_sendTextChangeEvent() {
         // Arrange.
         var textChanged by mutableStateOf(false)
@@ -2753,6 +2792,102 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
     }
 
     @Test
+    fun nodeRemoval_prunesCustomActionsAndDrawingOrderMappings() {
+        // Arrange.
+        var showItem1 by mutableStateOf(true)
+        val rootAction = CustomAccessibilityAction("RootAction") { true }
+        val customAction1 = CustomAccessibilityAction("Action1") { true }
+        val customAction2 = CustomAccessibilityAction("Action2") { true }
+
+        rule.setContentWithAccessibilityEnabled {
+            Column(Modifier.size(100.dp).semantics { this.customActions = listOf(rootAction) }) {
+                if (showItem1) {
+                    Box(
+                        Modifier.size(10.dp).testTag("button1").semantics(mergeDescendants = true) {
+                            this.role = Role.Button
+                            this.customActions = listOf(customAction1)
+                        }
+                    ) {
+                        Box(Modifier.size(5.dp).semantics { contentDescription = "Label1" })
+                    }
+                }
+                Box(Modifier.size(10.dp).semantics { this.customActions = listOf(customAction2) })
+            }
+        }
+
+        val delegate = androidComposeView.composeAccessibilityDelegate
+        val hostId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+        val id1 = rule.onNodeWithTag("button1").semanticsId()
+        val fakeRoleNodeId1 = id1 + RoleFakeNodeIdOffset
+        val id2 =
+            rule
+                .onNode(
+                    SemanticsMatcher.expectValue(
+                        androidx.compose.ui.semantics.SemanticsActions.CustomActions,
+                        listOf(customAction2),
+                    )
+                )
+                .semanticsId()
+
+        // Populate root, parent, and child node infos to assign drawing orders (including fake
+        // role node) and custom action IDs.
+        rule.runOnIdle {
+            val hostInfo = androidComposeView.createAccessibilityNodeInfo(hostId)
+            val columnId =
+                rule
+                    .onNode(
+                        SemanticsMatcher.expectValue(
+                            androidx.compose.ui.semantics.SemanticsActions.CustomActions,
+                            listOf(rootAction),
+                        )
+                    )
+                    .semanticsId()
+            if (columnId != androidComposeView.semanticsOwner.rootInfo.semanticsId) {
+                androidComposeView.createAccessibilityNodeInfo(columnId)
+            }
+            assertThat(hostInfo).isNotNull()
+            androidComposeView.createAccessibilityNodeInfo(id1)
+            androidComposeView.createAccessibilityNodeInfo(id2)
+
+            // Also populate HOST_VIEW_ID custom actions if root has semantics, or columnId
+            assertThat(delegate.actionIdToLabel.containsKey(id1)).isTrue()
+            assertThat(delegate.labelToActionId.containsKey(id1)).isTrue()
+            assertThat(delegate.drawingOrder.containsKey(id1)).isTrue()
+            assertThat(delegate.drawingOrder.containsKey(fakeRoleNodeId1)).isTrue()
+
+            assertThat(delegate.actionIdToLabel.containsKey(id2)).isTrue()
+            assertThat(delegate.labelToActionId.containsKey(id2)).isTrue()
+            assertThat(delegate.drawingOrder.containsKey(id2)).isTrue()
+        }
+
+        // Act: Remove item 1 from the composition while retaining item 2.
+        rule.runOnIdle { showItem1 = false }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        // Assert: Ensure all three maps pruned item 1 (and its fake role child) while retaining
+        // item 2.
+        rule.runOnIdle {
+            assertThat(delegate.actionIdToLabel.containsKey(id1)).isFalse()
+            assertThat(delegate.labelToActionId.containsKey(id1)).isFalse()
+            assertThat(delegate.drawingOrder.containsKey(id1)).isFalse()
+            assertThat(delegate.drawingOrder.containsKey(fakeRoleNodeId1)).isFalse()
+
+            assertThat(delegate.actionIdToLabel.containsKey(id2)).isTrue()
+            assertThat(delegate.labelToActionId.containsKey(id2)).isTrue()
+            assertThat(delegate.drawingOrder.containsKey(id2)).isTrue()
+        }
+
+        // Act: Detaching the view clears remaining node mappings.
+        rule.runOnIdle { delegate.onViewDetachedFromWindow(androidComposeView) }
+
+        rule.runOnIdle {
+            assertThat(delegate.actionIdToLabel.isEmpty()).isTrue()
+            assertThat(delegate.labelToActionId.isEmpty()).isTrue()
+            assertThat(delegate.drawingOrder.isEmpty()).isTrue()
+        }
+    }
+
+    @Test
     fun sendErrorEvent_onErrorSet() {
         // Arrange.
         var isError by mutableStateOf(false)
@@ -2869,74 +3004,6 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 24)
-    @OptIn(ExperimentalComposeUiApi::class)
-    fun testHideFromAccessibility_doesNotPropagateToMergedChildren_whenFlagDisabled() {
-        val previousFlagValue =
-            AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled
-        AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled = false
-        try {
-            // Arrange.
-            val tagParent = "parent"
-            val tagMergingChild = "mergingChild"
-            val tagNonMergingChild = "nonMergingChild"
-            rule.setContentWithAccessibilityEnabled {
-                Column(
-                    Modifier.semantics(mergeDescendants = true) { hideFromAccessibility() }
-                        .testTag(tagParent)
-                        .size(100.toDp())
-                ) {
-                    Box(
-                        Modifier.semantics(mergeDescendants = true) { contentDescription = "child" }
-                            .testTag(tagMergingChild)
-                            .size(50.toDp())
-                    )
-                    Box(
-                        Modifier.semantics { contentDescription = "child2" }
-                            .testTag(tagNonMergingChild)
-                            .size(50.toDp())
-                    )
-                }
-            }
-            val parentId = rule.onNodeWithTag(tagParent).semanticsId()
-            val mergingChildId =
-                rule.onNodeWithTag(tagMergingChild, useUnmergedTree = true).semanticsId()
-            val nonMergingChildId =
-                rule.onNodeWithTag(tagNonMergingChild, useUnmergedTree = true).semanticsId()
-
-            // Act.
-            val parentInfo = rule.runOnIdle {
-                androidComposeView.createAccessibilityNodeInfo(parentId)
-            }
-            val mergingChildInfo = rule.runOnIdle {
-                androidComposeView.createAccessibilityNodeInfo(mergingChildId)
-            }
-            val nonMergingChildInfo = rule.runOnIdle {
-                androidComposeView.createAccessibilityNodeInfo(nonMergingChildId)
-            }
-
-            // Assert.
-            rule.runOnIdle {
-                assertThat(parentInfo).isNotNull()
-                assertThat(parentInfo.isVisibleToUser).isFalse()
-                assertThat(parentInfo.isScreenReaderFocusable).isFalse()
-
-                assertThat(mergingChildInfo).isNotNull()
-                assertThat(mergingChildInfo.isVisibleToUser).isTrue() // NOT Propagated
-                assertThat(mergingChildInfo.isScreenReaderFocusable).isTrue()
-
-                assertThat(nonMergingChildInfo).isNotNull()
-                assertThat(nonMergingChildInfo.isVisibleToUser).isTrue() // NOT Propagated
-                assertThat(nonMergingChildInfo.isScreenReaderFocusable)
-                    .isFalse() // NOT focusable by design
-            }
-        } finally {
-            AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled =
-                previousFlagValue
-        }
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 24)
     fun testHideFromAccessibility_propagatesToDeeplyNestedMergedChildren() {
         // Arrange.
         val tagParent = "parent"
@@ -3019,49 +3086,6 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         rule.runOnIdle {
             // Should not hit the child because it is in a merging hidden subtree
             assertThat(hitId).isEqualTo(InvalidId)
-        }
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 24)
-    @OptIn(ExperimentalComposeUiApi::class)
-    fun testHitTest_hitsMergedChildren_whenFlagDisabled() {
-        val previousFlagValue =
-            AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled
-        AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled = false
-        try {
-            // Arrange.
-            val tagParent = "parent"
-            val tagChild = "child"
-            rule.setContentWithAccessibilityEnabled {
-                Box(
-                    Modifier.semantics(mergeDescendants = true) { hideFromAccessibility() }
-                        .testTag(tagParent)
-                        .size(100.toDp())
-                ) {
-                    Box(
-                        Modifier.semantics(mergeDescendants = true) { contentDescription = "child" }
-                            .testTag(tagChild)
-                            .size(50.toDp())
-                    )
-                }
-            }
-            val childId = rule.onNodeWithTag(tagChild, useUnmergedTree = true).semanticsId()
-            val delegate = androidComposeView.composeAccessibilityDelegate
-
-            // Act.
-            val density = rule.density
-            val hitPx = with(density) { 25.toDp().toPx() }
-            val hitId = rule.runOnIdle { delegate.hitTestSemanticsAt(hitPx, hitPx) }
-
-            // Assert.
-            rule.runOnIdle {
-                // Should hit the child because flag is disabled
-                assertThat(hitId).isEqualTo(childId)
-            }
-        } finally {
-            AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled =
-                previousFlagValue
         }
     }
 
@@ -3632,8 +3656,10 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                         actual.scrollY == expected.scrollY &&
                         actual.maxScrollX == expected.maxScrollX &&
                         actual.maxScrollY == expected.maxScrollY &&
-                        (SDK_INT < P || actual.scrollDeltaX == expected.scrollDeltaX) &&
-                        (SDK_INT < P || actual.scrollDeltaY == expected.scrollDeltaY) &&
+                        // Prior to API 30 (R), AccessibilityRecord.clear() does not reset
+                        // mScrollDeltaX/Y when AccessibilityEvents are recycled into sPool.
+                        (SDK_INT < R || actual.scrollDeltaX == expected.scrollDeltaX) &&
+                        (SDK_INT < R || actual.scrollDeltaY == expected.scrollDeltaY) &&
                         actual.addedCount == expected.addedCount &&
                         actual.removedCount == expected.removedCount &&
                         actual.parcelableData == expected.parcelableData &&
@@ -3835,27 +3861,174 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
     }
 
     @Test
-    fun scroll_whenKeyboardFocused_dispatchesAccessibilityFocusEventPostScroll() {
+    fun structureChange_addRemoveSwapAndNestedGrandchild_dispatchesSubtreeEvents() {
+        var childKeys by mutableStateOf(listOf("A"))
+        var showGrandchildInB by mutableStateOf(true)
+        rule.mainClock.autoAdvance = false
+
+        rule.setContentWithAccessibilityEnabled {
+            Column(Modifier.size(100.dp).testTag("parent").semantics { contentDescription = "P" }) {
+                for (itemKey in childKeys) {
+                    key(itemKey) {
+                        if (itemKey == "B") {
+                            Column(
+                                Modifier.size(20.dp).testTag("child_B").semantics {
+                                    contentDescription = "Child B"
+                                }
+                            ) {
+                                if (showGrandchildInB) {
+                                    Box(
+                                        Modifier.size(10.dp).semantics {
+                                            contentDescription = "Grandchild D"
+                                        }
+                                    )
+                                }
+                            }
+                        } else {
+                            Box(
+                                Modifier.size(10.dp).semantics {
+                                    contentDescription = "Child $itemKey"
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val getSourceNodeIdMethod =
+            Class.forName("android.view.accessibility.AccessibilityRecord")
+                .getDeclaredMethod("getSourceNodeId")
+                .apply { isAccessible = true }
+        fun subtreeSourceIds(): List<Int> =
+            dispatchedAccessibilityEvents
+                .filter {
+                    it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
+                        (it.contentChangeTypes and
+                            AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE) != 0
+                }
+                .map { ((getSourceNodeIdMethod.invoke(it) as Long) shr 32).toInt() }
+
+        // Structure changes require two boundsUpdatesEventLoop passes under manual clock
+        // (b/272068594): pass 1 runs the frame and drains Handler's semanticsChangeChecker (which
+        // enqueues the structural parent into boundsUpdateChannel), and pass 2 advances past
+        // delay(100ms) so updateBounds() dispatches the parent's CONTENT_CHANGE_TYPE_SUBTREE event.
+        fun flushStructureChangeEvents() {
+            repeat(2) {
+                rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+                rule.waitForIdle()
+            }
+        }
+
+        // Seed initial previousSemanticsNodes ({A}) before testing structural deltas.
+        flushStructureChangeEvents()
+        rule.runOnIdle { dispatchedAccessibilityEvents.clear() }
+
+        // 1. Child addition: {A} -> {A, B}
+        rule.runOnIdle { childKeys = listOf("A", "B") }
+        flushStructureChangeEvents()
+        rule.runOnIdle {
+            assertThat(subtreeSourceIds()).contains(parentId)
+            dispatchedAccessibilityEvents.clear()
+        }
+
+        // 2. Same-count child replacement: {A, B} -> {C, B}
+        rule.runOnIdle { childKeys = listOf("C", "B") }
+        flushStructureChangeEvents()
+        rule.runOnIdle {
+            assertThat(subtreeSourceIds()).contains(parentId)
+            dispatchedAccessibilityEvents.clear()
+        }
+
+        // 3. Unchanged parent children {C, B}, nested grandchild removed inside B
+        val childBId = rule.onNodeWithTag("child_B").semanticsId()
+        rule.runOnIdle { showGrandchildInB = false }
+        flushStructureChangeEvents()
+        rule.runOnIdle {
+            assertThat(subtreeSourceIds()).contains(childBId)
+            assertThat(subtreeSourceIds()).doesNotContain(parentId)
+            dispatchedAccessibilityEvents.clear()
+        }
+
+        // 4. Child deletion: {C, B} -> {C}
+        rule.runOnIdle { childKeys = listOf("C") }
+        flushStructureChangeEvents()
+        rule.runOnIdle { assertThat(subtreeSourceIds()).contains(parentId) }
+    }
+
+    @Test
+    fun scroll_whenFocusedNodeStaysVisible_doesNotDispatchFocusEvents() {
+        val scrollState = ScrollState(0)
+        val focusRequester = FocusRequester()
+        rule.setContentWithAccessibilityEnabled {
+            Column(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                Box(Modifier.size(50.dp).focusRequester(focusRequester).focusable())
+                Box(Modifier.size(200.dp))
+            }
+        }
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents.map { it.eventType })
+                .contains(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+            dispatchedAccessibilityEvents.clear()
+        }
+
+        // Scroll while the focused node remains (partially) visible.
+        rule.runOnIdle { scrollState.dispatchRawDelta(50f) }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        rule.runOnIdle {
+            val eventTypes = dispatchedAccessibilityEvents.map { it.eventType }
+            assertThat(eventTypes).contains(AccessibilityEvent.TYPE_VIEW_SCROLLED)
+            assertThat(eventTypes).doesNotContain(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+            assertThat(eventTypes)
+                .doesNotContain(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED)
+        }
+    }
+
+    @Test
+    fun scroll_whenAccessibilityFocusIsNotOnFocusedNode_doesNotDispatchFocusEvents() {
+        // Regression test for b/575338844: input focus stays on a node outside the scrolling
+        // container while TalkBack moves its own focus through the container's items. The bug
+        // only reproduced in keyboard (non-touch) mode.
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.setInTouchMode(false)
         try {
             val scrollState = ScrollState(0)
-            var isFocused by mutableStateOf(false)
+            val focusRequester = FocusRequester()
             lateinit var inputModeManager: InputModeManager
-
             rule.setContentWithAccessibilityEnabled {
                 inputModeManager = LocalInputModeManager.current
-                Column(Modifier.size(100.dp).verticalScroll(scrollState)) {
-                    Box(Modifier.size(50.dp).semantics { focused = isFocused })
-                    Box(Modifier.size(200.dp))
+                Column {
+                    Box(Modifier.size(50.dp).focusRequester(focusRequester).focusable())
+                    Column(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                        Box(Modifier.size(50.dp).testTag("item1").semantics {})
+                        Box(Modifier.size(200.dp))
+                    }
                 }
             }
 
             rule.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }
-            assumeTrue("Device must support non-touch mode", !androidComposeView.isInTouchMode)
+            val isInTouchMode = rule.runOnIdle { androidComposeView.isInTouchMode }
+            assumeTrue("Device must support non-touch mode", !isInTouchMode)
 
-            rule.runOnIdle { isFocused = true }
+            rule.runOnIdle { focusRequester.requestFocus() }
             rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+            val item1Id = rule.onNodeWithTag("item1").semanticsId()
+            rule.runOnIdle {
+                androidComposeView.composeAccessibilityDelegate
+                    .getAccessibilityNodeProvider(androidComposeView)
+                    .performAction(
+                        item1Id,
+                        AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
+                        null,
+                    )
+                dispatchedAccessibilityEvents.clear()
+            }
 
             rule.runOnIdle { scrollState.dispatchRawDelta(50f) }
             rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
@@ -3863,10 +4036,309 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
             rule.runOnIdle {
                 val eventTypes = dispatchedAccessibilityEvents.map { it.eventType }
                 assertThat(eventTypes).contains(AccessibilityEvent.TYPE_VIEW_SCROLLED)
-                assertThat(eventTypes).contains(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED)
+                assertThat(eventTypes).doesNotContain(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+                assertThat(eventTypes)
+                    .doesNotContain(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED)
             }
         } finally {
             instrumentation.setInTouchMode(true)
+        }
+    }
+
+    @Test
+    fun focus_whenNodeIsOffScreen_dispatchesTypeViewFocusedOnceItScrollsIntoView() {
+        // Regression test for b/447669491: the node is fully clipped by its scroll container when
+        // it gains focus, so it is not part of the accessibility tree and no Focused property
+        // change can be observed for it.
+        val scrollState = ScrollState(0)
+        val focusRequester = FocusRequester()
+        rule.setContentWithAccessibilityEnabled {
+            Column(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                Box(Modifier.size(150.dp))
+                Box(Modifier.size(50.dp).testTag("item").focusRequester(focusRequester).focusable())
+            }
+        }
+        val itemId = rule.onNodeWithTag("item").semanticsId()
+
+        // Pause the clock so the bringIntoView scroll triggered by the focus gain does not run yet.
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.runOnIdle {
+            val nodeInfo = androidComposeView.createAccessibilityNodeInfoIfPossible(itemId)
+            assertThat(nodeInfo?.isVisibleToUser ?: false).isFalse()
+            assertThat(dispatchedAccessibilityEvents.map { it.eventType })
+                .doesNotContain(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        }
+
+        // Let the scroll bring the node into the viewport.
+        rule.mainClock.autoAdvance = true
+        rule.runOnIdle { assertThat(scrollState.value).isGreaterThan(0) }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        rule.runOnIdle {
+            assertThat(androidComposeView.createAccessibilityNodeInfo(itemId).isVisibleToUser)
+                .isTrue()
+            val eventTypes = dispatchedAccessibilityEvents.map { it.eventType }
+            assertThat(eventTypes).contains(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+            assertThat(eventTypes)
+                .doesNotContain(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED)
+        }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun focus_whenNodeIsOffScreenAndFlagDisabled_doesNotDispatchTypeViewFocused() {
+        val originalFlag = AndroidComposeUiFlags.isScrollAccessibilityFocusEventEnabled
+        AndroidComposeUiFlags.isScrollAccessibilityFocusEventEnabled = false
+        try {
+            val scrollState = ScrollState(0)
+            val focusRequester = FocusRequester()
+            rule.setContentWithAccessibilityEnabled {
+                Column(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                    Box(Modifier.size(150.dp))
+                    Box(Modifier.size(50.dp).focusRequester(focusRequester).focusable())
+                }
+            }
+
+            rule.runOnIdle { focusRequester.requestFocus() }
+            rule.runOnIdle { assertThat(scrollState.value).isGreaterThan(0) }
+            rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+            rule.runOnIdle {
+                assertThat(dispatchedAccessibilityEvents.map { it.eventType })
+                    .doesNotContain(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+            }
+        } finally {
+            AndroidComposeUiFlags.isScrollAccessibilityFocusEventEnabled = originalFlag
+        }
+    }
+
+    @Test
+    fun scroll_whenFocusedNodeReentersViewport_doesNotDispatchTypeViewFocusedAgain() {
+        val scrollState = ScrollState(0)
+        val focusRequester = FocusRequester()
+        rule.setContentWithAccessibilityEnabled {
+            Column(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                Box(Modifier.size(50.dp).testTag("item").focusRequester(focusRequester).focusable())
+                Box(Modifier.size(300.dp))
+            }
+        }
+        val itemId = rule.onNodeWithTag("item").semanticsId()
+
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents.map { it.eventType })
+                .contains(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        }
+
+        // Scroll the focused node completely out of the viewport, so it leaves the tree...
+        val scrollDeltaPx = with(rule.density) { 60.dp.toPx() }
+        rule.runOnIdle { scrollState.dispatchRawDelta(scrollDeltaPx) }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+        rule.runOnIdle {
+            val nodeInfo = androidComposeView.createAccessibilityNodeInfoIfPossible(itemId)
+            assertThat(nodeInfo?.isVisibleToUser ?: false).isFalse()
+            dispatchedAccessibilityEvents.clear()
+        }
+
+        // ...and back into it while it still holds input focus.
+        rule.runOnIdle { scrollState.dispatchRawDelta(-scrollDeltaPx) }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        rule.runOnIdle {
+            assertThat(androidComposeView.createAccessibilityNodeInfo(itemId).isVisibleToUser)
+                .isTrue()
+            val eventTypes = dispatchedAccessibilityEvents.map { it.eventType }
+            assertThat(eventTypes).contains(AccessibilityEvent.TYPE_VIEW_SCROLLED)
+            assertThat(eventTypes).doesNotContain(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+            assertThat(eventTypes)
+                .doesNotContain(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED)
+        }
+    }
+
+    @Test
+    fun textSubstitution_whenShowing_updatesAccessibilityNodeInfoTextAndRestoresOnHideOrClear() {
+        rule.setContentWithAccessibilityEnabled {
+            BasicText(text = "Bonjour", modifier = Modifier.testTag(tag))
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+
+        val initialInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(virtualViewId)
+        }
+        assertThat(initialInfo.text.toString()).isEqualTo("Bonjour")
+
+        // Set substitution without showing it yet: node text should remain original.
+        val semanticsNode = rule.onNodeWithTag(tag).fetchSemanticsNode()
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.SetTextSubstitution]
+                .action
+                ?.invoke(AnnotatedString("Hello"))
+        }
+        val hiddenSubstitutionInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(virtualViewId)
+        }
+        assertThat(hiddenSubstitutionInfo.text.toString()).isEqualTo("Bonjour")
+
+        // Show substitution: node text should reflect substituted text.
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.ShowTextSubstitution].action?.invoke(true)
+        }
+        val showingSubstitutionInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(virtualViewId)
+        }
+        assertThat(showingSubstitutionInfo.text.toString()).isEqualTo("Hello")
+
+        // Hide substitution: node text should revert to original text.
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.ShowTextSubstitution].action?.invoke(false)
+        }
+        val afterHideInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(virtualViewId)
+        }
+        assertThat(afterHideInfo.text.toString()).isEqualTo("Bonjour")
+
+        // Re-show and then clear substitution: node text should revert to original text.
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.ShowTextSubstitution].action?.invoke(true)
+            semanticsNode.config[SemanticsActions.ClearTextSubstitution].action?.invoke()
+        }
+        val afterClearInfo = rule.runOnIdle {
+            androidComposeView.createAccessibilityNodeInfo(virtualViewId)
+        }
+        assertThat(afterClearInfo.text.toString()).isEqualTo("Bonjour")
+    }
+
+    @Test
+    fun textSubstitution_sendsContentChangeTypeTextEvent() {
+        rule.mainClock.autoAdvance = false
+        rule.setContentWithAccessibilityEnabled {
+            BasicText(text = "Bonjour", modifier = Modifier.size(100.dp).testTag(tag))
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val semanticsNode = rule.onNodeWithTag(tag).fetchSemanticsNode()
+
+        // Act 1: Set text substitution alone (before showing) should dispatch no event.
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.SetTextSubstitution]
+                .action
+                ?.invoke(AnnotatedString("Hello"))
+        }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        // Assert 1: No event is dispatched while IsShowingTextSubstitution is false.
+        rule.runOnIdle { assertThat(dispatchedAccessibilityEvents).isEmpty() }
+
+        // Act 2: Show text substitution.
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.ShowTextSubstitution].action?.invoke(true)
+        }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        // Assert 2: Only CONTENT_CHANGE_TYPE_TEXT is dispatched for this virtualViewId.
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents)
+                .comparingElementsUsing(AccessibilityEventComparator)
+                .containsExactly(
+                    AccessibilityEvent().apply {
+                        eventType = TYPE_WINDOW_CONTENT_CHANGED
+                        contentChangeTypes = CONTENT_CHANGE_TYPE_TEXT
+                        setSource(androidComposeView, virtualViewId)
+                    }
+                )
+            dispatchedAccessibilityEvents.clear()
+        }
+
+        // Act 3: Hide text substitution.
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.ShowTextSubstitution].action?.invoke(false)
+        }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        // Assert 3: Only CONTENT_CHANGE_TYPE_TEXT is dispatched when hiding substitution.
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents)
+                .comparingElementsUsing(AccessibilityEventComparator)
+                .containsExactly(
+                    AccessibilityEvent().apply {
+                        eventType = TYPE_WINDOW_CONTENT_CHANGED
+                        contentChangeTypes = CONTENT_CHANGE_TYPE_TEXT
+                        setSource(androidComposeView, virtualViewId)
+                    }
+                )
+            dispatchedAccessibilityEvents.clear()
+        }
+
+        // Act 4: Re-show and then clear text substitution while showing.
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.ShowTextSubstitution].action?.invoke(true)
+        }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+        rule.runOnIdle { dispatchedAccessibilityEvents.clear() }
+
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.ClearTextSubstitution].action?.invoke()
+        }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        // Assert 4: Only CONTENT_CHANGE_TYPE_TEXT is dispatched when clearing active substitution.
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents)
+                .comparingElementsUsing(AccessibilityEventComparator)
+                .containsExactly(
+                    AccessibilityEvent().apply {
+                        eventType = TYPE_WINDOW_CONTENT_CHANGED
+                        contentChangeTypes = CONTENT_CHANGE_TYPE_TEXT
+                        setSource(androidComposeView, virtualViewId)
+                    }
+                )
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun textSubstitution_longerTranslatedText_characterLocationsUseSubstitutedLayout() {
+        rule.setContentWithAccessibilityEnabled {
+            BasicText(text = "Hi", modifier = Modifier.testTag(tag))
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val semanticsNode = rule.onNodeWithTag(tag).fetchSemanticsNode()
+        val translatedText = "Bonjour"
+
+        rule.runOnIdle {
+            semanticsNode.config[SemanticsActions.SetTextSubstitution]
+                .action
+                ?.invoke(AnnotatedString(translatedText))
+            semanticsNode.config[SemanticsActions.ShowTextSubstitution].action?.invoke(true)
+        }
+
+        val info = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(virtualViewId) }
+        val args =
+            Bundle().apply {
+                putInt(EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX, 0)
+                putInt(EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH, translatedText.length)
+            }
+
+        rule.runOnIdle {
+            androidComposeView.composeAccessibilityDelegate
+                .getAccessibilityNodeProvider(androidComposeView)
+                .addExtraDataToAccessibilityNodeInfo(
+                    virtualViewId,
+                    info,
+                    EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
+                    args,
+                )
+        }
+
+        rule.runOnIdle {
+            @Suppress("DEPRECATION")
+            val locations = info.extras.getParcelableArray(EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY)
+            assertThat(locations).isNotNull()
+            assertThat(locations!!.size).isEqualTo(translatedText.length)
+            for (i in translatedText.indices) {
+                assertThat(locations[i] as? RectF).isNotNull()
+            }
         }
     }
 

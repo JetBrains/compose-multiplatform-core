@@ -397,7 +397,7 @@ internal class TextFieldCoreModifierNode(
             currSelection.end != previousSelection?.end -> currSelection.end
             currSelection.start != previousSelection?.start -> currSelection.start
             currTextLayoutSize != previousTextLayoutSize ||
-                currContainerSize != previousContainerSize -> currSelection.start
+                currContainerSize != previousContainerSize -> currSelection.min
             else -> -1
         }
     }
@@ -438,8 +438,9 @@ internal class TextFieldCoreModifierNode(
         val layoutResult = textLayoutState.layoutResult ?: return
 
         val rawCursorRect =
-            layoutResult.getCursorRect(
-                offsetToFollow.coerceIn(0..layoutResult.layoutInput.text.length)
+            textFieldSelectionState.getCursorRectInLayout(
+                layoutResult,
+                offsetToFollow.coerceIn(0, layoutResult.layoutInput.text.length),
             )
         val cursorRect =
             getCursorRectInScroller(

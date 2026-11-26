@@ -21,12 +21,12 @@ import androidx.collection.MutableScatterSet
 import androidx.collection.ScatterSet
 import androidx.collection.emptyObjectList
 import androidx.collection.emptyScatterSet
+import androidx.collection.mutableObjectListOf
 import androidx.collection.mutableScatterMapOf
 import androidx.collection.mutableScatterSetOf
 import androidx.compose.runtime.collection.MultiValueMap
 import androidx.compose.runtime.collection.fastForEach
 import androidx.compose.runtime.collection.fastMap
-import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.collection.wrapIntoSet
 import androidx.compose.runtime.external.kotlinx.collections.immutable.persistentSetOf
 import androidx.compose.runtime.internal.AtomicReference
@@ -254,8 +254,11 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     private var closeCause: Throwable? = null
     private val _knownCompositions = mutableListOf<ControlledComposition>()
     private var _knownCompositionsCache: List<ControlledComposition>? = null
+    // Compositions that are sent state changes but are not recomposed, such as a paused
+    // composition composing its initial content.
+    private val knownNonRecomposingCompositions = mutableListOf<ControlledComposition>()
     private var snapshotInvalidations = MutableScatterSet<Any>()
-    private val compositionInvalidations = mutableVectorOf<ControlledComposition>()
+    private val compositionInvalidations = mutableObjectListOf<ControlledComposition>()
     private val compositionsAwaitingApply = mutableListOf<ControlledComposition>()
     private val movableContentAwaitingInsert = mutableListOf<MovableContentStateReference>()
     private val movableContentRemoved =
@@ -352,6 +355,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     private fun deriveStateLocked(): CancellableContinuation<Unit>? {
         if (_state.value <= State.ShuttingDown) {
             clearKnownCompositionsLocked()
+            knownNonRecomposingCompositions.clear()
             snapshotInvalidations = MutableScatterSet()
             compositionInvalidations.clear()
             compositionsAwaitingApply.clear()
@@ -506,6 +510,15 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             synchronized(stateLock) {
                 if (snapshotInvalidations.isEmpty()) return hasFrameWorkLocked
                 compositions = knownCompositionsLocked()
+                if (knownNonRecomposingCompositions.isNotEmpty()) {
+                    val known = compositions
+                    compositions =
+                        ArrayList(known).apply {
+                            knownNonRecomposingCompositions.fastForEach {
+                                if (it !in known) add(it)
+                            }
+                        }
+                }
                 snapshotInvalidations.wrapIntoSet().also {
                     snapshotInvalidations = MutableScatterSet()
                 }
@@ -1094,8 +1107,15 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 synchronized(stateLock) {
                         if (_state.value >= State.Idle) {
                             val snapshotInvalidations = snapshotInvalidations
+                            // A composition that is still composing its initial content may read
+                            // the state later.
+                            val keepUnread = knownNonRecomposingCompositions.isNotEmpty()
                             changed.fastForEach {
-                                if (it is StateObjectImpl && !it.isReadIn(ReaderKind.Composition)) {
+                                if (
+                                    !keepUnread &&
+                                        it is StateObjectImpl &&
+                                        !it.isReadIn(ReaderKind.Composition)
+                                ) {
                                     // continue if we know that state is never read in
                                     // composition
                                     return@fastForEach
@@ -1179,14 +1199,14 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
      * [action] will be invoked when the current frame fully finishes composing. If a frame isn't
      * currently in-progress, a new frame will be scheduled (if one hasn't been already) and
      * [action] will execute at the completion of the next frame's composition. If a new frame is
-     * scheduled and there is no other work to execute, [action] will still execute.
+     * scheduled and there is no other work to execute, [action] will still execute. [action] will
+     * always execute on the applier thread.
      *
-     * [action] will always execute on the applier thread.
-     *
-     * @return A [CancellationHandle] that can be used to unregister the [action]. The returned
-     *   handle is thread-safe and may be cancelled from any thread. Cancelling the handle only
-     *   removes the callback from the queue. If [action] is currently executing, it will not be
-     *   cancelled by this handle.
+     * @return A [CancellationHandle] to unregister [action]. The handle is thread-safe and may be
+     *   cancelled from any thread. Cancelling the handle only removes the callback from the queue.
+     *   If [action] is currently executing, it will not be cancelled by this handle.
+     * @throws kotlin.coroutines.cancellation.CancellationException if the [Recomposer] that owns
+     *   the associated composition is shutting down or has shut down.
      */
     public override fun scheduleFrameEndCallback(action: () -> Unit): CancellationHandle {
         return nextFrameEndCallbackQueue.scheduleFrameEndCallback(action)
@@ -1264,6 +1284,17 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         shouldPause: ShouldPauseCallback,
         content: @Composable () -> Unit,
     ): ScatterSet<RecomposeScopeImpl> {
+        // The composition only becomes known once its initial content is composed, which can be on
+        // another thread. Until then, send it state changes without recomposing it.
+        val nonRecomposing =
+            synchronized(stateLock) {
+                if (
+                    _state.value > State.ShuttingDown && composition !in knownCompositionsLocked()
+                ) {
+                    knownNonRecomposingCompositions += composition
+                    true
+                } else false
+            }
         return try {
             composition.pausable(shouldPause) {
                 composeInitial(composition, content)
@@ -1271,6 +1302,9 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             }
         } finally {
             pausedScopes.set(null)
+            if (nonRecomposing) {
+                synchronized(stateLock) { knownNonRecomposingCompositions -= composition }
+            }
         }
     }
 
@@ -1610,6 +1644,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     internal override fun unregisterComposition(composition: ControlledComposition) {
         synchronized(stateLock) {
             removeKnownCompositionLocked(composition)
+            knownNonRecomposingCompositions -= composition
             compositionInvalidations -= composition
             compositionsAwaitingApply -= composition
         }
@@ -1617,7 +1652,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
 
     internal override fun invalidate(composition: ControlledComposition) {
         synchronized(stateLock) {
-                if (composition !in compositionInvalidations) {
+                if (
+                    composition !in compositionInvalidations &&
+                        composition !in knownNonRecomposingCompositions
+                ) {
                     compositionInvalidations += composition
                     deriveStateLocked()
                 } else null

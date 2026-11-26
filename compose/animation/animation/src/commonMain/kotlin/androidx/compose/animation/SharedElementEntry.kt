@@ -71,19 +71,41 @@ internal class SharedElementEntry(
     private var deferredTransformState: SharedMutableTransformState? = null
 
     /**
+     * Whether the parent container's deferred scale/offset transformations should be applied to
+     * this shared element during the deferred phase.
+     */
+    internal val shouldApplyContainerTransform: Boolean
+        get() =
+            userState.config.deferredTransitionBehavior ==
+                SharedTransitionScope.DeferredTransitionBehavior.FollowContainer ||
+                !renderInOverlayDuringTransition
+
+    /**
+     * Whether this shared element should seek between its initial and target bounds according to
+     * [MutableContentTransform.sharedElementProgress] during the deferred phase.
+     */
+    internal val shouldSeekDuringDeferredTransition: Boolean
+        get() =
+            userState.config.deferredTransitionBehavior ==
+                SharedTransitionScope.DeferredTransitionBehavior.SeekToTarget &&
+                renderInOverlayDuringTransition
+
+    /**
      * Resolves the active [SharedMutableTransformState] that is currently driving the deferred
      * transformations.
      *
      * If the shared element does not participate in deferred transformations, this returns null.
      *
-     * During a deferred phase, we apply the outgoing content's transformations to both shared
+     * During a deferred phase, we resolve the outgoing content's transformations for both shared
      * elements (the incoming and the outgoing). Therefore, if this entry represents the incoming
      * element, we must resolve the state from the corresponding exiting element to ensure they
-     * transform perfectly in sync.
+     * transform or seek perfectly in sync.
      */
     internal val activeMutableTransformState: SharedMutableTransformState?
         get() {
-            if (!userState.config.permitTransformDuringDeferredTransition) return null
+            if (!shouldApplyContainerTransform && !shouldSeekDuringDeferredTransition) {
+                return null
+            }
 
             var currentTransition: Transition<*>? = boundsAnimation.transition
             var isDeferred = false
@@ -101,17 +123,11 @@ internal class SharedElementEntry(
             if (transformState.isHandoffActive && deferredTransformState != null) {
                 return deferredTransformState
             }
-            // During a deferred phase, the underlying transition state is held back at the original
-            // state. This means the `target` property is temporarily inverted (exiting=true,
-            // incoming=false).
-            val isIncoming = if (isMutating) !target else target
 
             val resolvedState =
-                if (isIncoming) {
+                if (isDeferredEntering()) {
                     val exitingEntry =
-                        sharedElement.enabledEntries.fastFirstOrNull {
-                            if (it.isMutating) it.target else !it.target
-                        }
+                        sharedElement.enabledEntries.fastFirstOrNull { it.isDeferredExiting() }
                     exitingEntry?.boundsProvider?.modifierLocalTransformState ?: transformState
                 } else {
                     transformState
@@ -186,7 +202,8 @@ internal class SharedElementEntry(
                 val parentCoords = mutableTransformState?.parentLayoutCoordinates
                 val rootCoords = sharedElement.scope.root
                 if (
-                    mutableTransformState?.isMutating == true &&
+                    shouldApplyContainerTransform &&
+                        mutableTransformState?.isMutating == true &&
                         parentCoords != null &&
                         parentCoords.isAttached &&
                         rootCoords.isAttached
@@ -231,19 +248,39 @@ internal class SharedElementEntry(
             }
         }
 
+    /** Whether this entry is visible in the transition's current target state. */
     val target: Boolean
         get() = boundsAnimation.target
+
+    /**
+     * Whether this entry is visible in the transition's pending target state during the deferred
+     * phase of a [DeferredTransition], or `null` when not in a deferred phase.
+     */
+    val pendingTarget: Boolean?
+        get() = boundsAnimation.transition.pendingTargetState
+
+    /**
+     * Whether this entry is the incoming entry (not visible in [target], becoming visible in
+     * [pendingTarget]) during the deferred phase of a [DeferredTransition].
+     */
+    fun isDeferredEntering(): Boolean = !target && pendingTarget == true
+
+    /**
+     * Whether this entry is the outgoing entry (visible in [target], becoming not visible in
+     * [pendingTarget]) during the deferred phase of a [DeferredTransition].
+     */
+    fun isDeferredExiting(): Boolean = target && pendingTarget == false
 
     var boundsProvider: BoundsProvider? = null
 
     // Delegate the property to a mutable state, so that when layer is updated, the rendering
     // gets invalidated.
-    var layer: GraphicsLayer? by mutableStateOf(null)
+    override var layer: GraphicsLayer? by mutableStateOf(null)
 
     // Do not need to render the content of an outgoing `sharedElement`.
     private val shouldRenderAtAll: Boolean
         get() =
-            boundsAnimation.target ||
+            (sharedElement.pendingTargetEntry?.let { it === this } ?: target) ||
                 // This && only evaluates to true when the active match is removed during
                 // transition
                 (sharedElement.state.matchIsOrHasBeenConfigured &&
@@ -258,7 +295,9 @@ internal class SharedElementEntry(
                 // Render in overlay during transition only takes effect during transition (i.e.
                 // when transition is active)
                 renderInOverlayDuringTransition &&
-                (sharedElement.scope.isTransitionActive || isMutating)
+                (sharedElement.scope.isTransitionActive ||
+                    isDeferredEntering() ||
+                    isDeferredExiting())
 
     val shouldRenderInPlace: Boolean
         get() =
@@ -280,6 +319,7 @@ internal class SharedElementEntry(
         // Here we are observing strictly the states that would affect match and transition
         // activeness for the node. The match is the result of this observation, not the input.
         target
+        pendingTarget
         isEnabled
         boundsAnimation.isRunning
         activeMutableTransformState?.isMutating

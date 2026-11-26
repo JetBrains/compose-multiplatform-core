@@ -58,7 +58,7 @@ androidXMultiplatform {
             api(project(":compose:ui:ui-unit"))
             implementation(project(":compose:runtime:runtime"))
             implementation(project(":compose:ui:ui-util"))
-            implementation("androidx.collection:collection:1.6.0")
+            implementation("androidx.collection:collection:1.7.0")
         }
 
         commonTest.dependencies {
@@ -90,6 +90,8 @@ androidXMultiplatform {
             dependsOn(nonAndroidMain)
             dependencies {
                 api(libs.skiko)
+                api(libs.skikoPlatform)
+                api(libs.skikoGanesh)
             }
         }
         skikoTest.dependsOn(nonAndroidTest)
@@ -115,6 +117,8 @@ androidXMultiplatform {
                 implementation(libs.junit)
                 implementation(libs.truth)
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoGaneshAwtRuntime)
+                implementation(libs.skikoPlatformAwtRuntime)
                 implementation(project(":compose:ui:ui-test-junit4"))
             }
         }

@@ -9,6 +9,7 @@ public final class androidx/compose/ui/text/AnnotatedString : java/lang/CharSequ
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun flatMapAnnotations (Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/text/AnnotatedString;
 	public fun get (I)C
+	public final fun getDrawAnnotations (II)Ljava/util/List;
 	public fun getLength ()I
 	public final fun getLinkAnnotations (II)Ljava/util/List;
 	public final fun getParagraphStyles ()Ljava/util/List;
@@ -17,8 +18,11 @@ public final class androidx/compose/ui/text/AnnotatedString : java/lang/CharSequ
 	public final fun getStringAnnotations (Ljava/lang/String;II)Ljava/util/List;
 	public final fun getText ()Ljava/lang/String;
 	public final fun getTtsAnnotations (II)Ljava/util/List;
+	public final fun hasDrawAnnotations (II)Z
 	public final fun hasEqualAnnotations (Landroidx/compose/ui/text/AnnotatedString;)Z
 	public final fun hasLinkAnnotations (II)Z
+	public final fun hasSameDrawAffectingAnnotations (Landroidx/compose/ui/text/AnnotatedString;)Z
+	public final fun hasSameLayoutAffectingAnnotations (Landroidx/compose/ui/text/AnnotatedString;)Z
 	public final fun hasStringAnnotations (Ljava/lang/String;II)Z
 	public fun hashCode ()I
 	public final fun length ()I
@@ -47,6 +51,7 @@ public final class androidx/compose/ui/text/AnnotatedString$Builder : java/lang/
 	public fun <init> (Ljava/lang/String;)V
 	public final fun addBullet (Landroidx/compose/ui/text/Bullet;II)V
 	public final fun addBullet-r9BaKPg (Landroidx/compose/ui/text/Bullet;JII)V
+	public final fun addDrawAnnotation (Landroidx/compose/ui/text/DrawAnnotation;II)V
 	public final fun addLink (Landroidx/compose/ui/text/LinkAnnotation$Clickable;II)V
 	public final fun addLink (Landroidx/compose/ui/text/LinkAnnotation$Url;II)V
 	public final fun addStringAnnotation (Ljava/lang/String;Ljava/lang/String;II)V
@@ -125,9 +130,68 @@ public final class androidx/compose/ui/text/AnnotatedStringKt {
 	public static synthetic fun toUpperCase$default (Landroidx/compose/ui/text/AnnotatedString;Landroidx/compose/ui/text/intl/LocaleList;ILjava/lang/Object;)Landroidx/compose/ui/text/AnnotatedString;
 	public static final fun withAnnotation (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/TtsAnnotation;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withAnnotation (Landroidx/compose/ui/text/AnnotatedString$Builder;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static final fun withDrawAnnotation (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/DrawAnnotation;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withLink (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/LinkAnnotation;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withStyle (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/ParagraphStyle;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withStyle (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/SpanStyle;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
+public final class androidx/compose/ui/text/BackgroundAnnotation : androidx/compose/ui/text/DrawAnnotation {
+	public static final field $stable I
+	public synthetic fun <init> (JFLandroidx/compose/ui/text/BackgroundAnnotation$SpreadValues;ZLandroidx/compose/ui/text/BackgroundAnnotation$Border;FILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JFLandroidx/compose/ui/text/BackgroundAnnotation$SpreadValues;ZLandroidx/compose/ui/text/BackgroundAnnotation$Border;FLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroidx/compose/ui/graphics/Brush;FLandroidx/compose/ui/text/BackgroundAnnotation$SpreadValues;ZLandroidx/compose/ui/text/BackgroundAnnotation$Border;FILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroidx/compose/ui/graphics/Brush;FLandroidx/compose/ui/text/BackgroundAnnotation$SpreadValues;ZLandroidx/compose/ui/text/BackgroundAnnotation$Border;FLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroidx/compose/ui/graphics/ColorProducer;FLandroidx/compose/ui/text/BackgroundAnnotation$SpreadValues;ZLandroidx/compose/ui/text/BackgroundAnnotation$Border;FILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroidx/compose/ui/graphics/ColorProducer;FLandroidx/compose/ui/text/BackgroundAnnotation$SpreadValues;ZLandroidx/compose/ui/text/BackgroundAnnotation$Border;FLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun drawBehind (Landroidx/compose/ui/text/DrawAnnotationScope;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlpha ()F
+	public final fun getBorder ()Landroidx/compose/ui/text/BackgroundAnnotation$Border;
+	public final fun getBrush ()Landroidx/compose/ui/graphics/Brush;
+	public final fun getColor-0d7_KjU ()J
+	public final fun getColorProducer ()Landroidx/compose/ui/graphics/ColorProducer;
+	public final fun getCornerRadius-D9Ej5fM ()F
+	public final fun getMergeLines ()Z
+	public final fun getSpread ()Landroidx/compose/ui/text/BackgroundAnnotation$SpreadValues;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/ui/text/BackgroundAnnotation$Border {
+	public static final field $stable I
+	public synthetic fun <init> (FJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (FLandroidx/compose/ui/graphics/Brush;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (FLandroidx/compose/ui/graphics/ColorProducer;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBrush ()Landroidx/compose/ui/graphics/Brush;
+	public final fun getColor-0d7_KjU ()J
+	public final fun getColorProducer ()Landroidx/compose/ui/graphics/ColorProducer;
+	public final fun getWidth-D9Ej5fM ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/ui/text/BackgroundAnnotation$SpreadValues {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/ui/text/BackgroundAnnotation$SpreadValues$Companion;
+	public fun <init> ()V
+	public synthetic fun <init> (FFFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (FFFFLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (FFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (FFLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (FLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBottom-D9Ej5fM ()F
+	public final fun getLeft-D9Ej5fM ()F
+	public final fun getRight-D9Ej5fM ()F
+	public final fun getTop-D9Ej5fM ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/ui/text/BackgroundAnnotation$SpreadValues$Companion {
+	public final fun getZero ()Landroidx/compose/ui/text/BackgroundAnnotation$SpreadValues;
 }
 
 public final class androidx/compose/ui/text/Bullet : androidx/compose/ui/text/AnnotatedString$Annotation {
@@ -159,6 +223,26 @@ public final class androidx/compose/ui/text/Bullet$Companion {
 public final class androidx/compose/ui/text/DesktopTextStyle_skikoKt {
 	public static final fun lerp (Landroidx/compose/ui/text/PlatformParagraphStyle;Landroidx/compose/ui/text/PlatformParagraphStyle;F)Landroidx/compose/ui/text/PlatformParagraphStyle;
 	public static final fun lerp (Landroidx/compose/ui/text/PlatformSpanStyle;Landroidx/compose/ui/text/PlatformSpanStyle;F)Landroidx/compose/ui/text/PlatformSpanStyle;
+}
+
+public abstract class androidx/compose/ui/text/DrawAnnotation : androidx/compose/ui/text/AnnotatedString$Annotation {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun drawBehind (Landroidx/compose/ui/text/DrawAnnotationScope;)V
+	public fun drawOver (Landroidx/compose/ui/text/DrawAnnotationScope;)V
+	public abstract fun equals (Ljava/lang/Object;)Z
+	public abstract fun hashCode ()I
+}
+
+public final class androidx/compose/ui/text/DrawAnnotationKt {
+	public static final fun DrawAnnotation (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/text/DrawAnnotation;
+	public static synthetic fun DrawAnnotation$default (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/text/DrawAnnotation;
+}
+
+public abstract interface class androidx/compose/ui/text/DrawAnnotationScope : androidx/compose/ui/graphics/drawscope/DrawScope {
+	public abstract fun getEnd ()I
+	public abstract fun getStart ()I
+	public abstract fun getTextLayoutResult ()Landroidx/compose/ui/text/TextLayoutResult;
 }
 
 public abstract interface annotation class androidx/compose/ui/text/ExperimentalTextApi : java/lang/annotation/Annotation {
@@ -486,6 +570,70 @@ public final class androidx/compose/ui/text/PlatformTextStyle {
 	public fun hashCode ()I
 }
 
+public final class androidx/compose/ui/text/ReusableTextStyleScope : androidx/compose/ui/text/TextStyleScope {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun copyFrom (Landroidx/compose/ui/text/ReusableTextStyleScope;)V
+	public final fun getAlpha ()F
+	public final fun getBackground-0d7_KjU ()J
+	public final fun getBaselineShift-y9eOQZs ()F
+	public final fun getBrush ()Landroidx/compose/ui/graphics/Brush;
+	public final fun getColor-0d7_KjU ()J
+	public final fun getDrawStyle ()Landroidx/compose/ui/graphics/drawscope/DrawStyle;
+	public final fun getFontFamily ()Landroidx/compose/ui/text/font/FontFamily;
+	public final fun getFontFeatureSettings ()Ljava/lang/String;
+	public final fun getFontSize-XSAIIZE ()J
+	public final fun getFontStyle-4Lr2A7w ()Landroidx/compose/ui/text/font/FontStyle;
+	public final fun getFontSynthesis-ZQGJjVo ()Landroidx/compose/ui/text/font/FontSynthesis;
+	public final fun getFontWeight ()Landroidx/compose/ui/text/font/FontWeight;
+	public final fun getHyphens-vmbZdU8 ()I
+	public final fun getLetterSpacing-XSAIIZE ()J
+	public final fun getLineBreak-rAG3T2k ()I
+	public final fun getLineHeight-XSAIIZE ()J
+	public final fun getLineHeightStyle ()Landroidx/compose/ui/text/style/LineHeightStyle;
+	public final fun getLocaleList ()Landroidx/compose/ui/text/intl/LocaleList;
+	public final fun getPlatformStyle ()Landroidx/compose/ui/text/PlatformTextStyle;
+	public final fun getShadow ()Landroidx/compose/ui/graphics/Shadow;
+	public final fun getTextAlign-e0LSkKk ()I
+	public final fun getTextDecoration ()Landroidx/compose/ui/text/style/TextDecoration;
+	public final fun getTextDirection-s_7X-co ()I
+	public final fun getTextGeometricTransform ()Landroidx/compose/ui/text/style/TextGeometricTransform;
+	public final fun getTextIndent ()Landroidx/compose/ui/text/style/TextIndent;
+	public final fun getTextMotion ()Landroidx/compose/ui/text/style/TextMotion;
+	public final fun hasSameDrawAffectingAttributes (Landroidx/compose/ui/text/ReusableTextStyleScope;)Z
+	public final fun hasSameDrawAffectingAttributes (Landroidx/compose/ui/text/TextStyle;)Z
+	public final fun hasSameLayoutAffectingAttributes (Landroidx/compose/ui/text/ReusableTextStyleScope;)Z
+	public final fun hasSameLayoutAffectingAttributes (Landroidx/compose/ui/text/TextStyle;)Z
+	public final fun reset ()V
+	public fun setAlpha (F)V
+	public fun setBackground-8_81llA (J)V
+	public fun setBaselineShift-4Dl_Bck (F)V
+	public fun setBrush (Landroidx/compose/ui/graphics/Brush;)V
+	public fun setColor-8_81llA (J)V
+	public fun setDrawStyle (Landroidx/compose/ui/graphics/drawscope/DrawStyle;)V
+	public fun setFontFamily (Landroidx/compose/ui/text/font/FontFamily;)V
+	public fun setFontFeatureSettings (Ljava/lang/String;)V
+	public fun setFontSize--R2X_6o (J)V
+	public fun setFontStyle-nzbMABs (I)V
+	public fun setFontSynthesis-6p3vJLY (I)V
+	public fun setFontWeight (Landroidx/compose/ui/text/font/FontWeight;)V
+	public fun setHyphens--3fSNIE (I)V
+	public fun setLetterSpacing--R2X_6o (J)V
+	public fun setLineBreak-CZqVlQI (I)V
+	public fun setLineHeight--R2X_6o (J)V
+	public fun setLineHeightStyle (Landroidx/compose/ui/text/style/LineHeightStyle;)V
+	public fun setLocaleList (Landroidx/compose/ui/text/intl/LocaleList;)V
+	public fun setPlatformStyle (Landroidx/compose/ui/text/PlatformTextStyle;)V
+	public fun setShadow (Landroidx/compose/ui/graphics/Shadow;)V
+	public fun setTextAlign-aXe7zB0 (I)V
+	public fun setTextDecoration (Landroidx/compose/ui/text/style/TextDecoration;)V
+	public fun setTextDirection-Hejc4pk (I)V
+	public fun setTextGeometricTransform (Landroidx/compose/ui/text/style/TextGeometricTransform;)V
+	public fun setTextIndent (Landroidx/compose/ui/text/style/TextIndent;)V
+	public fun setTextMotion (Landroidx/compose/ui/text/style/TextMotion;)V
+	public fun setTextStyle (Landroidx/compose/ui/text/TextStyle;)V
+}
+
 public final class androidx/compose/ui/text/SpanStyle : androidx/compose/ui/text/AnnotatedString$Annotation {
 	public static final field $stable I
 	public synthetic fun <init> (JJLandroidx/compose/ui/text/font/FontWeight;Landroidx/compose/ui/text/font/FontStyle;Landroidx/compose/ui/text/font/FontSynthesis;Landroidx/compose/ui/text/font/FontFamily;Ljava/lang/String;JLandroidx/compose/ui/text/style/BaselineShift;Landroidx/compose/ui/text/style/TextGeometricTransform;Landroidx/compose/ui/text/intl/LocaleList;JLandroidx/compose/ui/text/style/TextDecoration;Landroidx/compose/ui/graphics/Shadow;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -627,8 +775,11 @@ public final class androidx/compose/ui/text/TextLayoutResult {
 	public final fun copy-O0kMr_c (Landroidx/compose/ui/text/TextLayoutInput;J)Landroidx/compose/ui/text/TextLayoutResult;
 	public static synthetic fun copy-O0kMr_c$default (Landroidx/compose/ui/text/TextLayoutResult;Landroidx/compose/ui/text/TextLayoutInput;JILjava/lang/Object;)Landroidx/compose/ui/text/TextLayoutResult;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun fillPathForRange-w_Dsyms (IILandroidx/compose/ui/graphics/Path;JZ)V
+	public static synthetic fun fillPathForRange-w_Dsyms$default (Landroidx/compose/ui/text/TextLayoutResult;IILandroidx/compose/ui/graphics/Path;JZILjava/lang/Object;)V
 	public final fun getBidiRunDirection (I)Landroidx/compose/ui/text/style/ResolvedTextDirection;
 	public final fun getBoundingBox (I)Landroidx/compose/ui/geometry/Rect;
+	public final fun getBoundingBoxesForRange (II)Ljava/util/List;
 	public final fun getCursorRect (I)Landroidx/compose/ui/geometry/Rect;
 	public final fun getDidOverflowHeight ()Z
 	public final fun getDidOverflowWidth ()Z
@@ -828,6 +979,36 @@ public final class androidx/compose/ui/text/TextStyle$Companion {
 public final class androidx/compose/ui/text/TextStyleKt {
 	public static final fun lerp (Landroidx/compose/ui/text/TextStyle;Landroidx/compose/ui/text/TextStyle;F)Landroidx/compose/ui/text/TextStyle;
 	public static final fun resolveDefaults (Landroidx/compose/ui/text/TextStyle;Landroidx/compose/ui/unit/LayoutDirection;)Landroidx/compose/ui/text/TextStyle;
+}
+
+public abstract interface class androidx/compose/ui/text/TextStyleScope {
+	public abstract fun setAlpha (F)V
+	public abstract fun setBackground-8_81llA (J)V
+	public abstract fun setBaselineShift-4Dl_Bck (F)V
+	public abstract fun setBrush (Landroidx/compose/ui/graphics/Brush;)V
+	public abstract fun setColor-8_81llA (J)V
+	public abstract fun setDrawStyle (Landroidx/compose/ui/graphics/drawscope/DrawStyle;)V
+	public abstract fun setFontFamily (Landroidx/compose/ui/text/font/FontFamily;)V
+	public abstract fun setFontFeatureSettings (Ljava/lang/String;)V
+	public abstract fun setFontSize--R2X_6o (J)V
+	public abstract fun setFontStyle-nzbMABs (I)V
+	public abstract fun setFontSynthesis-6p3vJLY (I)V
+	public abstract fun setFontWeight (Landroidx/compose/ui/text/font/FontWeight;)V
+	public abstract fun setHyphens--3fSNIE (I)V
+	public abstract fun setLetterSpacing--R2X_6o (J)V
+	public abstract fun setLineBreak-CZqVlQI (I)V
+	public abstract fun setLineHeight--R2X_6o (J)V
+	public abstract fun setLineHeightStyle (Landroidx/compose/ui/text/style/LineHeightStyle;)V
+	public abstract fun setLocaleList (Landroidx/compose/ui/text/intl/LocaleList;)V
+	public abstract fun setPlatformStyle (Landroidx/compose/ui/text/PlatformTextStyle;)V
+	public abstract fun setShadow (Landroidx/compose/ui/graphics/Shadow;)V
+	public abstract fun setTextAlign-aXe7zB0 (I)V
+	public abstract fun setTextDecoration (Landroidx/compose/ui/text/style/TextDecoration;)V
+	public abstract fun setTextDirection-Hejc4pk (I)V
+	public abstract fun setTextGeometricTransform (Landroidx/compose/ui/text/style/TextGeometricTransform;)V
+	public abstract fun setTextIndent (Landroidx/compose/ui/text/style/TextIndent;)V
+	public abstract fun setTextMotion (Landroidx/compose/ui/text/style/TextMotion;)V
+	public abstract fun setTextStyle (Landroidx/compose/ui/text/TextStyle;)V
 }
 
 public abstract class androidx/compose/ui/text/TtsAnnotation : androidx/compose/ui/text/AnnotatedString$Annotation {

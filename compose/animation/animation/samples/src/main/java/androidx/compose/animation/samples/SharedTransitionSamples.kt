@@ -26,6 +26,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.MutableContentTransform
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SharedTransitionScope.DeferredTransitionBehavior
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
 import androidx.compose.animation.SharedTransitionScope.SharedContentState
 import androidx.compose.animation.core.DeferredTransitionState
@@ -733,9 +734,8 @@ fun SharedContentConfigSample() {
 @Sampled
 @Composable
 fun SharedContentConfigDeferredTransitionSample() {
-    // In this example, we show how to use permitTransformDuringDeferredTransition to
-    // control whether a shared element transforms (scales/slides) with its parent container
-    // during a deferred transition (e.g., a Predictive Back gesture).
+    // In this example, we show how to use deferredTransitionBehavior to control how a shared
+    // element behaves during a deferred transition (e.g., a Predictive Back gesture).
     var state by remember { mutableStateOf("B") }
     var isBackGestureInProgress by remember { mutableStateOf(false) }
     var swipeOffset by remember { mutableStateOf(IntOffset.Zero) }
@@ -787,7 +787,14 @@ fun SharedContentConfigDeferredTransitionSample() {
                     Box(
                         Modifier.align(Alignment.TopEnd)
                             .sharedElement(
-                                rememberSharedContentState(key = "item_2"),
+                                rememberSharedContentState(
+                                    key = "item_2",
+                                    config =
+                                        SharedContentConfig(
+                                            deferredTransitionBehavior =
+                                                DeferredTransitionBehavior.Static
+                                        ),
+                                ),
                                 animatedVisibilityScope = this@DeferredAnimatedContent,
                             )
                             .size(100.dp)
@@ -798,8 +805,8 @@ fun SharedContentConfigDeferredTransitionSample() {
                 Box(Modifier.fillMaxSize().background(Color.LightGray)) {
                     // Origin elements on Screen B
 
-                    // Shared element that permits transformations during the deferred phase
-                    // (default).
+                    // Shared element that follows its container's transformations during the
+                    // deferred phase (default).
                     // As the user swipes back to screen A, this element will visually scale and
                     // translate in sync with container B. This is typical for content like images
                     // or cards that should stay visually anchored to their shifting parent page.
@@ -810,7 +817,8 @@ fun SharedContentConfigDeferredTransitionSample() {
                                     key = "item_1",
                                     config =
                                         SharedContentConfig(
-                                            permitTransformDuringDeferredTransition = true
+                                            deferredTransitionBehavior =
+                                                DeferredTransitionBehavior.FollowContainer
                                         ),
                                 ),
                                 animatedVisibilityScope = this@DeferredAnimatedContent,
@@ -819,12 +827,11 @@ fun SharedContentConfigDeferredTransitionSample() {
                             .background(Color.Red)
                     )
 
-                    // Shared element that disables transformations during the deferred phase.
-                    // It will remain static at its starting position (BottomEnd) relative to the
-                    // root layout, temporarily detaching from the moving container B. This is
-                    // useful for elements that should not scale or slide with the page container
-                    // during a predictive back gesture, such as a shared bottom navigation bar
-                    // or persistent header.
+                    // Shared element that detaches from its container's deferred transformations
+                    // and remains static at its starting position (BottomEnd) relative to the root
+                    // layout. Use DeferredTransitionBehavior.SeekToTarget instead to interpolate
+                    // toward target bounds when MutableContentTransform.sharedElementProgress is
+                    // configured.
                     Box(
                         Modifier.align(Alignment.BottomEnd)
                             .sharedElement(
@@ -832,7 +839,8 @@ fun SharedContentConfigDeferredTransitionSample() {
                                     key = "item_2",
                                     config =
                                         SharedContentConfig(
-                                            permitTransformDuringDeferredTransition = false
+                                            deferredTransitionBehavior =
+                                                DeferredTransitionBehavior.Static
                                         ),
                                 ),
                                 animatedVisibilityScope = this@DeferredAnimatedContent,

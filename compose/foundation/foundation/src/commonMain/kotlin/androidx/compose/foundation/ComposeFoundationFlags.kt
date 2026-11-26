@@ -166,17 +166,6 @@ public object ComposeFoundationFlags {
     public var isReverseLayoutNestedScrollConnectionInPagerFixEnabled: Boolean = true
 
     /**
-     * This flag controls whether [androidx.compose.foundation.pager.Pager]'s default nested scroll
-     * connection absorbs unconsumed main-axis deltas during non-gesture scrolls (such as
-     * accessibility actions) to prevent synthetic scrolls from accidentally dragging the parent
-     * Pager.
-     */
-    // TODO: Remove this flag once it has soaked (b/543033546)
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isAbsorbNonGestureNestedScrollInPagerFixEnabled: Boolean = true
-
-    /**
      * This flag controls whether [androidx.compose.foundation.text.BasicTextField]'s formatted text
      * features are enabled.
      */
@@ -236,16 +225,6 @@ public object ComposeFoundationFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isMouseSelectionBetweenTextEnabled: Boolean = true
-
-    /**
-     * Disable minimum touch target expansion for inline links. Touch target expansion for
-     * multi-line links causes incorrect clicks on plain text on the same lines because it uses
-     * layout bounds (bounding box of multi-line path) instead of clipped shape.
-     */
-    // TODO: b/522377028
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isLinkMinimumTouchTargetSizeZeroEnabled: Boolean = false
 
     /**
      * This flag controls the fix where draggable was ignoring and not consuming zero delta events.
@@ -362,6 +341,102 @@ public object ComposeFoundationFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isTextFieldWaitWindowFocusForInputSessionEnabled: Boolean = true
+
+    /**
+     * Controls a fix for using [border] with custom shape implementations that return
+     * [androidx.compose.ui.graphics.Outline.Rounded] where the outline does not start at (0,0). For
+     * most cases, such as when using a high level
+     * [androidx.compose.foundation.shape.RoundedCornerShape], this flag should have no effect.
+     */
+    // TODO: Remove this flag once it has soaked (b/568463028)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isRoundedRectangleBorderRenderingFixEnabled: Boolean = true
+    /**
+     * Controls whether lazy layout item animations use the state-based enter and exit transition
+     * model.
+     *
+     * When enabled, [androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimation] tracks
+     * transition states with an enum and uses
+     * [androidx.compose.foundation.lazy.layout.EnterExitFadeAnimation] to run
+     * [androidx.compose.animation.EnterTransition] and [androidx.compose.animation.ExitTransition]
+     * animations instead of boolean-based fade tracking.
+     */
+    // TODO: Remove this flag once it has soaked (b/570486457)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isLazyLayoutItemAnimationEnterExitTransitionsEnabled: Boolean = true
+
+    /**
+     * Whether to use an updated implementation to render borders in [border]. If disabled, the old
+     * border implementation will be used instead.
+     */
+    // TODO: Remove this flag once it has soaked (b/569992152)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isNewBorderImplementationEnabled: Boolean = true
+
+    /**
+     * Controls whether the new [border] implementation renders using the bounds of the
+     * [androidx.compose.ui.graphics.Outline] created by the provided shape. Previously, this
+     * behavior was inconsistent and sometimes used the outline bounds, and sometimes used the
+     * Modifier bounds. For most cases, when using high level shapes such as
+     * [androidx.compose.ui.graphics.RectangleShape] and
+     * [androidx.compose.foundation.shape.RoundedCornerShape] this has no effect.
+     *
+     * This flag only takes effect when [isNewBorderImplementationEnabled] is enabled.
+     */
+    // TODO: Remove this flag once it has soaked (b/546074983)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBorderMatchesOutlineBoundsFixEnabled: Boolean = true
+
+    /**
+     * Controls whether the new [border] implementation uses a more efficient rendering path for
+     * generic shapes / outlines (such as when using a polygon shape). When this flag is true there
+     * may be minor antialiasing differences around the edges of the border.
+     *
+     * This flag has no effect on rectangular or rounded borders, or on Android API levels below 28.
+     */
+    // TODO: Remove this flag once it has soaked (b/580078347)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBorderUsesGraphicsLayerForGenericShapesEnabled: Boolean = true
+
+    /**
+     * Controls whether [androidx.compose.foundation.text.BasicTextField] and
+     * [androidx.compose.foundation.text.BasicSecureTextField] use only
+     * [androidx.compose.foundation.text.input.OutputTransformation] internally for single-line line
+     * break replacement and glyph-based password obfuscation, rather than the legacy
+     * `CodepointTransformation`.
+     */
+    // TODO: Remove this flag once it has soaked and remove CodepointTransformation entirely
+    //  (b/568765731)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBasicTextFieldOutputTransformationOnlyEnabled: Boolean = true
+
+    /**
+     * Whether to use Modifier.Node implementations for internal modifiers used by
+     * [androidx.compose.foundation.text.BasicTextField], text selection handles, and text selection
+     * magnifiers. If false, the legacy Modifier.composed implementations will be used instead.
+     */
+    // TODO: b/573996017
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isNewTextFieldModifierImplementationEnabled: Boolean = true
+
+    /**
+     * Controls whether performance optimizations for [androidx.compose.ui.text.LinkAnnotation] in
+     * [androidx.compose.foundation.text.BasicText] are enabled.
+     *
+     * This flag is off by default: the optimizations are opt-in until the google3 screenshot test
+     * breakage they caused (b/583304699) is resolved.
+     */
+    // TODO: Enable by default and then remove this flag once it has soaked (b/581556315)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isLinkPerformanceOptimizationEnabled: Boolean = false
 }
 
 /** The initial value of [ComposeFoundationFlags.isNewContextMenuEnabled] */

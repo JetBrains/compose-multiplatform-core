@@ -73,7 +73,7 @@ androidXMultiplatform {
         commonMain.dependencies {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
-            implementation("androidx.collection:collection:1.6.0")
+            implementation("androidx.collection:collection:1.7.0")
             // when updating the runtime version please also update the runtime-saveable version
             implementation(project(":compose:runtime:runtime"))
             api("androidx.compose.runtime:runtime-retain:$composeVersion")
@@ -104,6 +104,8 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
                 api(project(":compose:ui:ui-skiko"))
+                implementation(libs.skikoPlatform)
+                implementation(libs.skikoGanesh)
                 implementation(libs.atomicFu)
 
                 implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
@@ -138,6 +140,8 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin)
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoGaneshAwtRuntime)
+                implementation(libs.skikoPlatformAwtRuntime)
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))
@@ -190,13 +194,9 @@ androidXMultiplatform {
             api(libs.kotlinXw3c)
         }
 
-        wasmJsMain.dependencies {
-            implementation(libs.skikoWasmJs)
-        }
-
-        // TODO: Align it with AOSP or make explicit
         configureEach {
             languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.platform.ExperimentalComposeUiHostApi")
             languageSettings.optIn("androidx.compose.ui.InternalComposeUiApi")
         }
     }

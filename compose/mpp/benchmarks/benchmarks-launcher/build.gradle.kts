@@ -24,11 +24,11 @@ dependencies {
     implementation(libs.clikt)
     implementation(libs.kotlinSerializationJson)
     implementation(libs.selenium.java)
+    testImplementation(kotlin("test"))
 }
 
 application {
     mainClass.set("org.jetbrains.compose.benchmarks.launcher.MainKt")
-    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 tasks.named<JavaExec>("run") {

@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalComposeUiHostApi::class)
+
 package androidx.compose.ui.platform
 
 import android.annotation.SuppressLint
-import android.view.View
 import androidx.collection.IntObjectMap
 import androidx.collection.MutableIntSet
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.node.OwnerScope
+import androidx.compose.ui.node.ObservationTarget
 import androidx.compose.ui.semantics.AdjustedSemanticsNode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsPropertyProvider
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.util.fastFirstOrNull
@@ -40,15 +42,17 @@ import androidx.compose.ui.util.fastMapNotNull
  * A snapshot of the semantics node. The children here is fixed and are taken from the time this
  * node is constructed. While a SemanticsNode always contains the up-to-date children.
  */
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal class SemanticsNodeCopy(
     semanticsNode: SemanticsNode,
     currentSemanticsNodes: IntObjectMap<AdjustedSemanticsNode>,
 ) {
-    val unmergedConfig = semanticsNode.unmergedConfig
+    val unmergedConfig = semanticsNode._unmergedConfig
     val children: MutableIntSet
 
     init {
-        val replacedChildren = semanticsNode.replacedChildren
+        val replacedChildren = mutableListOf<SemanticsNode>()
+        semanticsNode.collectAccessibilityChildren(replacedChildren)
         children = MutableIntSet(replacedChildren.size)
         replacedChildren.fastForEach { child ->
             if (currentSemanticsNodes.contains(child.id)) {
@@ -58,7 +62,8 @@ internal class SemanticsNodeCopy(
     }
 }
 
-internal fun getTextLayoutResult(configuration: SemanticsConfiguration): TextLayoutResult? {
+@OptIn(ExperimentalComposeUiHostApi::class)
+internal fun getTextLayoutResult(configuration: SemanticsPropertyProvider): TextLayoutResult? {
     val textLayoutResults = mutableListOf<TextLayoutResult>()
     val getLayoutResult =
         configuration
@@ -72,16 +77,56 @@ internal fun getTextLayoutResult(configuration: SemanticsConfiguration): TextLay
     }
 }
 
+/**
+ * Indices in the [MutableList] populated by [SemanticsActions.GetScrollViewportLength]:
+ * - [ScrollViewportLengthIndex] (0): active viewport length (`viewport - contentPadding`),
+ *   populated by [androidx.compose.ui.semantics.getScrollViewportLength] and `LazyLayoutSemantics`.
+ * - [ScrollViewportBeforePaddingIndex] (1): `beforeContentPadding` in pixels along the scroll axis,
+ *   populated by `LazyLayoutSemantics`.
+ * - [ScrollViewportAfterPaddingIndex] (2): `afterContentPadding` in pixels along the scroll axis,
+ *   populated by `LazyLayoutSemantics`.
+ */
+private const val ScrollViewportLengthIndex = 0
+private const val ScrollViewportBeforePaddingIndex = 1
+private const val ScrollViewportAfterPaddingIndex = 2
+
+@OptIn(ExperimentalComposeUiHostApi::class)
 @SuppressLint("PrimitiveInCollection")
-internal fun getScrollViewportLength(configuration: SemanticsConfiguration): Float? {
+internal fun getScrollViewportLength(configuration: SemanticsPropertyProvider): Float? {
     val viewPortCalculationsResult = mutableListOf<Float>()
     val actionResult =
         configuration
             .getOrNull(SemanticsActions.GetScrollViewportLength)
             ?.action
             ?.invoke(viewPortCalculationsResult) ?: return null
-    return if (actionResult) {
-        viewPortCalculationsResult.firstOrNull()
+    return if (actionResult && viewPortCalculationsResult.size > ScrollViewportLengthIndex) {
+        viewPortCalculationsResult[ScrollViewportLengthIndex]
+    } else {
+        null
+    }
+}
+
+internal class ScrollViewportPadding(
+    val beforeContentPadding: Float,
+    val afterContentPadding: Float,
+)
+
+@OptIn(ExperimentalComposeUiHostApi::class)
+@SuppressLint("PrimitiveInCollection")
+internal fun getScrollViewportPadding(
+    configuration: SemanticsPropertyProvider
+): ScrollViewportPadding? {
+    val viewPortCalculationsResult = mutableListOf<Float>()
+    val actionResult =
+        configuration
+            .getOrNull(SemanticsActions.GetScrollViewportLength)
+            ?.action
+            ?.invoke(viewPortCalculationsResult) ?: return null
+    return if (actionResult && viewPortCalculationsResult.size > ScrollViewportAfterPaddingIndex) {
+        ScrollViewportPadding(
+            beforeContentPadding = viewPortCalculationsResult[ScrollViewportBeforePaddingIndex],
+            afterContentPadding = viewPortCalculationsResult[ScrollViewportAfterPaddingIndex],
+        )
     } else {
         null
     }
@@ -99,8 +144,17 @@ internal class ScrollObservationScope(
     var oldYValue: Float?,
     var horizontalScrollAxisRange: ScrollAxisRange?,
     var verticalScrollAxisRange: ScrollAxisRange?,
-) : OwnerScope {
-    override val isValidOwnerScope
+) : ObservationTarget {
+    /**
+     * Stores pixels consumed since the last
+     * [android.view.accessibility.AccessibilityEvent.TYPE_VIEW_SCROLLED] event. Positive values
+     * follow `ACTION_SCROLL_FORWARD`. See
+     * [AndroidComposeViewAccessibilityDelegateCompat.onScrollChanged]. Event dispatch resets this
+     * to [Offset.Zero].
+     */
+    var pixelScrollDelta: Offset = Offset.Zero
+
+    override val isObservationValid
         get() = allScopes.contains(this)
 }
 
@@ -124,10 +178,7 @@ internal fun Role.toLegacyClassName(): String? =
         else -> null
     }
 
-/** This function retrieves the View corresponding to a semanticsId, if it exists. */
-internal fun AndroidViewsHandler.semanticsIdToView(id: Int): View? =
-    layoutNodeToHolder.entries.firstOrNull { it.key.semanticsId == id }?.value
-
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal fun SemanticsNode.getPrimaryTextColor(): Int? {
     val textLayoutResult = getTextLayoutResult(unmergedConfig)
     if (textLayoutResult != null) {
@@ -145,6 +196,7 @@ internal fun SemanticsNode.getPrimaryTextColor(): Int? {
     return null
 }
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal fun SemanticsNode.getLinkTextColor(): Int? {
     val text = unmergedConfig.getOrNull(SemanticsProperties.Text)?.firstOrNull() ?: return null
 
@@ -163,6 +215,7 @@ internal fun SemanticsNode.getLinkTextColor(): Int? {
  * render if it is semitransparent; i.e. we do not do any calculations to blend multiple background
  * colors.
  */
+@OptIn(ExperimentalComposeUiHostApi::class)
 internal fun SemanticsNode.getBackgroundColor(): Int? {
     val textLayoutResult = getTextLayoutResult(unmergedConfig)
     if (textLayoutResult != null) {

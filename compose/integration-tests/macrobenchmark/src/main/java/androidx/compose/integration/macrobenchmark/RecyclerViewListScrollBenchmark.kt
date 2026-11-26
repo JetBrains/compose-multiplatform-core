@@ -27,6 +27,9 @@ import androidx.test.uiautomator.UiDevice
 import androidx.testutils.createCompilationParams
 import androidx.testutils.defaultComposeScrollingMetrics
 import androidx.testutils.defaultMemoryMetrics
+import androidx.testutils.findObjectOrThrow
+import androidx.tracing.trace
+import java.util.regex.Pattern
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -57,17 +60,44 @@ class RecyclerViewListScrollBenchmark(private val compilationMode: CompilationMo
                 val intent = Intent()
                 intent.action = ACTION
                 startActivityAndWait(intent)
+                device.waitForIdle()
             },
         ) {
-            val recycler = device.findObject(By.res(PACKAGE_NAME, RESOURCE_ID))
-            // Setting a gesture margin is important otherwise gesture nav is triggered.
-            recycler.setGestureMargin(device.displayWidth / 5)
-            repeat(10) {
-                // From center we scroll 2/3 of it which is 1/3 of the screen.
-                recycler.drag(Point(0, recycler.visibleCenter.y / 3))
-                device.waitForIdle()
+            var previousIndex = visibleItemIndices().first()
+            repeat(10) { iter ->
+                trace("RecyclerViewListScroll#drag_$iter") {
+                    // Re-query the list before each drag because recycling views during a scroll
+                    // can refresh the accessibility tree and make a cached UiObject2 stale.
+                    val recycler = device.findObjectOrThrow(By.res(PACKAGE_NAME, RESOURCE_ID))
+                    // Setting a gesture margin is important otherwise gesture nav is triggered.
+                    recycler.setGestureMargin(device.displayWidth / 5)
+                    // From center we scroll 2/3 of it which is 1/3 of the screen.
+                    recycler.drag(Point(0, recycler.visibleCenter.y / 3))
+                    device.waitForIdle()
+                    val indices = visibleItemIndices()
+                    val index = indices.first()
+                    check(index > previousIndex) {
+                        "Drag $iter did not scroll the list: first visible item was " +
+                            "$previousIndex before, visible items after: $indices"
+                    }
+                    previousIndex = index
+                }
             }
         }
+    }
+
+    private fun visibleItemIndices(): List<Int> {
+        val recycler = device.findObjectOrThrow(By.res(PACKAGE_NAME, RESOURCE_ID))
+        val items = recycler.findObjects(By.text(ITEM_TEXT_PATTERN))
+        check(items.isNotEmpty()) { "No list items visible in $RESOURCE_ID" }
+        return items
+            .map { item ->
+                val text = item.text.orEmpty()
+                checkNotNull(ITEM_TEXT_REGEX.matchEntire(text)?.groupValues?.get(1)?.toInt()) {
+                    "Unexpected list item text: '$text'"
+                }
+            }
+            .sorted()
     }
 
     companion object {
@@ -75,6 +105,8 @@ class RecyclerViewListScrollBenchmark(private val compilationMode: CompilationMo
         private const val ACTION =
             "androidx.compose.integration.macrobenchmark.target.RECYCLERVIEW_LIST_ACTIVITY"
         private const val RESOURCE_ID = "recycler"
+        private val ITEM_TEXT_PATTERN = Pattern.compile("""Item \d+""")
+        private val ITEM_TEXT_REGEX = Regex("""Item (\d+)""")
 
         @Parameterized.Parameters(name = "compilation={0}")
         @JvmStatic

@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.internal.fastIndexOfFirst
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.requireCoordinator
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.AccessibilityAction
 import androidx.compose.ui.semantics.DesktopSemanticsProperties
 import androidx.compose.ui.semantics.ProgressBarRangeInfo

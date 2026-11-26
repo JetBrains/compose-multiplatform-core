@@ -17,8 +17,10 @@
 package androidx.compose.ui.platform.accessibility
 
 import androidx.collection.MutableIntObjectMap
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.containsImportantForAccessibility
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 

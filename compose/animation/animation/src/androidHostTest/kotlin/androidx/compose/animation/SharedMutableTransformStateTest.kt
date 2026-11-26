@@ -16,17 +16,28 @@
 
 package androidx.compose.animation
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
-@RunWith(JUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class SharedMutableTransformStateTest {
+
+    @After
+    fun tearDown() {
+        testTimeSource = null
+    }
 
     @Test
     fun updateMutationState_fromHandoffToMutating_resetsTransformScope() {
@@ -99,5 +110,124 @@ class SharedMutableTransformStateTest {
             MutationPhase.Mutating,
             state.mutationPhase,
         )
+    }
+
+    @Test
+    fun mutableContentTransform_fromTwoMutableTransforms_preservesInstances() {
+        val initialTransform = MutableTransform(veilMatchParentSize = false) { alpha = 0.5f }
+        val targetTransform = MutableTransform(veilMatchParentSize = true) { scale = 0.8f }
+
+        val contentTransform = MutableContentTransform(initialTransform, targetTransform)
+
+        assertEquals(initialTransform, contentTransform.initialTransform)
+        assertEquals(targetTransform, contentTransform.targetTransform)
+    }
+
+    @Test
+    fun combinedScale_constantValueWithDuplicateTimestamps_handoffVelocityIsZero() {
+        var now = 0L
+        testTimeSource = { now }
+        val state = SharedMutableTransformState()
+        state.updateMutationState(isMutating = true, isSettled = true)
+        state.transformScope.scale = 0.5f
+
+        // Record 3 samples across 2 timestamps ([0, 30, 30]), matching the duplicate-timestamp
+        // layout/layer pass pattern from b/574451802.
+        now = 0L
+        state.combinedScale(transitionValue = 1f)
+        now = 30L
+        state.combinedScale(transitionValue = 1f)
+        state.combinedScale(transitionValue = 1f)
+
+        state.updateMutationState(isMutating = false, isSettled = true)
+
+        assertEquals(0f, state.scaleHandoffVelocity?.value ?: Float.NaN, 0f)
+    }
+
+    @Test
+    fun combinedSlide_constantValueWithDuplicateTimestamps_handoffVelocityIsZero() {
+        var now = 0L
+        testTimeSource = { now }
+        val state = SharedMutableTransformState()
+        state.updateMutationState(isMutating = true, isSettled = true)
+        state.transformScope.offset = IntOffset(100, -50)
+
+        now = 0L
+        state.combinedSlide(IntOffset.Zero, IntSize(200, 200))
+        state.combinedSlide(IntOffset.Zero, IntSize(200, 200))
+        now = 7L
+        state.combinedSlide(IntOffset.Zero, IntSize(200, 200))
+
+        state.updateMutationState(isMutating = false, isSettled = true)
+
+        assertEquals(0f, state.slideHandoffVelocity?.v1 ?: Float.NaN, 0f)
+        assertEquals(0f, state.slideHandoffVelocity?.v2 ?: Float.NaN, 0f)
+    }
+
+    @Test
+    fun resolveSharedElementProgress_constantValueWithDuplicateTimestamps_handoffVelocityIsZero() {
+        var now = 0L
+        testTimeSource = { now }
+        val state = SharedMutableTransformState()
+        state.mutableData = MutableTransform().apply { sharedElementProgress(progress = { 0.5f }) }
+        state.updateMutationState(isMutating = true, isSettled = true)
+
+        now = 0L
+        state.resolveSharedElementProgress()
+        now = 30L
+        state.resolveSharedElementProgress()
+        state.resolveSharedElementProgress()
+
+        state.updateMutationState(isMutating = false, isSettled = true)
+
+        assertEquals(0f, state.sharedElementProgressHandoffVelocity, 0f)
+    }
+
+    @Test
+    fun combinedProperties_whenMutatingWithoutExplicitMutations_overrideToDefaultRestingValues() {
+        val state = SharedMutableTransformState()
+        state.updateMutationState(isMutating = true, isSettled = true)
+
+        assertEquals(1f, state.combinedAlpha(transitionValue = 0f), 0f)
+        assertEquals(1f, state.combinedScale(transitionValue = 0.5f), 0f)
+        assertEquals(
+            IntOffset.Zero,
+            state.combinedSlide(
+                transitionValue = IntOffset(200, 100),
+                fullSize = IntSize(300, 300),
+            ),
+        )
+        assertEquals(
+            TransformOrigin.Center,
+            state.combinedTransformOrigin(transitionValue = TransformOrigin(0f, 0f)),
+        )
+        assertEquals(Color.Red.copy(alpha = 0f), state.combinedVeil(transitionValue = Color.Red))
+
+        state.updateMutationState(isMutating = false, isSettled = false)
+        assertEquals(1f, state.alphaHandoffValue)
+        assertEquals(1f, state.scaleHandoffValue)
+        assertEquals(IntOffset.Zero, state.slideHandoffValue)
+        assertEquals(TransformOrigin.Center, state.transformOriginHandoffValue)
+        assertEquals(Color.Red.copy(alpha = 0f), state.veilHandoffValue)
+    }
+
+    @Test
+    fun combinedProperties_whenNotMutating_preserveTransitionValues() {
+        val state = SharedMutableTransformState()
+
+        assertEquals(0f, state.combinedAlpha(transitionValue = 0f), 0f)
+        assertEquals(0.5f, state.combinedScale(transitionValue = 0.5f), 0f)
+        assertEquals(
+            IntOffset(200, 100),
+            state.combinedSlide(
+                transitionValue = IntOffset(200, 100),
+                fullSize = IntSize(300, 300),
+            ),
+        )
+        assertEquals(
+            TransformOrigin(0f, 0f),
+            state.combinedTransformOrigin(transitionValue = TransformOrigin(0f, 0f)),
+        )
+        assertEquals(Color.Red, state.combinedVeil(transitionValue = Color.Red))
     }
 }

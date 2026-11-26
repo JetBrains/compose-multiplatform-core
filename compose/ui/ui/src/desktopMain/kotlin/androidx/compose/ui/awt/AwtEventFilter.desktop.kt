@@ -62,8 +62,14 @@ internal object OnlyValidPrimaryMouseButtonFilter : AwtEventFilter() {
     private var isPrimaryButtonPressed = false
 
     override fun shouldSendMouseEvent(event: MouseEvent): Boolean {
+        // See https://github.com/JetBrains/JetBrainsRuntime/issues/666
+        if (event.id == MouseEvent.MOUSE_WHEEL) {
+            return true
+        }
         val eventReportsPrimaryButtonPressed =
-            (event.modifiersEx and MouseEvent.BUTTON1_DOWN_MASK) != 0
+            (event.modifiersEx and MouseEvent.BUTTON1_DOWN_MASK) != 0 &&
+                // See https://github.com/JetBrains/JetBrainsRuntime/issues/666
+                !(event.id == MouseEvent.MOUSE_RELEASED && event.button == MouseEvent.BUTTON1)
         if ((event.button == MouseEvent.BUTTON1) &&
             ((event.id == MouseEvent.MOUSE_PRESSED) ||
                 (event.id == MouseEvent.MOUSE_RELEASED))) {

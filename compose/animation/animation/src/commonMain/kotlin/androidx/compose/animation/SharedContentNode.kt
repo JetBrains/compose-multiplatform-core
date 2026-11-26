@@ -23,6 +23,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.layer.GraphicsLayer
@@ -352,17 +353,21 @@ internal class SharedBoundsNode(entry: SharedElementEntry) :
             targetData.calculateOffsetFromDirectManipulation(it)
         }
 
+        val mutableTransformState = sharedElementEntry.activeMutableTransformState
+        val baseBounds =
+            if (animatedTopLeft == null) {
+                Rect(positionInScope, coordinates.size.toSize())
+            } else {
+                Rect(animatedTopLeft, animatedBounds.size)
+            }
+        val soughtBounds = seekBounds(baseBounds)
+
         if (boundsAnimation.target || activeMatchRemoved) {
             // The visible shared element defines the current bounds, either through animation
             // or when the animation is finished through its own position.
 
-            topLeft = animatedTopLeft ?: positionInScope
-            val bounds =
-                if (animatedTopLeft == null) {
-                    Rect(positionInScope, coordinates.size.toSize())
-                } else {
-                    Rect(animatedTopLeft, animatedBounds.size)
-                }
+            val bounds = soughtBounds ?: baseBounds
+            topLeft = bounds.topLeft
 
             sharedElement.state.updateBounds(bounds)
             sharedTransitionDebug {
@@ -372,12 +377,14 @@ internal class SharedBoundsNode(entry: SharedElementEntry) :
                     " ${sharedElement.state}"
             }
         } else {
-            topLeft = animatedTopLeft ?: currentBounds.topLeft
+            topLeft = soughtBounds?.topLeft ?: animatedTopLeft ?: currentBounds.topLeft
         }
 
-        val mutableTransformState = sharedElementEntry.activeMutableTransformState
         var finalTopLeft = topLeft
-        if (mutableTransformState?.isMutating == true) {
+        if (
+            sharedElementEntry.shouldApplyContainerTransform &&
+                mutableTransformState?.isMutating == true
+        ) {
             if (!boundsAnimation.isRunning) {
                 finalTopLeft = positionInScope
             }
@@ -444,7 +451,26 @@ internal class SharedBoundsNode(entry: SharedElementEntry) :
     override fun isMeasurementApproachInProgress(lookaheadSize: IntSize): Boolean {
         return sharedElementEntry.isEnabled &&
             sharedElement.foundMatch &&
-            sharedElement.scope.isTransitionActive
+            (sharedElement.scope.isTransitionActive ||
+                sharedElementEntry.isDeferredEntering() ||
+                sharedElementEntry.isDeferredExiting())
+    }
+
+    private val isSeeking: Boolean
+        get() =
+            sharedElementEntry.shouldSeekDuringDeferredTransition &&
+                sharedElementEntry.activeMutableTransformState?.isMutating == true
+
+    private fun seekBounds(baseBounds: Rect): Rect? {
+        if (!isSeeking) return null
+        val progress =
+            sharedElementEntry.activeMutableTransformState?.resolveSharedElementProgress() ?: 0f
+        val pendingTargetBounds = sharedElement.pendingTargetBounds
+        return if (progress > 0f && pendingTargetBounds != null) {
+            lerp(baseBounds, pendingTargetBounds, progress)
+        } else {
+            null
+        }
     }
 
     override fun ApproachMeasureScope.approachMeasure(
@@ -453,23 +479,26 @@ internal class SharedBoundsNode(entry: SharedElementEntry) :
     ): MeasureResult {
         updateDeferredHandoffValues()
 
+        val baseBounds =
+            forcedHandoffBounds
+                ?: boundsAnimation.value
+                ?: (if (isSeeking) sharedElement.state.targetData?.targetBounds else null)
+                ?: sharedElement.tryInitializingCurrentBounds()
+
         // Approach pass. Animation may not have started, or if the animation isn't
         // running, we'll measure with current bounds.
         val resolvedConstraints =
             // When a match is found, all matches will be measured using the constraints
             // created by the target bounds, **even when there is no active transition**.
-            (forcedHandoffBounds
-                    ?: boundsAnimation.value
-                    ?: sharedElement.tryInitializingCurrentBounds())
-                ?.let {
-                    val (width, height) = it.size.roundToIntSize()
-                    require(width != Constraints.Infinity && height != Constraints.Infinity) {
-                        "Error: Infinite width/height is invalid. " +
-                            "animated bounds: ${boundsAnimation.value}," +
-                            " current bounds: ${sharedElement.state.currentBounds}"
-                    }
-                    Constraints.fixed(width.coerceAtLeast(0), height.coerceAtLeast(0))
-                } ?: constraints
+            (baseBounds?.let { seekBounds(it) ?: it })?.let {
+                val (width, height) = it.size.roundToIntSize()
+                require(width != Constraints.Infinity && height != Constraints.Infinity) {
+                    "Error: Infinite width/height is invalid. " +
+                        "animated bounds: ${boundsAnimation.value}," +
+                        " current bounds: ${sharedElement.state.currentBounds}"
+                }
+                Constraints.fixed(width.coerceAtLeast(0), height.coerceAtLeast(0))
+            } ?: constraints
         sharedTransitionDebug {
             "approach measure constraints: $resolvedConstraints," +
                 " key = ${sharedElement.key}, state: ${sharedElement.state}"
@@ -479,7 +508,7 @@ internal class SharedBoundsNode(entry: SharedElementEntry) :
     }
 
     private fun updateDeferredHandoffValues() {
-        if (sharedElement.state.targetData == null) return
+        val targetData = sharedElement.state.targetData ?: return
         val currentBounds = sharedElement.state.currentBounds ?: return
 
         val mutableState = sharedElementEntry.activeMutableTransformState
@@ -489,6 +518,29 @@ internal class SharedBoundsNode(entry: SharedElementEntry) :
         }
 
         if (sharedElementEntry.hasHandoffOccurred) {
+            return
+        }
+
+        val mfrDelta = targetData.currentMfrOffset - targetData.initialMfrOffset
+        if (!sharedElementEntry.shouldApplyContainerTransform) {
+            if (sharedElementEntry.shouldSeekDuringDeferredTransition) {
+                forcedHandoffBounds = currentBounds.translate(-mfrDelta)
+                val progressVelocity = mutableState.sharedElementProgressHandoffVelocity
+                val baseBounds = boundsAnimation.value?.translate(mfrDelta)
+                val targetBounds = sharedElement.pendingTargetBounds
+                forcedHandoffVelocity =
+                    if (baseBounds != null && targetBounds != null && progressVelocity != 0f) {
+                        AnimationVector4D(
+                            (targetBounds.left - baseBounds.left) * progressVelocity,
+                            (targetBounds.top - baseBounds.top) * progressVelocity,
+                            (targetBounds.right - baseBounds.right) * progressVelocity,
+                            (targetBounds.bottom - baseBounds.bottom) * progressVelocity,
+                        )
+                    } else {
+                        null
+                    }
+                sharedElementEntry.hasHandoffOccurred = true
+            }
             return
         }
 
@@ -513,7 +565,8 @@ internal class SharedBoundsNode(entry: SharedElementEntry) :
         val newRight = newTopLeft.x + currentBounds.width * scale
         val newBottom = newTopLeft.y + currentBounds.height * scale
 
-        forcedHandoffBounds = Rect(newTopLeft.x, newTopLeft.y, newRight, newBottom)
+        forcedHandoffBounds =
+            Rect(newTopLeft.x, newTopLeft.y, newRight, newBottom).translate(-mfrDelta)
 
         if (!containerAppliesTransforms) {
             val scaleVelocity = mutableState.scaleHandoffVelocity?.value ?: 0f

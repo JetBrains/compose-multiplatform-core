@@ -23,7 +23,6 @@ enum class ComposePlatforms(vararg val alternativeNames: String) {
     TvosArm64("TvOs"),
     TvosSimulatorArm64("TvOs"),
     WatchosArm64("WatchOs"),
-    WatchosArm32("WatchOs"),
     WatchosSimulatorArm64("WatchOs"),
     LinuxX64("Linux"),
     LinuxArm64("Linux"),
@@ -60,7 +59,6 @@ enum class ComposePlatforms(vararg val alternativeNames: String) {
 
         val WATCH_OS = EnumSet.of(
             WatchosArm64,
-            WatchosArm32,
             WatchosSimulatorArm64
         )
 

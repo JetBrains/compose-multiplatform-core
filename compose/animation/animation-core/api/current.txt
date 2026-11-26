@@ -1,4 +1,5 @@
-// Signature format: 4.0
+// Signature format: 5.0
+// - surface=public
 package androidx.compose.animation.core {
 
   public final class Animatable<T, V extends androidx.compose.animation.core.AnimationVector> {
@@ -271,6 +272,14 @@ package androidx.compose.animation.core {
     property public androidx.compose.animation.core.ArcMode ArcLinear;
   }
 
+  @SuppressCompatibility @androidx.compose.animation.core.ExperimentalAnimationCoreApi public final class ComposeAnimationCoreFlags {
+    property public boolean isNanosecondAnimationSpecEnabled;
+    property public boolean isSeekableTransitionStateStartAfterLayoutEnabled;
+    field public static final androidx.compose.animation.core.ComposeAnimationCoreFlags INSTANCE;
+    field public static boolean isNanosecondAnimationSpecEnabled;
+    field public static boolean isSeekableTransitionStateStartAfterLayoutEnabled;
+  }
+
   @androidx.compose.runtime.Immutable public final class CubicBezierEasing implements androidx.compose.animation.core.Easing {
     ctor public CubicBezierEasing(float a, float b, float c, float d);
     method public float transform(float fraction);
@@ -330,8 +339,8 @@ package androidx.compose.animation.core {
     method @InaccessibleFromKotlin public S getCurrentState();
     method @InaccessibleFromKotlin public S? getPendingTargetState();
     method @InaccessibleFromKotlin public S getTargetState();
-    method @InaccessibleFromKotlin public void setCurrentState$commonMain(S);
-    method @InaccessibleFromKotlin public void setTargetState$commonMain(S);
+    method @InaccessibleFromKotlin public void setCurrentState$jvmAndAndroidMain(S);
+    method @InaccessibleFromKotlin public void setTargetState$jvmAndAndroidMain(S);
     property public S currentState;
     property public S? pendingTargetState;
     property public S targetState;
@@ -425,6 +434,9 @@ package androidx.compose.animation.core {
     property public static androidx.compose.animation.core.Easing FastOutSlowInEasing;
     property public static androidx.compose.animation.core.Easing LinearEasing;
     property public static androidx.compose.animation.core.Easing LinearOutSlowInEasing;
+  }
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This animation-core API is experimental and is likely to change or be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalAnimationCoreApi {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental animation API for AnimationSpec. It may change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalAnimationSpecApi {
@@ -545,6 +557,16 @@ package androidx.compose.animation.core {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is internal to library.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER}) public @interface InternalAnimationApi {
+  }
+
+  @androidx.compose.runtime.Immutable public final class InterruptionAwareAnimationSpec<T> implements androidx.compose.animation.core.FiniteAnimationSpec<T> {
+    ctor @BytecodeOnly public InterruptionAwareAnimationSpec(androidx.compose.animation.core.FiniteAnimationSpec!, androidx.compose.animation.core.FiniteAnimationSpec!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public InterruptionAwareAnimationSpec(androidx.compose.animation.core.FiniteAnimationSpec<T> animationSpec, optional androidx.compose.animation.core.FiniteAnimationSpec<T> interruptionSpec);
+    method @InaccessibleFromKotlin public androidx.compose.animation.core.FiniteAnimationSpec<T> getAnimationSpec();
+    method @InaccessibleFromKotlin public androidx.compose.animation.core.FiniteAnimationSpec<T> getInterruptionSpec();
+    method public <V extends androidx.compose.animation.core.AnimationVector> androidx.compose.animation.core.VectorizedFiniteAnimationSpec<V> vectorize(androidx.compose.animation.core.TwoWayConverter<T,V> converter);
+    property public androidx.compose.animation.core.FiniteAnimationSpec<T> animationSpec;
+    property public androidx.compose.animation.core.FiniteAnimationSpec<T> interruptionSpec;
   }
 
   public abstract sealed exhaustive class KeyframeBaseEntity<T> {

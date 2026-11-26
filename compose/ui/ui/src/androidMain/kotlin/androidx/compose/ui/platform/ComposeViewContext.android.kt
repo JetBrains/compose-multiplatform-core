@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalComposeUiHostApi::class)
+
 package androidx.compose.ui.platform
 
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-import android.annotation.SuppressLint
 import android.content.ComponentCallbacks2
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -42,18 +43,12 @@ import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.LocalInspectionTables
-import androidx.compose.ui.AndroidComposeUiFlags
-import androidx.compose.ui.ComposeUiFlags.isMediaQueryIntegrationEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.ExperimentalMediaQueryApi
-import androidx.compose.ui.LocalUiMediaScope
 import androidx.compose.ui.R
 import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.PlatformHapticFeedback
 import androidx.compose.ui.node.LayoutNodeDrawScope
-import androidx.compose.ui.res.ImageVectorCache
-import androidx.compose.ui.res.ResourceIdCache
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
@@ -81,7 +76,6 @@ import androidx.savedstate.findViewTreeSavedStateRegistryOwner
  *
  * @sample androidx.compose.ui.samples.ComposeViewContextUnattachedSample
  */
-@OptIn(ExperimentalComposeUiApi::class)
 public class ComposeViewContext
 private constructor(
     composeViewContext: ComposeViewContext?,
@@ -166,17 +160,13 @@ private constructor(
             return _viewModelStoreOwner
         }
 
-    /** [ImageVectorCache] provided by [LocalImageVectorCache] */
-    internal val imageVectorCache: ImageVectorCache =
+    /** [ComposeUiSharedResources] holding shared resource caches */
+    internal val sharedResources: ComposeUiSharedResources =
         if (matchesContext) {
-            composeViewContext!!.imageVectorCache
+            composeViewContext!!.sharedResources
         } else {
-            ImageVectorCache()
+            ComposeUiSharedResources(view.context.resources.configuration)
         }
-
-    /** [ResourceIdCache] provided by [LocalResourceIdCache] */
-    internal val resourceIdCache: ResourceIdCache =
-        composeViewContext?.resourceIdCache ?: ResourceIdCache()
 
     private var _graphicsResourceCache: GraphicsResourceCache? =
         composeViewContext?.graphicsResourceCache
@@ -220,38 +210,21 @@ private constructor(
 
     private var _isAccessibilityEnabled: Boolean = false
     internal val isAccessibilityEnabled: Boolean
-        get() =
-            if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
-                // b/504834104 saw accessibility being called when the state wasn't enabled. This
-                // indicates that the onAccessibilityChanged() was not received before the
-                // AccessibilityManager's state changed, so we must double-check here
-                _isAccessibilityEnabled && accessibilityManager.accessibilityManager.isEnabled
-            } else {
-                accessibilityManager.accessibilityManager.isEnabled
-            }
+        // b/504834104 saw accessibility being called when the state wasn't enabled. This
+        // indicates that the onAccessibilityChanged() was not received before the
+        // AccessibilityManager's state changed, so we must double-check here
+        get() = _isAccessibilityEnabled && accessibilityManager.accessibilityManager.isEnabled
 
-    private var _isTouchExplorationEnabled: Boolean = false
-    internal val isTouchExplorationEnabled: Boolean
-        get() =
-            if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
-                _isTouchExplorationEnabled
-            } else {
-                accessibilityManager.accessibilityManager.isTouchExplorationEnabled
-            }
+    internal var isTouchExplorationEnabled: Boolean = false
+        private set
 
     private var _enabledServices: List<AccessibilityServiceInfo>? = null
     internal val enabledServices: List<AccessibilityServiceInfo>
         get() =
-            if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
-                _enabledServices
-                    ?: accessibilityManager.accessibilityManager
-                        .getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
-                        .also { _enabledServices = it }
-            } else {
-                accessibilityManager.accessibilityManager.getEnabledAccessibilityServiceList(
-                    FEEDBACK_ALL_MASK
-                )
-            }
+            _enabledServices
+                ?: accessibilityManager.accessibilityManager
+                    .getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
+                    .also { _enabledServices = it }
 
     private var _uriHandler: AndroidUriHandler? =
         if (matchesContext) {
@@ -426,13 +399,11 @@ private constructor(
         view.viewTreeObserver.addOnWindowFocusChangeListener(callback)
         view.viewTreeObserver.addOnGlobalLayoutListener(callback)
         pendingWindowInfoUpdate = false
-        if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
-            val am = accessibilityManager.accessibilityManager
-            _isAccessibilityEnabled = am.isEnabled
-            _isTouchExplorationEnabled = _isAccessibilityEnabled && am.isTouchExplorationEnabled
-            handler = view.handler
-            handler?.post(callback)
-        }
+        val am = accessibilityManager.accessibilityManager
+        _isAccessibilityEnabled = am.isEnabled
+        isTouchExplorationEnabled = _isAccessibilityEnabled && am.isTouchExplorationEnabled
+        handler = view.handler
+        handler?.post(callback)
     }
 
     /** Stop observing configuration changes and window changes. */
@@ -443,14 +414,12 @@ private constructor(
         view.viewTreeObserver.removeOnWindowFocusChangeListener(callback)
         view.viewTreeObserver.removeOnGlobalLayoutListener(callback)
         pendingWindowInfoUpdate = false
-        if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
-            if (hasAccessibilityListener) {
-                handler?.post(callback)
-            } else {
-                handler?.removeCallbacks(callback)
-            }
-            handler = null
+        if (hasAccessibilityListener) {
+            handler?.post(callback)
+        } else {
+            handler?.removeCallbacks(callback)
         }
+        handler = null
     }
 
     /**
@@ -459,11 +428,10 @@ private constructor(
      * AndroidComposeViews also.
      */
     internal fun onConfigurationChanged(configuration: Configuration) {
+        sharedResources.onConfigurationChanged(configuration)
         val changedFlags = currentConfiguration.updateFrom(configuration)
         if (changedFlags != 0) {
-            imageVectorCache.prune(changedFlags)
             this@ComposeViewContext.configuration.value = Configuration(configuration)
-            resourceIdCache.clear()
             if (changedFlags and ActivityInfo.CONFIG_FONT_WEIGHT_ADJUSTMENT != 0) {
                 fontFamilyResolver.value = createFontFamilyResolver(view.context)
             }
@@ -549,8 +517,7 @@ private constructor(
     }
 
     /** Provide common CompositionLocals. */
-    @SuppressLint("NullAnnotationGroup")
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalMediaQueryApi::class)
+    @OptIn(ExperimentalComposeUiApi::class)
     @Suppress("DEPRECATION")
     @Composable
     internal fun ProvideCompositionLocals(
@@ -567,63 +534,24 @@ private constructor(
             currentComposer.collectParameterInformation()
         }
 
-        @Suppress("UNCHECKED_CAST")
-        if (androidx.compose.ui.ComposeUiFlags.isMinimalistLocalsEnabled) {
-            CompositionLocalProvider(
-                LocalAndroidComposeView provides owner,
-                LocalLifecycleOwner provides lifecycleOwner,
-                LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
-                LocalInspectionTables provides inspectionTable,
-                LocalContext provides owner.context,
-                LocalConfiguration provides owner.configuration,
-                LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
-                LocalProvidableScrollCaptureInProgress providesComputed
-                    {
-                        owner.scrollCaptureInProgress
-                    },
-                LocalHostDefaultProvider provides owner.hostDefaultProvider,
-                LocalView provides owner.view,
-                LocalViewConfiguration provides owner.viewConfiguration,
-                LocalImageVectorCache provides imageVectorCache,
-                LocalResourceIdCache provides resourceIdCache,
-            ) {
+        CompositionLocalProvider(
+            LocalAndroidComposeView provides owner,
+            LocalLifecycleOwner provides lifecycleOwner,
+            LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
+            LocalInspectionTables provides inspectionTable,
+            LocalContext provides owner.context,
+            LocalConfiguration provides owner.configuration,
+            LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
+            LocalProvidableScrollCaptureInProgress providesComputed
+                {
+                    owner.scrollCaptureInProgress
+                },
+            LocalHostDefaultProvider provides owner.hostDefaultProvider,
+            LocalView provides owner.view,
+            LocalViewConfiguration provides owner.viewConfiguration,
+        ) {
+            sharedResources.ProvideCompositionLocals {
                 ProvideCommonCompositionLocals(owner = owner, content = content)
-            }
-        } else {
-            CompositionLocalProvider(
-                LocalAndroidComposeView provides owner,
-                LocalLifecycleOwner provides lifecycleOwner,
-                LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
-                LocalImageVectorCache provides imageVectorCache,
-                LocalResourceIdCache provides resourceIdCache,
-                LocalSoundEffect providesComputed { soundEffect },
-                LocalContext provides owner.context,
-                LocalInspectionTables provides inspectionTable,
-                LocalConfiguration provides owner.configuration,
-                LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
-                LocalView provides owner.view,
-                LocalWindow providesComputed { owner.window },
-                LocalProvidableScrollCaptureInProgress providesComputed
-                    {
-                        owner.scrollCaptureInProgress
-                    },
-                LocalViewConfiguration provides owner.viewConfiguration,
-                LocalHostDefaultProvider provides owner.hostDefaultProvider,
-                LocalGraphicsResourceCache providesComputed { graphicsResourceCache },
-            ) {
-                if (isMediaQueryIntegrationEnabled) {
-                    CompositionLocalProvider(
-                        // Defer owner.uiMediaScope evaluation until actively read in composition.
-                        LocalUiMediaScope providesComputed
-                            {
-                                owner.uiMediaScope ?: error("UiMediaScope is not initialized.")
-                            }
-                    ) {
-                        ProvideCommonCompositionLocals(owner = owner, content = content)
-                    }
-                } else {
-                    ProvideCommonCompositionLocals(owner = owner, content = content)
-                }
             }
         }
     }
@@ -641,14 +569,12 @@ private constructor(
 
         @Deprecated("This callback is superseded by onTrimMemory")
         override fun onLowMemory() {
-            imageVectorCache.clear()
-            resourceIdCache.clear()
+            sharedResources.clear()
             _graphicsResourceCache?.clear()
         }
 
         override fun onTrimMemory(level: Int) {
-            imageVectorCache.clear()
-            resourceIdCache.clear()
+            sharedResources.clear()
             _graphicsResourceCache?.clear()
         }
 
@@ -662,7 +588,7 @@ private constructor(
         }
 
         override fun onTouchExplorationStateChanged(enabled: Boolean) {
-            _isTouchExplorationEnabled = enabled
+            isTouchExplorationEnabled = enabled
             if (enabled && _isAccessibilityEnabled) resetEnabledAccessibilityServiceList()
         }
 
@@ -671,7 +597,7 @@ private constructor(
             if (viewCount > 0) {
                 hasAccessibilityListener = true
                 _isAccessibilityEnabled = am.isEnabled
-                _isTouchExplorationEnabled = _isAccessibilityEnabled && am.isTouchExplorationEnabled
+                isTouchExplorationEnabled = _isAccessibilityEnabled && am.isTouchExplorationEnabled
                 if (_isAccessibilityEnabled) {
                     resetEnabledAccessibilityServiceList()
                 }

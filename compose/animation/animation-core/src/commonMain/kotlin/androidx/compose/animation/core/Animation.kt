@@ -90,6 +90,8 @@ internal const val MillisToNanos: Long = 1_000_000L
 
 internal const val SecondsToMillis: Long = 1_000L
 
+internal const val SecondsToNanos: Long = 1_000_000_000L
+
 /**
  * Returns the velocity of the animation at the given play time.
  *
@@ -107,6 +109,7 @@ public fun <T, V : AnimationVector> Animation<T, V>.getVelocityFromNanos(playTim
  * @param targetValue the value that the animation will end at
  * @param initialVelocity the initial velocity to start the animation at
  */
+@Suppress("BanRestrictTo")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public fun <V : AnimationVector> VectorizedAnimationSpec<V>.createAnimation(
     initialValue: V,

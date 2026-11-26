@@ -42,7 +42,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,7 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.R
 import androidx.compose.ui.UiComposable
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -542,7 +542,7 @@ public actual fun Popup(
                                     updatePosition()
                                 }
                                 // Hide the popup while we can't position it correctly
-                                .alpha(if (canCalculatePosition) 1f else 0f),
+                                .graphicsLayer { alpha = if (canCalculatePosition) 1f else 0f },
                             currentContent,
                         )
                     }
@@ -729,7 +729,7 @@ internal class PopupLayout(
     private var parentBounds: IntRect? = null
 
     /** Track parent coordinates and content size; only show popup once we have both. */
-    val canCalculatePosition by derivedStateOf {
+    val canCalculatePosition by computedStateOf {
         parentLayoutCoordinates?.takeIf { it.isAttached } != null && popupContentSize != null
     }
 

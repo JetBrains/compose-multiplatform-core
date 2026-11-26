@@ -410,13 +410,27 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
      */
     private var durationScale: Float = 0f
 
+    /**
+     * True when the next animation frame is the first frame following
+     * [waitForCompositionAfterTargetStateChange], so that main-thread time spent composing and
+     * laying out the new target state does not advance the animation by multiple frames at once.
+     */
+    private var isFirstFrameAfterTargetStateComposition: Boolean = false
+
     /** Lambda instance used for animating a single frame within [withFrameNanos]. */
     private val animateOneFrameLambda: (Long) -> Unit = { frameTimeNanos ->
-        val delta =
+        val rawDelta =
             if (lastFrameTimeNanos == AnimationConstants.UnspecifiedTime) {
                 0L
             } else {
                 frameTimeNanos - lastFrameTimeNanos
+            }
+        val delta =
+            if (isFirstFrameAfterTargetStateComposition) {
+                isFirstFrameAfterTargetStateComposition = false
+                rawDelta.coerceAtMost(MaxFirstFrameDeltaNanos)
+            } else {
+                rawDelta
             }
         lastFrameTimeNanos = frameTimeNanos
         val deltaPlayTimeNanos =
@@ -476,6 +490,7 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
         if (durationScale <= 0f || durationScale.isNaN()) {
             endAllAnimations()
             lastFrameTimeNanos = AnimationConstants.UnspecifiedTime
+            isFirstFrameAfterTargetStateComposition = false
             return
         }
         if (lastFrameTimeNanos == AnimationConstants.UnspecifiedTime) {
@@ -486,6 +501,7 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
             animateOneFrame()
         }
         lastFrameTimeNanos = AnimationConstants.UnspecifiedTime
+        isFirstFrameAfterTargetStateComposition = false
     }
 
     /**
@@ -571,6 +587,7 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
         mutatorMutex.mutate {
             endAllAnimations()
             lastFrameTimeNanos = AnimationConstants.UnspecifiedTime
+            isFirstFrameAfterTargetStateComposition = false
             fraction = 0f
             val fraction =
                 when (targetState) {
@@ -639,6 +656,7 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
                     launch { runAnimations() }
                 } else {
                     lastFrameTimeNanos = AnimationConstants.UnspecifiedTime
+                    isFirstFrameAfterTargetStateComposition = false
                 }
                 waitForCompositionAfterTargetStateChange()
                 seekToFraction()
@@ -743,9 +761,17 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
                     composedTargetState
                 }
                 if (targetState != composedTargetState) {
+                    val wasRunning = lastFrameTimeNanos != AnimationConstants.UnspecifiedTime
                     doOneFrame() // We have to wait a frame for the composition, so continue
                     // Now we shouldn't skip a frame while waiting for composition
                     waitForCompositionAfterTargetStateChange()
+                    @OptIn(ExperimentalAnimationCoreApi::class)
+                    if (
+                        ComposeAnimationCoreFlags
+                            .isSeekableTransitionStateStartAfterLayoutEnabled && !wasRunning
+                    ) {
+                        isFirstFrameAfterTargetStateComposition = true
+                    }
                 }
                 if (currentState != targetState) {
                     if (fraction < 1f) {
@@ -908,6 +934,11 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
 
         // AnimationVector1D with 1 value, used as the target value of 1f
         val Target1 = AnimationVector1D(1f)
+
+        // Maximum frame delta (1/60s in nanoseconds, ~16.67ms) allowed on the first frame after
+        // composing and laying out a new target state when starting from idle, preventing expensive
+        // first-frame composition/layout from skipping initial animation frames.
+        private const val MaxFirstFrameDeltaNanos = 16_666_667L
     }
 }
 
@@ -964,12 +995,19 @@ public fun <T> rememberTransition(
             transitionState.snapshotStateObserver = snapshotStateObserver
             onDispose { transitionState.snapshotStateObserver = null }
         }
-        LaunchedEffect(transitionState.currentState, transitionState.targetState) {
+        val targetState = transitionState.targetState
+        LaunchedEffect(transitionState.currentState, targetState) {
             transitionState.observeTotalDuration()
             transitionState.compositionContinuationMutex.withLock {
-                transitionState.composedTargetState = transitionState.targetState
-                transitionState.compositionContinuation?.resume(transitionState.targetState)
-                transitionState.compositionContinuation = null
+                @OptIn(ExperimentalAnimationCoreApi::class)
+                if (
+                    !ComposeAnimationCoreFlags.isSeekableTransitionStateStartAfterLayoutEnabled ||
+                        targetState == transitionState.targetState
+                ) {
+                    transitionState.composedTargetState = transitionState.targetState
+                    transitionState.compositionContinuation?.resume(transitionState.targetState)
+                    transitionState.compositionContinuation = null
+                }
             }
         }
     } else {
@@ -1043,7 +1081,9 @@ public fun <T> updateTransition(
 public sealed class Transition<S>
 protected constructor(
     private val transitionState: TransitionState<S>,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val parentTransition: Transition<*>?,
+    @Suppress("BanRestrictTo")
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    public val parentTransition: Transition<*>?,
     label: String? = null,
 ) {
     private val _rawLabel: String? = label
@@ -1121,6 +1161,7 @@ protected constructor(
      * Play time in nano-seconds. [playTimeNanos] is always non-negative. It starts from 0L at the
      * beginning of the transition and increment until all child animations have finished.
      */
+    @Suppress("BanRestrictTo")
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     @set:RestrictTo(RestrictTo.Scope.LIBRARY)
     public var playTimeNanos: Long
@@ -1152,6 +1193,7 @@ protected constructor(
         get() = _animations
 
     // Seeking related
+    @Suppress("BanRestrictTo")
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     @set:RestrictTo(RestrictTo.Scope.LIBRARY)
     public var isSeeking: Boolean by mutableStateOf(false)
@@ -1287,6 +1329,7 @@ protected constructor(
      * __Caveat:__ This function puts [Transition] in a manual playtime setting mode. From then on
      * the [Transition] will not resume normal animation runs.
      */
+    @Suppress("BanRestrictTo")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @OptIn(InternalAnimationApi::class)
     @JvmName("seek")
@@ -1642,12 +1685,18 @@ protected constructor(
                 durationNanos = animation.durationNanos
                 return
             }
+            val currentSpec = animationSpec
             val specWithoutDelay =
                 if (isInterrupted && !isSeeking) {
-                    // When interrupted, use the default spring, unless the spec is also a spring.
-                    if (animationSpec is SpringSpec<*>) animationSpec else interruptionSpec
+                    // When interrupted, use the default spring, unless the spec is also a spring
+                    // or specifies its own interruption spec.
+                    when (currentSpec) {
+                        is SpringSpec<*> -> currentSpec
+                        is InterruptionAwareAnimationSpec<T> -> currentSpec.interruptionSpec
+                        else -> interruptionSpec
+                    }
                 } else {
-                    animationSpec
+                    currentSpec
                 }
             val spec =
                 if (playTimeNanos <= 0L) {
@@ -1825,6 +1874,7 @@ protected constructor(
      * Once a [DeferredAnimation] is created, it can be configured and updated as needed using
      * [DeferredAnimation.animate] method.
      */
+    @Suppress("BanRestrictTo")
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public inner class DeferredAnimation<T, V : AnimationVector>
     internal constructor(
@@ -1997,6 +2047,7 @@ private const val ResetAnimationSnapTarget = -5f
  * @param typeConverter A converter to convert any value of type [T] from/to an [AnimationVector]
  * @param label A label for differentiating this animation from others in android studio.
  */
+@Suppress("BanRestrictTo")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Composable
 public fun <S, T, V : AnimationVector> Transition<S>.createDeferredAnimation(

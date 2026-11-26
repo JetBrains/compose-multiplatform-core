@@ -28,6 +28,7 @@ import androidx.compose.runtime.mock.revalidate
 import androidx.compose.runtime.mock.validate
 import androidx.compose.runtime.mock.view
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.fastForEach
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -2064,6 +2065,193 @@ class MovableContentTests {
                 slotTable.addressSpace.slots.filterIsInstance<Payload>().distinct().size,
             )
         }
+
+    @Test
+    fun movableContentDeletingInnerInvalidatedScopeClearsInvalidations() = compositionTest {
+        var move by mutableStateOf(false)
+        var showInner by mutableStateOf(true)
+        var innerState by mutableStateOf(0)
+
+        val content = movableContentOf {
+            if (showInner) {
+                Wrap { Text("Inner: $innerState") }
+            }
+        }
+
+        compose {
+            if (!move) {
+                Column { content() }
+            } else {
+                Row { content() }
+            }
+        }
+
+        validate {
+            Column {
+                Text("Inner: 0")
+            }
+        }
+
+        move = true
+        showInner = false
+        innerState = 1
+        expectChanges()
+
+        validate {
+            Row {}
+        }
+
+        assertEquals(0, (composition as CompositionImpl).composer.stacksSize())
+    }
+
+    @Test
+    fun movableContentInvalidatingMainContentDuringMove() = compositionTest {
+        var move by mutableStateOf(false)
+        var trigger by mutableStateOf(0)
+        val holder = MainStateHolder()
+
+        val content = movableContentOf {
+            if (move) {
+                holder.mainText = "UpdatedDuringMove"
+                holder.mainScope?.invalidate()
+            }
+            Text("Movable")
+        }
+
+        compose {
+            Text("Trigger: $trigger")
+            if (!move) {
+                Column { content() }
+            }
+            MainContent(holder)
+            if (move) {
+                Row { content() }
+            }
+        }
+
+        validate {
+            Text("Trigger: 0")
+            Column { Text("Movable") }
+            Text("Main: Initial")
+        }
+
+        move = true
+        expectChanges()
+
+        trigger = 1
+        expectChanges()
+
+        validate {
+            Text("Trigger: 1")
+            Text("Main: UpdatedDuringMove")
+            Row { Text("Movable") }
+        }
+
+        assertEquals(0, (composition as CompositionImpl).composer.stacksSize())
+    }
+
+    @Test // b/574059467
+    fun movableContentInvalidatesCompositionLocalCache() = compositionTest {
+        var items by mutableStateOf(listOf("A"))
+        val compositionLocal = compositionLocalOf { "default" }
+        val child = movableContentOf<String> { Text("child($it)") }
+
+        compose {
+            items.fastForEach { color ->
+                CompositionLocalProvider(compositionLocal provides color) {
+                    child(compositionLocal.current)
+                }
+            }
+            Text("outer(${compositionLocal.current})")
+        }
+
+        validate {
+            items.fastForEach {
+                Text("child($it)")
+            }
+            Text("outer(default)")
+        }
+
+        items = emptyList()
+        expectChanges()
+        revalidate()
+    }
+
+    @Test
+    fun removeAndInsertWithMoveAway_inPlaceLinkTableSlotsCompaction() = compositionTest {
+        var position by mutableIntStateOf(0)
+        var skipItem by mutableIntStateOf(5)
+        val content = movableContentOf { Marker() }
+
+        compose {
+            remember { 0 }
+            remember { 1 }
+            Row {
+                remember { 2 }
+                remember { 3 }
+                if (position == -1) content()
+                Column {
+                    repeat(10) { item ->
+                        key(item) {
+                            if (skipItem != item) Text("Item $item")
+                            if (position == item) content()
+                        }
+                    }
+                }
+            }
+        }
+
+        validate {
+            Row {
+                if (position == -1) Marker()
+                Column {
+                    repeat(10) { item ->
+                        if (skipItem != item) Text("Item $item")
+                        if (position == item) Marker()
+                    }
+                }
+            }
+        }
+
+        repeat(10) { markerPosition ->
+            repeat(10) { skip ->
+                position = -1
+                skipItem = -1
+                expectChanges()
+                revalidate()
+                // Move the marker and delete an item.
+                position = markerPosition
+                skipItem = skip
+                expectChanges()
+                revalidate()
+                // Move the marker away and insert an item
+                position = -1
+                skipItem = -1
+                expectChanges()
+                // Move the marker back
+                position = markerPosition
+                expectChanges()
+                revalidate()
+                // Move the marker way and delete an item
+                position = -1
+                skipItem = skip
+                expectChanges()
+                revalidate()
+            }
+        }
+    }
+}
+
+@Stable
+private class MainStateHolder {
+    var mainText: String = "Initial"
+    var mainScope: RecomposeScope? = null
+}
+
+@Composable
+private fun MainContent(holder: MainStateHolder) {
+    holder.mainScope = currentRecomposeScope
+    Text("Main: ${holder.mainText}")
 }
 
 @Composable

@@ -347,11 +347,13 @@ class BorderTest {
     fun border_rtl_initially() = runParametrizedTest {
         setContent {
             SemanticParent {
-                Box(
-                    Modifier.size(40.0f.toDp(), 40.0f.toDp())
-                        .background(color = Color.Blue)
-                        .border(BorderStroke(10.0f.toDp(), Color.Red), rtlAwareShape())
-                ) {}
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(
+                        Modifier.size(40.0f.toDp(), 40.0f.toDp())
+                            .background(color = Color.Blue)
+                            .border(BorderStroke(10.0f.toDp(), Color.Red), rtlAwareShape())
+                    ) {}
+                }
             }
         }
         captureToImage().assertShape(

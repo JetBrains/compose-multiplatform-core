@@ -17,7 +17,6 @@
 package androidx.compose.ui.text.platform.extensions
 
 import android.text.style.LocaleSpan
-import androidx.annotation.RequiresApi
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.AndroidTextPaint
 
@@ -26,15 +25,27 @@ import androidx.compose.ui.text.platform.AndroidTextPaint
  * compiled. It is expected that this class will soft-fail verification, but the classes which use
  * this method will pass.
  */
-@RequiresApi(24)
 internal object LocaleListHelperMethods {
-    @RequiresApi(24)
     fun localeSpan(localeList: LocaleList): Any =
-        LocaleSpan(android.os.LocaleList(*localeList.map { it.platformLocale }.toTypedArray()))
+        LocaleSpan(android.os.LocaleList(*Array(localeList.size) { localeList[it].platformLocale }))
 
-    @RequiresApi(24)
     fun setTextLocales(textPaint: AndroidTextPaint, localeList: LocaleList) {
+        val currentLocales = textPaint.textLocales
+        // Paint.textLocales setter internally checks for equality and avoids native calls if the
+        // locales match, but only after receiving an android.os.LocaleList instance.
+        // Checking equality here against compose's LocaleList avoids allocating the Array<Locale>
+        // and android.os.LocaleList when the locales have not changed.
+        if (currentLocales.size() == localeList.size) {
+            var matches = true
+            for (i in 0 until currentLocales.size()) {
+                if (currentLocales[i] != localeList[i].platformLocale) {
+                    matches = false
+                    break
+                }
+            }
+            if (matches) return
+        }
         textPaint.textLocales =
-            android.os.LocaleList(*localeList.map { it.platformLocale }.toTypedArray())
+            android.os.LocaleList(*Array(localeList.size) { localeList[it].platformLocale })
     }
 }

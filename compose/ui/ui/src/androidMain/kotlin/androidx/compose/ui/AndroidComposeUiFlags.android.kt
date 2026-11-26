@@ -64,7 +64,13 @@ public object AndroidComposeUiFlags {
     // TODO: b/483449576
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isFrameworkVelocityTrackerEnabled: Boolean = false
+    public var isFrameworkVelocityTrackerEnabled: Boolean = true
+
+    /** Guard for Hardware Navigation system default behavior in Compose. */
+    // TODO(b/520209822): Cleanup once proven stable.
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isHardwareNavigationHandlingEnabled: Boolean = false
 
     /**
      * If enabled, the creation of the container for AndroidViews is delayed until an AndroidView is
@@ -73,7 +79,7 @@ public object AndroidComposeUiFlags {
     // TODO: b/529483648
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isDelayAndroidViewsHandlerCreationEnabled: Boolean = false
+    public var isDelayAndroidViewsHandlerCreationEnabled: Boolean = true
 
     /**
      * This flag forces scroll capture to center the content being rendered even if it's already
@@ -91,59 +97,66 @@ public object AndroidComposeUiFlags {
     public var isOutOfFrameSchedulerForTextInputEventsEnabled: Boolean = true
 
     /**
-     * Enables sorting of accessibility children based on their traversal index when the parent is a
-     * traversal group and is a merging container.
+     * When enabled, focusing a Compose text field in a newly focused `ComposeView` starts a single
+     * input method session instead of restarting the session immediately after creation. This
+     * prevents the soft keyboard from dropping early keystrokes typed while the keyboard is
+     * opening.
      */
-    // TODO: b/522932901
+    // TODO(b/584257035): Cleanup once proven stable.
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isTraversalGroupSortingEnabled: Boolean = true
-
-    /** Enables propagation of hideFromAccessibility to children of merging parents. */
-    // TODO: b/522817006
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isPropagateHideFromAccessibilityToMergingChildrenEnabled: Boolean = true
+    public var isSkipRedundantRestartInputOnInitialFocusEnabled: Boolean = true
 
     /**
-     * This flag enables performance improvements in accessibility, such as caching accessibility
-     * state and deferring listener registration.
+     * With this flag on, a node that gains input focus while it is outside the accessibility tree
+     * (for example a lazy list item composed by BeyondBoundsLayout for keyboard navigation) or
+     * while it is not visible to the user dispatches TYPE_VIEW_FOCUSED once it becomes visible,
+     * typically after it has been scrolled into the viewport. This lets screen readers follow
+     * keyboard focus into items that were off-screen when they were focused.
      */
-    // TODO: remove me b/529420099
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isAccessibilityPerformanceEnabled: Boolean = true
-
-    /**
-     * If enabled, WindowInsetsRulers interactions will use the delayed-initialization path to
-     * improve ComposeView startup time. If disabled, the immediate-initialization path is used
-     * instead.
-     */
-    // TODO: Remove this flag once it has soaked (b/531596705)
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isDelayedWindowInsetsRulersEnabled: Boolean = true
-
-    /**
-     * This flag enables dispatching accessibility focus events (TYPE_VIEW_ACCESSIBILITY_FOCUSED)
-     * after keyboard scroll events for screen-reader synchronization.
-     */
-    // TODO: Remove this flag once TalkBack post-scroll sync is ubiquitous (b/447669491,
-    // b/543664588)
+    // TODO: b/447669491 - Remove this flag once the behavior has shipped.
     @field:Suppress("MutableBareField")
     @JvmField
     public var isScrollAccessibilityFocusEventEnabled: Boolean = true
 
     /**
-     * Restricts touch-exploration hover forwarding to interop views, so that an embedded
-     * AndroidView only receives hover events when it is the front-most hit, matching pointer input
-     * z-ordering, instead of receiving them whenever the point falls within its View bounds.
-     *
-     * When disabled, hover is forwarded to the interop layer unconditionally, which allows a view
-     * that is visually covered by Compose content to take accessibility focus.
+     * If enabled, [android.R.id.accessibilityActionShowOnScreen] accounts for the scrollable
+     * container's content padding (such as `LazyColumn(contentPadding = ...)`) when calculating the
+     * scroll delta required to make a target node fully visible.
      */
-    // TODO: b/565033965 - Remove this flag once the behavior has rolled out and proven stable.
+    // TODO: b/568388723
     @field:Suppress("MutableBareField")
     @JvmField
-    internal var isInteropHoverZOrderEnabled: Boolean = true
+    public var isShowOnScreenContentPaddingEnabled: Boolean = true
+
+    /**
+     * Enables dispatching nested scroll events from [androidx.compose.ui.viewinterop.AndroidView]
+     * to parent Compose nested scroll connections when the root hosted `View` has
+     * `isNestedScrollingEnabled` set to `false` by default (such as `FrameLayout` or
+     * `FragmentContainerView` wrapping a scrolling child `View`).
+     */
+    // TODO(b/541378736): Cleanup feature flag once proven stable.
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isNestedScrollInteropViewHolderFixEnabled: Boolean = true
+
+    /**
+     * Whether to use Modifier.Node for [androidx.compose.ui.input.pointer.pointerInteropFilter]. If
+     * false, the legacy Modifier.composed implementation will be used instead.
+     */
+    // TODO: b/573988321
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPointerInteropFilterNodeEnabled: Boolean = true
+
+    /**
+     * Enables synchronously flushing pending snapshot notifications and running measure and layout
+     * when [androidx.compose.ui.viewinterop.AndroidView] dispatches nested pre-scroll and
+     * post-scroll deltas to parent Compose nested scroll connections, so the child `View` observes
+     * any resulting container window offset synchronously during the nested scroll callback.
+     */
+    // TODO(b/569795619): Cleanup feature flag once proven stable.
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isNestedScrollInteropMeasureAndLayoutEnabled: Boolean = true
 }

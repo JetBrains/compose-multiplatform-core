@@ -25,64 +25,73 @@ import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimation.Companion.NotInitialized
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-internal class LazyLayoutItemAnimation(
-    private val coroutineScope: CoroutineScope,
-    private val graphicsContext: GraphicsContext,
-    private val onLayerPropertyChanged: () -> Unit = {},
-) {
-    var enterTransition: EnterTransition? = null
-    var exitTransition: ExitTransition? = null
-    var placementSpec: FiniteAnimationSpec<IntOffset>? = null
+@OptIn(ExperimentalFoundationApi::class)
+internal fun LazyLayoutItemAnimation(
+    coroutineScope: CoroutineScope,
+    graphicsContext: GraphicsContext,
+    onLayerPropertyChanged: () -> Unit = {},
+): LazyLayoutItemAnimation =
+    if (ComposeFoundationFlags.isLazyLayoutItemAnimationEnterExitTransitionsEnabled)
+        StateBasedLazyLayoutItemAnimation(
+            coroutineScope,
+            graphicsContext,
+            onLayerPropertyChanged,
+        )
+    else
+        BooleanBasedLazyLayoutItemAnimation(
+            coroutineScope,
+            graphicsContext,
+            onLayerPropertyChanged,
+        )
 
-    var isRunningMovingAwayAnimation = false
-        private set
+internal sealed interface LazyLayoutItemAnimation {
+    var enterTransition: EnterTransition?
+
+    var exitTransition: ExitTransition?
+
+    var placementSpec: FiniteAnimationSpec<IntOffset>?
+    val isRunningMovingAwayAnimation: Boolean
 
     /**
      * Returns true when the placement animation is currently in progress so the parent should
      * continue composing this item.
      */
-    var isPlacementAnimationInProgress by mutableStateOf(false)
-        private set
-
-    /** Returns true when the fade in animation is currently in progress. */
-    private var isFadeInAnimationInProgress by mutableStateOf(false)
+    val isPlacementAnimationInProgress: Boolean
 
     /**
      * Returns true when the appearance animations are in progress. That is to say when any enter
      * transition is in progress.
      */
-    val isAppearanceAnimationInProgress
-        get() = isFadeInAnimationInProgress
-
-    /** Returns true when the fade out animation is currently in progress. */
-    private var isFadeOutAnimationInProgress by mutableStateOf(false)
+    val isAppearanceAnimationInProgress: Boolean
 
     /**
      * Returns true when the disappearance animations are in progress. That is to say when any exit
      * transition is in progress.
      */
-    val isDisappearanceAnimationInProgress
-        get() = isFadeOutAnimationInProgress
-
-    /** Returns true when the fade out animation has been finished. */
-    private var isFadeOutAnimationFinished by mutableStateOf(false)
+    val isDisappearanceAnimationInProgress: Boolean
 
     /**
      * Returns true when the disappearance animation has been finished. That is to say when all exit
      * transition have finished.
      */
-    val isDisappearanceAnimationFinished
-        get() = isFadeOutAnimationFinished
+    val isDisappearanceAnimationFinished: Boolean
 
     /**
      * This property is managed by the animation manager and is not directly used by this class. It
@@ -91,41 +100,111 @@ internal class LazyLayoutItemAnimation(
      * not because of the scroll event in order to start the animation. When there is an active
      * animation it represents the final/target offset.
      */
-    var targetOffset: IntOffset = NotInitialized
+    var targetOffset: IntOffset
 
     /**
      * The final offset the placeable associated with this animations was placed at. Unlike
      * [targetOffset] it takes into account things like reverse layout and content padding.
      */
-    var placementOffset: IntOffset = IntOffset.Zero
+    var placementOffset: IntOffset
 
     /**
      * Tracks the offset of the item in the lookahead pass. When set, this is the animation target
      * that placementDelta should be applied to.
      */
-    var lookaheadOffset: IntOffset = NotInitialized
+    var lookaheadOffset: IntOffset
 
     /** Current [GraphicsLayer]. It will be set to null in [release]. */
-    var layer: GraphicsLayer? = graphicsContext.createGraphicsLayer()
-        private set
-
-    private val placementDeltaAnimation = Animatable(IntOffset.Zero, IntOffset.VectorConverter)
-
-    private val fadeAnimation = Animatable(1f, Float.VectorConverter)
+    val layer: GraphicsLayer?
 
     /**
      * Current delta to apply for a placement offset. Updates every animation frame. The settled
      * value is [IntOffset.Zero] so the animation is always targeting this value.
      */
-    var placementDelta by mutableStateOf(IntOffset.Zero)
+    val placementDelta: IntOffset
+
+    fun applyScrollOffset(offset: IntOffset)
+
+    /** Cancels the ongoing placement animation if there is one. */
+    fun cancelPlacementAnimation()
+
+    /** Animate the placement by the given [delta] offset. */
+    fun animatePlacementDelta(delta: IntOffset, isMovingAway: Boolean)
+
+    fun animateEnterTransition()
+
+    fun animateExitTransition()
+
+    fun release()
+
+    companion object {
+        val NotInitialized = IntOffset(Int.MAX_VALUE, Int.MAX_VALUE)
+    }
+}
+
+internal class StateBasedLazyLayoutItemAnimation(
+    private val coroutineScope: CoroutineScope,
+    private val graphicsContext: GraphicsContext,
+    private val onLayerPropertyChanged: () -> Unit = {},
+) : LazyLayoutItemAnimation {
+    private enum class TransitionState {
+        New,
+        Placed,
+        Entering,
+        Exiting,
+        Finished,
+    }
+
+    override var enterTransition: EnterTransition? = null
+    override var exitTransition: ExitTransition? = null
+    override var placementSpec: FiniteAnimationSpec<IntOffset>? = null
+    var itemSize: IntSize = IntSize.Zero
+
+    private var transitionState by mutableStateOf(TransitionState.New)
+
+    private var transitionJob: Job? = null
+
+    private val fadeAnimation = EnterExitFadeAnimation(::updateLayerProperties)
+
+    private val slideAnimation = EnterExitSlideAnimation(::updateLayerProperties)
+
+    override var isRunningMovingAwayAnimation = false
         private set
 
-    fun applyScrollOffset(offset: IntOffset) {
+    override var isPlacementAnimationInProgress by mutableStateOf(false)
+        private set
+
+    override val isAppearanceAnimationInProgress
+        get() = transitionState == TransitionState.Entering
+
+    override val isDisappearanceAnimationInProgress
+        get() = transitionState == TransitionState.Exiting
+
+    override val isDisappearanceAnimationFinished
+        get() = transitionState == TransitionState.Finished
+
+    override var targetOffset: IntOffset = NotInitialized
+
+    override var placementOffset: IntOffset = IntOffset.Zero
+
+    override var lookaheadOffset: IntOffset = NotInitialized
+
+    override var layer: GraphicsLayer? = graphicsContext.createGraphicsLayer()
+        private set
+
+    private val placementDeltaAnimation = Animatable(IntOffset.Zero, IntOffset.VectorConverter)
+
+    override var placementDelta by mutableStateOf(IntOffset.Zero)
+        private set
+
+    private val containerSize
+        get() = layer?.size?.takeIf { it != IntSize.Zero } ?: itemSize
+
+    override fun applyScrollOffset(offset: IntOffset) {
         targetOffset += offset
     }
 
-    /** Cancels the ongoing placement animation if there is one. */
-    fun cancelPlacementAnimation() {
+    override fun cancelPlacementAnimation() {
         if (isPlacementAnimationInProgress) {
             coroutineScope.launch {
                 placementDeltaAnimation.snapTo(IntOffset.Zero)
@@ -135,8 +214,7 @@ internal class LazyLayoutItemAnimation(
         }
     }
 
-    /** Animate the placement by the given [delta] offset. */
-    fun animatePlacementDelta(delta: IntOffset, isMovingAway: Boolean) {
+    override fun animatePlacementDelta(delta: IntOffset, isMovingAway: Boolean) {
         val spec = placementSpec ?: return
         val totalDelta = placementDelta - delta
         placementDelta = totalDelta
@@ -175,7 +253,183 @@ internal class LazyLayoutItemAnimation(
         }
     }
 
-    fun animateEnterTransition() {
+    override fun animateEnterTransition() {
+        if (layer == null || transitionState == TransitionState.Entering) return
+        val config = enterTransition?.config
+        val size = containerSize
+        runTransition(TransitionState.Entering, TransitionState.Placed) {
+            launchUndispatched { fadeAnimation.animateFadeIn(config?.fade) }
+            launchUndispatched { slideAnimation.animateSlideIn(config?.slide, size) }
+        }
+    }
+
+    override fun animateExitTransition() {
+        if (layer == null || transitionState == TransitionState.Exiting) return
+        val config = exitTransition?.config
+        val size = containerSize
+        runTransition(TransitionState.Exiting, TransitionState.Finished) {
+            launchUndispatched { fadeAnimation.animateFadeOut(config?.fade) }
+            launchUndispatched {
+                slideAnimation.animateSlideOut(config?.slide, size, { IntOffset.Zero })
+            }
+        }
+    }
+
+    private fun runTransition(
+        startState: TransitionState,
+        endState: TransitionState,
+        animations: CoroutineScope.() -> Unit,
+    ) {
+        transitionJob?.cancel()
+        transitionState = startState
+        updateLayerProperties()
+        transitionJob = coroutineScope.launchUndispatched {
+            coroutineScope { animations() }
+            transitionState = endState
+            updateLayerProperties()
+        }
+    }
+
+    private fun CoroutineScope.launchUndispatched(block: suspend CoroutineScope.() -> Unit) =
+        launch(start = CoroutineStart.UNDISPATCHED, block = block)
+
+    override fun release() {
+        if (isPlacementAnimationInProgress) {
+            isPlacementAnimationInProgress = false
+            coroutineScope.launch { placementDeltaAnimation.stop() }
+        }
+        val job = transitionJob
+        transitionJob = null
+        job?.cancel()
+        transitionState = TransitionState.New
+        fadeAnimation.release()
+        slideAnimation.release()
+        isRunningMovingAwayAnimation = false
+        placementDelta = IntOffset.Zero
+        targetOffset = NotInitialized
+        layer?.let { graphicsContext.releaseGraphicsLayer(it) }
+        layer = null
+        enterTransition = null
+        exitTransition = null
+        placementSpec = null
+        itemSize = IntSize.Zero
+    }
+
+    private fun updateLayerProperties() {
+        val layer = layer ?: return
+        val offset = slideAnimation.value ?: IntOffset.Zero
+
+        layer.alpha = fadeAnimation.value ?: 1f
+        layer.translationX = offset.x.toFloat()
+        layer.translationY = offset.y.toFloat()
+
+        onLayerPropertyChanged()
+    }
+}
+
+internal class BooleanBasedLazyLayoutItemAnimation(
+    private val coroutineScope: CoroutineScope,
+    private val graphicsContext: GraphicsContext,
+    private val onLayerPropertyChanged: () -> Unit = {},
+) : LazyLayoutItemAnimation {
+    override var enterTransition: EnterTransition? = null
+    override var exitTransition: ExitTransition? = null
+    override var placementSpec: FiniteAnimationSpec<IntOffset>? = null
+
+    override var isRunningMovingAwayAnimation = false
+        private set
+
+    override var isPlacementAnimationInProgress by mutableStateOf(false)
+        private set
+
+    /** Returns true when the fade in animation is currently in progress. */
+    private var isFadeInAnimationInProgress by mutableStateOf(false)
+
+    override val isAppearanceAnimationInProgress
+        get() = isFadeInAnimationInProgress
+
+    /** Returns true when the fade out animation is currently in progress. */
+    private var isFadeOutAnimationInProgress by mutableStateOf(false)
+
+    override val isDisappearanceAnimationInProgress
+        get() = isFadeOutAnimationInProgress
+
+    /** Returns true when the fade out animation has been finished. */
+    private var isFadeOutAnimationFinished by mutableStateOf(false)
+
+    override val isDisappearanceAnimationFinished
+        get() = isFadeOutAnimationFinished
+
+    override var targetOffset: IntOffset = NotInitialized
+
+    override var placementOffset: IntOffset = IntOffset.Zero
+
+    override var lookaheadOffset: IntOffset = NotInitialized
+
+    override var layer: GraphicsLayer? = graphicsContext.createGraphicsLayer()
+        private set
+
+    private val placementDeltaAnimation = Animatable(IntOffset.Zero, IntOffset.VectorConverter)
+
+    private val fadeAnimation = Animatable(1f, Float.VectorConverter)
+
+    override var placementDelta by mutableStateOf(IntOffset.Zero)
+        private set
+
+    override fun applyScrollOffset(offset: IntOffset) {
+        targetOffset += offset
+    }
+
+    override fun cancelPlacementAnimation() {
+        if (isPlacementAnimationInProgress) {
+            coroutineScope.launch {
+                placementDeltaAnimation.snapTo(IntOffset.Zero)
+                placementDelta = IntOffset.Zero
+                isPlacementAnimationInProgress = false
+            }
+        }
+    }
+
+    override fun animatePlacementDelta(delta: IntOffset, isMovingAway: Boolean) {
+        val spec = placementSpec ?: return
+        val totalDelta = placementDelta - delta
+        placementDelta = totalDelta
+        isPlacementAnimationInProgress = true
+        isRunningMovingAwayAnimation = isMovingAway
+        coroutineScope.launch {
+            try {
+                val finalSpec =
+                    if (placementDeltaAnimation.isRunning) {
+                        // when interrupted, use the default spring, unless the spec is a spring.
+                        spec as? SpringSpec<IntOffset> ?: InterruptionSpec
+                    } else {
+                        spec
+                    }
+                if (!placementDeltaAnimation.isRunning) {
+                    // if not running we can snap to the initial value and animate to zero
+                    placementDeltaAnimation.snapTo(totalDelta)
+                    onLayerPropertyChanged()
+                }
+                // if animation is not currently running the target will be zero, otherwise
+                // we have to continue the animation from the current value, but keep the needed
+                // total delta for the new animation.
+                val animationTarget = placementDeltaAnimation.value - totalDelta
+                placementDeltaAnimation.animateTo(animationTarget, finalSpec) {
+                    // placementDelta is calculated as if we always animate to target equal to zero
+                    placementDelta = value - animationTarget
+                    onLayerPropertyChanged()
+                }
+
+                isPlacementAnimationInProgress = false
+                isRunningMovingAwayAnimation = false
+            } catch (_: CancellationException) {
+                // we don't reset inProgress in case of cancellation as it means
+                // there is a new animation started which would reset it later
+            }
+        }
+    }
+
+    override fun animateEnterTransition() {
         layer?.let { layer -> animateFadeIn(layer) }
     }
 
@@ -213,7 +467,7 @@ internal class LazyLayoutItemAnimation(
         }
     }
 
-    fun animateExitTransition() {
+    override fun animateExitTransition() {
         layer?.let { layer -> animateFadeOut(layer) }
     }
 
@@ -235,7 +489,7 @@ internal class LazyLayoutItemAnimation(
         }
     }
 
-    fun release() {
+    override fun release() {
         if (isPlacementAnimationInProgress) {
             isPlacementAnimationInProgress = false
             coroutineScope.launch { placementDeltaAnimation.stop() }
@@ -256,10 +510,6 @@ internal class LazyLayoutItemAnimation(
         enterTransition = null
         exitTransition = null
         placementSpec = null
-    }
-
-    companion object {
-        val NotInitialized = IntOffset(Int.MAX_VALUE, Int.MAX_VALUE)
     }
 }
 

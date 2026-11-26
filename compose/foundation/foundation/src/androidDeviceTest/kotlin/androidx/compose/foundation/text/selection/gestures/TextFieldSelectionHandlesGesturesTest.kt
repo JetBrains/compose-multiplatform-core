@@ -19,7 +19,6 @@ package androidx.compose.foundation.text.selection.gestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.Handle
-import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
 import androidx.compose.foundation.text.input.InputMethodInterceptor
 import androidx.compose.foundation.text.selection.HandlePressedScope
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
@@ -36,6 +35,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import kotlin.test.fail
@@ -44,7 +44,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
-@RunWith(ContextMenuFlagFlipperRunner::class)
+@RunWith(AndroidJUnit4::class)
 internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGesturesTest() {
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
@@ -86,7 +86,7 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
         performTouchGesture { longClick(characterPosition(13)) }
 
         asserter.applyAndAssert {
-            selection = 12 to 17
+            selectionByTouch = 12 to 17
             selectionHandlesShown = true
             textToolbarShown = true
             hapticsLongPressCount++
@@ -130,7 +130,7 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
         Truth.assertThat(finalX).isNotNull()
 
         asserter.applyAndAssert {
-            selection = 6 to 11
+            selectionByTouch = 6 to 11
             selectionHandlesShown = true
             textToolbarShown = true
             hapticsLongPressCount++
@@ -142,7 +142,7 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
             moveHandleToCharacter(6)
             // simulate drag to select only the first character
             asserter.applyAndAssert {
-                selection = 6 to 7
+                selectionByTouch = 6 to 7
                 textToolbarShown = false
                 magnifierShown = true
                 hapticsTextHandleMoveCount++
@@ -174,7 +174,7 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
         performTouchGesture { longClick(characterPosition(content.lastIndex)) }
 
         asserter.applyAndAssert {
-            selection = 0 to content.length
+            selectionByTouch = 0 to content.length
             selectionHandlesShown = true
             textToolbarShown = true
             hapticsLongPressCount++
@@ -185,7 +185,7 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
             moveHandleToCharacter(10)
             moveHandleToCharacter(5)
             asserter.applyAndAssert {
-                selection = 0 to 5
+                selectionByTouch = 0 to 5
                 magnifierShown = true
                 textToolbarShown = false
                 hapticsTextHandleMoveCount++
