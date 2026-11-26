@@ -33,7 +33,7 @@ import kotlin.jvm.JvmName
     "Font.ResourceLoader is deprecated, instead use FontFamily.Resolver",
     ReplaceWith(
         "ParagraphIntrinsics(text, style, spanStyles, density, " +
-            "createFontFamilyResolver(resourceLoader), placeholders, true, Locale.current)",
+            "createFontFamilyResolver(), placeholders, true, LocaleList.current)",
         "androidx.compose.ui.text.font.createFontFamilyResolver",
     ),
 )
@@ -60,7 +60,7 @@ actual fun ParagraphIntrinsics(
 @Deprecated(
     "Use an overload that takes `annotations` instead",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders, softWrap, Locale.current)"
+        "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders, true, LocaleList.current)"
     ),
 )
 actual fun ParagraphIntrinsics(
