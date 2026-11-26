@@ -29,10 +29,9 @@ import androidx.compose.ui.unit.Density
 import kotlin.jvm.JvmName
 
 @Deprecated(
-    "Font.ResourceLoader is deprecated, instead use FontFamily.Resolver",
+    "Use an override with `defaultLocaleList`",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, spanStyles, placeholders, density, " +
-            "fontFamilyResolver"
+        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, placeholders, softWrap, LocaleList.current)"
     ),
 )
 actual fun ParagraphIntrinsics(
@@ -55,6 +54,15 @@ actual fun ParagraphIntrinsics(
             defaultLocaleList = LocaleList.current,
         )
 
+@Suppress("DEPRECATION")
+@Deprecated(
+    "Font.ResourceLoader is deprecated, instead use FontFamily.Resolver",
+    ReplaceWith(
+        "ParagraphIntrinsics(text, style, spanStyles, density, " +
+            "createFontFamilyResolver(resourceLoader), placeholders, true, LocaleList.current)",
+        "androidx.compose.ui.text.font.createFontFamilyResolver",
+    ),
+)
 actual fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
@@ -120,6 +128,12 @@ actual fun ParagraphIntrinsics(
             defaultLocaleList = LocaleList.current,
         )
 
+@Deprecated(
+    "Use an override with `softWrap`",
+    ReplaceWith(
+        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, placeholders, true, LocaleList.current)"
+    ),
+)
 actual fun ParagraphIntrinsics(
     text: String,
     style: TextStyle,
