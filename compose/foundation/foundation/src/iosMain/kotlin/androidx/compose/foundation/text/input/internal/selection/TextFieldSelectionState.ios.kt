@@ -59,8 +59,8 @@ import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.text.TextRange
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /** Runs platform-specific text tap gestures logic. */
@@ -224,12 +224,21 @@ internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
     val selectionState = this
     val dragObserver = IosTextFieldTextDragObserver(selectionState)
 
-    snapshotFlow { textFieldState.holder.isNativeTextInput }.collectLatest { native ->
-        if (!native) {
-            pointerInputScope.awaitSelectionGestures(
-                mouseSelectionObserver = mouseSelectionObserver,
-                textDragObserver = dragObserver,
-            )
+    coroutineScope {
+        var selectionGesturesJob: Job? = null
+        snapshotFlow { textFieldState.holder.isNativeTextInput }.collect { native ->
+            if (native) {
+                selectionGesturesJob?.cancel()
+                selectionGesturesJob = null
+            } else {
+                selectionGesturesJob =
+                    this@coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                        pointerInputScope.awaitSelectionGestures(
+                            mouseSelectionObserver = mouseSelectionObserver,
+                            textDragObserver = dragObserver,
+                        )
+                    }
+            }
         }
     }
 }
