@@ -51,13 +51,6 @@ private val benchmarkScope = CoroutineScope(Dispatchers.Default + SupervisorJob(
 fun main() = Unit
 
 @JsExport
-fun benchmarkNames(): JsArray<JsString> = BenchmarkCase.entries
-    .filter { it != BenchmarkCase.MultipleComponents }
-    .map { it.id.toJsString() }
-    .toTypedArray()
-    .toJsArray()
-
-@JsExport
 fun launch(benchmarkName: String): Promise<JsAny?> = benchmarkScope.promise {
     val report = measureCase(benchmarkName, warmupCount = WarmupCount, frameCount = FrameCount)
     println("BENCHMARK_REPORT:${reportJson.encodeToString(report)}")
