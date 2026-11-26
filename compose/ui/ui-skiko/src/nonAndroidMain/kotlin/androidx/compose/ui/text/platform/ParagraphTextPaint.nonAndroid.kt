@@ -59,8 +59,7 @@ internal data class ParagraphTextForegroundStyle(
 }
 
 internal fun SpanStyle.toParagraphTextForegroundStyle(): ParagraphTextForegroundStyle {
-    val currentBrush = brush
-    return when (currentBrush) {
+    return when (val currentBrush = brush) {
         null -> {
             if (color.isSpecified) {
                 ParagraphTextForegroundStyle(

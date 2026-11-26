@@ -72,14 +72,34 @@ androidXMultiplatform {
             dependsOn(nonAndroidMain)
             dependsOn(nonAndroidExcludingWebMain)
             dependencies {
+                api(libs.skikoGanesh)
+                api(libs.skikoPlatform)
                 runtimeOnly(libs.skikoAwtRuntime)
+                runtimeOnly(libs.skikoGaneshAwtRuntime)
+                runtimeOnly(libs.skikoPlatformAwtRuntime)
             }
+        }
+
+        webMain.dependencies {
+            api(libs.skikoGanesh)
+            api(libs.skikoPlatform)
+        }
+
+        macosMain.dependencies {
+            api(libs.skikoGanesh)
+            api(libs.skikoPlatform)
+        }
+
+        iosMain.dependencies {
+            api(libs.skikoGaneshGpuProvider)
         }
 
         desktopTest {
             dependsOn(nonAndroidTest)
             dependencies {
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoGaneshAwtRuntime)
+                implementation(libs.skikoPlatformAwtRuntime)
                 implementation(libs.junit)
                 implementation(libs.truth)
                 implementation(project(":internal-testutils-fonts"))

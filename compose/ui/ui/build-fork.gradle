@@ -104,6 +104,8 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
                 api(project(":compose:ui:ui-skiko"))
+                implementation(libs.skikoPlatform)
+                implementation(libs.skikoGanesh)
                 implementation(libs.atomicFu)
 
                 implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
@@ -138,6 +140,8 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin)
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoGaneshAwtRuntime)
+                implementation(libs.skikoPlatformAwtRuntime)
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))
@@ -188,10 +192,6 @@ androidXMultiplatform {
 
         webMain.dependencies {
             api(libs.kotlinXw3c)
-        }
-
-        wasmJsMain.dependencies {
-            implementation(libs.skikoWasmJs)
         }
 
         configureEach {

@@ -199,6 +199,12 @@ private sealed interface ComputedStyle {
                 res.letterSpacing = it
             }
 
+            // Skia supports only a single locale per style. The locale is used, in particular,
+            // by the system font fallback to pick locale-specific glyphs (e.g. for Han ideographs).
+            localeList?.firstOrNull()?.let {
+                res.locale = it.toLanguageTag()
+            }
+
             res.addFontFeatures(FontFeature.parseW3(fontFeatureSettings.orEmpty()))
             res.fontEdging = fontRasterizationSettings.smoothing.toSkFontEdging()
             res.fontHinting = fontRasterizationSettings.hinting.toSkFontHinting()

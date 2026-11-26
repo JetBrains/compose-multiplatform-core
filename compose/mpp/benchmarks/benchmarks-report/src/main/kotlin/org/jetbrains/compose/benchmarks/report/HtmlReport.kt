@@ -16,8 +16,10 @@
 
 package org.jetbrains.compose.benchmarks.report
 
+import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.EnumMap
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.math.ceil
@@ -26,6 +28,7 @@ import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 
@@ -33,12 +36,145 @@ private val reportJson = Json { encodeDefaults = true }
 private const val realFramesBudgetHz = 60
 private const val realFramesBudgetMs = 1000.0 / realFramesBudgetHz
 private const val realFramesBudgetTolerancePercent = 5
+private const val realFramesBudgetTolerance = realFramesBudgetTolerancePercent / 100.0
+private const val realFramesOverBudgetMs = realFramesBudgetMs * (1 + realFramesBudgetTolerance)
 
+/** Display-paced per-frame metrics use linear distribution scales. */
 @Serializable
-private data class ChartMeasurement(val title: String, val unit: String, val value: Double)
+private enum class Pacing {
+    /** Time between frames: 1000 / refresh rate, in milliseconds. */
+    @SerialName("interval")
+    INTERVAL,
 
+    /** Frames per second: the refresh rate itself. */
+    @SerialName("rate")
+    RATE,
+}
+
+/**
+ * Every metric the report can show, in display order. The page has no per-metric logic: it reads
+ * titles, units, descriptions, and the comparison direction from the catalog built from these.
+ */
+private enum class Metric(
+    val id: String,
+    val title: String,
+    val unit: String,
+    val description: String,
+    val higherIsBetter: Boolean = false,
+    val pacing: Pacing? = null,
+) {
+    PROCESS_TO_MAIN(
+        "processToMain", "Process to main", "ms",
+        "Elapsed time from process launch to main entry, when available.",
+    ),
+    MAIN_TO_FIRST_FRAME(
+        "mainToFirstFrame", "Main to first frame", "ms",
+        "Elapsed time from main entry to the first observed frame callback.",
+    ),
+    MAIN_TO_NTH_FRAME(
+        "mainToNthFrame", "Main to Nth frame", "ms",
+        "Elapsed time from main entry to the configured Nth frame callback after the first frame.",
+    ),
+    FRAME_TIME(
+        "frameTime", "Frame time", "ms",
+        "Callback intervals: elapsed monotonic time between consecutive withFrameNanos callbacks, sampled " +
+            "inside each callback; not CPU render time or presentation timestamps. Historical reports may " +
+            "instead contain frame-clock timestamp differences or wall-clock waits for callbacks; " +
+            "regenerating HTML does not change collected measurements.",
+        pacing = Pacing.INTERVAL,
+    ),
+    FRAME_RATE(
+        "frameRate", "Frame rate", "FPS",
+        "1000 / callback interval in milliseconds, using only positive, finite intervals; not measured " +
+            "display FPS. Historical reports use the interval measurement method of the runtime that " +
+            "collected them.",
+        higherIsBetter = true,
+        pacing = Pacing.RATE,
+    ),
+    OVER_BUDGET_INTERVALS(
+        "overBudgetIntervals", "Over-budget intervals", "%",
+        "Percentage of positive, finite callback intervals longer than " +
+            "${realFramesOverBudgetMs.toDescriptionText()} ms: a fixed $realFramesBudgetHz Hz budget " +
+            "(1000/$realFramesBudgetHz ms) plus $realFramesBudgetTolerancePercent% tolerance. Callback delays " +
+            "do not prove missed presentation deadlines.",
+    ),
+    ESTIMATED_MISSED_VSYNC(
+        "estimatedMissedVsync", "Estimated missed VSync", "%",
+        "Estimated missed slots / total slots × 100, using positive, finite callback intervals. " +
+            "Slots = max(1, ceil(interval / (1000/$realFramesBudgetHz ms) − " +
+            "${realFramesBudgetTolerance.toDescriptionText()})). Assumes a fixed $realFramesBudgetHz Hz budget " +
+            "with $realFramesBudgetTolerancePercent% tolerance, not measured VSync or presentation events; " +
+            "callback scheduling jitter can inflate this estimate.",
+    ),
+    TOTAL_DURATION(
+        "totalDuration", "Total duration", "ms",
+        "Wall-clock time for the measured frame-loop intervals. Compare runs with the same frame count.",
+    ),
+    THROUGHPUT(
+        "throughput", "Throughput", "FPS",
+        "Measured frame count divided by total wall-clock duration, in FPS.",
+        higherIsBetter = true,
+    ),
+    AVERAGE_CPU_TIME(
+        "averageCpuTime", "Average CPU time", "ms",
+        "Total offscreen measurement time minus GPU-completion waits, divided by frame count.",
+    ),
+    AVERAGE_GPU_TIME(
+        "averageGpuTime", "Average GPU time", "ms",
+        "Total offscreen GPU-completion wait time divided by frame count; not GPU timestamp timing.",
+    ),
+    AVERAGE_FRAME_FPS(
+        "averageFrameFps", "Average frame FPS", "FPS",
+        "Offscreen frame count divided by total measurement time, including GPU-completion waits; " +
+            "not display FPS.",
+        higherIsBetter = true,
+    ),
+    CPU_TIME(
+        "cpuTime", "CPU time", "ms",
+        "Per-frame offscreen elapsed time minus the GPU-completion wait. Includes CPU work and other " +
+            "elapsed overhead, not CPU utilization.",
+    ),
+    GPU_TIME(
+        "gpuTime", "GPU time", "ms",
+        "Per-frame wall-clock time waiting for GPU completion during offscreen rendering; not GPU " +
+            "timestamp timing.",
+    ),
+    FRAME_FPS(
+        "frameFps", "Frame FPS", "FPS",
+        "Reciprocal of per-frame offscreen elapsed time, including the GPU-completion wait; not display FPS.",
+        higherIsBetter = true,
+    ),
+}
+
+/** A catalog entry: one [Metric], or one of its variants, as the page shows it. */
 @Serializable
-private data class ChartDistribution(val title: String, val unit: String, val values: List<Double>)
+private data class ChartMetric(
+    val title: String,
+    val unit: String,
+    val higherIsBetter: Boolean,
+    val description: List<String>,
+    val pacing: Pacing?,
+)
+
+/** Collects the metrics that reports actually contain; runs refer to them by id. */
+private class MetricCatalog {
+    // Keeps metrics in declaration order, whichever report mentions them first.
+    private val variants = EnumMap<Metric, MutableMap<String, ChartMetric>>(Metric::class.java)
+
+    /**
+     * Returns the id of [metric], or of its [variant]: a per-frame statistic or a parameterized form
+     * that gets its own [title] and an extra description paragraph, [note].
+     */
+    fun id(metric: Metric, variant: String? = null, title: String = metric.title, note: String? = null): String {
+        val id = listOfNotNull(metric.id, variant).joinToString(".")
+        variants.getOrPut(metric) { linkedMapOf() }.getOrPut(id) {
+            ChartMetric(title, metric.unit, metric.higherIsBetter, listOfNotNull(metric.description, note), metric.pacing)
+        }
+        return id
+    }
+
+    fun toMap(): Map<String, ChartMetric> = variants.values.flatMap { it.entries }.associate { it.toPair() }
+}
 
 @Serializable
 private data class ChartRun(
@@ -50,8 +186,10 @@ private data class ChartRun(
     val iteration: Int,
     val status: String,
     val error: String?,
-    val measurements: List<ChartMeasurement>,
-    val distributions: List<ChartDistribution>,
+    /** Values by [MetricCatalog] id. */
+    val measurements: Map<String, Double>,
+    /** Per-frame samples by [MetricCatalog] id. */
+    val distributions: Map<String, List<Double>>,
     val browser: String? = null,
     val browserName: String? = null,
     val parameters: JsonObject = JsonObject(emptyMap()),
@@ -72,6 +210,7 @@ private data class ChartConfiguration(
 private data class ChartReport(
     val composeVersions: List<String>,
     val kotlinVersions: List<String>,
+    val metrics: Map<String, ChartMetric>,
     val runs: List<ChartRun>,
     val warnings: List<String>,
     val configurations: List<ChartConfiguration>,
@@ -95,6 +234,7 @@ fun generateHtmlReport(session: Path): Path {
     }
     val runs = mutableListOf<ChartRun>()
     val configurations = mutableListOf<ChartConfiguration>()
+    val metrics = MetricCatalog()
     // Keep requested endpoints even when a configuration has no summary or measurements.
     val composeVersions = requestedVersions(launcherArguments, "--compose-version")
     val kotlinVersions = requestedVersions(launcherArguments, "--kotlin-version")
@@ -177,11 +317,11 @@ fun generateHtmlReport(session: Path): Path {
                                         "frameTimes", "totalDuration", "averageFrameInfo", "frames",
                                     )
                                 })
-                                reportMeasurements(report) to reportDistributions(report)
-                            } ?: (emptyList<ChartMeasurement>() to emptyList<ChartDistribution>())
+                                reportMeasurements(report, metrics) to reportDistributions(report, metrics)
+                            } ?: (emptyMap<String, Double>() to emptyMap<String, List<Double>>())
                         } catch (error: Exception) {
                             warnings.add("${run.requiredText("name")} / $configuration / Kotlin $kotlin / Compose $compose: ${error.message}")
-                            emptyList<ChartMeasurement>() to emptyList<ChartDistribution>()
+                            emptyMap<String, Double>() to emptyMap<String, List<Double>>()
                         }
                         runs.add(ChartRun(
                             target, kotlin, compose, run.requiredText("name"), run.requiredText("type"),
@@ -200,7 +340,7 @@ fun generateHtmlReport(session: Path): Path {
     runs.sortWith(compareBy({ kotlinOrder.getValue(it.kotlin) }, { composeOrder.getValue(it.compose) }))
     configurations.sortWith(compareBy({ kotlinOrder.getValue(it.kotlin) }, { composeOrder.getValue(it.compose) }))
     val payload = reportJson.encodeToString(ChartReport(
-        composeVersions.toList(), kotlinVersions.toList(), runs, warnings, configurations,
+        composeVersions.toList(), kotlinVersions.toList(), metrics.toMap(), runs, warnings, configurations,
     ))
         // JSON lives in a script raw-text element, not in an HTML text node.
         .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
@@ -293,6 +433,24 @@ fun generateHtmlReport(session: Path): Path {
                 div { id = "warnings" }
                 div { id = "charts" }
             }
+            dialog(classes = "raw-dialog") {
+                id = "dialog"
+                attributes["aria-labelledby"] = "dialog-title"
+                div(classes = "raw-dialog-heading") {
+                    h2 { id = "dialog-title" }
+                    button(classes = "chart-raw-button") {
+                        id = "dialog-close"
+                        attributes["type"] = "button"
+                        +"Close"
+                    }
+                }
+                div { id = "dialog-content" }
+            }
+            div(classes = "value-tooltip") {
+                id = "value-tooltip"
+                attributes["role"] = "tooltip"
+                attributes["hidden"] = ""
+            }
             script(type = "application/json") { id = "report-data"; unsafe { +payload } }
             script { unsafe { +reportResource("report.js") } }
         }
@@ -322,79 +480,102 @@ private fun reportResource(name: String): String =
 
 private fun JsonObject.requiredText(key: String): String = getValue(key).jsonPrimitive.content
 
-private fun reportMeasurements(report: JsonObject): List<ChartMeasurement> = buildList {
-    fun addValue(title: String, unit: String, value: Double) {
-        if (value.isFinite()) add(ChartMeasurement(title, unit, value))
+/** Formats a constant for a metric description: at most two decimals, no trailing zeros. */
+private fun Double.toDescriptionText(): String =
+    toBigDecimal().setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+
+private fun reportMeasurements(report: JsonObject, catalog: MetricCatalog): Map<String, Double> = buildMap {
+    fun addValue(
+        metric: Metric, value: Double,
+        variant: String? = null, title: String = metric.title, note: String? = null,
+    ) {
+        if (value.isFinite()) put(catalog.id(metric, variant, title, note), value)
     }
-    fun duration(title: String, key: String) {
+    fun duration(metric: Metric, key: String, variant: String? = null, title: String = metric.title) {
         report[key]?.takeUnless { it == JsonNull }?.let {
-            addValue(title, "ms", durationMillis(it))
+            addValue(metric, durationMillis(it), variant, title)
         }
     }
-    fun samples(title: String, unit: String, values: List<Double>) {
+    fun samples(metric: Metric, values: List<Double>) {
         val sorted = values.filter { it.isFinite() }.sorted()
         if (sorted.isEmpty()) return
-        addValue("$title — mean", unit, sorted.sumOf { it / sorted.size })
+        addValue(
+            metric, sorted.sumOf { it / sorted.size }, "mean", "${metric.title} — mean",
+            "Uses the arithmetic mean of finite frame samples in each run.",
+        )
         for (percentile in listOf(50, 95, 99)) {
             val index = (sorted.size - 1) * percentile / 100.0
             val low = sorted[floor(index).toInt()]
             val high = sorted[ceil(index).toInt()]
-            addValue("$title — p$percentile", unit, low + (high - low) * (index - floor(index)))
+            addValue(
+                metric, low + (high - low) * (index - floor(index)), "p$percentile", "${metric.title} — p$percentile",
+                "Uses P$percentile of finite frame samples in each run, with linear interpolation between sorted values.",
+            )
         }
     }
     when (report.requiredText("type")) {
         "startup" -> {
-            duration("Process to main", "timeToMain")
-            duration("Main to first frame", "timeToFirstFrame")
-            duration("Main to Nth frame (${report.requiredText("frameCount")} after first)", "timeToNthFrame")
+            val frameCount = report.requiredText("frameCount")
+            duration(Metric.PROCESS_TO_MAIN, "timeToMain")
+            duration(Metric.MAIN_TO_FIRST_FRAME, "timeToFirstFrame")
+            // Runs with different frame counts measure different things and get separate charts.
+            duration(
+                Metric.MAIN_TO_NTH_FRAME, "timeToNthFrame", frameCount,
+                "${Metric.MAIN_TO_NTH_FRAME.title} ($frameCount after first)",
+            )
         }
         "realFrames" -> {
             val frameTimes = report.getValue("frameTimes").jsonArray.map(::durationMillis)
-            samples("Frame time", "ms", frameTimes)
+            samples(Metric.FRAME_TIME, frameTimes)
             val intervals = frameTimes.filter { it.isFinite() && it > 0 }
             if (intervals.isNotEmpty()) {
-                val tolerance = realFramesBudgetTolerancePercent / 100.0
-                val threshold = realFramesBudgetMs * (1 + tolerance)
-                addValue("Over-budget intervals", "%", 100.0 * intervals.count { it > threshold } / intervals.size)
+                addValue(
+                    Metric.OVER_BUDGET_INTERVALS,
+                    100.0 * intervals.count { it > realFramesOverBudgetMs } / intervals.size,
+                )
                 // Infer refresh slots from frame-loop intervals, not actual presentation timestamps.
-                val slots = intervals.map { ceil(it / realFramesBudgetMs - tolerance).coerceAtLeast(1.0) }
-                addValue("Estimated missed VSync", "%", 100.0 * slots.sumOf { it - 1 } / slots.sum())
+                val slots = intervals.map {
+                    ceil(it / realFramesBudgetMs - realFramesBudgetTolerance).coerceAtLeast(1.0)
+                }
+                addValue(Metric.ESTIMATED_MISSED_VSYNC, 100.0 * slots.sumOf { it - 1 } / slots.sum())
             }
-            duration("Total duration", "totalDuration")
+            duration(Metric.TOTAL_DURATION, "totalDuration")
             val seconds = durationMillis(report.getValue("totalDuration")) / 1000
-            if (seconds > 0) addValue("Throughput", "FPS", report.getValue("frameCount").jsonPrimitive.int / seconds)
+            if (seconds > 0) addValue(Metric.THROUGHPUT, report.getValue("frameCount").jsonPrimitive.int / seconds)
         }
         "averageFrame" -> {
             val frame = report.getValue("averageFrameInfo").jsonObject
-            addValue("Average CPU time", "ms", durationMillis(frame.getValue("cpu")))
-            addValue("Average GPU time", "ms", durationMillis(frame.getValue("gpu")))
-            addValue("Average frame FPS", "FPS", frame.getValue("fps").jsonPrimitive.double)
+            addValue(Metric.AVERAGE_CPU_TIME, durationMillis(frame.getValue("cpu")))
+            addValue(Metric.AVERAGE_GPU_TIME, durationMillis(frame.getValue("gpu")))
+            addValue(Metric.AVERAGE_FRAME_FPS, frame.getValue("fps").jsonPrimitive.double)
         }
         "fps" -> {
             val frames = report.getValue("frames").jsonArray.map { it.jsonObject }
-            samples("CPU time", "ms", frames.map { durationMillis(it.getValue("cpu")) })
-            samples("GPU time", "ms", frames.map { durationMillis(it.getValue("gpu")) })
-            samples("Frame FPS", "FPS", frames.map { it.getValue("fps").jsonPrimitive.double })
+            samples(Metric.CPU_TIME, frames.map { durationMillis(it.getValue("cpu")) })
+            samples(Metric.GPU_TIME, frames.map { durationMillis(it.getValue("gpu")) })
+            samples(Metric.FRAME_FPS, frames.map { it.getValue("fps").jsonPrimitive.double })
         }
         else -> error("unknown report type: ${report.requiredText("type")}")
     }
 }
 
-private fun reportDistributions(report: JsonObject): List<ChartDistribution> {
-    if (report.requiredText("type") == "realFrames") {
-        val frameTimes = report.getValue("frameTimes").jsonArray.map(::durationMillis).filter { it.isFinite() }
-        return listOf(
-            ChartDistribution("Frame time", "ms", frameTimes),
-            ChartDistribution("Frame rate", "FPS", frameTimes.filter { it > 0 }.map { 1000.0 / it }.filter { it.isFinite() }),
-        )
+private fun reportDistributions(report: JsonObject, catalog: MetricCatalog): Map<String, List<Double>> = buildMap {
+    fun addSamples(metric: Metric, values: List<Double>) {
+        put(catalog.id(metric), values.filter { it.isFinite() })
     }
-    if (report.requiredText("type") != "fps") return emptyList()
-    val frames = report.getValue("frames").jsonArray.map { it.jsonObject }
-    return listOf(
-        ChartDistribution("CPU time", "ms", frames.map { durationMillis(it.getValue("cpu")) }.filter { it.isFinite() }),
-        ChartDistribution("GPU time", "ms", frames.map { durationMillis(it.getValue("gpu")) }.filter { it.isFinite() }),
-        ChartDistribution("Frame FPS", "FPS", frames.map { it.getValue("fps").jsonPrimitive.double }.filter { it.isFinite() }),
-    )
+    when (report.requiredText("type")) {
+        "realFrames" -> {
+            val frameTimes = report.getValue("frameTimes").jsonArray.map(::durationMillis).filter { it.isFinite() }
+            addSamples(Metric.FRAME_TIME, frameTimes)
+            addSamples(Metric.FRAME_RATE, frameTimes.filter { it > 0 }.map { 1000.0 / it })
+        }
+        "fps" -> {
+            val frames = report.getValue("frames").jsonArray.map { it.jsonObject }
+            addSamples(Metric.CPU_TIME, frames.map { durationMillis(it.getValue("cpu")) })
+            addSamples(Metric.GPU_TIME, frames.map { durationMillis(it.getValue("gpu")) })
+            addSamples(Metric.FRAME_FPS, frames.map { it.getValue("fps").jsonPrimitive.double })
+        }
+    }
 }
 
 private fun durationMillis(value: JsonElement): Double =

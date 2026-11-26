@@ -6,11 +6,14 @@ BENCHMARKS_DIR="$ROOT_DIR/compose/mpp/benchmarks"
 BUILD_LOG="$(mktemp "${TMPDIR:-/tmp}/run-benchmarks.XXXXXX")"
 trap 'rm -f "$BUILD_LOG"' EXIT
 
+printf 'Building benchmark launcher...' >&2
 if "$BENCHMARKS_DIR/gradlew" -p "$BENCHMARKS_DIR" :benchmarks-launcher:installDist --console=plain >"$BUILD_LOG" 2>&1; then
+    printf '\r\033[2K' >&2
     rm -f "$BUILD_LOG"
     trap - EXIT
 else
     status=$?
+    printf '\r\033[2K' >&2
     cat "$BUILD_LOG" >&2
     exit "$status"
 fi

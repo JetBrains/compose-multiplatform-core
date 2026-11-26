@@ -10,7 +10,7 @@ requires JDK 17 or newer. Apple targets require macOS with Xcode.
 
 - `benchmarks-app` — an application with Compose benchmark cases.
 - `benchmarks-runtime` — runs measurements and sends results.
-- `benchmarks-compose-init-1-12` / `benchmarks-compose-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
+- `benchmarks-compose-init-1-12` / `benchmarks-compose-init-1-13` / `benchmarks-compose-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
 - `benchmarks-data` — shared report models and benchmark case IDs.
 - `benchmarks-report` — a JVM library that generates a static HTML report from a session directory.
 - `benchmarks-collector` — receives reports over HTTP and saves them as JSON files.
@@ -58,25 +58,40 @@ it started and keeps collected results.
 Main options:
 
 - `--target` — required list of targets, separated by spaces or commas: `jvm`, `macos` (ARM64),
-  `js`, `wasmJs`, or `ios` (ARM64 Simulator). Duplicate entries are ignored.
+  `js`, `wasmJs`, or `ios` (physical ARM64 iOS device or ARM64 Simulator). `all` selects all targets.
+  Duplicate entries are ignored.
 - `--compose-version` — a list of published Compose versions and/or `local`; defaults to `local`
   using the current core checkout (`composeCorePath=../../..` in `gradle.properties`). Specify a
   published version explicitly to benchmark it instead.
-- `--kotlin-version` — a list of Kotlin and matching Compose Compiler versions; defaults to one catalog version.
-- `--tests` — test names separated by spaces or commas; defaults to all tests.
+- `--kotlin-version` — a list of published Kotlin and matching Compose Compiler versions for the
+  benchmarks project; defaults to one catalog version. Local core sources use their own Kotlin version.
+- `--tests` — test names separated by spaces or commas, or `all`; defaults to all tests.
 - `--modes` — measurement modes; defaults to all four:
   - `startup` — startup time to the first frames;
   - `realFrames` — frame measurements in a real UI;
   - `averageFrame` — average offscreen rendering measurements;
   - `fps` — per-frame offscreen rendering measurements.
 - `--repeat` — repetitions of each test/mode pair; default: `1`.
-- `--timeout` — timeout per test in seconds, excluding build time; default: `300`.
-- `--port` — a free port for the collector; default: `8090`.
-- `--output-dir` — the base directory for results; it can already exist. Each invocation creates a new
-  timestamped subdirectory for the whole version matrix.
+- `--timeout` — report timeout in seconds for each test run and environment collection, excluding
+  build time; default: `300`.
+- `--port` — collector TCP port (`1`–`65535`), which must be free; default: `8090`.
+- `--web-port` — static HTTP server port for JS/WasmJS (`0`–`65535`); default: `0` selects a free port.
+- `--output-dir` — the base directory for results; it can already exist. Defaults to
+  `$OUT_DIR/benchmark-reports` when `OUT_DIR` is set, otherwise `<project>/out/benchmark-reports`.
+  Each invocation creates a new timestamped subdirectory for the whole version matrix.
+- `--project-dir` — standalone benchmarks project directory; detected from the working directory or
+  launcher location by default.
+- `--compose-core-path` — core checkout for `local` Compose; defaults to the configured
+  `composeCorePath`, otherwise `../../..` relative to the benchmarks project.
+- `--ios-target` — iOS simulator UUID, physical iOS device UDID/CoreDevice UUID, or unique name.
+  Defaults to the first booted iOS simulator, otherwise boots the first available one. Ignored for other targets.
+- `--apple-development-team` — Apple development team ID for physical iOS device signing; defaults to Xcode
+  project settings. Ignored for simulator and non-iOS targets.
+
+Only `--target`, `--tests`, and `--modes` accept `all`; use it alone, not alongside individual values.
 
 Browser targets require `--browser` with a list of executable paths, commands on `PATH`, or macOS
-`.app` bundles, separated by spaces or commas. Quote paths containing spaces. Duplicate entries are
+`.app` bundles, separated by spaces or commas; `--browser` can also be repeated. Quote paths containing spaces. Duplicate entries are
 ignored. Each selected browser runs on each selected web target; non-web targets ignore this list.
 Chromium, Firefox, and Safari are detected from the executable name. ChromeDriver/GeckoDriver launch
 the selected Chromium/Firefox executable with a temporary profile for each session. Rendering runs
@@ -96,11 +111,17 @@ WebDriver does not wait for the page's `load` event; the collector report determ
 After an error or timeout, the current run is failed without a retry, and the next run starts a new
 browser session.
 
-For iOS, select an available iOS simulator with `--simulator UUID` (or a unique name). Without
-this option, the launcher uses the single booted iOS simulator. If none are booted, it selects
-the first available iOS simulator in `simctl list devices available --json` order and boots it
-automatically. Multiple booted iOS simulators require an explicit selection. The launcher waits
-for the selected simulator to finish booting before installing the app.
+For iOS, the launcher uses the first booted iOS simulator, or boots the first available one.
+Physical iOS devices are never selected automatically. Use `--ios-target ID_OR_NAME` to select
+an available simulator by UUID or unique name, or a physical iOS device by UDID, CoreDevice UUID,
+or unique name. An explicit selection must match exactly one target across both types;
+missing or ambiguous matches fail without fallback. If discovery of one target type fails,
+only an explicit ID can select a target of the other type; names require successful discovery of both.
+
+Physical iOS devices require Xcode 15+, pairing, Developer Mode, and an unlocked screen. Pass
+`--apple-development-team TEAM_ID` for signing without saving the team in the Xcode project.
+The collector address is detected automatically; the iOS device must be able to reach the Mac over
+the local network. Allow local-network access on iOS device and incoming collector connections on Mac.
 
 ### Example: JVM
 
@@ -145,19 +166,24 @@ Build core sources and use Kotlin 2.4.20 for the benchmark project:
 ## Compose and Skiko compatibility
 
 `benchmarks-runtime` owns the scene and exposes configuration hooks without depending on any init
-module. Both init modules provide the same `org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko()` function.
-The app calls it at startup to configure `onBenchmarkComposeSceneInit` and, on JVM,
-`getJvmGraphicsContext`. No reflection or service loading is needed.
+module. All init modules provide the same `org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko()` function.
+The app calls it at startup to configure scene initialization and JVM/Apple graphics context providers.
+Surface flushing is a `GraphicsContext` method implemented with the matching Skiko API in each init
+module. No reflection or service loading is needed.
 
-The app declares `benchmarks-compose-init-current` in `commonMain`. When the Compose version is
-exactly `1.12.2`, Gradle substitutes `benchmarks-compose-init-1-12` on all targets. The version comes
-from `benchmarkComposeVersion` or the catalog default. Other versions and local core builds keep
-current initialization. Skiko and its native libraries come from Compose and are not overridden.
+The app declares `benchmarks-compose-init-current` in `commonMain`. For published Compose versions,
+Gradle substitutes `benchmarks-compose-init-1-12` for `1.12.x` and `benchmarks-compose-init-1-13` for
+`1.13.0`–`1.13.9` (including prereleases) on all targets. Compose `1.13.10` and later use `current`.
+The version comes from `benchmarkComposeVersion` or the catalog default. Local core builds always
+keep `current`, regardless of the catalog version. Other versions also keep `current`.
+Skiko and its native libraries come from Compose and are not overridden.
 
-Current initialization supports Metal/OpenGL/DirectX offscreen contexts on JVM. Legacy initialization
-for Compose `1.12.2` uses DirectX on Windows and null-rendering on macOS/Linux, as in the original
-multiplatform benchmarks, and leaves the scene initialization hook as a no-op. Offscreen GPU results
-from different backends are not directly comparable. Other old Compose versions are not supported.
+The `1-13` module preserves initialization for the Skiko APIs shipped with Compose `1.13.0`–`1.13.9`;
+`current` uses the new Ganesh extension APIs. Both support Metal/OpenGL/DirectX offscreen contexts on JVM.
+Legacy initialization for Compose `1.12.2` uses DirectX on Windows and null-rendering on macOS/Linux,
+as in the original multiplatform benchmarks, and leaves the scene initialization hook as a no-op.
+Offscreen GPU results from different backends are not directly comparable. Other old Compose versions
+are not supported.
 
 ## Launcher results
 
@@ -263,7 +289,7 @@ and generates an HTML report. There is no need to build the application or start
 separately. Use `--compose-version local` instead to investigate changes in a core checkout.
 
 After the first successful run, check the other relevant modes (`startup`, `averageFrame`, and
-`fps`) and platforms. For iOS, use `--target ios --simulator <simulator-uuid>` on macOS; for web,
+`fps`) and platforms. For iOS, use `--target ios --ios-target <simulator-uuid>` on macOS; for web,
 select `--target js` or `--target wasmJs` and add `--browser`. Offscreen modes (`averageFrame` and
 `fps`) must work without a platform window or user interaction.
 

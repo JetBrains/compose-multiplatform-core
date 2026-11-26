@@ -59,6 +59,10 @@ internal class MetalGraphicsContext : GraphicsContext {
         }
     }
 
+    override fun flushAndSubmit(surface: Surface) {
+        surface.flushAndSubmit()
+    }
+
     override suspend fun awaitGPUCompletion() {
         directContext.submit(syncCpu = true)
     }
@@ -103,6 +107,10 @@ internal class OpenGLGraphicsContext : GraphicsContext {
         } finally {
             api.call(finishRendering, contextPointer)
         }
+    }
+
+    override fun flushAndSubmit(surface: Surface) {
+        surface.flushAndSubmit()
     }
 
     override suspend fun awaitGPUCompletion() {

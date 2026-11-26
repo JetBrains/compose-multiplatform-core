@@ -21,11 +21,13 @@ import org.jetbrains.skia.impl.use
 
 interface GraphicsContext {
     suspend fun <T> withSurface(width: Int, height: Int, action: suspend (Surface) -> T): T
+    fun flushAndSubmit(surface: Surface)
     suspend fun awaitGPUCompletion()
 }
 
 internal object EmptyGraphicsContext : GraphicsContext {
     override suspend fun <T> withSurface(width: Int, height: Int, action: suspend (Surface) -> T): T =
         Surface.makeNull(width, height).use { action(it) }
+    override fun flushAndSubmit(surface: Surface) = Unit
     override suspend fun awaitGPUCompletion() = Unit
 }
