@@ -28,6 +28,8 @@ import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.LocalInputModeManager
 import kotlinx.coroutines.flow.flow
 
+internal actual val isPlatformIndicationRequired: Boolean = true
+
 internal actual fun platformIndication(indication: Indication?) =
     inputModeFilterIndication(indication)
 

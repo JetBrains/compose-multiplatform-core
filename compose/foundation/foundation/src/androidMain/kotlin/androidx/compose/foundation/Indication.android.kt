@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
- * Copyright 2025 The Android Open Source Project
-=======
  * Copyright 2026 The Android Open Source Project
->>>>>>> 03c09d67189f97782e3192bbcdb8ddbcc3172728
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +16,7 @@
 
 package androidx.compose.foundation
 
-<<<<<<< HEAD
-=======
 internal actual val isPlatformIndicationRequired: Boolean
     get() = false
 
->>>>>>> 03c09d67189f97782e3192bbcdb8ddbcc3172728
 internal actual fun platformIndication(indication: Indication?): Indication? = indication
