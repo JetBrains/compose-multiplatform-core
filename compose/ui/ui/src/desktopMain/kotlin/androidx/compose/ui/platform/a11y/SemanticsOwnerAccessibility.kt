@@ -361,7 +361,6 @@ internal class SemanticsOwnerAccessibility(
     /**
      * Syncs [accessibleByNodeId] with the semantics node tree.
      */
-    @OptIn(ExperimentalComposeUiHostApi::class)
     private fun syncNodes() {
         fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
         // `InvisibleToUser` and `HideFromAccessibility` are unmerged properties, so it's ok to get

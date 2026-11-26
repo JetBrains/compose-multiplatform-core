@@ -20,7 +20,6 @@ import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
@@ -34,6 +33,7 @@ import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -42,6 +42,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DrawModifierNode
@@ -60,6 +62,8 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -278,15 +282,42 @@ class ClickableFocusTest {
         override fun equals(other: Any?) = super.equals(other)
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Suppress("DEPRECATION")
     @Test
     fun mouseClickOutsideClearsFocusWithClearFocusOnMouseDownEnabled() {
-        val prevClearFocusOnMouseDownEnabled = ComposeUiFlags.isClearFocusOnMouseDownEnabled
-        ComposeUiFlags.isClearFocusOnMouseDownEnabled = true
-        try {
+        withClearFocusOnMouseDownEnabled {
             runComposeUiTest {
                 val focusRequester = FocusRequester()
+                setContent {
+                    Column(Modifier.size(300.dp)) {
+                        BasicTextField(
+                            state = rememberTextFieldState(),
+                            modifier = Modifier
+                                .testTag("textField")
+                                .focusRequester(focusRequester)
+                        )
+                        LaunchedEffect(Unit) {
+                            focusRequester.requestFocus()
+                        }
+                        Box(Modifier.testTag("box").size(200.dp))
+                    }
+                }
+
+                onNodeWithTag("textField").assertIsFocused()
+                onNodeWithTag("box").performMouseInput { click() }
+                onNodeWithTag("textField").assertIsNotFocused()
+                onNode(isFocused()).assertDoesNotExist()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun mouseClickOnPopupDoesNotClearFocusFromMainLayerWithClearFocusOnMouseDownEnabled() {
+        withClearFocusOnMouseDownEnabled {
+            androidx.compose.ui.test.v2.runComposeUiTest {
+                val focusRequester = FocusRequester()
+                var pressedInPopup = false
                 setContent {
                     Column(Modifier.size(300.dp, 400.dp)) {
                         BasicTextField(
@@ -298,15 +329,118 @@ class ClickableFocusTest {
                         LaunchedEffect(Unit) {
                             focusRequester.requestFocus()
                         }
-                        Box(Modifier.testTag("box").fillMaxWidth().weight(1f))
+
+                        // Must not overlap the text field, so that the click is outside of it
+                        Popup(alignment = Alignment.BottomStart) {
+                            Box(
+                                Modifier
+                                    .testTag("box")
+                                    .size(100.dp)
+                                    .onPointerEvent(eventType = PointerEventType.Press) {
+                                        pressedInPopup = true
+                                    }
+                            )
+                        }
                     }
                 }
 
                 onNodeWithTag("textField").assertIsFocused()
                 onNodeWithTag("box").performMouseInput { click() }
+                assertTrue(pressedInPopup, "The click didn't reach the popup")
+                onNodeWithTag("textField").assertIsFocused()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun mouseClickOutsideNonFocusablePopupClearsFocusFromMainLayerWithClearFocusOnMouseDownEnabled() {
+        withClearFocusOnMouseDownEnabled {
+            androidx.compose.ui.test.v2.runSkikoComposeUiTest {
+                val focusRequester = FocusRequester()
+                var boxPressed = false
+                setContent {
+                    Column(Modifier.size(400.dp)) {
+                        BasicTextField(
+                            state = rememberTextFieldState(),
+                            modifier = Modifier
+                                .testTag("textField")
+                                .focusRequester(focusRequester)
+                        )
+                        LaunchedEffect(Unit) {
+                            focusRequester.requestFocus()
+                        }
+
+                        Box(Modifier
+                            .testTag("box")
+                            .size(100.dp)
+                            .onPointerEvent(eventType = PointerEventType.Press) {
+                                boxPressed = true
+                            }
+                        )
+
+                        Popup(
+                            alignment = Alignment.BottomStart,
+                            properties = PopupProperties(focusable = false)
+                        ) {
+                            Box(Modifier.size(100.dp))
+                        }
+                    }
+                }
+
+                onNodeWithTag("textField").assertIsFocused()
+                onNodeWithTag("box").performMouseInput { click() }
+                assertTrue(boxPressed, "The click didn't reach the box")
                 onNodeWithTag("textField").assertIsNotFocused()
                 onNode(isFocused()).assertDoesNotExist()
             }
+        }
+    }
+
+    @Test
+    fun mouseClickOutsideFocusablePopupDoesNotClearFocusFromMainLayerWithClearFocusOnMouseDownEnabled() {
+        withClearFocusOnMouseDownEnabled {
+            androidx.compose.ui.test.v2.runSkikoComposeUiTest {
+                val focusRequester = FocusRequester()
+                setContent {
+                    Column(Modifier.size(400.dp)) {
+                        BasicTextField(
+                            state = rememberTextFieldState(),
+                            modifier = Modifier
+                                .testTag("textField")
+                                .focusRequester(focusRequester)
+                        )
+                        LaunchedEffect(Unit) {
+                            focusRequester.requestFocus()
+                        }
+
+                        Box(Modifier
+                            .testTag("box")
+                            .size(100.dp)
+                        )
+
+                        Popup(
+                            alignment = Alignment.BottomStart,
+                            properties = PopupProperties(focusable = true)
+                        ) {
+                            Box(Modifier.size(100.dp))
+                        }
+                    }
+                }
+
+                onNodeWithTag("textField").assertIsFocused()
+                onNodeWithTag("box").performMouseInput { click() }
+                onNodeWithTag("textField").assertIsFocused()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    private inline fun withClearFocusOnMouseDownEnabled(block: () -> Unit) {
+        val prevClearFocusOnMouseDownEnabled = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+        ComposeUiFlags.isClearFocusOnMouseDownEnabled = true
+        try {
+            block()
         } finally {
             ComposeUiFlags.isClearFocusOnMouseDownEnabled = prevClearFocusOnMouseDownEnabled
         }

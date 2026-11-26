@@ -16,8 +16,6 @@
 
 package androidx.compose.ui.text
 
-import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.sp
@@ -25,11 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 // Adopted copy of compose/ui/ui-text/src/test/java/androidx/compose/ui/text/AnnotatedStringTransformTest.kt
-@OptIn(InternalComposeUiApi::class)
 class AnnotatedStringTransformSkikoTest {
-    init {
-        registerSkikoComposeImplementation()
-    }
 
     private val spanStyle1 = SpanStyle(fontSize = 8.sp)
     private val spanStyle2 = SpanStyle(fontSize = 16.sp)

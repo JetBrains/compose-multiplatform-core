@@ -21,6 +21,7 @@ import kotlin.math.sign
 import org.jetbrains.skia.BreakIterator
 import org.jetbrains.skia.icu.CharProperties
 
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11184) Avoid converting CharSequence to String for break iteration.
 internal actual fun CharSequence.findPrecedingBreak(index: Int): Int {
     val it = BreakIterator.makeCharacterInstance()
     it.setText(toString())

@@ -48,7 +48,9 @@ include(":benchmarks-report")
 include(":benchmarks-collector")
 include(":benchmarks-launcher")
 include(":benchmarks-app")
+include(":benchmarks-d8-app")
 include(":benchmarks-compose-init-1-12")
+include(":benchmarks-compose-init-1-13")
 include(":benchmarks-compose-init-current")
 
 val composeCorePath = providers.gradleProperty("composeCorePath").orNull?.takeIf { it.isNotBlank() }

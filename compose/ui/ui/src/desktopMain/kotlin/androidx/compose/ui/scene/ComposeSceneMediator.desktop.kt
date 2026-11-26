@@ -1071,19 +1071,29 @@ private val MouseEvent.buttons get() = PointerButtons(
     // info about the pressed mouse button when using touchpad on MacOS 12 (AWT only).
     // When the [Tap to click] feature is activated on Mac OS 12, half of all clicks are not
     // handled because [event.modifiersEx] may not provide info about the pressed mouse button.
-    isPrimaryPressed = ((modifiersEx and MouseEvent.BUTTON1_DOWN_MASK) != 0
+    isPrimaryPressed = (isButtonDown(MouseEvent.BUTTON1)
         || (id == MouseEvent.MOUSE_PRESSED && button == MouseEvent.BUTTON1))
         && !isMacOsCtrlClick,
-    isSecondaryPressed = (modifiersEx and MouseEvent.BUTTON3_DOWN_MASK) != 0
+    isSecondaryPressed = isButtonDown(MouseEvent.BUTTON3)
         || (id == MouseEvent.MOUSE_PRESSED && button == MouseEvent.BUTTON3)
         || isMacOsCtrlClick,
-    isTertiaryPressed = (modifiersEx and MouseEvent.BUTTON2_DOWN_MASK) != 0
+    isTertiaryPressed = isButtonDown(MouseEvent.BUTTON2)
         || (id == MouseEvent.MOUSE_PRESSED && button == MouseEvent.BUTTON2),
-    isBackPressed = (modifiersEx and MouseEvent.getMaskForButton(4)) != 0
+    isBackPressed = isButtonDown(4)
         || (id == MouseEvent.MOUSE_PRESSED && button == 4),
-    isForwardPressed = (modifiersEx and MouseEvent.getMaskForButton(5)) != 0
+    isForwardPressed = isButtonDown(5)
         || (id == MouseEvent.MOUSE_PRESSED && button == 5),
 )
+
+/**
+ * Returns whether AWT reports [button] as currently pressed.
+ *
+ * Workaround for https://github.com/JetBrains/JetBrainsRuntime/issues/666, where X11 touchscreen
+ * events in JBR still have `BUTTON1_DOWN_MASK` set on `MOUSE_RELEASED`.
+ */
+private fun MouseEvent.isButtonDown(button: Int): Boolean =
+    (modifiersEx and MouseEvent.getMaskForButton(button)) != 0 &&
+        !(id == MouseEvent.MOUSE_RELEASED && this.button == button)
 
 private val MouseEvent.keyboardModifiers get() = PointerKeyboardModifiers(
     isCtrlPressed = (modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0,
@@ -1119,7 +1129,7 @@ private fun getLockingKeyStateSafe(
 private val MouseEvent.isMacOsCtrlClick
     get() = (
         hostOs.isMacOS &&
-            ((modifiersEx and InputEvent.BUTTON1_DOWN_MASK) != 0) &&
+            isButtonDown(MouseEvent.BUTTON1) &&
             ((modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0)
         )
 

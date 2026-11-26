@@ -419,7 +419,6 @@ internal class ComposeAccessible(
             return focused != null
         }
 
-        @OptIn(ExperimentalComposeUiHostApi::class)
         override fun requestFocus() {
             if (focused == false) {
                 semanticsNode.unmergedConfig.getOrNull(SemanticsActions.RequestFocus)
@@ -967,7 +966,6 @@ private class ProgressBarAccessibleValue(
     }
 }
 
-@OptIn(ExperimentalComposeUiHostApi::class)
 private fun SemanticsNode.traversalOrderedChildren(
     cachedConfig: SemanticsConfiguration? = null
 ): List<SemanticsNode> {

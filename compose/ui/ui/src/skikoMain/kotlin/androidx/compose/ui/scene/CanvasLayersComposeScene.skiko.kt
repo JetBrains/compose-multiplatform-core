@@ -53,7 +53,6 @@ import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastLastOrNull
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.window.getDialogScrimBlendMode
-import kotlin.collections.mutableListOf
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 
@@ -295,6 +294,8 @@ private class CanvasLayersComposeSceneImpl(
                 return processUnknownEvent(event)  // We don't want any side effects from it
             else -> PointerEventResult(anyMovementConsumed = false)
         }
+
+        gestureOwner?.performClearFocusOnMouseDown(composeSceneContext, event)
 
         // Clean gestureOwner when there is no pressed pointers/buttons
         if (!event.isGestureInProgress) {

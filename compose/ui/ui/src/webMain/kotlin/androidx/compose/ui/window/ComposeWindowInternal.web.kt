@@ -70,7 +70,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.browser.document
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.dom.clear
 import org.jetbrains.skia.DirectContext
+import org.jetbrains.skia.gpu.ganesh.recordingContext
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.w3c.dom.Element
@@ -321,6 +324,17 @@ internal class ComposeWindow(
     }
 
     init {
+        if (attachSkikoToCanvas(viewportSize = state.currentSize(), getVisualViewportScale())) {
+            initComposeWindow(content)
+        } else {
+            // No WebGL context. Compose App won't work.
+            // The best we can do is to show a message about it.
+            viewportContainer.clear()
+            viewportContainer.append(document.createTextNode(WEBGL2_NOT_SUPPORTED_MSG))
+        }
+    }
+
+    private fun initComposeWindow(content: @Composable () -> Unit) {
         if (configuration.enableBrowserWindowInsets) {
             checkViewportFitCover()
             insetsManager = WebWindowInsetsManager({ density }, htmlCanvas)
@@ -329,10 +343,6 @@ internal class ComposeWindow(
         initEvents(htmlCanvas)
         state.init()
 
-        applyResizeAndScale(
-            size = state.currentSize(),
-            viewportScale = getVisualViewportScale()
-        )
         archComponentsOwner.enableSavedStateHandles()
 
         setSceneContent(content)
@@ -343,6 +353,31 @@ internal class ComposeWindow(
         )
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.addInput(navigationEventInput)
+    }
+
+
+    /**
+     * @return true when skiko successfully created the webgl context and attached to the html canvas,
+     *  otherwise, it returns false. In such a case the Compose App won't work at all.
+     */
+    @OptIn(ExperimentalWasmJsInterop::class)
+    private fun attachSkikoToCanvas(
+        viewportSize: IntSize,
+        viewportScale: Float
+    ): Boolean = try {
+        /*
+            1) skiaLayer.attachTo throws when the underlying canvas.getContext call returns `null`.
+            2) Previously, we called canvas.getContext just for checking purposes,
+               but it's not cheap - could take up to 1 frame. Now we avoid redundant context initialization.
+            3) Skiko must create the context for Compose, because Skiko patches canvas.getContext function.
+            4) To avoid try...catch overhead during the app runtime, we try to catch it once,
+               before initializing the rest of the Compose Window.
+         */
+        applyResizeAndScale(size = viewportSize, viewportScale = viewportScale)
+        true
+    } catch (t: JsException) {
+        println("Compose Window initialization error: ${t.stackTraceToString()}")
+        false
     }
 
     internal fun requestA11YActivation() {
@@ -515,3 +550,7 @@ internal class ComposeWindow(
             || rootNode.hasActiveElement()
     }
 }
+
+@VisibleForTesting
+internal const val WEBGL2_NOT_SUPPORTED_MSG = "This application requires WebGL2. " +
+    "Please ensure your browser is updated and hardware acceleration is enabled in the browser settings."

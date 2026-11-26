@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiHostApi::class)
-
 package androidx.compose.ui.platform
 
 import androidx.collection.MutableIntSet
@@ -1498,6 +1496,7 @@ internal class AccessibilityMediator(
             customRootNodeId = rootNode.id,
             shouldIgnoreNode = { false }
         )
+        // TODO(https://youtrack.jetbrains.com/issue/CMP-11182) Verify accessible bounds for inline links on iOS.
         fun uncoveredBounds(node: SemanticsNode): Rect? {
             nodes[node.id]?.let { return it.adjustedBounds.toRect() }
             // The shared traversal skips inline link markers. iOS exposes links as separate

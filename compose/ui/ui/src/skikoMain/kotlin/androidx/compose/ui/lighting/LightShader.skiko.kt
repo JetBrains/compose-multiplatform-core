@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.LayoutDirection
 
 internal actual fun LightShader.Companion.isSupported(): Boolean = false
 
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11181) Implement the lighting API for non-Android targets.
 internal actual fun LightShader(
     lights: List<Light>,
     surfaceMaterial: SurfaceMaterial,
@@ -35,7 +36,7 @@ internal actual fun LightShader(
     throw UnsupportedOperationException("Lighting is not supported on this platform")
 
 internal actual val LightShader.Companion.MaxLightsAllowed: Int
-    get() = 4
+    get() = throw UnsupportedOperationException("Lighting is not supported on this platform")
 
 internal actual fun createFlatNormalShader(outline: Outline): Shader =
     throw UnsupportedOperationException("Lighting is not supported on this platform")

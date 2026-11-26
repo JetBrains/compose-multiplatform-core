@@ -20,6 +20,11 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
 }
 
+configurations.configureEach {
+    // Keep the published Compose and matching Skiko API, even when local core is included.
+    resolutionStrategy.useGlobalDependencySubstitutionRules = false
+}
+
 kotlin {
     jvm()
     iosArm64()

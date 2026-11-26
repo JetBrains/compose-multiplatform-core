@@ -78,19 +78,6 @@ kotlin {
     }
 }
 
-// Published 1.12.x releases need legacy initialization; local core uses current.
-if (libs.versions.compose.multiplatform.get().startsWith("1.12.") &&
-    providers.gradleProperty("composeCorePath").orNull.isNullOrBlank()
-) {
-    configurations.configureEach {
-        resolutionStrategy.dependencySubstitution {
-            substitute(project(":benchmarks-compose-init-current"))
-                .using(project(":benchmarks-compose-init-1-12"))
-                .because("Compose 1.12 requires legacy Skiko initialization")
-        }
-    }
-}
-
 compose {
     resources {
         packageOfResClass = "compose_benchmarks.benchmarks.generated.resources"
