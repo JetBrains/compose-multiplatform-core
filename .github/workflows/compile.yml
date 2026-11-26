@@ -54,6 +54,13 @@ jobs:
             :compose:mpp:demo:linkDebugExecutableIosSimArm64 \
             --no-daemon --stacktrace
 
+      - name: Compile Apple benchmark modules with local Compose
+        working-directory: compose/mpp/benchmarks
+        run: |
+          ./gradlew \
+            compileKotlinIosArm64 compileKotlinIosSimulatorArm64 compileKotlinMacosArm64 \
+            --console=plain --no-daemon --stacktrace
+
   compose-web-publish:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsWeb == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
@@ -78,6 +85,13 @@ jobs:
             :compose:mpp:demo:compileKotlinWasmJs \
             --no-daemon --stacktrace
 
+      - name: Compile Web benchmark modules with local Compose
+        working-directory: compose/mpp/benchmarks
+        run: |
+          ./gradlew \
+            compileKotlinJs compileKotlinWasmJs \
+            --console=plain --no-daemon --stacktrace
+
   compose-jvm-publish:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.sourceSetsDesktop == 'true' || needs.changes.outputs.sourceSetsUnknown == 'true'
@@ -101,3 +115,10 @@ jobs:
             :compose:mpp:demo:desktopMainClasses \
             :compose:desktop:desktop:desktop-samples:jvmMainClasses \
             --no-daemon --stacktrace
+
+      - name: Compile JVM benchmark modules with local Compose
+        working-directory: compose/mpp/benchmarks
+        run: |
+          ./gradlew \
+            compileKotlinJvm compileKotlin \
+            --console=plain --no-daemon --stacktrace

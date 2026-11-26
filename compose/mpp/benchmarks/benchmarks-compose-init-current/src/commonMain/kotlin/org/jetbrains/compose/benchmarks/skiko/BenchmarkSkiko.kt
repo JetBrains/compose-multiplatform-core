@@ -22,7 +22,7 @@ import org.jetbrains.compose.benchmarks.BenchmarkComposeSceneConfiguration
 @OptIn(InternalComposeUiApi::class)
 fun configureBenchmarkSkiko() {
     BenchmarkComposeSceneConfiguration.onBenchmarkComposeSceneInit = ::registerSkikoComposeImplementation
-    initJvmGraphicsContext()
+    initGraphicsContext()
 }
 
-internal expect fun initJvmGraphicsContext()
+internal expect fun initGraphicsContext()

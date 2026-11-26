@@ -27,6 +27,8 @@ import org.jetbrains.skia.Surface
 import org.jetbrains.skia.SurfaceColorFormat
 import org.jetbrains.skia.SurfaceOrigin
 import org.jetbrains.skia.SurfaceProps
+import org.jetbrains.skia.gpu.ganesh.flushAndSubmit
+import org.jetbrains.skia.gpu.ganesh.makeFromBackendRenderTarget
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.graphicapi.DirectXOffscreenContext
 import org.jetbrains.skiko.graphicapi.MetalOffscreenContext
@@ -36,7 +38,7 @@ import org.jetbrains.skiko.hostOs
 import org.jetbrains.compose.benchmarks.GraphicsContext
 import org.jetbrains.compose.benchmarks.JvmGraphicsContextConfiguration
 
-internal actual fun initJvmGraphicsContext() {
+internal actual fun initGraphicsContext() {
     val fallback = JvmGraphicsContextConfiguration.getJvmGraphicsContext
     val graphicsContext: GraphicsContext by lazy {
         val context = when {
@@ -76,6 +78,10 @@ private class DirectXGraphicsContext : GraphicsContext {
             }
         }
 
+    override fun flushAndSubmit(surface: Surface) {
+        surface.flushAndSubmit()
+    }
+
     override suspend fun awaitGPUCompletion() {
         texture?.waitForCompletion()
     }
@@ -91,6 +97,10 @@ private class MetalGraphicsContext : GraphicsContext {
                 .makeSurface(texture.backendRenderTarget, SurfaceOrigin.TOP_LEFT, SurfaceColorFormat.BGRA_8888)
                 .use { action(it) }
         }
+
+    override fun flushAndSubmit(surface: Surface) {
+        surface.flushAndSubmit()
+    }
 
     override suspend fun awaitGPUCompletion() {
         context.directContext.submit(syncCpu = true)
@@ -111,6 +121,10 @@ private class OpenGLGraphicsContext : GraphicsContext {
                 .makeSurface(texture.backendRenderTarget, SurfaceOrigin.BOTTOM_LEFT, SurfaceColorFormat.RGBA_8888)
                 .use { surface -> runBlocking(callerContext) { action(surface) } }
         }
+    }
+
+    override fun flushAndSubmit(surface: Surface) {
+        surface.flushAndSubmit()
     }
 
     override suspend fun awaitGPUCompletion() {

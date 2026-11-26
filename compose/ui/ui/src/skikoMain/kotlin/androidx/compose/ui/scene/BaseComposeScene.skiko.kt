@@ -24,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.input.key.KeyEvent
@@ -35,7 +34,11 @@ import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.node.RootNodeOwner
+import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.ProvidePlatformCompositionLocals
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
@@ -47,7 +50,6 @@ import kotlin.concurrent.Volatile
  * @property composeSceneContext the object that used to share "context" between multiple scenes
  * on the screen. Also, it provides a way for platform interaction that is required within a scene.
  */
-@OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
     protected val frameRecomposer: FrameRecomposer,
     private var invalidateLayout: () -> Unit,
@@ -283,16 +285,6 @@ internal abstract class BaseComposeScene(
     ): Composition
 
     private fun onPointerInputEvent(event: PointerInputEvent) = processPointerInputEvent(event)
-        .also {
-            if (composeSceneContext.platformContext.isClearFocusOnMouseDownEnabled) {
-                val isDown = event.eventType == PointerEventType.Press
-                val pointer = event.pointers.singleOrNull()
-                val isFromMouse = pointer?.type == PointerType.Mouse
-                if (isDown && isFromMouse) {
-                    focusManager.clearFocusIfOutsideOfActiveFocusTargetNode(pointer.position)
-                }
-            }
-        }
 
     protected abstract fun processPointerInputEvent(event: PointerInputEvent): PointerEventResult
 
@@ -316,3 +308,36 @@ internal val ComposeScene.lastKnownPointerPosition: Offset?
         this as BaseComposeScene
         return lastKnownPointerPosition
     }
+
+/**
+ * If clearing focus on mouse down is enabled ([PlatformContext.isClearFocusOnMouseDownEnabled]),
+ * implements clearing the focus.
+ */
+internal fun RootNodeOwner.performClearFocusOnMouseDown(
+    composeSceneContext: ComposeSceneContext,
+    event: PointerInputEvent
+) {
+    if (!composeSceneContext.platformContext.isClearFocusOnMouseDownEnabled) return
+
+    if (event.eventType != PointerEventType.Press) return
+
+    val pointer = event.pointers.singleOrNull()
+    if (pointer?.type != PointerType.Mouse) return
+
+    val focusOwner = focusOwner
+    val activeFocusTargetNode = focusOwner.activeFocusTargetNode
+    if (activeFocusTargetNode != null) {
+        val focusedNodeBounds =
+            activeFocusTargetNode.requireLayoutCoordinates().boundsInRoot()
+        // Only clear focus if the motion event doesn't fall inside the bounds
+        // of the node that is currently focused
+        // Note that we don't use the current focusRect which can be different
+        // from the bounds of the currently focused node.
+        // If a focusable node is choosing to have the focusRect be different from
+        // its own bounds, we shouldn't clear focus from it if the down event
+        // occurs over that node.
+        if (!focusedNodeBounds.contains(pointer.position)) {
+            focusOwner.clearFocus()
+        }
+    }
+}
