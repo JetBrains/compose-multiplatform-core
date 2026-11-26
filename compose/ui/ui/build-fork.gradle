@@ -194,9 +194,9 @@ androidXMultiplatform {
             implementation(libs.skikoWasmJs)
         }
 
-        // TODO: Align it with AOSP or make explicit
         configureEach {
             languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiHostApi")
             languageSettings.optIn("androidx.compose.ui.InternalComposeUiApi")
         }
     }
