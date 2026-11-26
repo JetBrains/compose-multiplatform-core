@@ -18,6 +18,7 @@
 
 package androidx.compose.runtime
 
+import androidx.collection.objectListOf
 import androidx.compose.runtime.composer.gapbuffer.expectError
 import androidx.compose.runtime.mock.ComposerToUse
 import androidx.compose.runtime.mock.Contact
@@ -4960,7 +4961,7 @@ class CompositionTests {
             Wrap { Text("$derived") }
         }
 
-        repeat(100) {
+        repeat(10) {
             state.intValue++
             advance(ignorePendingWork = true)
         }
@@ -5149,6 +5150,96 @@ class CompositionTests {
             "*, S(0,0), L(0,0), *, S(-1,1), L(-1,1)",
             events.joinToString(),
         )
+    }
+
+    @Test // b/565042559
+    fun removedScopeInvalidationsAreCleared() = compositionTest {
+        var visible by mutableStateOf(true)
+        var childState by mutableIntStateOf(0)
+
+        compose {
+            if (visible) {
+                Wrap { Text("Child: $childState") }
+            }
+        }
+
+        validate { Text("Child: 0") }
+
+        val composer = (composition as CompositionImpl).composer
+        assertEquals(0, composer.stacksSize())
+
+        // Both ancestor (`visible`) and descendant scope (`childState`) are invalidated in the
+        // same snapshot, and the ancestor removes the descendant scope.
+        // The unvisited descendant invalidation must be cleared when composition finishes.
+        Snapshot.withMutableSnapshot {
+            visible = false
+            childState += 1
+        }
+        expectChanges()
+        validate {}
+        assertEquals(0, composer.stacksSize())
+    }
+
+    @Test // b/574639982
+    fun testMoveAndInsertKeyedGroups() = compositionTest {
+        var list by mutableStateOf(objectListOf("A", "B"))
+        compose {
+            list.forEach { item ->
+                key(item) {
+                    Text("Item $item")
+                }
+            }
+        }
+
+        validate {
+            list.forEach { item ->
+                Text("Item $item")
+            }
+        }
+
+        list = objectListOf("B", "NEW", "A")
+        expectChanges()
+        revalidate()
+
+        list = objectListOf("B", "A")
+        expectChanges()
+        revalidate()
+
+        list = objectListOf("A", "B", "NEW")
+        expectChanges()
+        revalidate()
+
+        list = objectListOf("A", "B")
+        expectChanges()
+        revalidate()
+    }
+
+    @Test // b/569219194
+    fun moveNodeFromParentToChildGroupOfInlinedNode() = compositionTest {
+        var move by mutableStateOf(false)
+        compose {
+            key(move) {}
+            InlineLinear {
+                Linear {}
+                if (move) Linear {}
+            }
+            if (!move) Linear {}
+        }
+        validate {
+            Linear {
+                Linear()
+            }
+            Linear()
+        }
+
+        move = true
+        expectChanges()
+        validate {
+            Linear {
+                Linear()
+                Linear()
+            }
+        }
     }
 }
 

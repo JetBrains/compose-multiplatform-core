@@ -35,6 +35,7 @@ import androidx.compose.runtime.composer.gapbuffer.BitVector
 import androidx.compose.runtime.composer.linkbuffer.GroupAddress
 import androidx.compose.runtime.composer.linkbuffer.GroupHandle
 import androidx.compose.runtime.composer.linkbuffer.HasMovableContentFlag
+import androidx.compose.runtime.composer.linkbuffer.HasRecompositionRequiredFlag
 import androidx.compose.runtime.composer.linkbuffer.HasSubcompositionContextFlag
 import androidx.compose.runtime.composer.linkbuffer.IsMovableContentFlag
 import androidx.compose.runtime.composer.linkbuffer.IsNodeFlag
@@ -72,12 +73,9 @@ import androidx.compose.runtime.internal.IntRef
 import androidx.compose.runtime.internal.invokeComposable
 import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 import androidx.compose.runtime.internal.trace
-import androidx.compose.runtime.snapshots.IndirectState
-import androidx.compose.runtime.snapshots.IndirectStateObserver
 import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastToSet
-import androidx.compose.runtime.snapshots.observeIndirectStateRecalculations
 import androidx.compose.runtime.tooling.ComposeStackTrace
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 import androidx.compose.runtime.tooling.CompositionData
@@ -198,7 +196,14 @@ private class LinkPending(val keyInfos: MutableList<KeyInfo>, val startIndex: In
      * necessary to track, as the handle returned by this will be an "anchor" which moved groups
      * must be positioned before.
      */
-    fun groupHandleOfNextUnmovedGroup() = keyInfos[placedGroups.nextClear(0)].handle
+    fun groupHandleOfNextUnmovedGroup(parent: GroupAddress): GroupHandle {
+        val nextIndex = placedGroups.nextClear(0)
+        return if (nextIndex < keyInfos.size) {
+            keyInfos[nextIndex].handle
+        } else {
+            makeGroupHandle(parent, NULL_ADDRESS, NULL_ADDRESS)
+        }
+    }
 
     /**
      * Mark the [index]-th child (based on the original ordering of the children before
@@ -337,21 +342,6 @@ internal class LinkComposer(
     override var sourceMarkersEnabled =
         parentContext.collectingSourceInformation || parentContext.collectingCallByInformation
 
-    private val indirectStateObserver =
-        object : IndirectStateObserver {
-            override fun start(state: IndirectState<*>) {
-                if (state is DerivedState<*>) {
-                    childrenComposing++
-                }
-            }
-
-            override fun done(state: IndirectState<*>, calculatedValue: Any?) {
-                if (state is DerivedState<*>) {
-                    childrenComposing--
-                }
-            }
-        }
-
     private val invalidateStack = Stack<RecomposeScopeImpl>()
 
     override var isComposing = false
@@ -365,7 +355,9 @@ internal class LinkComposer(
 
     override val currentRecomposeScope: RecomposeScopeImpl?
         get() = invalidateStack.let {
-            if (childrenComposing == 0 && it.isNotEmpty()) it.peek() else null
+            if (childrenComposing == 0 && composition.derivedStateDepth == 0 && it.isNotEmpty())
+                it.peek()
+            else null
         }
 
     /**
@@ -652,10 +644,6 @@ internal class LinkComposer(
         }
     }
 
-    /** See [Composer.currentCompositionLocalMap] */
-    override val currentCompositionLocalMap: CompositionLocalMap
-        get() = currentCompositionLocalScope()
-
     /** See [Composer.currentMarker] */
     override val currentMarker: GroupAddress
         get() = if (inserting) -builder.parentGroup else reader.parentGroup
@@ -679,6 +667,7 @@ internal class LinkComposer(
                 return
             }
             changeListWriter.deactivateCurrentGroup()
+            removeInvalidations(reader.parentGroup)
             reader.skipToGroupEnd()
         }
     }
@@ -855,9 +844,7 @@ internal class LinkComposer(
             val observer = observerHolder.pin()
             observer?.onBeginComposition(composition)
             try {
-                observeIndirectStateRecalculations(indirectStateObserver) {
-                    insertMovableContentGuarded(references)
-                }
+                insertMovableContentGuarded(references)
                 completed = true
             } finally {
                 observer?.onEndComposition(composition)
@@ -1052,7 +1039,8 @@ internal class LinkComposer(
             invalidateStack.size +
             providersInvalidStack.size +
             pendingStack.size +
-            parentStateStack.size
+            parentStateStack.size +
+            invalidations.size
     }
 
     /** See [InternalComposer.stackTraceForValue] */
@@ -1284,6 +1272,12 @@ internal class LinkComposer(
     override fun updateComposerInvalidations(
         invalidationsRequested: ScopeMap<RecomposeScopeImpl, Any>
     ) {
+        // Remove any invalidations that are no longer in the slot table.
+        invalidations.removeValueIf { scope ->
+            val anchor = scope.anchor?.asLinkAnchor()
+            anchor == null || !anchor.valid
+        }
+
         // Add the requested invalidations
         invalidationsRequested.map.forEach { scope, instances ->
             scope as RecomposeScopeImpl
@@ -1492,25 +1486,23 @@ internal class LinkComposer(
                 }
                 // ^^ Experimental for forced
 
-                // Ignore reads of derivedStateOf recalculations
-                observeIndirectStateRecalculations(indirectStateObserver) {
-                    if (content != null) {
-                        startGroup(invocationKey, invocation)
-                        invokeComposable(this, content)
-                        endGroup()
-                    } else if (
-                        (forciblyRecompose || providersInvalid) &&
-                            savedContent != null &&
-                            savedContent != Composer.Empty
-                    ) {
-                        startGroup(invocationKey, invocation)
-                        @Suppress("UNCHECKED_CAST")
-                        invokeComposable(this, savedContent as @Composable () -> Unit)
-                        endGroup()
-                    } else {
-                        skipCurrentGroup()
-                    }
+                if (content != null) {
+                    startGroup(invocationKey, invocation)
+                    invokeComposable(this, content)
+                    endGroup()
+                } else if (
+                    (forciblyRecompose || providersInvalid) &&
+                        savedContent != null &&
+                        savedContent != Composer.Empty
+                ) {
+                    startGroup(invocationKey, invocation)
+                    @Suppress("UNCHECKED_CAST")
+                    invokeComposable(this, savedContent as @Composable () -> Unit)
+                    endGroup()
+                } else {
+                    skipCurrentGroup()
                 }
+
                 endRoot()
                 complete = true
             } catch (e: Throwable) {
@@ -1519,6 +1511,7 @@ internal class LinkComposer(
                 observer?.onEndComposition(composition)
                 observerHolder.unpin()
                 isComposing = false
+                invalidations.clear()
                 if (!complete) abortRoot()
                 resetInsertBuilder(dispose = !complete)
             }
@@ -1639,6 +1632,7 @@ internal class LinkComposer(
             // Remove nodes and release movableContent first. We'll delete the group data next.
             readerTable.traverseSiblings(reader.currentGroup) { group ->
                 reportFreeMovableContent(makeGroupHandle(reader.parentGroup, predecessor, group))
+                removeInvalidations(group)
                 val nodesToRemove = reader.nodeCount(group)
                 changeListWriter.removeNode(removeIndex, nodesToRemove)
                 changeListWriter.endNodeMovement()
@@ -1795,15 +1789,19 @@ internal class LinkComposer(
         cleanUpCompose()
     }
 
+    /** See [Composer.currentCompositionLocalMap] */
+    override val currentCompositionLocalMap: CompositionLocalMap
+        get() = currentCompositionLocalScope()
+
+    /**
+     * Returns the current [CompositionLocalMap] for the current group, or [providerCache] if a
+     * cached value present. [providerCache] must be reset to `null` when entering or exiting a new
+     * group to prevent a stale value from being returned.
+     */
     private fun currentCompositionLocalScope(): PersistentCompositionLocalMap {
         providerCache?.let {
             return it
         }
-        return currentCompositionLocalScope(reader.parentGroup)
-    }
-
-    /** Return the current [CompositionLocal] scope which was provided by a parent group. */
-    private fun currentCompositionLocalScope(group: GroupAddress): PersistentCompositionLocalMap {
         if (inserting && builderHasAProvider) {
             var current = builder.parentGroup
             while (current >= 0) {
@@ -1818,6 +1816,14 @@ internal class LinkComposer(
                 current = builder.parent(current)
             }
         }
+        return currentCompositionLocalScope(reader.parentGroup).also { providerCache = it }
+    }
+
+    /**
+     * Resolves the current [CompositionLocalMap] for the given [group]. This does **NOT** update
+     * the [providerCache] or perform any other caching.
+     */
+    private fun currentCompositionLocalScope(group: GroupAddress): PersistentCompositionLocalMap {
         if (!reader.isEmpty) {
             var current = group
             while (current >= 0) {
@@ -1825,16 +1831,12 @@ internal class LinkComposer(
                     reader.groupKey(current) == compositionLocalMapKey &&
                         reader.groupObjectKey(current) == compositionLocalMap
                 ) {
-                    val providers =
-                        providerUpdates?.get(current)
-                            ?: reader.groupAux(current) as PersistentCompositionLocalMap
-                    providerCache = providers
-                    return providers
+                    return providerUpdates?.get(current)
+                        ?: reader.groupAux(current) as PersistentCompositionLocalMap
                 }
                 current = reader.parentOf(current)
             }
         }
-        providerCache = rootProvider
         return rootProvider
     }
 
@@ -2130,10 +2132,9 @@ internal class LinkComposer(
                 if (reader.recomposeRequired(group)) {
                     reader.reposition(group)
                     val scope = requireRecomposeScope(group)
-                    val invalidation = invalidations[scope]
+                    val invalidation = invalidations.remove(scope)
 
                     if (scope.isInvalidFor(invalidation)) {
-                        invalidations.remove(scope)
                         recomposed = true
 
                         // We have moved so the cached lookup of the provider is invalid
@@ -2227,7 +2228,33 @@ internal class LinkComposer(
         // It is import that the movable content is reported first so it can be removed before the
         // group itself is removed.
         reportFreeMovableContent(reader.handle())
+        removeInvalidations(reader.currentGroup)
         changeListWriter.removeGroup()
+    }
+
+    private fun removeInvalidations(group: GroupAddress) {
+        val reader = reader
+        val invalidations = invalidations
+        if (group <= 0 || invalidations.isEmpty()) return
+
+        if (reader.recomposeRequired(group)) {
+            reader.getRecomposeScopeOrNull(group)?.let { invalidations.remove(it) }
+        }
+
+        if (HasRecompositionRequiredFlag in reader.flagsOf(group)) {
+            reader.traverseChildrenConditionally(
+                group = group,
+                enter = { child -> HasRecompositionRequiredFlag in reader.flagsOf(child) },
+                block = { child ->
+                    if (reader.recomposeRequired(child)) {
+                        reader.getRecomposeScopeOrNull(child)?.let { invalidations.remove(it) }
+                    }
+                    false
+                },
+                exit = {},
+                skip = {},
+            )
+        }
     }
 
     private fun recordInsert(source: GroupHandle) {
@@ -2551,7 +2578,7 @@ internal class LinkComposer(
                 val currentRelativePosition = relativePosition - pending.groupIndex
                 pending.registerMoveSlot(relativePosition, pending.groupIndex)
                 if (currentRelativePosition > 0) {
-                    reader.reposition(pending.groupHandleOfNextUnmovedGroup())
+                    reader.reposition(pending.groupHandleOfNextUnmovedGroup(reader.parentGroup))
                     // The slot group must be moved, record the move to be performed during apply.
                     changeListWriter.moveGroup(currentRelativePosition)
                 }
@@ -2559,9 +2586,10 @@ internal class LinkComposer(
                 reader.reposition(location)
                 startReaderGroup(isNode, data)
             } else {
-                // The group is new, go into insert mode. All child groups will written to the
+                // The group is new, go into insert mode. All child groups will be written to the
                 // insertTable until the group is complete which will schedule the groups to be
                 // inserted into in the table.
+                reader.reposition(pending.groupHandleOfNextUnmovedGroup(reader.parentGroup))
                 reader.beginEmpty()
                 inserting = true
                 providerCache = null
@@ -2724,9 +2752,12 @@ internal class LinkComposer(
             var current = virtualHandle
 
             var minPending = pendingStack.size - 1
+            val groups = readerTable.addressSpace.groups
             while (current.group != NULL_ADDRESS) {
                 val newCurrentNodes = updatedNodeCount(current) + delta
                 updateChildNodeCount(current, newCurrentNodes)
+                if (!current.isInsertHandle && IsNodeFlag in groups.groupFlags(current.group)) break
+
                 for (pendingIndex in minPending downTo 0) {
                     val pending = pendingStack.peek(pendingIndex)
                     if (
@@ -2736,14 +2767,12 @@ internal class LinkComposer(
                         break
                     }
                 }
-                if (current.isInsertHandle) {
-                    current = reader.parentHandle
-                } else {
-                    val groups = readerTable.addressSpace.groups
-                    val group = current.group
-                    if (IsNodeFlag in groups.groupFlags(group)) break
-                    current = groups.groupParent(group).toGroupHandle()
-                }
+                current =
+                    if (current.isInsertHandle) {
+                        reader.parentHandle
+                    } else {
+                        groups.groupParent(current.group).toGroupHandle()
+                    }
             }
         }
     }

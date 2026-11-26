@@ -73,7 +73,7 @@ androidXMultiplatform {
         commonMain.dependencies {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
-            implementation("androidx.collection:collection:1.6.0")
+            implementation("androidx.collection:collection:1.7.0")
             // when updating the runtime version please also update the runtime-saveable version
             implementation(project(":compose:runtime:runtime"))
             api("androidx.compose.runtime:runtime-retain:$composeVersion")
@@ -194,9 +194,9 @@ androidXMultiplatform {
             api(libs.kotlinXw3c)
         }
 
-        // TODO: Align it with AOSP or make explicit
         configureEach {
             languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.platform.ExperimentalComposeUiHostApi")
             languageSettings.optIn("androidx.compose.ui.InternalComposeUiApi")
         }
     }

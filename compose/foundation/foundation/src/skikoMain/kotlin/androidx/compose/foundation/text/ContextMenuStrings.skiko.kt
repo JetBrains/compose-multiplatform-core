@@ -23,6 +23,8 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.text.intl.Locale
 import kotlin.jvm.JvmInline
 
+// If you add new fields here, update also
+// "stringByResourceName" in [compose/foundation/foundation/build-fork.gradle]
 @Immutable
 @JvmInline
 internal actual value class ContextMenuStrings actual constructor(actual val value: Int) {
@@ -37,6 +39,8 @@ internal actual value class ContextMenuStrings actual constructor(actual val val
             get() = ContextMenuStrings(3)
         actual inline val Autofill: ContextMenuStrings
             get() = ContextMenuStrings(4)
+        actual inline val LookUp: ContextMenuStrings
+            get() = ContextMenuStrings(5)
     }
 }
 

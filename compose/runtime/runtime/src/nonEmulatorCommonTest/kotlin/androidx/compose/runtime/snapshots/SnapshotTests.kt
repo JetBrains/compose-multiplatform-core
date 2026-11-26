@@ -1717,7 +1717,7 @@ class SnapshotTests {
     fun readOnly_clearsParentSnapshotOnRelease() {
         val parent = takeMutableSnapshot(readObserver = {})
         try {
-            val readOnlySnapshot = obtainTransparentReadOnlySnapshot(parent)
+            val readOnlySnapshot = obtainTransparentReadOnlySnapshot(parent)!!
             assertSame(parent.readObserver, readOnlySnapshot.readObserver)
             assertFalse(readOnlySnapshot.disposed)
 
@@ -1845,6 +1845,222 @@ class SnapshotTests {
             snapshot2.dispose()
             handle.dispose()
         }
+    }
+
+    @Test
+    fun nestedMutableSnapshotMergeWithEqualValuesDoesNotLeakOpenSnapshot() {
+        val state = mutableStateOf(0)
+        val parent = takeMutableSnapshot()
+        try {
+            val child = parent.takeNestedMutableSnapshot()
+            try {
+                parent.enter { state.value = 1 }
+                child.enter { state.value = 1 }
+                child.apply().check()
+            } finally {
+                child.dispose()
+            }
+            parent.enter { assertEquals(1, state.value) }
+            parent.apply().check()
+        } finally {
+            parent.dispose()
+        }
+        assertEquals(1, state.value)
+
+        // Verify that openNonGlobalSnapshots was cleanly closed so reuseLimit advances
+        // and subsequent transactions reuse unreachable StateRecords instead of leaking them.
+        repeat(5) { i ->
+            atomic { state.value = i + 2 }
+        }
+        assertTrue(
+            usedRecords(state as StateObject) <= 2,
+            "Expected StateRecords to be garbage collected after nested merge apply",
+        )
+    }
+
+    @Test
+    fun nestedMutableSnapshotCustomPolicyMergeAppliesMergedValueToParent() {
+        val sumPolicy =
+            object : SnapshotMutationPolicy<Int> {
+                override fun equivalent(a: Int, b: Int): Boolean = a == b
+
+                override fun merge(previous: Int, current: Int, applied: Int): Int =
+                    current + applied - previous
+            }
+        val state = mutableStateOf(1, sumPolicy)
+        val parent = takeMutableSnapshot()
+        try {
+            val child = parent.takeNestedMutableSnapshot()
+            try {
+                // Advance child so child.snapshotId > parent.snapshotId before writing
+                child.takeNestedSnapshot().dispose()
+                parent.enter { state.value += 10 }
+                child.enter { state.value += 100 }
+                child.apply().check()
+            } finally {
+                child.dispose()
+            }
+            // Parent must observe the merged value (1 + 10 + 100 = 111), not child's unmerged 101
+            parent.enter { assertEquals(111, state.value) }
+            parent.apply().check()
+        } finally {
+            parent.dispose()
+        }
+        assertEquals(111, state.value)
+    }
+
+    @Test
+    fun disposingParentMutableSnapshotWhileNestedSnapshotIsActiveDoesNotCorruptState() {
+        // 1. NestedMutableSnapshot active after parent.dispose()
+        val state = mutableIntStateOf(0)
+        val parent = takeMutableSnapshot()
+        parent.enter { state.intValue = 99 }
+        val child = parent.takeNestedMutableSnapshot()
+        parent.dispose()
+
+        try {
+            assertEquals(99, child.enter { state.intValue })
+            child.enter { state.intValue = 100 }
+            assertEquals(100, child.enter { state.intValue })
+            assertEquals(0, state.intValue)
+        } finally {
+            child.dispose()
+        }
+        assertEquals(0, state.intValue)
+
+        // 2. NestedReadonlySnapshot active after parent.dispose()
+        val roState = mutableIntStateOf(0)
+        val roParent = takeMutableSnapshot()
+        roParent.enter { roState.intValue = 50 }
+        val roChild = roParent.takeNestedSnapshot()
+        roParent.dispose()
+
+        try {
+            assertEquals(50, roChild.enter { roState.intValue })
+            roState.intValue = 1
+            assertEquals(1, roState.intValue)
+            assertEquals(50, roChild.enter { roState.intValue })
+        } finally {
+            roChild.dispose()
+        }
+        assertEquals(1, roState.intValue)
+
+        // 3. Three-level nesting: parent and child disposed while grandchild is active
+        val deepState = mutableIntStateOf(0)
+        val root = takeMutableSnapshot()
+        root.enter { deepState.intValue = 10 }
+        val middle = root.takeNestedMutableSnapshot()
+        middle.enter { deepState.intValue = 20 }
+        val leaf = middle.takeNestedMutableSnapshot()
+        root.dispose()
+        middle.dispose()
+
+        try {
+            assertEquals(20, leaf.enter { deepState.intValue })
+            leaf.enter { deepState.intValue = 30 }
+            assertEquals(30, leaf.enter { deepState.intValue })
+            assertEquals(0, deepState.intValue)
+        } finally {
+            leaf.dispose()
+        }
+        assertEquals(0, deepState.intValue)
+    }
+
+    @Test // b/573222121
+    fun globalWriteToNewlyCreatedObject() {
+        val state = Snapshot.withMutableSnapshot {
+            Snapshot.withMutableSnapshot {
+                val state = mutableIntStateOf(1)
+                Snapshot.global { state.intValue = 2 }
+                state
+            }
+        }
+        assertEquals(2, state.intValue)
+    }
+
+    @Test // b/573222121
+    fun nestedThreadWrite() {
+        fun direct() {
+            // Direct case from 573222121
+            val state = Snapshot.withMutableSnapshot {
+                Snapshot.withMutableSnapshot {
+                    val state = mutableIntStateOf(1)
+                    Snapshot.global { state.intValue = 2 }
+                    state
+                }
+            }
+            assertEquals(2, state.intValue)
+        }
+
+        fun simulateComposition(
+            preCreatedState: MutableState<String?>? = null
+        ): MutableState<String?> = atomic {
+            preCreatedState ?: mutableStateOf(null)
+        }
+
+        fun simulateBackgroundThread(block: () -> Unit) {
+            // Simulate work in a background thread by switch to the global snapshot synchronously.
+            Snapshot.global(block)
+        }
+
+        fun runCase(
+            composeInNestedSnapshot: Boolean,
+            bgWrite: (MutableState<String?>) -> Unit,
+            preCreatedState: MutableState<String?>? = null,
+        ): State<String?> {
+            lateinit var state: MutableState<String?>
+            if (composeInNestedSnapshot) {
+                atomic {
+                    state = simulateComposition(preCreatedState)
+                    simulateBackgroundThread { bgWrite(state) }
+                }
+            } else {
+                state = simulateComposition(preCreatedState)
+                simulateBackgroundThread { bgWrite(state) }
+            }
+            return state
+        }
+
+        // Directly reproduce 573222121
+        direct()
+
+        val backgroundValue = "from background"
+        val plain: (MutableState<String?>) -> Unit = { it.value = backgroundValue }
+        val inSnapshot: (MutableState<String?>) -> Unit = { s ->
+            atomic { s.value = backgroundValue }
+        }
+
+        // Ensure all related cases are equivalent (caseB is the equivalent of direct() above)
+        val caseA = runCase(composeInNestedSnapshot = false, bgWrite = plain)
+        assertEquals(backgroundValue, caseA.value)
+        val caseB = runCase(composeInNestedSnapshot = true, bgWrite = plain)
+        assertEquals(backgroundValue, caseB.value)
+        val caseC = runCase(composeInNestedSnapshot = false, bgWrite = inSnapshot)
+        assertEquals(backgroundValue, caseC.value)
+        val caseD = runCase(composeInNestedSnapshot = true, bgWrite = inSnapshot)
+        assertEquals(backgroundValue, caseD.value)
+
+        val preCreatedValue: MutableState<String?> = mutableStateOf(null)
+        runCase(composeInNestedSnapshot = false, bgWrite = plain, preCreatedState = preCreatedValue)
+        assertEquals(backgroundValue, preCreatedValue.value)
+        preCreatedValue.value = null
+        runCase(composeInNestedSnapshot = true, bgWrite = plain, preCreatedState = preCreatedValue)
+        assertEquals(backgroundValue, preCreatedValue.value)
+        preCreatedValue.value = null
+        runCase(
+            composeInNestedSnapshot = false,
+            bgWrite = inSnapshot,
+            preCreatedState = preCreatedValue,
+        )
+        assertEquals(backgroundValue, preCreatedValue.value)
+        preCreatedValue.value = null
+        runCase(
+            composeInNestedSnapshot = true,
+            bgWrite = inSnapshot,
+            preCreatedState = preCreatedValue,
+        )
+        assertEquals(backgroundValue, preCreatedValue.value)
+        preCreatedValue.value = null
     }
 
     private fun usedRecords(state: StateObject): Int {

@@ -50,7 +50,9 @@ import kotlinx.coroutines.launch
  * [DeferredTransition] (e.g., for predictive back gestures).
  *
  * During the deferred phase, the transition's state is held at its initial value. Properties that
- * are not manually set in the [update] block default to the transition's initial value.
+ * are not manually set in the [update] block default to their resting values (e.g., `alpha = 1f`,
+ * `scale = 1f`, `offset = IntOffset.Zero`, `transformOrigin = TransformOrigin.Center`, and `veil`
+ * with `alpha = 0f`).
  *
  * Properties in [TransformScope] are set directly and reflect the manual value for the current
  * frame. They do not automatically animate between values; instead, they should be updated
@@ -76,6 +78,7 @@ public class MutableTransform(
     internal var offsetVelocityProvider: (() -> Offset)? = null,
     internal var block: (TransformScope.(fullSize: IntSize) -> Unit)? = null,
 ) {
+    internal var sharedElementProgressProvider: (() -> Float)? = null
 
     /**
      * Define the manual transformation to apply during the deferred phase.
@@ -87,10 +90,15 @@ public class MutableTransform(
         this.block = block
     }
 
+    internal fun sharedElementProgress(progress: () -> Float) {
+        this.sharedElementProgressProvider = progress
+    }
+
     internal fun clear() {
         block = null
         veilMatchParentSize = false
         offsetVelocityProvider = null
+        sharedElementProgressProvider = null
     }
 }
 
@@ -251,8 +259,15 @@ internal class SharedMutableTransformState {
                     } else {
                         MutationPhase.MutatingPendingCatchUp
                     }
+                scaleVelocityTracker?.resetTracking()
+                offsetVelocityTracker?.resetTracking()
+                sharedElementProgressVelocityTracker?.resetTracking()
+                lastScaleTrackMillis = Long.MIN_VALUE
+                lastSlideTrackMillis = Long.MIN_VALUE
+                lastProgressTrackMillis = Long.MIN_VALUE
                 scaleHandoffVelocity = null
                 slideHandoffVelocity = null
+                sharedElementProgressHandoffVelocity = 0f
             }
         } else {
             if (
@@ -288,6 +303,15 @@ internal class SharedMutableTransformState {
         get() =
             if (transformScope.isTransformOriginMutated) transformScope.transformOrigin
             else TransformOrigin.Center
+
+    internal fun resolveSharedElementProgress(): Float {
+        val provider = mutableData?.sharedElementProgressProvider ?: return 0f
+        val progress = provider().coerceIn(0f, 1f)
+        if (isMutating) {
+            trackSharedElementProgressVelocity(progress)
+        }
+        return progress
+    }
 
     private val timeSource = TimeSource.Monotonic
     private val startTime = timeSource.markNow()
@@ -338,15 +362,12 @@ internal class SharedMutableTransformState {
         val initialVeil = activeTransitionVeil
         val initialTransformOrigin = activeTransitionTransformOrigin
 
-        initialManualAlpha = if (transformScope.isAlphaMutated) transformScope.alpha else 1f
-        initialManualScale = if (transformScope.isScaleMutated) transformScope.scale else 1f
-        initialManualSlide =
-            if (transformScope.isOffsetMutated) transformScope.offset else IntOffset.Zero
+        initialManualAlpha = transformScope.alpha
+        initialManualScale = transformScope.scale
+        initialManualSlide = transformScope.offset
         initialManualVeil =
-            if (transformScope.isVeilMutated) transformScope.veil else Color.Transparent
-        initialManualTransformOrigin =
-            if (transformScope.isTransformOriginMutated) transformScope.transformOrigin
-            else TransformOrigin.Center
+            if (transformScope.isVeilMutated) transformScope.veil else initialVeil.copy(alpha = 0f)
+        initialManualTransformOrigin = transformScope.transformOrigin
 
         catchUpAlpha.snapTo(initialAlpha)
         catchUpScale.snapTo(initialScale)
@@ -357,15 +378,15 @@ internal class SharedMutableTransformState {
             mutationPhase = MutationPhase.MutatingCatchingUp
 
             coroutineScope {
-                if (transformScope.isAlphaMutated)
+                if (initialAlpha != initialManualAlpha)
                     launch { catchUpAlpha.animateTo(initialManualAlpha) }
-                if (transformScope.isScaleMutated)
+                if (initialScale != initialManualScale)
                     launch { catchUpScale.animateTo(initialManualScale) }
-                if (transformScope.isOffsetMutated)
+                if (initialSlide != initialManualSlide)
                     launch { catchUpSlide.animateTo(initialManualSlide) }
-                if (transformScope.isVeilMutated)
+                if (initialVeil != initialManualVeil)
                     launch { catchUpVeil.animateTo(initialManualVeil) }
-                if (transformScope.isTransformOriginMutated)
+                if (initialTransformOrigin != initialManualTransformOrigin)
                     launch { catchUpTransformOrigin.animateTo(initialManualTransformOrigin) }
             }
 
@@ -413,11 +434,18 @@ internal class SharedMutableTransformState {
 
     private var scaleVelocityTracker: VelocityTracker? = null
     private var offsetVelocityTracker: VelocityTracker? = null
+    private var sharedElementProgressVelocityTracker: VelocityTracker? = null
+    private var lastScaleTrackMillis: Long = Long.MIN_VALUE
+    private var lastSlideTrackMillis: Long = Long.MIN_VALUE
+    private var lastProgressTrackMillis: Long = Long.MIN_VALUE
 
     var scaleHandoffVelocity: AnimationVector1D? = null
         private set
 
     var slideHandoffVelocity: AnimationVector2D? = null
+        private set
+
+    var sharedElementProgressHandoffVelocity: Float = 0f
         private set
 
     private fun calculateHandoffVelocities() {
@@ -435,11 +463,18 @@ internal class SharedMutableTransformState {
                     vel.y.takeUnless { it.isNaN() } ?: 0f,
                 )
             }
+
+        sharedElementProgressHandoffVelocity =
+            sharedElementProgressVelocityTracker?.calculateVelocity()?.x?.takeUnless { it.isNaN() }
+                ?: 0f
     }
 
     val slideHandoffOffset: (IntSize) -> IntOffset = { lastSlide }
 
     private fun trackScaleVelocity(value: Float) {
+        val now = currentMillis
+        if (now <= lastScaleTrackMillis) return
+        lastScaleTrackMillis = now
         if (scaleVelocityTracker == null) {
             // The 2D VelocityTracker is used here because its Lsq2/Framework implementations better
             // smooth out the phase jitter introduced by using TimeSource.Monotonic instead of vsync
@@ -447,17 +482,27 @@ internal class SharedMutableTransformState {
             // jitter.
             scaleVelocityTracker = VelocityTracker()
         }
-        scaleVelocityTracker?.addPosition(currentMillis, Offset(value, 0f))
+        scaleVelocityTracker?.addPosition(now, Offset(value, 0f))
     }
 
     private fun trackSlideVelocity(value: IntOffset) {
+        val now = currentMillis
+        if (now <= lastSlideTrackMillis) return
+        lastSlideTrackMillis = now
         if (offsetVelocityTracker == null) {
             offsetVelocityTracker = VelocityTracker()
         }
-        offsetVelocityTracker?.addPosition(
-            currentMillis,
-            Offset(value.x.toFloat(), value.y.toFloat()),
-        )
+        offsetVelocityTracker?.addPosition(now, Offset(value.x.toFloat(), value.y.toFloat()))
+    }
+
+    private fun trackSharedElementProgressVelocity(value: Float) {
+        val now = currentMillis
+        if (now <= lastProgressTrackMillis) return
+        lastProgressTrackMillis = now
+        if (sharedElementProgressVelocityTracker == null) {
+            sharedElementProgressVelocityTracker = VelocityTracker()
+        }
+        sharedElementProgressVelocityTracker?.addPosition(now, Offset(value, 0f))
     }
 
     fun evaluateTransformBlock(fullSize: IntSize) {
@@ -469,16 +514,12 @@ internal class SharedMutableTransformState {
     fun combinedAlpha(transitionValue: Float): Float {
         activeTransitionAlpha = transitionValue
 
-        val isMutated = isMutating && transformScope.isAlphaMutated
         val combined =
             when {
-                isMutated &&
-                    mutationPhase == MutationPhase.MutatingCatchingUp &&
-                    catchUpAlpha.isRunning ->
+                mutationPhase == MutationPhase.MutatingCatchingUp && catchUpAlpha.isRunning ->
                     catchUpAlpha.value + (transformScope.alpha - initialManualAlpha)
-                isMutated &&
-                    (mutationPhase == MutationPhase.MutatingCatchingUp ||
-                        mutationPhase == MutationPhase.Mutating) -> transformScope.alpha
+                mutationPhase == MutationPhase.MutatingCatchingUp ||
+                    mutationPhase == MutationPhase.Mutating -> transformScope.alpha
                 else -> transitionValue
             }
 
@@ -494,13 +535,10 @@ internal class SharedMutableTransformState {
         val isMutated = isMutating && transformScope.isScaleMutated
         val combined =
             when {
-                isMutated &&
-                    mutationPhase == MutationPhase.MutatingCatchingUp &&
-                    catchUpScale.isRunning ->
+                mutationPhase == MutationPhase.MutatingCatchingUp && catchUpScale.isRunning ->
                     catchUpScale.value + (transformScope.scale - initialManualScale)
-                isMutated &&
-                    (mutationPhase == MutationPhase.MutatingCatchingUp ||
-                        mutationPhase == MutationPhase.Mutating) -> transformScope.scale
+                mutationPhase == MutationPhase.MutatingCatchingUp ||
+                    mutationPhase == MutationPhase.Mutating -> transformScope.scale
                 else -> transitionValue
             }
 
@@ -515,15 +553,12 @@ internal class SharedMutableTransformState {
     fun combinedTransformOrigin(transitionValue: TransformOrigin): TransformOrigin {
         activeTransitionTransformOrigin = transitionValue
 
-        val isMutated = isMutating && transformScope.isTransformOriginMutated
         val combined =
             when {
-                isMutated &&
-                    mutationPhase == MutationPhase.MutatingCatchingUp &&
+                mutationPhase == MutationPhase.MutatingCatchingUp &&
                     catchUpTransformOrigin.isRunning -> catchUpTransformOrigin.value
-                isMutated &&
-                    (mutationPhase == MutationPhase.MutatingCatchingUp ||
-                        mutationPhase == MutationPhase.Mutating) -> transformScope.transformOrigin
+                mutationPhase == MutationPhase.MutatingCatchingUp ||
+                    mutationPhase == MutationPhase.Mutating -> transformScope.transformOrigin
                 else -> transitionValue
             }
 
@@ -539,13 +574,10 @@ internal class SharedMutableTransformState {
         val isMutated = isMutating && transformScope.isOffsetMutated
         val combined =
             when {
-                isMutated &&
-                    mutationPhase == MutationPhase.MutatingCatchingUp &&
-                    catchUpSlide.isRunning ->
+                mutationPhase == MutationPhase.MutatingCatchingUp && catchUpSlide.isRunning ->
                     catchUpSlide.value + (transformScope.offset - initialManualSlide)
-                isMutated &&
-                    (mutationPhase == MutationPhase.MutatingCatchingUp ||
-                        mutationPhase == MutationPhase.Mutating) -> transformScope.offset
+                mutationPhase == MutationPhase.MutatingCatchingUp ||
+                    mutationPhase == MutationPhase.Mutating -> transformScope.offset
                 else -> transitionValue
             }
 
@@ -560,15 +592,15 @@ internal class SharedMutableTransformState {
     fun combinedVeil(transitionValue: Color): Color {
         activeTransitionVeil = transitionValue
 
-        val isMutated = isMutating && transformScope.isVeilMutated
+        val targetVeil =
+            if (transformScope.isVeilMutated) transformScope.veil
+            else transitionValue.copy(alpha = 0f)
         val combined =
             when {
-                isMutated &&
-                    mutationPhase == MutationPhase.MutatingCatchingUp &&
-                    catchUpVeil.isRunning -> catchUpVeil.value
-                isMutated &&
-                    (mutationPhase == MutationPhase.MutatingCatchingUp ||
-                        mutationPhase == MutationPhase.Mutating) -> transformScope.veil
+                mutationPhase == MutationPhase.MutatingCatchingUp && catchUpVeil.isRunning ->
+                    catchUpVeil.value
+                mutationPhase == MutationPhase.MutatingCatchingUp ||
+                    mutationPhase == MutationPhase.Mutating -> targetVeil
                 else -> transitionValue
             }
 
@@ -585,13 +617,18 @@ internal class SharedMutableTransformState {
         lastAlpha = 1f
         lastScale = 1f
         scaleVelocityTracker?.resetTracking()
+        lastScaleTrackMillis = Long.MIN_VALUE
         lastTransformOrigin = TransformOrigin.Center
         lastSlide = IntOffset.Zero
         lastManualScale = 1f
         lastManualSlide = IntOffset.Zero
         offsetVelocityTracker?.resetTracking()
+        lastSlideTrackMillis = Long.MIN_VALUE
+        sharedElementProgressVelocityTracker?.resetTracking()
+        lastProgressTrackMillis = Long.MIN_VALUE
         scaleHandoffVelocity = null
         slideHandoffVelocity = null
+        sharedElementProgressHandoffVelocity = 0f
         lastMutableData = null
         mutableData = null
     }

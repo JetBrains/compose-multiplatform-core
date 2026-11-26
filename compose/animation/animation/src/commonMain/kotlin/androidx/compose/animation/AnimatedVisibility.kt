@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -620,19 +620,21 @@ public fun <T> Transition<T>.AnimatedVisibility(
  * [mutableTransform] A block to control the visual transformations during the deferred phase (e.g.,
  * for predictive back gestures) before the main transition begins. This is only active if the
  * [Transition] was created using [rememberDeferredTransition] with [DeferredTransitionState]. By
- * default, this is `null`, meaning no manual transformations are applied. This phase starts when
+ * default, this is `null`, meaning no manual transformations are applied and properties remain at
+ * the transition's initial values during the deferred phase. This phase starts when
  * [DeferredTransitionState.defer] is called and ends when [DeferredTransitionState.animateTo] is
  * called to start the automatic transition. During this phase, you can manually manipulate the
  * content's transformations (like [TransformScope.alpha], [TransformScope.scale],
- * [TransformScope.offset], and [TransformScope.veil]). Properties that are not manually set default
- * to the transition's initial values during the deferred phase. Once the transition starts, the
- * manually applied transformations are handed off to the configured [enter] and [exit] transitions.
- * For exiting content, a "sustain unless specified" policy is applied: if an exit transition (e.g.
- * `fadeOut`) is specified, the hand-off will animate towards the target value of that transition.
- * However, if no exit transition is specified for a given property (e.g. `slideOut` is missing),
- * that property will sustain its last manual value until the entire transition completes. While in
- * the deferred phase, entering content remains in the [EnterExitState.PreEnter] state, and exiting
- * content remains in the [EnterExitState.Visible] state.
+ * [TransformScope.offset], and [TransformScope.veil]). When a [MutableTransform] is provided,
+ * properties that are not manually set default to their resting values during the deferred phase.
+ * Once the transition starts, the manually applied transformations are handed off to the configured
+ * [enter] and [exit] transitions. For exiting content, a "sustain unless specified" policy is
+ * applied: if an exit transition (e.g. `fadeOut`) is specified, the hand-off will animate towards
+ * the target value of that transition. However, if no exit transition is specified for a given
+ * property (e.g. `slideOut` is missing), that property will sustain its last manual value until the
+ * entire transition completes. While in the deferred phase, entering content remains in the
+ * [EnterExitState.PreEnter] state, and exiting content remains in the [EnterExitState.Visible]
+ * state.
  *
  * @sample androidx.compose.animation.samples.DeferredAnimatedVisibilitySample
  *
@@ -737,10 +739,8 @@ public interface AnimatedVisibilityScope {
 }
 
 internal class AnimatedVisibilityScopeImpl
-internal constructor(
-    override var transition: Transition<EnterExitState>,
-    internal val sharedMutableTransformState: SharedMutableTransformState,
-) : AnimatedVisibilityScope {
+internal constructor(override var transition: Transition<EnterExitState>) :
+    AnimatedVisibilityScope {
     internal val targetSize = mutableStateOf(IntSize.Zero)
 }
 
@@ -822,32 +822,21 @@ internal fun <T> AnimatedEnterExitImpl(
         // re-initialize with the new parameters (which could be ExitTransition.None in
         // AnimatedContent), causing the animation to lose its start/end values and snap.
         val modifierState =
-            updateEnterExitModifierState(
-                childTransition,
-                enter,
-                exit,
-                mutableTransformData,
-            )
+            updateEnterExitModifierState(childTransition, enter, exit, mutableTransformData)
 
         val shouldDisposeAfterExit by
             remember(childTransition, shouldDisposeBlock) {
-                derivedStateOf {
-                    if (childTransition.exitFinished) {
+                computedStateOf {
+                    childTransition.exitFinished &&
                         shouldDisposeBlock(
                             childTransition.currentState,
                             childTransition.targetState,
                         )
-                    } else {
-                        false
-                    }
                 }
             }
 
         if (!childTransition.exitFinished || !shouldDisposeAfterExit) {
-            val scope =
-                remember(childTransition) {
-                    AnimatedVisibilityScopeImpl(childTransition, modifierState.transformState)
-                }
+            val scope = remember(childTransition) { AnimatedVisibilityScopeImpl(childTransition) }
             Layout(
                 content = { scope.content() },
                 modifier =
@@ -855,6 +844,7 @@ internal fun <T> AnimatedEnterExitImpl(
                         childTransition
                             .createEnterExitModifier(
                                 modifierState,
+                                provideTransformState = transition is DeferredTransition<*>,
                                 label = "Built-in",
                             )
                             .then(

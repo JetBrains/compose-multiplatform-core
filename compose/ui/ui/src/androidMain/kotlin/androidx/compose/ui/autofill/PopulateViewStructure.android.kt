@@ -27,6 +27,7 @@ import android.view.inputmethod.EditorInfo
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat.Companion.TextClassName
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat.Companion.TextFieldClassName
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.platform.toLegacyClassName
 import androidx.compose.ui.semantics.CredentialRequestData
 import androidx.compose.ui.semantics.Role
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastForEach
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 
+@OptIn(ExperimentalComposeUiHostApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 internal fun ViewStructure.populate(
     semanticsInfo: SemanticsInfo,
@@ -59,6 +61,7 @@ internal fun ViewStructure.populate(
     var editableTextProp: AnnotatedString? = null
     var isPasswordProp = false
     var fillableDataProp: AndroidFillableData? = null
+    var hintTextProp: String? = null
     // We will set the `isSensitiveData` prop to true by default; the only way this value is false
     // is if the developer explicitly marks `isSensitiveData = false` on a node. This mirrors
     // the `setDataIsSensitive` flag on `ViewStructure.java`, which states that "by default, all
@@ -88,6 +91,7 @@ internal fun ViewStructure.populate(
             properties.FillableData -> fillableDataProp = value as AndroidFillableData
             properties.EditableText -> editableTextProp = value as AnnotatedString
             properties.Focused -> autofillApi.setFocused(this, value as Boolean)
+            properties.HintText -> hintTextProp = value as String
             properties.MaxTextLength -> maxTextLengthProp = value as Int
             properties.Password -> isPasswordProp = true
             properties.IsSensitiveData -> isSensitiveDataProp = value as Boolean
@@ -141,7 +145,10 @@ internal fun ViewStructure.populate(
     }
 
     // Autofill Hints.
-    contentTypeProp?.contentHints?.let { autofillApi.setAutofillHints(this, it) }
+    contentTypeProp?.contentHints?.let { autofillApi.setAutofillHints(this, it.toTypedArray()) }
+
+    // Hint Text.
+    hintTextProp?.let { autofillApi.setHint(this, it) }
 
     // Dimensions.
     rectManager.withRect(semanticsInfo.semanticsId) { left, top, right, bottom ->

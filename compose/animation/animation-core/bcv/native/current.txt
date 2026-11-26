@@ -6,6 +6,10 @@
 // - Show declarations: true
 
 // Library unique name: <androidx.compose.animation:animation-core>
+open annotation class androidx.compose.animation.core/ExperimentalAnimationCoreApi : kotlin/Annotation { // androidx.compose.animation.core/ExperimentalAnimationCoreApi|null[0]
+    constructor <init>() // androidx.compose.animation.core/ExperimentalAnimationCoreApi.<init>|<init>(){}[0]
+}
+
 open annotation class androidx.compose.animation.core/ExperimentalAnimationSpecApi : kotlin/Annotation { // androidx.compose.animation.core/ExperimentalAnimationSpecApi|null[0]
     constructor <init>() // androidx.compose.animation.core/ExperimentalAnimationSpecApi.<init>|<init>(){}[0]
 }
@@ -401,6 +405,19 @@ final class <#A: kotlin/Any?> androidx.compose.animation.core/InfiniteRepeatable
     final fun <#A1: androidx.compose.animation.core/AnimationVector> vectorize(androidx.compose.animation.core/TwoWayConverter<#A, #A1>): androidx.compose.animation.core/VectorizedAnimationSpec<#A1> // androidx.compose.animation.core/InfiniteRepeatableSpec.vectorize|vectorize(androidx.compose.animation.core.TwoWayConverter<1:0,0:0>){0§<androidx.compose.animation.core.AnimationVector>}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.animation.core/InfiniteRepeatableSpec.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // androidx.compose.animation.core/InfiniteRepeatableSpec.hashCode|hashCode(){}[0]
+}
+
+final class <#A: kotlin/Any?> androidx.compose.animation.core/InterruptionAwareAnimationSpec : androidx.compose.animation.core/FiniteAnimationSpec<#A> { // androidx.compose.animation.core/InterruptionAwareAnimationSpec|null[0]
+    constructor <init>(androidx.compose.animation.core/FiniteAnimationSpec<#A>, androidx.compose.animation.core/FiniteAnimationSpec<#A> = ...) // androidx.compose.animation.core/InterruptionAwareAnimationSpec.<init>|<init>(androidx.compose.animation.core.FiniteAnimationSpec<1:0>;androidx.compose.animation.core.FiniteAnimationSpec<1:0>){}[0]
+
+    final val animationSpec // androidx.compose.animation.core/InterruptionAwareAnimationSpec.animationSpec|{}animationSpec[0]
+        final fun <get-animationSpec>(): androidx.compose.animation.core/FiniteAnimationSpec<#A> // androidx.compose.animation.core/InterruptionAwareAnimationSpec.animationSpec.<get-animationSpec>|<get-animationSpec>(){}[0]
+    final val interruptionSpec // androidx.compose.animation.core/InterruptionAwareAnimationSpec.interruptionSpec|{}interruptionSpec[0]
+        final fun <get-interruptionSpec>(): androidx.compose.animation.core/FiniteAnimationSpec<#A> // androidx.compose.animation.core/InterruptionAwareAnimationSpec.interruptionSpec.<get-interruptionSpec>|<get-interruptionSpec>(){}[0]
+
+    final fun <#A1: androidx.compose.animation.core/AnimationVector> vectorize(androidx.compose.animation.core/TwoWayConverter<#A, #A1>): androidx.compose.animation.core/VectorizedFiniteAnimationSpec<#A1> // androidx.compose.animation.core/InterruptionAwareAnimationSpec.vectorize|vectorize(androidx.compose.animation.core.TwoWayConverter<1:0,0:0>){0§<androidx.compose.animation.core.AnimationVector>}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.animation.core/InterruptionAwareAnimationSpec.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.compose.animation.core/InterruptionAwareAnimationSpec.hashCode|hashCode(){}[0]
 }
 
 final class <#A: kotlin/Any?> androidx.compose.animation.core/KeyframesSpec : androidx.compose.animation.core/DurationBasedAnimationSpec<#A> { // androidx.compose.animation.core/KeyframesSpec|null[0]
@@ -804,6 +821,15 @@ final object androidx.compose.animation.core/AnimationConstants { // androidx.co
         final fun <get-UnspecifiedTime>(): kotlin/Long // androidx.compose.animation.core/AnimationConstants.UnspecifiedTime.<get-UnspecifiedTime>|<get-UnspecifiedTime>(){}[0]
 }
 
+final object androidx.compose.animation.core/ComposeAnimationCoreFlags { // androidx.compose.animation.core/ComposeAnimationCoreFlags|null[0]
+    final var isNanosecondAnimationSpecEnabled // androidx.compose.animation.core/ComposeAnimationCoreFlags.isNanosecondAnimationSpecEnabled|{}isNanosecondAnimationSpecEnabled[0]
+        final fun <get-isNanosecondAnimationSpecEnabled>(): kotlin/Boolean // androidx.compose.animation.core/ComposeAnimationCoreFlags.isNanosecondAnimationSpecEnabled.<get-isNanosecondAnimationSpecEnabled>|<get-isNanosecondAnimationSpecEnabled>(){}[0]
+        final fun <set-isNanosecondAnimationSpecEnabled>(kotlin/Boolean) // androidx.compose.animation.core/ComposeAnimationCoreFlags.isNanosecondAnimationSpecEnabled.<set-isNanosecondAnimationSpecEnabled>|<set-isNanosecondAnimationSpecEnabled>(kotlin.Boolean){}[0]
+    final var isSeekableTransitionStateStartAfterLayoutEnabled // androidx.compose.animation.core/ComposeAnimationCoreFlags.isSeekableTransitionStateStartAfterLayoutEnabled|{}isSeekableTransitionStateStartAfterLayoutEnabled[0]
+        final fun <get-isSeekableTransitionStateStartAfterLayoutEnabled>(): kotlin/Boolean // androidx.compose.animation.core/ComposeAnimationCoreFlags.isSeekableTransitionStateStartAfterLayoutEnabled.<get-isSeekableTransitionStateStartAfterLayoutEnabled>|<get-isSeekableTransitionStateStartAfterLayoutEnabled>(){}[0]
+        final fun <set-isSeekableTransitionStateStartAfterLayoutEnabled>(kotlin/Boolean) // androidx.compose.animation.core/ComposeAnimationCoreFlags.isSeekableTransitionStateStartAfterLayoutEnabled.<set-isSeekableTransitionStateStartAfterLayoutEnabled>|<set-isSeekableTransitionStateStartAfterLayoutEnabled>(kotlin.Boolean){}[0]
+}
+
 final object androidx.compose.animation.core/Spring { // androidx.compose.animation.core/Spring|null[0]
     final const val DampingRatioHighBouncy // androidx.compose.animation.core/Spring.DampingRatioHighBouncy|{}DampingRatioHighBouncy[0]
         final fun <get-DampingRatioHighBouncy>(): kotlin/Float // androidx.compose.animation.core/Spring.DampingRatioHighBouncy.<get-DampingRatioHighBouncy>|<get-DampingRatioHighBouncy>(){}[0]
@@ -949,6 +975,7 @@ final val androidx.compose.animation.core/androidx_compose_animation_core_Animat
 final val androidx.compose.animation.core/androidx_compose_animation_core_AnimationVector4D$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_AnimationVector4D$stableprop|#static{}androidx_compose_animation_core_AnimationVector4D$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_ArcAnimationSpec$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_ArcAnimationSpec$stableprop|#static{}androidx_compose_animation_core_ArcAnimationSpec$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_ArcSpline_Arc$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_ArcSpline_Arc$stableprop|#static{}androidx_compose_animation_core_ArcSpline_Arc$stableprop[0]
+final val androidx.compose.animation.core/androidx_compose_animation_core_ComposeAnimationCoreFlags$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_ComposeAnimationCoreFlags$stableprop|#static{}androidx_compose_animation_core_ComposeAnimationCoreFlags$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_CubicBezierEasing$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_CubicBezierEasing$stableprop|#static{}androidx_compose_animation_core_CubicBezierEasing$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_DecayAnimation$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_DecayAnimation$stableprop|#static{}androidx_compose_animation_core_DecayAnimation$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_DeferredTargetAnimation$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_DeferredTargetAnimation$stableprop|#static{}androidx_compose_animation_core_DeferredTargetAnimation$stableprop[0]
@@ -959,6 +986,7 @@ final val androidx.compose.animation.core/androidx_compose_animation_core_FloatS
 final val androidx.compose.animation.core/androidx_compose_animation_core_FloatTweenSpec$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_FloatTweenSpec$stableprop|#static{}androidx_compose_animation_core_FloatTweenSpec$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_InfiniteRepeatableSpec$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_InfiniteRepeatableSpec$stableprop|#static{}androidx_compose_animation_core_InfiniteRepeatableSpec$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_InfiniteTransition$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_InfiniteTransition$stableprop|#static{}androidx_compose_animation_core_InfiniteTransition$stableprop[0]
+final val androidx.compose.animation.core/androidx_compose_animation_core_InterruptionAwareAnimationSpec$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_InterruptionAwareAnimationSpec$stableprop|#static{}androidx_compose_animation_core_InterruptionAwareAnimationSpec$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_KeyframeBaseEntity$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_KeyframeBaseEntity$stableprop|#static{}androidx_compose_animation_core_KeyframeBaseEntity$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_KeyframesSpec$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_KeyframesSpec$stableprop|#static{}androidx_compose_animation_core_KeyframesSpec$stableprop[0]
 final val androidx.compose.animation.core/androidx_compose_animation_core_KeyframesSpecBaseConfig$stableprop // androidx.compose.animation.core/androidx_compose_animation_core_KeyframesSpecBaseConfig$stableprop|#static{}androidx_compose_animation_core_KeyframesSpecBaseConfig$stableprop[0]
@@ -1041,6 +1069,7 @@ final fun androidx.compose.animation.core/androidx_compose_animation_core_Animat
 final fun androidx.compose.animation.core/androidx_compose_animation_core_AnimationVector4D$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_AnimationVector4D$stableprop_getter|androidx_compose_animation_core_AnimationVector4D$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_ArcAnimationSpec$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_ArcAnimationSpec$stableprop_getter|androidx_compose_animation_core_ArcAnimationSpec$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_ArcSpline_Arc$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_ArcSpline_Arc$stableprop_getter|androidx_compose_animation_core_ArcSpline_Arc$stableprop_getter(){}[0]
+final fun androidx.compose.animation.core/androidx_compose_animation_core_ComposeAnimationCoreFlags$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_ComposeAnimationCoreFlags$stableprop_getter|androidx_compose_animation_core_ComposeAnimationCoreFlags$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_CubicBezierEasing$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_CubicBezierEasing$stableprop_getter|androidx_compose_animation_core_CubicBezierEasing$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_DecayAnimation$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_DecayAnimation$stableprop_getter|androidx_compose_animation_core_DecayAnimation$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_DeferredTargetAnimation$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_DeferredTargetAnimation$stableprop_getter|androidx_compose_animation_core_DeferredTargetAnimation$stableprop_getter(){}[0]
@@ -1051,6 +1080,7 @@ final fun androidx.compose.animation.core/androidx_compose_animation_core_FloatS
 final fun androidx.compose.animation.core/androidx_compose_animation_core_FloatTweenSpec$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_FloatTweenSpec$stableprop_getter|androidx_compose_animation_core_FloatTweenSpec$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_InfiniteRepeatableSpec$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_InfiniteRepeatableSpec$stableprop_getter|androidx_compose_animation_core_InfiniteRepeatableSpec$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_InfiniteTransition$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_InfiniteTransition$stableprop_getter|androidx_compose_animation_core_InfiniteTransition$stableprop_getter(){}[0]
+final fun androidx.compose.animation.core/androidx_compose_animation_core_InterruptionAwareAnimationSpec$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_InterruptionAwareAnimationSpec$stableprop_getter|androidx_compose_animation_core_InterruptionAwareAnimationSpec$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_KeyframeBaseEntity$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_KeyframeBaseEntity$stableprop_getter|androidx_compose_animation_core_KeyframeBaseEntity$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_KeyframesSpec$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_KeyframesSpec$stableprop_getter|androidx_compose_animation_core_KeyframesSpec$stableprop_getter(){}[0]
 final fun androidx.compose.animation.core/androidx_compose_animation_core_KeyframesSpecBaseConfig$stableprop_getter(): kotlin/Int // androidx.compose.animation.core/androidx_compose_animation_core_KeyframesSpecBaseConfig$stableprop_getter|androidx_compose_animation_core_KeyframesSpecBaseConfig$stableprop_getter(){}[0]

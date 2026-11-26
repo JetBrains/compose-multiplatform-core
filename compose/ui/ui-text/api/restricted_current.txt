@@ -1,10 +1,9 @@
-// Signature format: 4.0
+// Signature format: 5.0
+// - surface=restricted-atomic-group
 package androidx.compose.ui.text {
 
   @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public final class AndroidComposeUiTextFlags {
-    property public boolean isSingleLineLineHeightOptimizationEnabled;
     field public static final androidx.compose.ui.text.AndroidComposeUiTextFlags INSTANCE;
-    field public static boolean isSingleLineLineHeightOptimizationEnabled;
   }
 
   public final class AndroidTextStyle_androidKt {
@@ -20,6 +19,7 @@ package androidx.compose.ui.text {
     method @BytecodeOnly public char charAt(int);
     method public androidx.compose.ui.text.AnnotatedString flatMapAnnotations(kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>,? extends java.util.List<? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>>> transform);
     method public operator char get(int index);
+    method public java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.DrawAnnotation>> getDrawAnnotations(int start, int end);
     method @InaccessibleFromKotlin public int getLength();
     method public java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.LinkAnnotation>> getLinkAnnotations(int start, int end);
     method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.ParagraphStyle>> getParagraphStyles();
@@ -29,8 +29,11 @@ package androidx.compose.ui.text {
     method @InaccessibleFromKotlin public String getText();
     method public java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.TtsAnnotation>> getTtsAnnotations(int start, int end);
     method @Deprecated @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.UrlAnnotation>> getUrlAnnotations(int start, int end);
+    method public boolean hasDrawAnnotations(int start, int end);
     method public boolean hasEqualAnnotations(androidx.compose.ui.text.AnnotatedString other);
     method public boolean hasLinkAnnotations(int start, int end);
+    method public boolean hasSameDrawAffectingAnnotations(androidx.compose.ui.text.AnnotatedString other);
+    method public boolean hasSameLayoutAffectingAnnotations(androidx.compose.ui.text.AnnotatedString other);
     method public boolean hasStringAnnotations(String tag, int start, int end);
     method @BytecodeOnly public int length();
     method public androidx.compose.ui.text.AnnotatedString mapAnnotations(kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>,? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>> transform);
@@ -63,6 +66,7 @@ package androidx.compose.ui.text {
     method @KotlinOnly public void addBullet(androidx.compose.ui.text.Bullet bullet, androidx.compose.ui.unit.TextUnit indentation, int start, int end);
     method public void addBullet(androidx.compose.ui.text.Bullet bullet, int start, int end);
     method @BytecodeOnly public void addBullet-r9BaKPg(androidx.compose.ui.text.Bullet, long, int, int);
+    method public void addDrawAnnotation(androidx.compose.ui.text.DrawAnnotation drawAnnotation, int start, int end);
     method public void addLink(androidx.compose.ui.text.LinkAnnotation.Clickable clickable, int start, int end);
     method public void addLink(androidx.compose.ui.text.LinkAnnotation.Url url, int start, int end);
     method public void addStringAnnotation(String tag, String annotation, int start, int end);
@@ -142,9 +146,81 @@ package androidx.compose.ui.text {
     method public static inline <R> R withAnnotation(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.TtsAnnotation ttsAnnotation, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method @Deprecated @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public static inline <R> R withAnnotation(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.UrlAnnotation urlAnnotation, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method public static inline <R> R withAnnotation(androidx.compose.ui.text.AnnotatedString.Builder, String tag, String annotation, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
+    method public static inline <R> R withDrawAnnotation(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.DrawAnnotation drawAnnotation, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method public static inline <R> R withLink(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.LinkAnnotation link, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method public static inline <R> R withStyle(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.ParagraphStyle style, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method public static inline <R> R withStyle(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.SpanStyle style, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
+  }
+
+  @androidx.compose.runtime.Immutable public final class BackgroundAnnotation extends androidx.compose.ui.text.DrawAnnotation {
+    ctor @KotlinOnly public BackgroundAnnotation(androidx.compose.ui.graphics.Brush brush, optional androidx.compose.ui.unit.Dp cornerRadius, optional androidx.compose.ui.text.BackgroundAnnotation.SpreadValues spread, optional boolean mergeLines, optional androidx.compose.ui.text.BackgroundAnnotation.Border? border, optional @FloatRange(from=0.0, to=1.0) float alpha);
+    ctor @BytecodeOnly public BackgroundAnnotation(androidx.compose.ui.graphics.Brush!, float, androidx.compose.ui.text.BackgroundAnnotation.SpreadValues!, boolean, androidx.compose.ui.text.BackgroundAnnotation.Border!, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation(androidx.compose.ui.graphics.Brush!, float, androidx.compose.ui.text.BackgroundAnnotation.SpreadValues!, boolean, androidx.compose.ui.text.BackgroundAnnotation.Border!, @FloatRange(from=0.0, to=1.0) float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @KotlinOnly public BackgroundAnnotation(androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.unit.Dp cornerRadius, optional androidx.compose.ui.text.BackgroundAnnotation.SpreadValues spread, optional boolean mergeLines, optional androidx.compose.ui.text.BackgroundAnnotation.Border? border, optional @FloatRange(from=0.0, to=1.0) float alpha);
+    ctor @KotlinOnly public BackgroundAnnotation(androidx.compose.ui.graphics.ColorProducer colorProducer, optional androidx.compose.ui.unit.Dp cornerRadius, optional androidx.compose.ui.text.BackgroundAnnotation.SpreadValues spread, optional boolean mergeLines, optional androidx.compose.ui.text.BackgroundAnnotation.Border? border, optional @FloatRange(from=0.0, to=1.0) float alpha);
+    ctor @BytecodeOnly public BackgroundAnnotation(androidx.compose.ui.graphics.ColorProducer!, float, androidx.compose.ui.text.BackgroundAnnotation.SpreadValues!, boolean, androidx.compose.ui.text.BackgroundAnnotation.Border!, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation(androidx.compose.ui.graphics.ColorProducer!, float, androidx.compose.ui.text.BackgroundAnnotation.SpreadValues!, boolean, androidx.compose.ui.text.BackgroundAnnotation.Border!, @FloatRange(from=0.0, to=1.0) float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation(long, float, androidx.compose.ui.text.BackgroundAnnotation.SpreadValues!, boolean, androidx.compose.ui.text.BackgroundAnnotation.Border!, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation(long, float, androidx.compose.ui.text.BackgroundAnnotation.SpreadValues!, boolean, androidx.compose.ui.text.BackgroundAnnotation.Border!, @FloatRange(from=0.0, to=1.0) float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public float getAlpha();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.BackgroundAnnotation.Border? getBorder();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Brush? getBrush();
+    method @BytecodeOnly public long getColor-0d7_KjU();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.ColorProducer? getColorProducer();
+    method @BytecodeOnly public float getCornerRadius-D9Ej5fM();
+    method @InaccessibleFromKotlin public boolean getMergeLines();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.BackgroundAnnotation.SpreadValues getSpread();
+    property public float alpha;
+    property public androidx.compose.ui.text.BackgroundAnnotation.Border? border;
+    property public androidx.compose.ui.graphics.Brush? brush;
+    property public androidx.compose.ui.graphics.Color color;
+    property public androidx.compose.ui.graphics.ColorProducer? colorProducer;
+    property public androidx.compose.ui.unit.Dp cornerRadius;
+    property public boolean mergeLines;
+    property public androidx.compose.ui.text.BackgroundAnnotation.SpreadValues spread;
+  }
+
+  @androidx.compose.runtime.Immutable public static final class BackgroundAnnotation.Border {
+    ctor @KotlinOnly public BackgroundAnnotation.Border(androidx.compose.ui.unit.Dp width, androidx.compose.ui.graphics.Brush brush);
+    ctor @KotlinOnly public BackgroundAnnotation.Border(androidx.compose.ui.unit.Dp width, androidx.compose.ui.graphics.Color color);
+    ctor @KotlinOnly public BackgroundAnnotation.Border(androidx.compose.ui.unit.Dp width, androidx.compose.ui.graphics.ColorProducer colorProducer);
+    ctor @BytecodeOnly public BackgroundAnnotation.Border(float, androidx.compose.ui.graphics.Brush!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation.Border(float, androidx.compose.ui.graphics.ColorProducer!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation.Border(float, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Brush? getBrush();
+    method @BytecodeOnly public long getColor-0d7_KjU();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.ColorProducer? getColorProducer();
+    method @BytecodeOnly public float getWidth-D9Ej5fM();
+    property public androidx.compose.ui.graphics.Brush? brush;
+    property public androidx.compose.ui.graphics.Color color;
+    property public androidx.compose.ui.graphics.ColorProducer? colorProducer;
+    property public androidx.compose.ui.unit.Dp width;
+  }
+
+  @androidx.compose.runtime.Immutable public static final class BackgroundAnnotation.SpreadValues {
+    ctor @BytecodeOnly public BackgroundAnnotation.SpreadValues();
+    ctor @KotlinOnly public BackgroundAnnotation.SpreadValues(androidx.compose.ui.unit.Dp all);
+    ctor @KotlinOnly public BackgroundAnnotation.SpreadValues(optional androidx.compose.ui.unit.Dp horizontal, optional androidx.compose.ui.unit.Dp vertical);
+    ctor @KotlinOnly public BackgroundAnnotation.SpreadValues(optional androidx.compose.ui.unit.Dp left, optional androidx.compose.ui.unit.Dp top, optional androidx.compose.ui.unit.Dp right, optional androidx.compose.ui.unit.Dp bottom);
+    ctor @BytecodeOnly public BackgroundAnnotation.SpreadValues(float, float, float, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation.SpreadValues(float, float, float, float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation.SpreadValues(float, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation.SpreadValues(float, float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public BackgroundAnnotation.SpreadValues(float, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @BytecodeOnly public float getBottom-D9Ej5fM();
+    method @BytecodeOnly public float getLeft-D9Ej5fM();
+    method @BytecodeOnly public float getRight-D9Ej5fM();
+    method @BytecodeOnly public float getTop-D9Ej5fM();
+    property public androidx.compose.ui.unit.Dp bottom;
+    property public androidx.compose.ui.unit.Dp left;
+    property public androidx.compose.ui.unit.Dp right;
+    property public androidx.compose.ui.unit.Dp top;
+    field public static final androidx.compose.ui.text.BackgroundAnnotation.SpreadValues.Companion Companion;
+  }
+
+  public static final class BackgroundAnnotation.SpreadValues.Companion {
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.BackgroundAnnotation.SpreadValues getZero();
+    property public androidx.compose.ui.text.BackgroundAnnotation.SpreadValues Zero;
   }
 
   public final class Bullet implements androidx.compose.ui.text.AnnotatedString.Annotation {
@@ -180,6 +256,28 @@ package androidx.compose.ui.text {
     property public androidx.compose.ui.unit.TextUnit DefaultIndentation;
     property public androidx.compose.ui.unit.TextUnit DefaultPadding;
     property public androidx.compose.ui.unit.TextUnit DefaultSize;
+  }
+
+  @androidx.compose.runtime.Stable public abstract class DrawAnnotation implements androidx.compose.ui.text.AnnotatedString.Annotation {
+    ctor public DrawAnnotation();
+    method public void drawBehind(androidx.compose.ui.text.DrawAnnotationScope);
+    method public void drawOver(androidx.compose.ui.text.DrawAnnotationScope);
+    method public abstract boolean equals(Object? other);
+    method public abstract int hashCode();
+  }
+
+  public final class DrawAnnotationKt {
+    method public static androidx.compose.ui.text.DrawAnnotation DrawAnnotation(optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.DrawAnnotationScope,kotlin.Unit>? drawBehind, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.DrawAnnotationScope,kotlin.Unit>? drawOver);
+    method @BytecodeOnly public static androidx.compose.ui.text.DrawAnnotation! DrawAnnotation$default(kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, Object!);
+  }
+
+  public interface DrawAnnotationScope extends androidx.compose.ui.graphics.drawscope.DrawScope {
+    method @InaccessibleFromKotlin public int getEnd();
+    method @InaccessibleFromKotlin public int getStart();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextLayoutResult getTextLayoutResult();
+    property public abstract int end;
+    property public abstract int start;
+    property public abstract androidx.compose.ui.text.TextLayoutResult textLayoutResult;
   }
 
   @kotlin.jvm.JvmInline public final value class EmojiSupportMatch {
@@ -581,6 +679,107 @@ package androidx.compose.ui.text {
     property public androidx.compose.ui.text.PlatformSpanStyle? spanStyle;
   }
 
+  public final class ReusableTextStyleScope implements androidx.compose.ui.text.TextStyleScope {
+    ctor public ReusableTextStyleScope();
+    method public void copyFrom(androidx.compose.ui.text.ReusableTextStyleScope other);
+    method @InaccessibleFromKotlin public float getAlpha();
+    method @BytecodeOnly public long getBackground-0d7_KjU();
+    method @BytecodeOnly public float getBaselineShift-y9eOQZs();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Brush? getBrush();
+    method @BytecodeOnly public long getColor-0d7_KjU();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.drawscope.DrawStyle? getDrawStyle();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontFamily? getFontFamily();
+    method @InaccessibleFromKotlin public String? getFontFeatureSettings();
+    method @BytecodeOnly public long getFontSize-XSAIIZE();
+    method @BytecodeOnly public androidx.compose.ui.text.font.FontStyle? getFontStyle-4Lr2A7w();
+    method @BytecodeOnly public androidx.compose.ui.text.font.FontSynthesis? getFontSynthesis-ZQGJjVo();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontWeight? getFontWeight();
+    method @BytecodeOnly public int getHyphens-vmbZdU8();
+    method @BytecodeOnly public long getLetterSpacing-XSAIIZE();
+    method @BytecodeOnly public int getLineBreak-rAG3T2k();
+    method @BytecodeOnly public long getLineHeight-XSAIIZE();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.style.LineHeightStyle? getLineHeightStyle();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.intl.LocaleList? getLocaleList();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.PlatformTextStyle? getPlatformStyle();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shadow? getShadow();
+    method @BytecodeOnly public int getTextAlign-e0LSkKk();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.style.TextDecoration? getTextDecoration();
+    method @BytecodeOnly public int getTextDirection-s_7X-co();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.style.TextGeometricTransform? getTextGeometricTransform();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.style.TextIndent? getTextIndent();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.style.TextMotion? getTextMotion();
+    method public boolean hasSameDrawAffectingAttributes(androidx.compose.ui.text.ReusableTextStyleScope other);
+    method public boolean hasSameDrawAffectingAttributes(androidx.compose.ui.text.TextStyle style);
+    method public boolean hasSameLayoutAffectingAttributes(androidx.compose.ui.text.ReusableTextStyleScope other);
+    method public boolean hasSameLayoutAffectingAttributes(androidx.compose.ui.text.TextStyle style);
+    method public void reset();
+    method public void setAlpha(float alpha);
+    method @KotlinOnly public void setBackground(androidx.compose.ui.graphics.Color background);
+    method @BytecodeOnly public void setBackground-8_81llA(long);
+    method @KotlinOnly public void setBaselineShift(androidx.compose.ui.text.style.BaselineShift baselineShift);
+    method @BytecodeOnly public void setBaselineShift-4Dl_Bck(float);
+    method public void setBrush(androidx.compose.ui.graphics.Brush brush);
+    method @KotlinOnly public void setColor(androidx.compose.ui.graphics.Color color);
+    method @BytecodeOnly public void setColor-8_81llA(long);
+    method public void setDrawStyle(androidx.compose.ui.graphics.drawscope.DrawStyle drawStyle);
+    method public void setFontFamily(androidx.compose.ui.text.font.FontFamily fontFamily);
+    method public void setFontFeatureSettings(String fontFeatureSettings);
+    method @KotlinOnly public void setFontSize(androidx.compose.ui.unit.TextUnit fontSize);
+    method @BytecodeOnly public void setFontSize--R2X_6o(long);
+    method @KotlinOnly public void setFontStyle(androidx.compose.ui.text.font.FontStyle fontStyle);
+    method @BytecodeOnly public void setFontStyle-nzbMABs(int);
+    method @KotlinOnly public void setFontSynthesis(androidx.compose.ui.text.font.FontSynthesis fontSynthesis);
+    method @BytecodeOnly public void setFontSynthesis-6p3vJLY(int);
+    method public void setFontWeight(androidx.compose.ui.text.font.FontWeight fontWeight);
+    method @KotlinOnly public void setHyphens(androidx.compose.ui.text.style.Hyphens hyphens);
+    method @BytecodeOnly public void setHyphens--3fSNIE(int);
+    method @KotlinOnly public void setLetterSpacing(androidx.compose.ui.unit.TextUnit letterSpacing);
+    method @BytecodeOnly public void setLetterSpacing--R2X_6o(long);
+    method @KotlinOnly public void setLineBreak(androidx.compose.ui.text.style.LineBreak lineBreak);
+    method @BytecodeOnly public void setLineBreak-CZqVlQI(int);
+    method @KotlinOnly public void setLineHeight(androidx.compose.ui.unit.TextUnit lineHeight);
+    method @BytecodeOnly public void setLineHeight--R2X_6o(long);
+    method public void setLineHeightStyle(androidx.compose.ui.text.style.LineHeightStyle lineHeightStyle);
+    method public void setLocaleList(androidx.compose.ui.text.intl.LocaleList localeList);
+    method public void setPlatformStyle(androidx.compose.ui.text.PlatformTextStyle platformStyle);
+    method public void setShadow(androidx.compose.ui.graphics.Shadow shadow);
+    method @KotlinOnly public void setTextAlign(androidx.compose.ui.text.style.TextAlign textAlign);
+    method @BytecodeOnly public void setTextAlign-aXe7zB0(int);
+    method public void setTextDecoration(androidx.compose.ui.text.style.TextDecoration textDecoration);
+    method @KotlinOnly public void setTextDirection(androidx.compose.ui.text.style.TextDirection textDirection);
+    method @BytecodeOnly public void setTextDirection-Hejc4pk(int);
+    method public void setTextGeometricTransform(androidx.compose.ui.text.style.TextGeometricTransform textGeometricTransform);
+    method public void setTextIndent(androidx.compose.ui.text.style.TextIndent textIndent);
+    method public void setTextMotion(androidx.compose.ui.text.style.TextMotion textMotion);
+    method public void setTextStyle(androidx.compose.ui.text.TextStyle style);
+    property public float alpha;
+    property public androidx.compose.ui.graphics.Color background;
+    property public androidx.compose.ui.text.style.BaselineShift baselineShift;
+    property public androidx.compose.ui.graphics.Brush? brush;
+    property public androidx.compose.ui.graphics.Color color;
+    property public androidx.compose.ui.graphics.drawscope.DrawStyle? drawStyle;
+    property public androidx.compose.ui.text.font.FontFamily? fontFamily;
+    property public String? fontFeatureSettings;
+    property public androidx.compose.ui.unit.TextUnit fontSize;
+    property public androidx.compose.ui.text.font.FontStyle? fontStyle;
+    property public androidx.compose.ui.text.font.FontSynthesis? fontSynthesis;
+    property public androidx.compose.ui.text.font.FontWeight? fontWeight;
+    property public androidx.compose.ui.text.style.Hyphens hyphens;
+    property public androidx.compose.ui.unit.TextUnit letterSpacing;
+    property public androidx.compose.ui.text.style.LineBreak lineBreak;
+    property public androidx.compose.ui.unit.TextUnit lineHeight;
+    property public androidx.compose.ui.text.style.LineHeightStyle? lineHeightStyle;
+    property public androidx.compose.ui.text.intl.LocaleList? localeList;
+    property public androidx.compose.ui.text.PlatformTextStyle? platformStyle;
+    property public androidx.compose.ui.graphics.Shadow? shadow;
+    property public androidx.compose.ui.text.style.TextAlign textAlign;
+    property public androidx.compose.ui.text.style.TextDecoration? textDecoration;
+    property public androidx.compose.ui.text.style.TextDirection textDirection;
+    property public androidx.compose.ui.text.style.TextGeometricTransform? textGeometricTransform;
+    property public androidx.compose.ui.text.style.TextIndent? textIndent;
+    property public androidx.compose.ui.text.style.TextMotion? textMotion;
+  }
+
   @androidx.compose.runtime.Immutable public final class SpanStyle implements androidx.compose.ui.text.AnnotatedString.Annotation {
     ctor @KotlinOnly public SpanStyle(androidx.compose.ui.graphics.Brush? brush, optional float alpha, optional androidx.compose.ui.unit.TextUnit fontSize, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional String? fontFeatureSettings, optional androidx.compose.ui.unit.TextUnit letterSpacing, optional androidx.compose.ui.text.style.BaselineShift? baselineShift, optional androidx.compose.ui.text.style.TextGeometricTransform? textGeometricTransform, optional androidx.compose.ui.text.intl.LocaleList? localeList, optional androidx.compose.ui.graphics.Color background, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.graphics.Shadow? shadow, optional androidx.compose.ui.text.PlatformSpanStyle? platformStyle, optional androidx.compose.ui.graphics.drawscope.DrawStyle? drawStyle);
     ctor @BytecodeOnly public SpanStyle(androidx.compose.ui.graphics.Brush!, float, long, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, androidx.compose.ui.text.font.FontFamily!, String!, long, androidx.compose.ui.text.style.BaselineShift!, androidx.compose.ui.text.style.TextGeometricTransform!, androidx.compose.ui.text.intl.LocaleList!, long, androidx.compose.ui.text.style.TextDecoration!, androidx.compose.ui.graphics.Shadow!, androidx.compose.ui.text.PlatformSpanStyle!, androidx.compose.ui.graphics.drawscope.DrawStyle!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -737,8 +936,12 @@ package androidx.compose.ui.text {
     method @KotlinOnly public androidx.compose.ui.text.TextLayoutResult copy(optional androidx.compose.ui.text.TextLayoutInput layoutInput, optional androidx.compose.ui.unit.IntSize size);
     method @BytecodeOnly public androidx.compose.ui.text.TextLayoutResult copy-O0kMr_c(androidx.compose.ui.text.TextLayoutInput, long);
     method @BytecodeOnly public static androidx.compose.ui.text.TextLayoutResult! copy-O0kMr_c$default(androidx.compose.ui.text.TextLayoutResult!, androidx.compose.ui.text.TextLayoutInput!, long, int, Object!);
+    method @KotlinOnly public void fillPathForRange(int start, int end, androidx.compose.ui.graphics.Path target, optional androidx.compose.ui.geometry.CornerRadius cornerRadius, optional boolean mergeLines);
+    method @BytecodeOnly public void fillPathForRange-w_Dsyms(int, int, androidx.compose.ui.graphics.Path, long, boolean);
+    method @BytecodeOnly public static void fillPathForRange-w_Dsyms$default(androidx.compose.ui.text.TextLayoutResult!, int, int, androidx.compose.ui.graphics.Path!, long, boolean, int, Object!);
     method public androidx.compose.ui.text.style.ResolvedTextDirection getBidiRunDirection(int offset);
     method public androidx.compose.ui.geometry.Rect getBoundingBox(int offset);
+    method public java.util.List<androidx.compose.ui.geometry.Rect> getBoundingBoxesForRange(int start, int end);
     method public androidx.compose.ui.geometry.Rect getCursorRect(int offset);
     method @InaccessibleFromKotlin public boolean getDidOverflowHeight();
     method @InaccessibleFromKotlin public boolean getDidOverflowWidth();
@@ -995,6 +1198,48 @@ package androidx.compose.ui.text {
     method public static androidx.compose.ui.text.TextStyle resolveDefaults(androidx.compose.ui.text.TextStyle style, androidx.compose.ui.unit.LayoutDirection direction);
   }
 
+  public sealed nonexhaustive interface TextStyleScope {
+    method public void setAlpha(float alpha);
+    method @KotlinOnly public void setBackground(androidx.compose.ui.graphics.Color background);
+    method @BytecodeOnly public void setBackground-8_81llA(long);
+    method @KotlinOnly public void setBaselineShift(androidx.compose.ui.text.style.BaselineShift baselineShift);
+    method @BytecodeOnly public void setBaselineShift-4Dl_Bck(float);
+    method public void setBrush(androidx.compose.ui.graphics.Brush brush);
+    method @KotlinOnly public void setColor(androidx.compose.ui.graphics.Color color);
+    method @BytecodeOnly public void setColor-8_81llA(long);
+    method public void setDrawStyle(androidx.compose.ui.graphics.drawscope.DrawStyle drawStyle);
+    method public void setFontFamily(androidx.compose.ui.text.font.FontFamily fontFamily);
+    method public void setFontFeatureSettings(String fontFeatureSettings);
+    method @KotlinOnly public void setFontSize(androidx.compose.ui.unit.TextUnit fontSize);
+    method @BytecodeOnly public void setFontSize--R2X_6o(long);
+    method @KotlinOnly public void setFontStyle(androidx.compose.ui.text.font.FontStyle fontStyle);
+    method @BytecodeOnly public void setFontStyle-nzbMABs(int);
+    method @KotlinOnly public void setFontSynthesis(androidx.compose.ui.text.font.FontSynthesis fontSynthesis);
+    method @BytecodeOnly public void setFontSynthesis-6p3vJLY(int);
+    method public void setFontWeight(androidx.compose.ui.text.font.FontWeight fontWeight);
+    method @KotlinOnly public void setHyphens(androidx.compose.ui.text.style.Hyphens hyphens);
+    method @BytecodeOnly public void setHyphens--3fSNIE(int);
+    method @KotlinOnly public void setLetterSpacing(androidx.compose.ui.unit.TextUnit letterSpacing);
+    method @BytecodeOnly public void setLetterSpacing--R2X_6o(long);
+    method @KotlinOnly public void setLineBreak(androidx.compose.ui.text.style.LineBreak lineBreak);
+    method @BytecodeOnly public void setLineBreak-CZqVlQI(int);
+    method @KotlinOnly public void setLineHeight(androidx.compose.ui.unit.TextUnit lineHeight);
+    method @BytecodeOnly public void setLineHeight--R2X_6o(long);
+    method public void setLineHeightStyle(androidx.compose.ui.text.style.LineHeightStyle lineHeightStyle);
+    method public void setLocaleList(androidx.compose.ui.text.intl.LocaleList localeList);
+    method public void setPlatformStyle(androidx.compose.ui.text.PlatformTextStyle platformStyle);
+    method public void setShadow(androidx.compose.ui.graphics.Shadow shadow);
+    method @KotlinOnly public void setTextAlign(androidx.compose.ui.text.style.TextAlign textAlign);
+    method @BytecodeOnly public void setTextAlign-aXe7zB0(int);
+    method public void setTextDecoration(androidx.compose.ui.text.style.TextDecoration textDecoration);
+    method @KotlinOnly public void setTextDirection(androidx.compose.ui.text.style.TextDirection textDirection);
+    method @BytecodeOnly public void setTextDirection-Hejc4pk(int);
+    method public void setTextGeometricTransform(androidx.compose.ui.text.style.TextGeometricTransform textGeometricTransform);
+    method public void setTextIndent(androidx.compose.ui.text.style.TextIndent textIndent);
+    method public void setTextMotion(androidx.compose.ui.text.style.TextMotion textMotion);
+    method public void setTextStyle(androidx.compose.ui.text.TextStyle style);
+  }
+
   public abstract sealed exhaustive class TtsAnnotation implements androidx.compose.ui.text.AnnotatedString.Annotation {
   }
 
@@ -1162,40 +1407,40 @@ package androidx.compose.ui.text.font {
   }
 
   @androidx.compose.runtime.Immutable public final class FontListFontFamily extends androidx.compose.ui.text.font.FileBasedFontFamily implements kotlin.jvm.internal.markers.KMappedMarker java.util.List<androidx.compose.ui.text.font.Font> {
-    method @BytecodeOnly public boolean add(androidx.compose.ui.text.font.Font!);
-    method @BytecodeOnly public void add(int, androidx.compose.ui.text.font.Font!);
-    method @BytecodeOnly public boolean addAll(int, java.util.Collection<? extends androidx.compose.ui.text.font.Font!>!);
-    method @BytecodeOnly public boolean addAll(java.util.Collection<? extends androidx.compose.ui.text.font.Font!>!);
+    method @InaccessibleFromKotlin public boolean add(androidx.compose.ui.text.font.Font! p);
+    method @InaccessibleFromKotlin public void add(int p, androidx.compose.ui.text.font.Font! p1);
+    method @InaccessibleFromKotlin public boolean addAll(int p, java.util.Collection<? extends androidx.compose.ui.text.font.Font!>! p1);
+    method @InaccessibleFromKotlin public boolean addAll(java.util.Collection<? extends androidx.compose.ui.text.font.Font!>! p);
     method @BytecodeOnly public void addFirst(androidx.compose.ui.text.font.Font!);
     method @BytecodeOnly public void addLast(androidx.compose.ui.text.font.Font!);
-    method @BytecodeOnly public void clear();
+    method @InaccessibleFromKotlin public void clear();
     method public operator boolean contains(androidx.compose.ui.text.font.Font element);
-    method @BytecodeOnly public boolean contains(Object!);
-    method public boolean containsAll(java.util.Collection<androidx.compose.ui.text.font.Font> elements);
+    method @InaccessibleFromKotlin public boolean contains(Object element);
+    method public boolean containsAll(java.util.Collection<? extends java.lang.Object?> elements);
     method public operator androidx.compose.ui.text.font.Font get(int index);
     method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.text.font.Font> getFonts();
     method public int getSize();
     method public int indexOf(androidx.compose.ui.text.font.Font element);
-    method @BytecodeOnly public int indexOf(Object!);
+    method @InaccessibleFromKotlin public int indexOf(Object element);
     method public boolean isEmpty();
     method public operator java.util.Iterator<androidx.compose.ui.text.font.Font> iterator();
     method public int lastIndexOf(androidx.compose.ui.text.font.Font element);
-    method @BytecodeOnly public int lastIndexOf(Object!);
+    method @InaccessibleFromKotlin public int lastIndexOf(Object element);
     method public java.util.ListIterator<androidx.compose.ui.text.font.Font> listIterator();
     method public java.util.ListIterator<androidx.compose.ui.text.font.Font> listIterator(int index);
-    method @BytecodeOnly public androidx.compose.ui.text.font.Font! remove(int);
-    method @BytecodeOnly public boolean remove(Object!);
-    method @BytecodeOnly public boolean removeAll(java.util.Collection<? extends java.lang.Object!>!);
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.font.Font! remove(int p);
+    method @InaccessibleFromKotlin public boolean remove(Object! p);
+    method @InaccessibleFromKotlin public boolean removeAll(java.util.Collection<? extends java.lang.Object?>! p);
     method @BytecodeOnly public androidx.compose.ui.text.font.Font! removeFirst();
     method @BytecodeOnly public androidx.compose.ui.text.font.Font! removeLast();
     method @BytecodeOnly public void replaceAll(java.util.function.UnaryOperator<androidx.compose.ui.text.font.Font!>!);
-    method @BytecodeOnly public boolean retainAll(java.util.Collection<? extends java.lang.Object!>!);
-    method @BytecodeOnly public androidx.compose.ui.text.font.Font! set(int, androidx.compose.ui.text.font.Font!);
-    method @BytecodeOnly public int size();
+    method @InaccessibleFromKotlin public boolean retainAll(java.util.Collection<? extends java.lang.Object?>! p);
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.font.Font! set(int p, androidx.compose.ui.text.font.Font! p1);
+    method @InaccessibleFromKotlin public int size();
     method @BytecodeOnly public void sort(java.util.Comparator<? super androidx.compose.ui.text.font.Font!>!);
     method public java.util.List<androidx.compose.ui.text.font.Font> subList(int fromIndex, int toIndex);
-    method @BytecodeOnly public Object![]! toArray();
-    method @BytecodeOnly public <T> T[]! toArray(T[]!);
+    method @InaccessibleFromKotlin public Object![]! toArray();
+    method @InaccessibleFromKotlin public <T> T[]! toArray(T[]! p);
     property public java.util.List<androidx.compose.ui.text.font.Font> fonts;
     property public int size;
   }
@@ -1769,24 +2014,24 @@ package androidx.compose.ui.text.intl {
     ctor public LocaleList(androidx.compose.ui.text.intl.Locale... locales);
     ctor public LocaleList(String languageTags);
     ctor public LocaleList(java.util.List<androidx.compose.ui.text.intl.Locale> localeList);
-    method @BytecodeOnly public boolean add(androidx.compose.ui.text.intl.Locale!);
-    method @BytecodeOnly public boolean addAll(java.util.Collection<? extends androidx.compose.ui.text.intl.Locale!>!);
-    method @BytecodeOnly public void clear();
+    method @InaccessibleFromKotlin public boolean add(androidx.compose.ui.text.intl.Locale! p);
+    method @InaccessibleFromKotlin public boolean addAll(java.util.Collection<? extends androidx.compose.ui.text.intl.Locale!>! p);
+    method @InaccessibleFromKotlin public void clear();
     method public operator boolean contains(androidx.compose.ui.text.intl.Locale element);
-    method @BytecodeOnly public boolean contains(Object!);
-    method public boolean containsAll(java.util.Collection<androidx.compose.ui.text.intl.Locale> elements);
+    method @InaccessibleFromKotlin public operator boolean contains(Object element);
+    method public boolean containsAll(java.util.Collection<? extends java.lang.Object?> elements);
     method public operator androidx.compose.ui.text.intl.Locale get(int i);
     method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.text.intl.Locale> getLocaleList();
     method @InaccessibleFromKotlin public int getSize();
     method public boolean isEmpty();
     method public java.util.Iterator<androidx.compose.ui.text.intl.Locale> iterator();
-    method @BytecodeOnly public boolean remove(Object!);
-    method @BytecodeOnly public boolean removeAll(java.util.Collection<? extends java.lang.Object!>!);
+    method @InaccessibleFromKotlin public boolean remove(Object! p);
+    method @InaccessibleFromKotlin public boolean removeAll(java.util.Collection<? extends java.lang.Object?>! p);
     method @BytecodeOnly public boolean removeIf(java.util.function.Predicate<? super androidx.compose.ui.text.intl.Locale!>!);
-    method @BytecodeOnly public boolean retainAll(java.util.Collection<? extends java.lang.Object!>!);
-    method @BytecodeOnly public int size();
-    method @BytecodeOnly public Object![]! toArray();
-    method @BytecodeOnly public <T> T[]! toArray(T[]!);
+    method @InaccessibleFromKotlin public boolean retainAll(java.util.Collection<? extends java.lang.Object?>! p);
+    method @InaccessibleFromKotlin public int size();
+    method @InaccessibleFromKotlin public Object![]! toArray();
+    method @InaccessibleFromKotlin public <T> T[]! toArray(T[]! p);
     property public java.util.List<androidx.compose.ui.text.intl.Locale> localeList;
     property public int size;
     field public static final androidx.compose.ui.text.intl.LocaleList.Companion Companion;
@@ -1810,6 +2055,7 @@ package androidx.compose.ui.text.platform {
   }
 
   @BytecodeOnly @kotlin.PublishedApi internal final class SynchronizedObject {
+    ctor public SynchronizedObject();
   }
 
 }

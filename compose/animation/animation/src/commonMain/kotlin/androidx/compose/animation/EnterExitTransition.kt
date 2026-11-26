@@ -48,12 +48,14 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.modifier.ModifierLocalMap
 import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.requireLayoutCoordinates
+import androidx.compose.ui.node.updateLayerBlock
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
@@ -1199,6 +1201,7 @@ internal operator fun <T : TransitionEffect> ExitTransition.get(key: TransitionE
 internal fun Transition<EnterExitState>.createEnterExitModifier(
     state: EnterExitModifierState,
     isEnabled: () -> Boolean = { true },
+    provideTransformState: Boolean = false,
     label: String,
 ): Modifier {
     val activeEnter = state.enter
@@ -1275,7 +1278,7 @@ internal fun Transition<EnterExitState>.createEnterExitModifier(
                 slideAnimation,
                 activeEnter,
                 activeExit,
-                activeMutableState,
+                if (provideTransformState) activeMutableState else null,
                 isEnabled,
                 graphicsLayerBlock,
             )
@@ -1308,12 +1311,7 @@ private class EnterExitTransitionTracker {
         targetState: EnterExitState,
         isSeeking: Boolean,
     ): EnterExitModifierState {
-        trackActiveMutableState(
-            mutableTransformData,
-            pendingTargetState,
-            currentState,
-            targetState,
-        )
+        trackActiveMutableState(mutableTransformData, pendingTargetState, currentState, targetState)
         trackActiveEnter(enter, currentState, targetState, isSeeking)
         trackActiveExit(exit, currentState, targetState, isSeeking)
         return EnterExitModifierState(activeTransformState, activeEnter, activeExit)
@@ -1340,9 +1338,13 @@ private class EnterExitTransitionTracker {
             activeState.clear()
         }
 
+        if (!isMutating) {
+            startTransformStateCatchup = false
+        } else if (!wasMutating) {
+            startTransformStateCatchup = !isSettled
+        }
         lastTarget = targetState
         wasMutating = isMutating
-        startTransformStateCatchup = isMutating && !isSettled
     }
 
     private fun trackActiveEnter(
@@ -1462,9 +1464,7 @@ internal fun updateEnterExitModifierState(
             transition.isSeeking,
         )
     if (tracker.startTransformStateCatchup) {
-        LaunchedEffect(tracker) {
-            tracker.activeTransformState.startCatchUp()
-        }
+        LaunchedEffect(tracker) { tracker.activeTransformState.startCatchUp() }
     }
     return modifierState
 }
@@ -1626,7 +1626,7 @@ private class EnterExitTransitionModifierNode(
     var slideAnimation: Transition<EnterExitState>.DeferredAnimation<IntOffset, AnimationVector2D>?,
     var enter: EnterTransition,
     var exit: ExitTransition,
-    mutableTransformState: SharedMutableTransformState,
+    mutableTransformState: SharedMutableTransformState?,
     var isEnabled: () -> Boolean,
     var graphicsLayerBlock: GraphicsLayerBlockForEnterExit,
 ) :
@@ -1634,19 +1634,24 @@ private class EnterExitTransitionModifierNode(
     LayoutAwareModifierNode,
     ModifierLocalModifierNode {
 
-    var mutableTransformState: SharedMutableTransformState = mutableTransformState
+    var mutableTransformState: SharedMutableTransformState? = mutableTransformState
         set(value) {
             if (field != value) {
                 field = value
-                provide(ModifierLocalSharedMutableTransformState, value)
+                if (value != null) {
+                    provide(ModifierLocalSharedMutableTransformState, value)
+                }
             }
         }
 
-    override val providedValues =
+    private val transformStateMap =
         modifierLocalMapOf(ModifierLocalSharedMutableTransformState to mutableTransformState)
 
+    override val providedValues: ModifierLocalMap
+        get() = if (mutableTransformState != null) transformStateMap else modifierLocalMapOf()
+
     override fun onPlaced(coordinates: LayoutCoordinates) {
-        this.mutableTransformState.parentLayoutCoordinates = coordinates
+        this.mutableTransformState?.parentLayoutCoordinates = coordinates
     }
 
     private var lookaheadConstraintsAvailable = false
@@ -1754,23 +1759,30 @@ private class EnterExitTransitionModifierNode(
             val animSlideOffsetState =
                 slideAnimation?.animate(
                     transitionSpec = slideSpec,
-                    forcedInitialValue = mutableTransformState.slideHandoffValue,
-                    forcedInitialVelocity = mutableTransformState.slideHandoffVelocity,
+                    forcedInitialValue = mutableTransformState?.slideHandoffValue,
+                    forcedInitialVelocity = mutableTransformState?.slideHandoffVelocity,
                 ) {
                     slideTargetValueByState(it, target)
                 }
 
             return layout(currentSize.width, currentSize.height) {
+                val slideOffset = animSlideOffsetState?.value ?: IntOffset.Zero
                 val combinedSlideOffset =
-                    mutableTransformState.combinedSlide(
-                        transitionValue = animSlideOffsetState?.value ?: IntOffset.Zero,
+                    mutableTransformState?.combinedSlide(
+                        transitionValue = slideOffset,
                         fullSize = measuredSize,
-                    )
+                    ) ?: slideOffset
 
                 val offset =
                     (currentAlignment?.align(target, currentSize, LayoutDirection.Ltr)
                         ?: IntOffset.Zero) + combinedSlideOffset
 
+                if (mutableTransformState?.isMutating == true) {
+                    // `combinedSlide` above just evaluated the mutable transform. Force the layer
+                    // to update immediately before `placeWithLayer` places children (such as
+                    // in-place shared elements).
+                    updateLayerBlock(layerBlock)
+                }
                 placeable.placeWithLayer(
                     offset.x + offsetDelta.x,
                     offset.y + offsetDelta.y,
@@ -1818,7 +1830,7 @@ private class EnterExitTransitionElement(
     var slideAnimation: Transition<EnterExitState>.DeferredAnimation<IntOffset, AnimationVector2D>?,
     var enter: EnterTransition,
     var exit: ExitTransition,
-    var mutableTransformState: SharedMutableTransformState,
+    var mutableTransformState: SharedMutableTransformState?,
     var isEnabled: () -> Boolean,
     var graphicsLayerBlock: GraphicsLayerBlockForEnterExit,
 ) : ModifierNodeElement<EnterExitTransitionModifierNode>() {

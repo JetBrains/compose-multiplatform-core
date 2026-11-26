@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.toSize
@@ -137,10 +138,26 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
     fun tryInitializingCurrentBounds() = stateMachine.tryInitializingCurrentBounds()
 
     fun onSharedTransitionFinished() {
+        pendingTargetBounds = null
         if (enabledEntries.size <= 1 || !enabledEntries.hasVisibleContent()) {
             stateMachine.resetState()
         }
     }
+
+    internal var pendingTargetBounds: Rect? by mutableStateOf(null)
+        private set
+
+    /**
+     * Returns the incoming entry during the deferred phase of a
+     * [DeferredTransition][androidx.compose.animation.core.DeferredTransition], or `null` if none
+     * exists.
+     *
+     * When an incoming match exists during deferral, rendering hands off to it. If there is no
+     * incoming match (e.g., deferring to an unmatched state while a transition is in flight), the
+     * current [SharedElementEntry.target] entry keeps rendering.
+     */
+    internal val pendingTargetEntry: SharedElementEntry?
+        get() = enabledEntries.fastFirstOrNull { it.pendingTarget == true }
 
     /**
      * This is queried by developers for active match. We need to therefore return the possibility
@@ -164,7 +181,6 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
         if (state.boundsAnimation.target && matchState.activeMatchFound) {
             with(placementScope) {
                 coordinates?.let {
-                    val lookaheadSize = it.size.toSize()
                     val topLeft =
                         with(state.sharedElement.scope) {
                             state.sharedElement.scope.lookaheadRoot.localLookaheadPositionOf(it)
@@ -176,8 +192,37 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
                                 includeMotionFrameOfReference = false,
                             )
                         }
-
-                    stateMachine.configureActiveMatch(lookaheadSize, topLeft, structuralOffset)
+                    if (state.isDeferredExiting()) {
+                        // Initialize the match once from the outgoing entry's pre-transition bounds
+                        // on screen (the same source non-deferred transitions use for the outgoing
+                        // entry's starting bounds) rather than re-reading the outgoing entry's
+                        // lookahead size and structural offset during the transition. MFR offset
+                        // changes (e.g. scrolling of the outgoing content) are still tracked, but
+                        // only take effect while a transition is active.
+                        val mfrOffset = topLeft - structuralOffset
+                        if (!matchState.matchIsOrHasBeenConfigured) {
+                            matchState.initializeCurrentBounds(this@SharedElement)?.let { bounds ->
+                                stateMachine.configureActiveMatch(
+                                    bounds.size,
+                                    bounds.topLeft,
+                                    bounds.topLeft - mfrOffset,
+                                )
+                            }
+                        } else {
+                            matchState.targetData?.currentMfrOffset = mfrOffset
+                        }
+                    } else {
+                        val lookaheadSize = it.size.toSize()
+                        stateMachine.configureActiveMatch(lookaheadSize, topLeft, structuralOffset)
+                    }
+                }
+            }
+        } else if (state.isDeferredEntering() && matchState.activeMatchFound) {
+            with(placementScope) {
+                coordinates?.let {
+                    val lookaheadSize = it.size.toSize()
+                    val topLeft = with(scope) { lookaheadRoot.localLookaheadPositionOf(it) }
+                    pendingTargetBounds = Rect(topLeft, lookaheadSize)
                 }
             }
         }

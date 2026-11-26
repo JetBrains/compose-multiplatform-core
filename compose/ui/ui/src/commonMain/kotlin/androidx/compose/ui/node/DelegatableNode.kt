@@ -17,11 +17,11 @@
 package androidx.compose.ui.node
 
 import androidx.annotation.EmptySuper
+import androidx.collection.MutableObjectList
 import androidx.collection.MutableScatterSet
 import androidx.collection.ScatterSet
+import androidx.collection.mutableObjectListOf
 import androidx.collection.mutableScatterSetOf
-import androidx.compose.runtime.collection.MutableVector
-import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -140,12 +140,12 @@ internal fun DelegatableNode.nearestAncestor(mask: Int): Modifier.Node? {
 
 private fun LayoutNode.getChildren(zOrder: Boolean) =
     if (zOrder) {
-        zSortedChildren
+        zSortedChildrenList
     } else {
         _children
     }
 
-private fun MutableVector<Modifier.Node>.addLayoutNodeChildren(
+private fun MutableObjectList<Modifier.Node>.addLayoutNodeChildren(
     node: Modifier.Node,
     zOrder: Boolean,
 ) {
@@ -158,11 +158,11 @@ internal inline fun DelegatableNode.visitChildren(
     block: (Modifier.Node) -> Unit,
 ) {
     checkPrecondition(node.isAttached) { "visitChildren called on an unattached node" }
-    val branches = mutableVectorOf<Modifier.Node>()
+    val branches = mutableObjectListOf<Modifier.Node>()
     val child = node.child
     if (child == null) branches.addLayoutNodeChildren(node, zOrder) else branches.add(child)
     while (branches.isNotEmpty()) {
-        val branch = branches.removeAt(branches.lastIndex)
+        val branch = branches.removeAt(branches.size - 1)
         if (branch.aggregateChildKindSet and mask == 0) {
             branches.addLayoutNodeChildren(branch, zOrder)
             // none of these nodes match the mask, so don't bother traversing them
@@ -189,7 +189,7 @@ internal inline fun DelegatableNode.visitSubtreeIf(
     block: (Modifier.Node) -> Boolean,
 ) {
     checkPrecondition(node.isAttached) { "visitSubtreeIf called on an unattached node" }
-    val branches = mutableVectorOf<Modifier.Node>()
+    val branches = mutableObjectListOf<Modifier.Node>()
     val child = node.child
     if (child == null) branches.addLayoutNodeChildren(node, zOrder) else branches.add(child)
     outer@ while (branches.isNotEmpty()) {
@@ -477,12 +477,14 @@ public fun DelegatableNode.invalidateDrawForSubtree() {
  * is attached to to let the underlying platform know that a scroll event happened in this
  * [LayoutNode].
  *
- * On Android this will trigger a ViewTreeObserver onScrollChanged callback.
+ * On Android, this triggers a `ViewTreeObserver` `onScrollChanged` callback. It also reports the
+ * pixel delta on `TYPE_VIEW_SCROLLED` accessibility events.
  *
- * @param delta The scroll delta that was consumed by this node.
+ * @param delta the scroll delta this node consumed, in pointer coordinates. Positive x or y means
+ *   the content moved right or down on screen.
  */
 public fun DelegatableNode.dispatchOnScrollChanged(delta: Offset): Unit =
-    requireOwner().dispatchOnScrollChanged(delta)
+    requireOwner().dispatchOnScrollChanged(requireLayoutNode(), delta)
 
 /** Call this function to find the nearest [BeyondBoundsLayout] to the current node. */
 @Suppress("DEPRECATION")
@@ -586,7 +588,7 @@ internal inline fun <reified T> Modifier.Node.dispatchForKind(
     dispatchToDelegates: Boolean,
     block: (T) -> Unit,
 ) {
-    var stack: MutableVector<Modifier.Node>? = null
+    var stack: MutableObjectList<Modifier.Node>? = null
     var node: Modifier.Node? = this
     while (node != null) {
         val dispatchAgain =
@@ -611,7 +613,7 @@ internal inline fun <reified T> Modifier.Node.dispatchForKind(
                     } else {
                         // turns out there are multiple delegates that implement this kind, so we
                         // have to allocate in this case.
-                        stack = stack ?: mutableVectorOf()
+                        stack = stack ?: mutableObjectListOf()
                         val theNode = node
                         if (theNode != null) {
                             stack?.add(theNode)
@@ -630,6 +632,6 @@ internal inline fun <reified T> Modifier.Node.dispatchForKind(
     }
 }
 
-private fun MutableVector<Modifier.Node>?.pop(): Modifier.Node? {
+private fun MutableObjectList<Modifier.Node>?.pop(): Modifier.Node? {
     return if (this == null || isEmpty()) null else removeAt(size - 1)
 }

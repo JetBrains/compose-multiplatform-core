@@ -237,6 +237,13 @@ public final class androidx/compose/animation/core/ArcMode$Companion {
 	public final fun getArcLinear--9T-Mq4 ()I
 }
 
+public final class androidx/compose/animation/core/ComposeAnimationCoreFlags {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/animation/core/ComposeAnimationCoreFlags;
+	public static field isNanosecondAnimationSpecEnabled Z
+	public static field isSeekableTransitionStateStartAfterLayoutEnabled Z
+}
+
 public final class androidx/compose/animation/core/CubicBezierEasing : androidx/compose/animation/core/Easing {
 	public static final field $stable I
 	public fun <init> (FFFF)V
@@ -347,6 +354,9 @@ public final class androidx/compose/animation/core/EasingKt {
 	public static final fun getFastOutSlowInEasing ()Landroidx/compose/animation/core/Easing;
 	public static final fun getLinearEasing ()Landroidx/compose/animation/core/Easing;
 	public static final fun getLinearOutSlowInEasing ()Landroidx/compose/animation/core/Easing;
+}
+
+public abstract interface annotation class androidx/compose/animation/core/ExperimentalAnimationCoreApi : java/lang/annotation/Annotation {
 }
 
 public abstract interface annotation class androidx/compose/animation/core/ExperimentalAnimationSpecApi : java/lang/annotation/Annotation {
@@ -461,6 +471,18 @@ public final class androidx/compose/animation/core/InfiniteTransitionKt {
 }
 
 public abstract interface annotation class androidx/compose/animation/core/InternalAnimationApi : java/lang/annotation/Annotation {
+}
+
+public final class androidx/compose/animation/core/InterruptionAwareAnimationSpec : androidx/compose/animation/core/FiniteAnimationSpec {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/FiniteAnimationSpec;)V
+	public synthetic fun <init> (Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/FiniteAnimationSpec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
+	public final fun getInterruptionSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
+	public fun hashCode ()I
+	public synthetic fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedAnimationSpec;
+	public fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedFiniteAnimationSpec;
 }
 
 public abstract class androidx/compose/animation/core/KeyframeBaseEntity {

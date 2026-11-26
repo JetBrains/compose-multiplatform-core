@@ -15,10 +15,10 @@
  */
 
 @file:OptIn(ExperimentalFoundationStyleApi::class)
+@file:Suppress("DEPRECATION")
 
 package androidx.compose.foundation.benchmark
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,7 +39,6 @@ import androidx.compose.foundation.style.CommonStyle
 import androidx.compose.foundation.style.ExperimentalFoundationStyleApi
 import androidx.compose.foundation.style.MutableStyleState
 import androidx.compose.foundation.style.Style
-import androidx.compose.foundation.style.StyleResolver
 import androidx.compose.foundation.style.StyleScope
 import androidx.compose.foundation.style.animate
 import androidx.compose.foundation.style.border
@@ -50,6 +49,7 @@ import androidx.compose.foundation.style.externalPadding
 import androidx.compose.foundation.style.focused
 import androidx.compose.foundation.style.hovered
 import androidx.compose.foundation.style.pressed
+import androidx.compose.foundation.style.rememberStyleResolver
 import androidx.compose.foundation.style.size
 import androidx.compose.foundation.style.styleResolver
 import androidx.compose.foundation.style.styleable
@@ -147,7 +147,6 @@ class StyleBenchmark(val isStyle: Boolean) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 class BasicTextTestCase(@Suppress("unused") val isStyle: Boolean) : LayeredComposeTestCase() {
     @Composable
     override fun MeasuredContent() {
@@ -474,7 +473,7 @@ fun StyleText(
     color: ColorProducer? = null,
     autoSize: TextAutoSize? = null,
 ) {
-    val styleResolver = remember(style) { StyleResolver(style) }
+    val styleResolver = rememberStyleResolver(style)
     BasicText(
         text = text,
         modifier = modifier.styleResolver(styleResolver),

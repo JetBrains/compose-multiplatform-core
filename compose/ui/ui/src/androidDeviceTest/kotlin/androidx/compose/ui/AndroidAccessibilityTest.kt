@@ -269,7 +269,10 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @LargeTest
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(
+    ExperimentalMaterialApi::class,
+    androidx.compose.ui.platform.ExperimentalComposeUiHostApi::class,
+)
 @RunWith(AndroidJUnit4::class)
 class AndroidAccessibilityTest {
     @get:Rule val rule = createAndroidComposeRule<TestActivity>()
@@ -2443,6 +2446,159 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    fun testPerformAction_showOnScreen_lazy_withContentPadding() {
+        rule.mainClock.autoAdvance = false
+
+        val lazyState = LazyListState()
+        val target0Tag = "target0"
+        val target1Tag = "target1"
+        setContent {
+            Box {
+                with(LocalDensity.current) {
+                    LazyColumn(
+                        modifier = Modifier.size(200.toDp()),
+                        state = lazyState,
+                        contentPadding = PaddingValues(top = 40.toDp(), bottom = 60.toDp()),
+                    ) {
+                        item { BasicText("First", Modifier.testTag(target0Tag).size(80.toDp())) }
+                        item { BasicText("Second", Modifier.testTag(target1Tag).size(80.toDp())) }
+                        item { BasicText("Third", Modifier.size(80.toDp())) }
+                    }
+                }
+            }
+        }
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(0)
+
+        // Second item is at [120, 200], which is within the outer bounds [0, 200] of LazyColumn
+        // but obscured by bottom contentPadding [140, 200]. ACTION_SHOW_ON_SCREEN should scroll
+        // by 60px so that Second item's bottom aligns with the padded viewport bottom (140).
+        val showOnScreen = android.R.id.accessibilityActionShowOnScreen
+        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(target1Id, showOnScreen, null)).isTrue()
+        }
+        rule.mainClock.advanceTimeBy(5000)
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(60)
+
+        // First item is now at [-20, 60], partially obscured by top contentPadding [0, 40].
+        // ACTION_SHOW_ON_SCREEN on First item should scroll back to 0 so its top aligns with 40.
+        val target0Id = rule.onNodeWithTag(target0Tag).semanticsId()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(target0Id, showOnScreen, null)).isTrue()
+        }
+        rule.mainClock.advanceTimeBy(5000)
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(0)
+    }
+
+    @Test
+    fun testPerformAction_showOnScreen_lazy_reverseLayout_withContentPadding() {
+        rule.mainClock.autoAdvance = false
+
+        val lazyState = LazyListState()
+        val target0Tag = "target0"
+        val target1Tag = "target1"
+        setContent {
+            Box {
+                with(LocalDensity.current) {
+                    LazyColumn(
+                        modifier = Modifier.size(200.toDp()),
+                        state = lazyState,
+                        reverseLayout = true,
+                        contentPadding = PaddingValues(top = 60.toDp(), bottom = 40.toDp()),
+                    ) {
+                        item { BasicText("First", Modifier.testTag(target0Tag).size(70.toDp())) }
+                        item { BasicText("Second", Modifier.testTag(target1Tag).size(70.toDp())) }
+                        item { BasicText("Third", Modifier.size(70.toDp())) }
+                    }
+                }
+            }
+        }
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(0)
+
+        // With reverseLayout = true, First item is at [90, 160] and Second item is at [20, 90],
+        // which is within the outer bounds [0, 200] but obscured by top contentPadding [0, 60].
+        // ACTION_SHOW_ON_SCREEN on Second item should scroll by 40px so its top aligns with 60.
+        val showOnScreen = android.R.id.accessibilityActionShowOnScreen
+        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(target1Id, showOnScreen, null)).isTrue()
+        }
+        rule.mainClock.advanceTimeBy(5000)
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(40)
+
+        // First item is now at [130, 200], within outer bounds [0, 200] but obscured by bottom
+        // contentPadding [160, 200]. ACTION_SHOW_ON_SCREEN on First item should scroll back to 0.
+        val target0Id = rule.onNodeWithTag(target0Tag).semanticsId()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(target0Id, showOnScreen, null)).isTrue()
+        }
+        rule.mainClock.advanceTimeBy(5000)
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(0)
+    }
+
+    @Test
+    fun testPerformAction_showOnScreen_lazyRow_rtl_withContentPadding() {
+        rule.mainClock.autoAdvance = false
+
+        val lazyState = LazyListState()
+        val target0Tag = "target0"
+        val target1Tag = "target1"
+        setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box {
+                    with(LocalDensity.current) {
+                        LazyRow(
+                            modifier = Modifier.size(200.toDp()),
+                            state = lazyState,
+                            contentPadding = PaddingValues(start = 40.toDp(), end = 60.toDp()),
+                        ) {
+                            item {
+                                BasicText("First", Modifier.testTag(target0Tag).size(70.toDp()))
+                            }
+                            item {
+                                BasicText("Second", Modifier.testTag(target1Tag).size(70.toDp()))
+                            }
+                            item { BasicText("Third", Modifier.size(70.toDp())) }
+                        }
+                    }
+                }
+            }
+        }
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(0)
+
+        // In RTL, start (40px) is on the right [160, 200] and end (60px) is on the left [0, 60].
+        // First item is at [90, 160] and Second item is at [20, 90], within outer bounds [0, 200]
+        // but obscured by left (end) contentPadding [0, 60]. ACTION_SHOW_ON_SCREEN on Second item
+        // should scroll by 40px so its left edge aligns with 60.
+        val showOnScreen = android.R.id.accessibilityActionShowOnScreen
+        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(target1Id, showOnScreen, null)).isTrue()
+        }
+        rule.mainClock.advanceTimeBy(5000)
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(40)
+
+        // First item is now at [130, 200], within outer bounds [0, 200] but obscured by right
+        // (start) contentPadding [160, 200]. ACTION_SHOW_ON_SCREEN on First item should scroll
+        // back to 0.
+        val target0Id = rule.onNodeWithTag(target0Tag).semanticsId()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(target0Id, showOnScreen, null)).isTrue()
+        }
+        rule.mainClock.advanceTimeBy(5000)
+        assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(0)
+    }
+
+    @Test
     fun testPerformAction_showOnScreen_lazynested() {
         val parentLazyState = LazyListState()
         val lazyState = LazyListState()
@@ -3382,7 +3538,7 @@ class AndroidAccessibilityTest {
     @Test
     fun sendTextEvents_whenSetText() {
         // Arrange.
-        val locale = Locale("en_US")
+        val locale = Locale("en-US")
         val initialText = "h"
         val finalText = "hello"
         setContent {
@@ -4433,17 +4589,6 @@ class AndroidAccessibilityTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    private fun withInteropHoverZOrderFlag(enabled: Boolean = true, block: () -> Unit) {
-        val saved = AndroidComposeUiFlags.isInteropHoverZOrderEnabled
-        AndroidComposeUiFlags.isInteropHoverZOrderEnabled = enabled
-        try {
-            block()
-        } finally {
-            AndroidComposeUiFlags.isInteropHoverZOrderEnabled = saved
-        }
-    }
-
     @Composable
     private fun RecordingAndroidView(
         receivedActions: MutableList<Int>,
@@ -4476,151 +4621,139 @@ class AndroidAccessibilityTest {
     private fun dispatchHover(action: Int, x: Float, y: Float): Boolean =
         androidComposeView.dispatchHoverEvent(createHoverMotionEvent(action = action, x = x, y = y))
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
-    fun testViewInterop_hoverOverComposeContentCoveringAndroidView_doesNotForwardToView() =
-        withInteropHoverZOrderFlag {
-            val overlayTag = "overlayTag"
-            val receivedActions = mutableListOf<Int>()
-            setContent {
-                Box(Modifier.size(100.dp)) {
-                    RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
-                    Box(
-                        Modifier.fillMaxSize().testTag(overlayTag).semantics {
-                            contentDescription = "Covering Overlay"
-                        }
-                    )
-                }
-            }
-
-            val overlayId = rule.onNodeWithTag(overlayTag).semanticsId()
-            val (centerX, centerY) = nodeCenter(overlayTag)
-
-            rule.runOnUiThread {
-                // Hover enter, move, and exit over covering Compose node should not reach
-                // AndroidView
-                assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, centerY)).isTrue()
-                assertThat(delegate.hoveredVirtualViewId).isEqualTo(overlayId)
-                assertThat(dispatchHover(ACTION_HOVER_MOVE, centerX, centerY)).isTrue()
-                assertThat(dispatchHover(ACTION_HOVER_EXIT, centerX, centerY)).isTrue()
-                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
-                assertThat(receivedActions).isEmpty()
-
-                // Legacy behavior when flag disabled: hover enter forwards to covered AndroidView
-                AndroidComposeUiFlags.isInteropHoverZOrderEnabled = false
-                dispatchHover(ACTION_HOVER_ENTER, centerX, centerY)
-                assertThat(receivedActions).contains(ACTION_HOVER_ENTER)
-            }
-        }
-
-    @Test
-    fun testViewInterop_hoverOverUncoveredAndroidViewInFrontOfComposeContent_forwardsToView() =
-        withInteropHoverZOrderFlag {
-            val bgTag = "backgroundCompose"
-            val receivedActions = mutableListOf<Int>()
-            setContent {
-                Box(Modifier.size(100.dp)) {
-                    Box(
-                        Modifier.fillMaxSize().testTag(bgTag).semantics {
-                            contentDescription = "Background"
-                        }
-                    )
-                    // Raw AndroidView without any Compose modifiers or semantics placed in front
-                    RecordingAndroidView(receivedActions)
-                }
-            }
-
-            val (centerX, centerY) = nodeCenter(bgTag)
-
-            rule.runOnUiThread {
-                assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, centerY)).isTrue()
-                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
-                assertThat(receivedActions).containsExactly(ACTION_HOVER_ENTER)
-            }
-        }
-
-    @Test
-    fun testViewInterop_hoverMoveFromUncoveredAndroidViewToCoveringComposeNode_synthesizesHoverExit() =
-        withInteropHoverZOrderFlag {
-            val overlayTag = "overlayTag"
-            val receivedActions = mutableListOf<Int>()
-            setContent {
-                Box(Modifier.size(100.dp)) {
-                    RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
-                    // Overlay covers the bottom half (y in 50.dp..100.dp)
-                    Box(
-                        Modifier.offset(y = 50.dp)
-                            .size(width = 100.dp, height = 50.dp)
-                            .testTag(overlayTag)
-                            .semantics { contentDescription = "Bottom Sheet" }
-                    )
-                }
-            }
-
-            val overlayId = rule.onNodeWithTag(overlayTag).semanticsId()
-            val overlayBounds =
-                with(rule.density) { rule.onNodeWithTag(overlayTag).getBoundsInRoot().toRect() }
-            val centerX = overlayBounds.center.x
-            val topHalfY = overlayBounds.top / 2f
-            val bottomHalfY = overlayBounds.center.y
-
-            rule.runOnUiThread {
-                // 1. Hover enter on uncovered top half -> forwards to AndroidView
-                assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, topHalfY)).isTrue()
-                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
-                assertThat(receivedActions).contains(ACTION_HOVER_ENTER)
-                receivedActions.clear()
-
-                // 2. Hover move onto covering overlay -> synthesizes single HOVER_EXIT to
-                // AndroidView
-                assertThat(dispatchHover(ACTION_HOVER_MOVE, centerX, bottomHalfY)).isTrue()
-                assertThat(delegate.hoveredVirtualViewId).isEqualTo(overlayId)
-                assertThat(receivedActions).containsExactly(ACTION_HOVER_EXIT)
-                receivedActions.clear()
-
-                // 3. Hover exit from overlay -> does not send duplicate HOVER_EXIT to AndroidView
-                assertThat(dispatchHover(ACTION_HOVER_EXIT, centerX, bottomHalfY)).isTrue()
-                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
-                assertThat(receivedActions).isEmpty()
-            }
-        }
-
-    @Test
-    fun testViewInterop_hoverOverHiddenAndroidView_doesNotForwardToView() =
-        withInteropHoverZOrderFlag {
-            val directTag = "directHidden"
-            val ancestorTag = "ancestorHidden"
-            val receivedActions = mutableListOf<Int>()
-            setContent {
-                Column {
-                    RecordingAndroidView(
-                        receivedActions,
-                        Modifier.size(100.dp).testTag(directTag).semantics {
-                            hideFromAccessibility()
-                        },
-                    )
-                    Box(
-                        Modifier.size(100.dp).testTag(ancestorTag).semantics(
-                            mergeDescendants = true
-                        ) {
-                            hideFromAccessibility()
-                        }
-                    ) {
-                        RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
+    fun testViewInterop_hoverOverComposeContentCoveringAndroidView_doesNotForwardToView() {
+        val overlayTag = "overlayTag"
+        val receivedActions = mutableListOf<Int>()
+        setContent {
+            Box(Modifier.size(100.dp)) {
+                RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
+                Box(
+                    Modifier.fillMaxSize().testTag(overlayTag).semantics {
+                        contentDescription = "Covering Overlay"
                     }
-                }
-            }
-
-            val (directX, directY) = nodeCenter(directTag)
-            val (ancestorX, ancestorY) = nodeCenter(ancestorTag)
-
-            rule.runOnUiThread {
-                dispatchHover(ACTION_HOVER_ENTER, directX, directY)
-                dispatchHover(ACTION_HOVER_ENTER, ancestorX, ancestorY)
-                assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
-                assertThat(receivedActions).isEmpty()
+                )
             }
         }
+
+        val overlayId = rule.onNodeWithTag(overlayTag).semanticsId()
+        val (centerX, centerY) = nodeCenter(overlayTag)
+
+        rule.runOnUiThread {
+            // Hover enter, move, and exit over covering Compose node should not reach
+            // AndroidView
+            assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, centerY)).isTrue()
+            assertThat(delegate.hoveredVirtualViewId).isEqualTo(overlayId)
+            assertThat(dispatchHover(ACTION_HOVER_MOVE, centerX, centerY)).isTrue()
+            assertThat(dispatchHover(ACTION_HOVER_EXIT, centerX, centerY)).isTrue()
+            assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+            assertThat(receivedActions).isEmpty()
+        }
+    }
+
+    @Test
+    fun testViewInterop_hoverOverUncoveredAndroidViewInFrontOfComposeContent_forwardsToView() {
+        val bgTag = "backgroundCompose"
+        val receivedActions = mutableListOf<Int>()
+        setContent {
+            Box(Modifier.size(100.dp)) {
+                Box(
+                    Modifier.fillMaxSize().testTag(bgTag).semantics {
+                        contentDescription = "Background"
+                    }
+                )
+                // Raw AndroidView without any Compose modifiers or semantics placed in front
+                RecordingAndroidView(receivedActions)
+            }
+        }
+
+        val (centerX, centerY) = nodeCenter(bgTag)
+
+        rule.runOnUiThread {
+            assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, centerY)).isTrue()
+            assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+            assertThat(receivedActions).containsExactly(ACTION_HOVER_ENTER)
+        }
+    }
+
+    @Test
+    fun testViewInterop_hoverMoveFromUncoveredAndroidViewToCoveringComposeNode_synthesizesHoverExit() {
+        val overlayTag = "overlayTag"
+        val receivedActions = mutableListOf<Int>()
+        setContent {
+            Box(Modifier.size(100.dp)) {
+                RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
+                // Overlay covers the bottom half (y in 50.dp..100.dp)
+                Box(
+                    Modifier.offset(y = 50.dp)
+                        .size(width = 100.dp, height = 50.dp)
+                        .testTag(overlayTag)
+                        .semantics { contentDescription = "Bottom Sheet" }
+                )
+            }
+        }
+
+        val overlayId = rule.onNodeWithTag(overlayTag).semanticsId()
+        val overlayBounds =
+            with(rule.density) { rule.onNodeWithTag(overlayTag).getBoundsInRoot().toRect() }
+        val centerX = overlayBounds.center.x
+        val topHalfY = overlayBounds.top / 2f
+        val bottomHalfY = overlayBounds.center.y
+
+        rule.runOnUiThread {
+            // 1. Hover enter on uncovered top half -> forwards to AndroidView
+            assertThat(dispatchHover(ACTION_HOVER_ENTER, centerX, topHalfY)).isTrue()
+            assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+            assertThat(receivedActions).contains(ACTION_HOVER_ENTER)
+            receivedActions.clear()
+
+            // 2. Hover move onto covering overlay -> synthesizes single HOVER_EXIT to
+            // AndroidView
+            assertThat(dispatchHover(ACTION_HOVER_MOVE, centerX, bottomHalfY)).isTrue()
+            assertThat(delegate.hoveredVirtualViewId).isEqualTo(overlayId)
+            assertThat(receivedActions).containsExactly(ACTION_HOVER_EXIT)
+            receivedActions.clear()
+
+            // 3. Hover exit from overlay -> does not send duplicate HOVER_EXIT to AndroidView
+            assertThat(dispatchHover(ACTION_HOVER_EXIT, centerX, bottomHalfY)).isTrue()
+            assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+            assertThat(receivedActions).isEmpty()
+        }
+    }
+
+    @Test
+    fun testViewInterop_hoverOverHiddenAndroidView_doesNotForwardToView() {
+        val directTag = "directHidden"
+        val ancestorTag = "ancestorHidden"
+        val receivedActions = mutableListOf<Int>()
+        setContent {
+            Column {
+                RecordingAndroidView(
+                    receivedActions,
+                    Modifier.size(100.dp).testTag(directTag).semantics {
+                        hideFromAccessibility()
+                    },
+                )
+                Box(
+                    Modifier.size(100.dp).testTag(ancestorTag).semantics(mergeDescendants = true) {
+                        hideFromAccessibility()
+                    }
+                ) {
+                    RecordingAndroidView(receivedActions, Modifier.fillMaxSize())
+                }
+            }
+        }
+
+        val (directX, directY) = nodeCenter(directTag)
+        val (ancestorX, ancestorY) = nodeCenter(ancestorTag)
+
+        rule.runOnUiThread {
+            dispatchHover(ACTION_HOVER_ENTER, directX, directY)
+            dispatchHover(ACTION_HOVER_ENTER, ancestorX, ancestorY)
+            assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
+            assertThat(receivedActions).isEmpty()
+        }
+    }
 
     @Test
     fun dispatchHoverEvent_returnsTrueForHandledAndFalseForUnhandled() {
@@ -6572,6 +6705,190 @@ class AndroidAccessibilityTest {
                         }
                     ),
                 )
+        }
+    }
+
+    @Test
+    fun clippedChildInScrollContainer_doesNotOccludeAdjacentSiblingTouchTarget() {
+        val topButtonTag = "top_button"
+        val gridItemTag = "grid_item"
+        var itemTopOffsetDp by mutableStateOf((-12).dp)
+        container.setContent {
+            Column(Modifier.size(200.dp)) {
+                // Top bar with a 48.dp clickable button (zIndex = 0f)
+                Box(Modifier.fillMaxWidth().height(56.dp)) {
+                    Box(
+                        Modifier.size(48.dp)
+                            .align(Alignment.BottomStart)
+                            .testTag(topButtonTag)
+                            .clickable {}
+                    )
+                }
+                // Clipped container below top bar with a partially scrolled/clipped clickable
+                // item
+                Box(Modifier.fillMaxWidth().height(144.dp).clipToBounds()) {
+                    Box(
+                        Modifier.offset(y = itemTopOffsetDp)
+                            .size(100.dp)
+                            .testTag(gridItemTag)
+                            .clickable {}
+                    )
+                }
+            }
+        }
+
+        val topButtonNode = rule.onNodeWithTag(topButtonTag).fetchSemanticsNode()
+        val gridItemNode = rule.onNodeWithTag(gridItemTag).fetchSemanticsNode()
+        val expectedHeight = with(rule.density) { 48.dp.roundToPx() }
+        val containerTopPx = with(rule.density) { 56.dp.roundToPx().toFloat() }
+        // Since 88.dp (>= 48.dp) of grid_item is visible inside the clipped container, its
+        // touchBoundsInRoot should be clipped to the container's top edge (56.dp).
+        assertThat(gridItemNode.touchBoundsInRoot.top).isEqualTo(containerTopPx)
+        rule.runOnIdle {
+            val topButtonAni = createAccessibilityNodeInfo(topButtonNode.id)
+            val bounds = Rect().also { topButtonAni.getBoundsInScreen(it) }
+            assertThat(bounds.height()).isEqualTo(expectedHeight)
+        }
+
+        // Now scroll the item further up so less than 48.dp (20.dp) is visible inside the
+        // clipped container. Its touchBoundsInRoot extends above the container for minimum
+        // touch target, but it still must not occlude the sibling top_button outside the
+        // clipped container.
+        rule.runOnIdle { itemTopOffsetDp = (-80).dp }
+        val gridItemNodeAfterScroll = rule.onNodeWithTag(gridItemTag).fetchSemanticsNode()
+        assertThat(gridItemNodeAfterScroll.touchBoundsInRoot.top).isLessThan(containerTopPx)
+        rule.runOnIdle {
+            val topButtonAniAfterScroll = createAccessibilityNodeInfo(topButtonNode.id)
+            val boundsAfterScroll = Rect().also { topButtonAniAfterScroll.getBoundsInScreen(it) }
+            assertThat(boundsAfterScroll.height()).isEqualTo(expectedHeight)
+        }
+    }
+
+    @Test
+    fun overlappingClippedChildrenNearContainerEdge_occludedChildIsPruned() {
+        val primaryButtonTag = "primary_button"
+        val secondaryButtonTag = "secondary_button"
+        container.setContent {
+            Box(Modifier.size(100.dp).clipToBounds()) {
+                // Two 0.dp-height clickable nodes placed 20.dp above the bottom edge of a
+                // 100.dp clipping container (at y = 80.dp). Both expand their 48.dp minimum
+                // touch target to [56.dp, 104.dp], sticking 4.dp outside the container's
+                // bottom edge (100.dp).
+                Box(
+                    Modifier.offset(y = 80.dp)
+                        .size(width = 80.dp, height = 0.dp)
+                        .testTag(primaryButtonTag)
+                        .clickable {}
+                )
+                Box(
+                    Modifier.offset(y = 80.dp)
+                        .size(width = 80.dp, height = 0.dp)
+                        .testTag(secondaryButtonTag)
+                        .clickable {}
+                )
+            }
+        }
+
+        val primaryNode = rule.onNodeWithTag(primaryButtonTag).fetchSemanticsNode()
+        val secondaryNode = rule.onNodeWithTag(secondaryButtonTag).fetchSemanticsNode()
+        val expectedHeight = with(rule.density) { 48.dp.roundToPx() }
+
+        rule.runOnIdle {
+            val rootAni = createAccessibilityNodeInfo(AccessibilityNodeProviderCompat.HOST_VIEW_ID)
+            val secondaryAni = createAccessibilityNodeInfo(secondaryNode.id)
+            val secondaryBounds = Rect().also { secondaryAni.getBoundsInScreen(it) }
+            assertThat(secondaryBounds.height()).isEqualTo(expectedHeight)
+            // The underlying primary button is 100% occluded within the clipping container and
+            // must be pruned rather than surviving with a 4.dp overhang sliver outside the
+            // container.
+            assertThat(rootAni.childCount).isEqualTo(1)
+            assertThat(provider.createAccessibilityNodeInfo(primaryNode.id)).isNull()
+        }
+    }
+
+    @Test
+    fun overlappingClippedChildrenInContainerCorner_occludedChildIsPruned() {
+        val primaryButtonTag = "primary_corner_button"
+        val secondaryButtonTag = "secondary_corner_button"
+        container.setContent {
+            Box(Modifier.padding(50.dp).size(100.dp).clipToBounds()) {
+                // Two 20.dp clickable nodes stacked in the bottom-start corner of a 100.dp
+                // clipping container. Their 48.dp minimum touch target overhangs both the left
+                // and bottom edges by 14.dp (an L-shaped overhang outside the container).
+                Box(
+                    Modifier.align(Alignment.BottomStart)
+                        .size(20.dp)
+                        .testTag(primaryButtonTag)
+                        .clickable {}
+                )
+                Box(
+                    Modifier.align(Alignment.BottomStart)
+                        .size(20.dp)
+                        .testTag(secondaryButtonTag)
+                        .clickable {}
+                )
+            }
+        }
+
+        val primaryNode = rule.onNodeWithTag(primaryButtonTag).fetchSemanticsNode()
+        val secondaryNode = rule.onNodeWithTag(secondaryButtonTag).fetchSemanticsNode()
+        val expectedSize = with(rule.density) { 48.dp.roundToPx() }
+
+        rule.runOnIdle {
+            val rootAni = createAccessibilityNodeInfo(AccessibilityNodeProviderCompat.HOST_VIEW_ID)
+            val secondaryAni = createAccessibilityNodeInfo(secondaryNode.id)
+            val secondaryBounds = Rect().also { secondaryAni.getBoundsInScreen(it) }
+            assertThat(secondaryBounds.width()).isEqualTo(expectedSize)
+            assertThat(secondaryBounds.height()).isEqualTo(expectedSize)
+            assertThat(rootAni.childCount).isEqualTo(1)
+            assertThat(provider.createAccessibilityNodeInfo(primaryNode.id)).isNull()
+        }
+    }
+
+    @Test
+    fun clippedChildWithPerpendicularSiblingOverlap_preservesFullTouchTargetBounds() {
+        val dismissButtonTag = "dismiss_tag_button"
+        val lowerRowButtonTag = "lower_row_button"
+        container.setContent {
+            Box(Modifier.padding(50.dp).size(200.dp)) {
+                // Row 0: A 32.dp-tall, 100.dp-wide clipping chip container (height < 48.dp,
+                // width >= 48.dp) with a 24.dp dismiss button placed 4.dp from the right edge.
+                // Its 48x48.dp touchBoundsInRoot extends 8.dp vertically ([-8.dp, 40.dp]) and
+                // 8.dp horizontally past the right edge of the chip ([68.dp, 108.dp]).
+                // Because the chip clips horizontally (width = 100.dp >= 48.dp) but not
+                // vertically (height = 32.dp < 48.dp), clippedTouchBoundsInRoot is
+                // [68.dp, 100.dp] x [-8.dp, 40.dp].
+                Box(Modifier.size(width = 100.dp, height = 32.dp).clipToBounds()) {
+                    Box(
+                        Modifier.align(Alignment.CenterEnd)
+                            .padding(end = 4.dp)
+                            .size(24.dp)
+                            .testTag(dismissButtonTag)
+                            .clickable {}
+                    )
+                }
+                // Row 1 (placed 8.dp below Row 0, at y = 40.dp): A 32.dp-tall clickable sibling
+                // spanning x = [0.dp, 100.dp]. Its 48.dp vertical touch target spans
+                // y = [32.dp, 80.dp], overlapping y = [32.dp, 40.dp] across x = [68.dp, 100.dp]
+                // inside the chip's clipped width, while leaving the right overhang
+                // x = [100.dp, 108.dp] x [-8.dp, 40.dp] completely unoccluded.
+                Box(
+                    Modifier.offset(y = 40.dp)
+                        .size(width = 100.dp, height = 32.dp)
+                        .testTag(lowerRowButtonTag)
+                        .clickable {}
+                )
+            }
+        }
+
+        val dismissNode = rule.onNodeWithTag(dismissButtonTag).fetchSemanticsNode()
+        val expectedSize = with(rule.density) { 48.dp.roundToPx() }
+
+        rule.runOnIdle {
+            val dismissAni = createAccessibilityNodeInfo(dismissNode.id)
+            val dismissBounds = Rect().also { dismissAni.getBoundsInScreen(it) }
+            assertThat(dismissBounds.width()).isEqualTo(expectedSize)
+            assertThat(dismissBounds.height()).isEqualTo(expectedSize)
         }
     }
 

@@ -19,8 +19,10 @@ package androidx.compose.ui.platform.accessibility
 import androidx.collection.ScatterMap
 import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.internal.focusExt
+import androidx.compose.ui.platform.ExperimentalComposeUiHostApi
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.containsImportantForAccessibility
 import androidx.compose.ui.semantics.isHidden
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js

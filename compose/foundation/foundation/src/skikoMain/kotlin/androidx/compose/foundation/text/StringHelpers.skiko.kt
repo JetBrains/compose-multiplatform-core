@@ -21,15 +21,16 @@ import kotlin.math.sign
 import org.jetbrains.skia.BreakIterator
 import org.jetbrains.skia.icu.CharProperties
 
-internal actual fun String.findPrecedingBreak(index: Int): Int {
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11184) Avoid converting CharSequence to String for break iteration.
+internal actual fun CharSequence.findPrecedingBreak(index: Int): Int {
     val it = BreakIterator.makeCharacterInstance()
-    it.setText(this)
+    it.setText(toString())
     return it.preceding(index)
 }
 
-internal actual fun String.findFollowingBreak(index: Int): Int {
+internal actual fun CharSequence.findFollowingBreak(index: Int): Int {
     val it = BreakIterator.makeCharacterInstance()
-    it.setText(this)
+    it.setText(toString())
     return it.following(index)
 }
 
@@ -67,7 +68,10 @@ internal fun CharSequence.offsetByCodePoints(index: Int, offset: Int): Int {
     return currentOffset
 }
 
-internal actual fun String.findCodePointOrEmojiStartBefore(index: Int, ifNotFound: Int): Int {
+internal actual fun CharSequence.findCodePointOrEmojiStartBefore(
+    index: Int,
+    ifNotFound: Int,
+): Int {
     if (index <= 0) return -1
 
     // Instead of trying to detect emoji sequences, which is hard, we jump to the preceding break
