@@ -198,7 +198,7 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
             "cut": "Cut",
             "selectAll": "SelectAll",
             "autofill": "Autofill",
-// TODO(Merge) it is missing in https://android.googlesource.com/platform/frameworks/bas
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11188) it is missing in https://android.googlesource.com/platform/frameworks/base
 //  androidMain picks it from own string androidx_compose_foundation_look_up
 //            "lookUp": "LookUp"
     ]

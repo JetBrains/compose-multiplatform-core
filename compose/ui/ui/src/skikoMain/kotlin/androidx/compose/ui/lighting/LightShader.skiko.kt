@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.LayoutDirection
 
 internal actual fun LightShader.Companion.isSupported(): Boolean = false
 
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11181) Implement the lighting API for non-Android targets.
 internal actual fun LightShader(
     lights: List<Light>,
     surfaceMaterial: SurfaceMaterial,

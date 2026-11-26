@@ -21,4 +21,5 @@ import androidx.compose.ui.semantics.SemanticsNode
 internal actual val SemanticsNode.hasFocusAndWindowFocus: Boolean
     get() = false // TODO: https://youtrack.jetbrains.com/issue/CMP-10168
 
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11180) Implement Skiko waitForWindowFocus behavior.
 internal actual fun TestContext.waitForWindowFocus(roots: List<SemanticsNode>): Boolean = false
