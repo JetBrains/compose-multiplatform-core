@@ -56,6 +56,7 @@
 		99D71BAB304604D90012EEB8 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 99D71BAA304604D90012EEB8 /* IOKit.framework */; };
 		99D97A882BF73A9B0035552B /* CMPEditMenuView.m in Sources */ = {isa = PBXBuildFile; fileRef = 99D97A872BF73A9B0035552B /* CMPEditMenuView.m */; };
 		99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */; };
+		AABB22222F5A0000000000A3 /* CMPWindowPostureUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB22222F5A0000000000A2 /* CMPWindowPostureUtils.m */; };
 		A01609822EB42A3300FB9790 /* CMPLayoutRegion.m in Sources */ = {isa = PBXBuildFile; fileRef = A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */; };
 		A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */; };
 		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
@@ -159,6 +160,8 @@
 		99D97A862BF73A9B0035552B /* CMPEditMenuView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPEditMenuView.h; sourceTree = "<group>"; };
 		99D97A872BF73A9B0035552B /* CMPEditMenuView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPEditMenuView.m; sourceTree = "<group>"; };
 		99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPTextLoupeSession.h; sourceTree = "<group>"; };
+		AABB22222F5A0000000000A1 /* CMPWindowPostureUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPWindowPostureUtils.h; sourceTree = "<group>"; };
+		AABB22222F5A0000000000A2 /* CMPWindowPostureUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPWindowPostureUtils.m; sourceTree = "<group>"; };
 		99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPTextLoupeSession.m; sourceTree = "<group>"; };
 		A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPLayoutRegion.m; sourceTree = "<group>"; };
 		A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitSwiftUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -291,6 +294,8 @@
 				C4C07E882F57037300A9DC94 /* CMPTextInputView.m */,
 				99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */,
 				99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */,
+				AABB22222F5A0000000000A1 /* CMPWindowPostureUtils.h */,
+				AABB22222F5A0000000000A2 /* CMPWindowPostureUtils.m */,
 				996EFEF52B02CE8A0000FE0F /* CMPUIKitObjcUtils.h */,
 				AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */,
 				AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */,
@@ -562,6 +567,7 @@
 				99293FF82F2B8A81001EC2A1 /* CMPDrawable.m in Sources */,
 				992014D33099D038000768B7 /* CMPProtocolProxy.m in Sources */,
 				EADD02932C98484F003F66E8 /* CMPDropInteractionProxy.m in Sources */,
+				AABB22222F5A0000000000A3 /* CMPWindowPostureUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

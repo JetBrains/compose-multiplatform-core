@@ -79,6 +79,33 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
         }
 
+        darwinMain {
+            dependsOn(nativeMain)
+        }
+
+        darwinTest {
+            dependsOn(nativeTest)
+        }
+
+        iosMain {
+            dependsOn(darwinMain)
+            dependencies {
+                implementation(project(":compose:ui:ui-uikit"))
+            }
+        }
+
+        iosTest {
+            dependsOn(darwinTest)
+        }
+
+        macosMain {
+            dependsOn(darwinMain)
+        }
+
+        macosTest {
+            dependsOn(darwinTest)
+        }
+
         webMain {
             dependsOn(nonAndroidMain)
         }

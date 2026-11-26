@@ -27,9 +27,3 @@ import kotlin.jvm.JvmName
 )
 @Composable
 fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo = currentWindowAdaptiveInfo(false)
-
-private val DefaultPosture = Posture()
-
-@Composable
-internal actual fun calculatePosture(): Posture =
-    DefaultPosture // Postures and hinges are relevant to android devices only
