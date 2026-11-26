@@ -48,6 +48,7 @@ import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -59,6 +60,7 @@ import androidx.compose.ui.text.TextRange
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /** Runs platform-specific text tap gestures logic. */
@@ -93,24 +95,16 @@ internal actual suspend fun TextFieldSelectionState.detectTextFieldTapGestures(
         }
     }
 
-    if (this.textFieldState.holder.isNativeTextInput) {
-        pointerInputScope.detectTapAndPress(
-            onTap = { offset ->
-                val wasFocused = isWindowAndTextFieldFocused
-                requestFocus()
-                if (!wasFocused) {
-                    handleTap(offset, wasFocused)
-                }
-            }
-        )
-    } else {
-        pointerInputScope.detectTapAndPress(
-            onTap = { offset ->
-                val wasFocused = isWindowAndTextFieldFocused
-                requestFocus()
+    pointerInputScope.detectTapAndPress(
+        onTap = { offset ->
+            val wasFocused = isWindowAndTextFieldFocused
+            requestFocus()
+            if (!wasFocused || !textFieldState.holder.isNativeTextInput) {
                 handleTap(offset, wasFocused)
-            },
-            onPress = { offset ->
+            }
+        },
+        onPress = { offset ->
+            if (!textFieldState.holder.isNativeTextInput) {
                 interactionSource?.let { interactionSource ->
                     coroutineScope {
                         launch {
@@ -138,9 +132,11 @@ internal actual suspend fun TextFieldSelectionState.detectTextFieldTapGestures(
                         pressInteraction = null
                     }
                 }
+            } else {
+                tryAwaitRelease()
             }
-        )
-    }
+        }
+    )
 }
 
 // Copied from common part and added adjusting cursor position in iOS-style
@@ -225,16 +221,17 @@ internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
     mouseSelectionObserver: MouseSelectionObserver,
     textDragObserver: TextDragObserver
 ) {
-    if (this.textFieldState.holder.isNativeTextInput) {
-        return
-    }
-
     val selectionState = this
-    val textDragObserver = IosTextFieldTextDragObserver(selectionState)
-    pointerInputScope.awaitSelectionGestures(
-        mouseSelectionObserver = mouseSelectionObserver,
-        textDragObserver = textDragObserver,
-    )
+    val dragObserver = IosTextFieldTextDragObserver(selectionState)
+
+    snapshotFlow { textFieldState.holder.isNativeTextInput }.collectLatest { native ->
+        if (!native) {
+            pointerInputScope.awaitSelectionGestures(
+                mouseSelectionObserver = mouseSelectionObserver,
+                textDragObserver = dragObserver,
+            )
+        }
+    }
 }
 
 private fun TextFieldSelectionState.moveCaretByLongPress(
