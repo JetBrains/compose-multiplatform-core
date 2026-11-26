@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -168,13 +167,8 @@ class NavDisplayScreenshotTest {
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
-                    first -> NavEntry(first) { Text(first) }
-                    second ->
-                        NavEntry(second) {
-                            Box(Modifier.fillMaxSize().background(Color.Blue)) {
-                                Text(second, Modifier.size(50.dp))
-                            }
-                        }
+                    first -> NavEntry(first) { RedBox(first) }
+                    second -> NavEntry(second) { BlueBox(second) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -228,7 +222,7 @@ class NavDisplayScreenshotTest {
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
-                    first -> NavEntry(first) { Text(first) }
+                    first -> NavEntry(first) { RedBox(first) }
                     second ->
                         NavEntry(
                             second,
@@ -245,9 +239,7 @@ class NavDisplayScreenshotTest {
                                     }
                                 },
                         ) {
-                            Box(Modifier.fillMaxSize().background(Color.Blue)) {
-                                Text(second, Modifier.size(50.dp))
-                            }
+                            BlueBox(second)
                         }
                     else -> error("Invalid key passed")
                 }
@@ -364,7 +356,7 @@ class NavDisplayScreenshotTest {
         composeTestRule.mainClock.autoAdvance = false
         backPressedDispatcher.onBackPressed()
 
-        composeTestRule.mainClock.advanceTimeBy((duration / 2).toLong())
+        composeTestRule.mainClock.advanceTimeBy((duration / 20).toLong())
         // make sure popped entry is not blank screen
         composeTestRule
             .onNodeWithTag(navHostTag)
@@ -1277,6 +1269,56 @@ class NavDisplayScreenshotTest {
             .assertAgainstGolden(
                 screenshotRule,
                 "testNavDisplayPredictiveBackSharedElementListDetail",
+            )
+    }
+
+    @Test
+    fun testSharedElementInterruptedPopByPush() {
+        lateinit var backStack: MutableList<Any>
+        val testDuration = DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong()
+        composeTestRule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.ForcedSize(DpSize(1280.dp, 800.dp))
+            ) {
+                backStack = remember { mutableStateListOf(first, second) }
+                SharedTransitionLayout {
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = { backStack.removeAt(backStack.lastIndex) },
+                        sharedTransitionScope = this,
+                        sceneStrategies = listOf(rememberListDetailSceneStrategy()),
+                        entryProvider =
+                            entryProvider {
+                                entry(first, metadata = ListDetailScene.listPane()) {
+                                    RedBox("first")
+                                }
+                                entry(second, metadata = ListDetailScene.detailPane()) {
+                                    BlueBox("second")
+                                }
+                            },
+                        modifier = Modifier.testTag(navHostTag),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.autoAdvance = false
+
+        // Pop to single-pane [first], then interrupt halfway by re-pushing [second]
+        composeTestRule.runOnIdle { backStack.removeLastOrNull() }
+        composeTestRule.mainClock.advanceTimeBy(testDuration / 2)
+        composeTestRule.runOnIdle { backStack.add(second) }
+
+        composeTestRule.mainClock.advanceTimeBy(testDuration / 2)
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "testSharedElementInterruptedPopByPush",
             )
     }
 }
