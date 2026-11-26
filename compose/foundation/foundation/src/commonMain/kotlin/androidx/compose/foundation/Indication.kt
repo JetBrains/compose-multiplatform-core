@@ -33,9 +33,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+<<<<<<< HEAD
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+=======
+import androidx.compose.ui.input.InputMode
+>>>>>>> 03c09d67189f97782e3192bbcdb8ddbcc3172728
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.DrawModifierNode
@@ -185,6 +189,9 @@ private fun Modifier.indicationImpl(
     interactionSource: InteractionSource,
     indication: Indication?
 ): Modifier {
+    val indication =
+        if (isPlatformIndicationRequired) platformIndication(indication) else indication
+
     if (indication == null) return this
     // Fast path - ideally we should never break into the composed path below.
     if (indication is IndicationNodeFactory) {
@@ -368,7 +375,19 @@ private const val IndicationInstanceDeprecationMessage =
         "please visit developer.android.com"
 
 /**
+<<<<<<< HEAD
  * Some platforms add additional logic to the indication.
  * For example, desktop/web in Compose Multiplatform hide focus indication depending on [InputMode]
+=======
+ * Whether [Modifier.indication] should wrap the indication in [platformIndication].
+ *
+ * This is just to emphasize that this should not be done on Android.
+ */
+internal expect val isPlatformIndicationRequired: Boolean
+
+/**
+ * Some platforms add additional logic to the indication. For example, desktop/web in Compose
+ * Multiplatform hide focus indication depending on [InputMode].
+>>>>>>> 03c09d67189f97782e3192bbcdb8ddbcc3172728
  */
 internal expect fun platformIndication(indication: Indication?): Indication?
