@@ -67,10 +67,9 @@ androidXMultiplatform {
             implementation(libs.kotlinCoroutinesCore)
             implementation(libs.kotlinSerializationCore)
         }
-        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
         commonTest.dependencies {
             implementation(libs.kotlinTest)
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+            implementation("androidx.navigationevent:navigationevent-testing:1.2.0")
         }
         create("nonAndroidMain").dependsOn(commonMain)
         create("nonAndroidTest").dependsOn(commonTest)

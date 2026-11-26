@@ -51,7 +51,6 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
         commonMain.dependencies {
             api(project(":compose:animation:animation-core"))
             api(project(":compose:foundation:foundation"))
@@ -69,8 +68,8 @@ androidXMultiplatform {
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(project(":compose:ui:ui-test"))
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
-            implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
+            implementation("androidx.navigationevent:navigationevent-testing:1.2.0")
+            implementation("androidx.navigationevent:navigationevent-compose:1.2.0")
         }
 
         // TODO: Align naming: nonAndroidMain

@@ -64,7 +64,6 @@ androidXMultiplatform {
             implementation("androidx.graphics:graphics-shapes:1.1.0")
         }
 
-        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
@@ -99,8 +98,8 @@ androidXMultiplatform {
             dependsOn(skikoTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))
-                implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
-                implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
+                implementation("androidx.navigationevent:navigationevent-testing:1.2.0")
+                implementation("androidx.navigationevent:navigationevent-compose:1.2.0")
                 implementation(libs.truth)
                 implementation(libs.junit)
                 implementation(libs.skikoAwtRuntime)
