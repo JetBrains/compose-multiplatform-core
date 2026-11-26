@@ -1,2 +1,5 @@
 Merge script: conflict
 Requested at: 2026-11-26T05:09:47.099600931Z
+
+Air: unresolved - Gradle verification blocked: Gradle 9.5 wrapper download from services.gradle.org failed with UnknownHostException after four attempts.
+Produced by Air Automations. Name: AOSP Merges / Run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/aeefe510-9f34-4bbe-b6f6-db539bf3d1bb?run=69c07ab5-a23c-4017-8077-78d270e130b9
