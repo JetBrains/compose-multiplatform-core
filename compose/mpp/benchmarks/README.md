@@ -9,6 +9,7 @@ requires JDK 17 or newer. Apple targets require macOS with Xcode.
 ## Modules
 
 - `benchmarks-app` — an application with Compose benchmark cases.
+- `benchmarks-d8-app` — a standalone Wasm/D8 host for specialized checks and external harnesses such as JetStream; see [Wasm d8](#wasm-d8).
 - `benchmarks-runtime` — runs measurements and sends results.
 - `benchmarks-compose-init-1-12` / `benchmarks-compose-init-1-13` / `benchmarks-compose-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
 - `benchmarks-data` — shared report models and benchmark case IDs.
@@ -58,7 +59,8 @@ it started and keeps collected results.
 Main options:
 
 - `--target` — required list of targets, separated by spaces or commas: `jvm`, `macos` (ARM64),
-  `js`, `wasmJs`, or `ios` (physical ARM64 iOS device or ARM64 Simulator). `all` selects all targets.
+  `js`, `wasmJs`, `ios` (physical ARM64 iOS device or ARM64 Simulator), or `wasmD8`.
+  `wasmD8` must be selected alone and requires no browser. `all` selects all targets except `wasmD8`.
   Duplicate entries are ignored.
 - `--compose-version` — a list of published Compose versions and/or `local`; defaults to `local`
   using the current core checkout (`composeCorePath=../../..` in `gradle.properties`). Specify a
@@ -66,7 +68,8 @@ Main options:
 - `--kotlin-version` — a list of published Kotlin and matching Compose Compiler versions for the
   benchmarks project; defaults to one catalog version. Local core sources use their own Kotlin version.
 - `--tests` — test names separated by spaces or commas, or `all`; defaults to all tests.
-- `--modes` — measurement modes; defaults to all four:
+- `--modes` — measurement modes; defaults to `averageFrame` for `wasmD8` (its only supported mode),
+  otherwise all four:
   - `startup` — startup time to the first frames;
   - `realFrames` — frame measurements in a real UI;
   - `averageFrame` — average offscreen rendering measurements;
@@ -106,7 +109,7 @@ The first run may require network access; cache `~/.cache/selenium` on CI. Drive
 provisioned explicitly using Selenium's `SE_CHROMEDRIVER` / `SE_GECKODRIVER` environment variables.
 Safari uses the system `safaridriver` (or the Technology Preview driver for Safari Technology Preview).
 Enable **Allow remote automation** in Safari's developer settings before running Safari benchmarks;
-the launcher does not change this setting. Browser runs require a graphical desktop/session, as before.
+the launcher does not change this setting. Browser runs require a graphical desktop/session.
 WebDriver does not wait for the page's `load` event; the collector report determines completion.
 After an error or timeout, the current run is failed without a retry, and the next run starts a new
 browser session.
@@ -163,6 +166,105 @@ Build core sources and use Kotlin 2.4.20 for the benchmark project:
   --tests LazyGrid --modes startup --output-dir ./results
 ```
 
+## Wasm d8
+
+Run optimized Kotlin/Wasm benchmarks in D8 without a browser or HTTP collector:
+
+```bash
+./launcher/bin/benchmarks-launcher --target wasmD8 \
+  --kotlin-version 2.4.21 --compose-version 1.13.0-beta02 local \
+  --tests LazyGrid TextLayout --repeat 2
+```
+
+`wasmD8` must be the only target. It defaults to `averageFrame`; an explicit `--modes` must
+select only `averageFrame`. The launcher builds each version pair, then invokes one Gradle task
+per case/repetition, each starting a fresh D8 process. It watches for a new report, copies it into
+the usual session/version/target `reports` directory, and generates `index.html` after the matrix.
+Builds and Gradle configuration do not count toward `--timeout`; the timeout starts when D8 launches.
+Failed cases are recorded and do not stop the remaining runs. `--tests all` attempts every case,
+including `MultipleComponents`, which currently fails because D8 does not support its XML vectors.
+
+To run a single case without the launcher:
+
+```bash
+./gradlew :benchmarks-d8-app:wasmJsD8BenchmarkRun \
+  -PbenchmarkName=LazyGrid -PcomposeCorePath= --console=plain
+```
+
+Omit `-PcomposeCorePath=` to use the configured local core. Published versions can be selected with
+`-PbenchmarkKotlinVersion=<version>` and `-PbenchmarkComposeVersion=<version>`.
+The task always performs fresh measurements and overwrites a fixed output directory:
+
+```text
+benchmarks-d8-app/build/reports/benchmark/
+    report.json    # One averageFrame report, published atomically after successful completion
+    d8.log         # D8 stdout/stderr
+    started        # Signals the start of the measurement process
+```
+
+The launcher removes old files before each run, validates the new report, assigns its session run ID
+to the collected copy, and retains Gradle and D8 logs separately. Do not run multiple D8 launchers or
+single-case tasks concurrently in the same checkout: they share this output directory.
+
+### Building a standalone binary for JetStream
+
+Build the optimized Wasm application and package its D8 runtime without running benchmarks:
+
+```bash
+./gradlew :benchmarks-d8-app:buildD8Distribution \
+  -PbenchmarkKotlinVersion=2.4.21 \
+  -PbenchmarkComposeVersion=1.13.0-beta02 \
+  -PcomposeCorePath= --console=plain
+```
+
+`-PcomposeCorePath=` selects published Compose artifacts. To build against the local core checkout,
+use `-PcomposeCorePath=../../..` instead; the core uses its own Kotlin version.
+
+The ZIP is `benchmarks-d8-app/build/distributions/d8-distribution.zip`.
+Its unpacked contents are also available in `benchmarks-d8-app/build/d8/production/`.
+To prepare only that directory, use `:benchmarks-d8-app:prepareWasmJsD8Runtime` with the same version
+properties.
+
+The application binary is `benchmarks-benchmarks-d8-app.wasm`, loaded through
+`benchmarks-benchmarks-d8-app.mjs`. Keep the **entire distribution** together: it includes JavaScript
+modules, Skiko Wasm binaries, polyfills, and `composeResources/`. The application `.wasm` file alone
+is not sufficient. The ZIP does not include the D8 executable; provide it in the external harness.
+
+For a standalone smoke test, unpack the ZIP and run D8 from the distribution directory:
+
+```bash
+unzip benchmarks-d8-app/build/distributions/d8-distribution.zip -d /tmp/compose-benchmarks-d8
+cd /tmp/compose-benchmarks-d8
+/path/to/d8 --expose-gc --module launcher.mjs -- LazyGrid
+```
+
+A case run prints `BENCHMARK_REPORT:<json>` and `BENCHMARK_COMPLETE`;
+this direct invocation does not save a JSON report file.
+
+For JetStream, use a harness module alongside the distribution files instead of `launcher.mjs`.
+Import the polyfills first, then dynamically import the application:
+
+```javascript
+import './polyfills.mjs';
+
+const { customLaunch, benchmarkNames } = await import('./benchmarks-benchmarks-d8-app.mjs');
+
+// The harness can use benchmarkNames() to discover supported case IDs.
+// Invoke and await this function for each measured workload.
+async function runIteration() {
+    await customLaunch('LazyGrid', 1000);
+}
+
+await runIteration();
+```
+
+Run the harness with `d8 --expose-gc --module <harness.mjs>`. Importing the application does not start
+benchmark workloads. `customLaunch(benchmarkName, frameCount)` returns a Promise, uses no warmup,
+and completes after the requested positive number of frames. It does not print a benchmark report;
+the external harness owns timing and result collection. Await every call and propagate Promise
+rejections as test failures. Offscreen rendering uses a 1920 × 1080 null surface and a virtual
+120 FPS animation clock; this clock does not limit execution speed.
+
 ## Compose and Skiko compatibility
 
 `benchmarks-runtime` owns the scene and exposes configuration hooks without depending on any init
@@ -179,9 +281,9 @@ keep `current`, regardless of the catalog version. Other versions also keep `cur
 Skiko and its native libraries come from Compose and are not overridden.
 
 The `1-13` module preserves initialization for the Skiko APIs shipped with Compose `1.13.0`–`1.13.9`;
-`current` uses the new Ganesh extension APIs. Both support Metal/OpenGL/DirectX offscreen contexts on JVM.
-Legacy initialization for Compose `1.12.2` uses DirectX on Windows and null-rendering on macOS/Linux,
-as in the original multiplatform benchmarks, and leaves the scene initialization hook as a no-op.
+`current` uses Ganesh extension APIs. Both support Metal/OpenGL/DirectX offscreen contexts on JVM.
+Initialization for Compose `1.12.2` uses DirectX on Windows and null-rendering on macOS/Linux,
+and leaves the scene initialization hook as a no-op.
 Offscreen GPU results from different backends are not directly comparable. Other old Compose versions
 are not supported.
 

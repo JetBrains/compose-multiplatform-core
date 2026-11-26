@@ -18,5 +18,5 @@ package org.jetbrains.compose.benchmarks
 
 internal expect object Platform {
     fun getGraphicsContext(): GraphicsContext
-    fun runGC()
+    suspend fun runGC()
 }

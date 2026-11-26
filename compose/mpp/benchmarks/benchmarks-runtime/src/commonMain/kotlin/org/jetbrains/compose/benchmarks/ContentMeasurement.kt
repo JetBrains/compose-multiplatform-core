@@ -31,7 +31,8 @@ import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect
 import org.jetbrains.skia.Surface
 
-internal class ContentMeasurement(
+// Public for execution from the D8 environment.
+class ContentMeasurement(
     private val width: Int,
     private val height: Int,
     private val targetFps: Int,

@@ -33,6 +33,8 @@ import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.restrictTo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.compose.benchmarks.data.BenchmarkCase
 import org.jetbrains.compose.benchmarks.report.generateHtmlReport
@@ -51,7 +53,8 @@ import kotlin.io.path.*
 import kotlin.math.round
 
 private val cases = BenchmarkCase.entries.map { it.id }
-private val availableTargets = listOf("jvm", "macos", "js", "wasmJs", "ios")
+private val defaultTargets = listOf("jvm", "macos", "js", "wasmJs", "ios")
+private val availableTargets = defaultTargets + "wasmD8"
 private val modes = listOf("averageFrame", "fps", "realFrames", "startup")
 private val json = Json { prettyPrint = true; encodeDefaults = true; explicitNulls = false }
 
@@ -113,6 +116,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         benchmarks-launcher --target jvm --compose-version local --compose-core-path /path/to/core
 
         Lists accept spaces or commas. Only --target, --tests, and --modes accept all; use it alone.
+        wasmD8 must be selected alone, is excluded from all, and supports only averageFrame (default).
         Web targets require --browser. iOS uses the first booted simulator, or boots the first available one.
         Physical iOS devices require explicit --ios-target selection. Missing or ambiguous matches are errors.
         Names require discovery of both simulators and physical iOS devices; use an ID if either discovery fails.
@@ -126,7 +130,10 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         .copy(valueSplit = { it.split(",") }).required()
         .validate {
             require("all" !in it || it == listOf("all")) { "use all alone" }
-            val selected = select(it, availableTargets)
+            val selected = select(it, defaultTargets)
+            require("wasmD8" !in selected || selected == listOf("wasmD8")) {
+                "wasmD8 must be selected alone (and is not included in all)"
+            }
             require(selected.none { it in listOf("ios", "macos") } || isMac) { "Apple targets require macOS" }
             require(selected.none { it in listOf("js", "wasmJs") } || browsers.isNotEmpty()) {
                 "web targets require --browser"
@@ -156,7 +163,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
     private val selectedModes by option("--modes", help = "Measurement modes, space/comma separated, or all; startup: startup time, realFrames: on-screen frames, averageFrame/fps: offscreen rendering")
         .choice(modes + "all").varargValues()
         .copy(valueSplit = { it.split(",") })
-        .default(listOf("all"), defaultForHelp = "all")
+        .default(emptyList(), defaultForHelp = "averageFrame for wasmD8, all otherwise")
         .check("use all alone") { "all" !in it || it == listOf("all") }
     private val repeat by option(help = "Repetitions of each case/mode").int().restrictTo(min = 1).default(1)
     private val timeout by option(help = "Report timeout in seconds for each test run and environment collection; excludes build time").double()
@@ -200,7 +207,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
 
     override fun run() {
         try {
-            val selectedTargets = select(targets, availableTargets)
+            val selectedTargets = select(targets, defaultTargets)
             val selectedBrowsers = browsers.flatMap { it.split(",") }.distinct()
             launchSeries(selectedTargets, selectedBrowsers)
         } catch (error: CliktError) {
@@ -223,7 +230,12 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         val configuredCore = corePath ?: configuredCorePath(root)
         val selectedCompose = selectVersions(composeVersions, if (configuredCore != null) "local" else catalogCompose)
         val selectedTests = select(tests, cases)
-        val measurementModes = select(selectedModes, modes)
+        val measurementModes = if (selectedTargets == listOf("wasmD8")) {
+            require(selectedModes.isEmpty() || selectedModes.distinct() == listOf("averageFrame")) {
+                "wasmD8 supports only --modes averageFrame"
+            }
+            listOf("averageFrame")
+        } else select(selectedModes.ifEmpty { listOf("all") }, modes)
         val stamp = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS").withZone(ZoneOffset.UTC)
             .format(Instant.now())
         val base = outputDir ?: out.resolve("benchmark-reports")
@@ -325,6 +337,10 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         println("Results: $directory")
         try {
             summary.save(directory)
+            if (target == "wasmD8") {
+                runD8Configuration(root, directory, logs, reports, summary, processes)
+                return
+            }
             val selectedIosTarget = if (target == "ios") selectIosTarget(iosTarget, processes) else null
             val targetIosDevice = selectedIosTarget as? IosDevice
             val targetIosSimulator = selectedIosTarget as? IosSimulator
@@ -494,6 +510,70 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             }
         }
         println("Finished: ${summary.runs.count { it.status == "passed" }}/${summary.runs.size} passed. Results: $directory")
+    }
+
+    private fun runD8Configuration(
+        root: Path, directory: Path, logs: Path, reports: Path, summary: Summary, processes: Processes,
+    ) {
+        summary.launcherEnvironment = collectLauncherEnvironment(
+            "wasmD8", summary.composeCorePath?.let { Path.of(it) }, null, null, processes,
+        )
+        summary.save(directory)
+        val wrapper = root.resolve(if (isWindows) "gradlew.bat" else "gradlew")
+        val command = listOf(
+            wrapper.toString(), "--project-cache-dir", root.resolve(".gradle/launcher").toString(),
+            "-PbenchmarkKotlinVersion=${summary.kotlinVersion}",
+            "-PbenchmarkComposeVersion=${summary.composeVersion}",
+            "-PcomposeCorePath=${summary.composeCorePath.orEmpty()}", "--console=plain",
+        )
+        processes.run(
+            command + listOf(":benchmarks-d8-app:prepareWasmJsD8Runtime", ":benchmarks-d8-app:kotlinWasmD8Setup"),
+            logs.resolve("gradle-build.log"),
+        )
+        val output = root.resolve("benchmarks-d8-app/build/reports/benchmark")
+        val total = summary.tests.size * repeat
+        for ((name, mode, iteration) in benchmarkRuns(summary.tests, summary.modes, repeat, groupStartup = false)) {
+            if (Thread.interrupted()) throw InterruptedException()
+            val id = UUID.randomUUID().toString()
+            val log = logs.resolve("$id.log")
+            val result = RunResult(id, name, mode, iteration, log = "logs/$id.log")
+            summary.runs.add(result)
+            summary.save(directory)
+            val started = System.nanoTime()
+            println("[${summary.runs.size}/$total] $name / $mode / $id")
+            try {
+                Files.deleteIfExists(output.resolve("report.json"))
+                Files.deleteIfExists(output.resolve("started"))
+                Files.deleteIfExists(output.resolve("d8.log"))
+                processes.start(
+                    command + listOf(":benchmarks-d8-app:wasmJsD8BenchmarkRun", "-PbenchmarkName=$name"), log,
+                ).use { child ->
+                    waitForD8Report(output, name, timeout, child.process) { source ->
+                        val destination = reports.resolve("$id-averageFrame.json")
+                        val document = Json.parseToJsonElement(source.readText()).jsonObject
+                        destination.writeText(json.encodeToString(JsonObject(
+                            document + ("id" to JsonPrimitive(id)),
+                        )) + "\n")
+                        result.report = directory.relativize(destination).toString()
+                    }
+                    result.status = "passed"
+                }
+            } catch (error: InterruptedException) {
+                result.status = "interrupted"
+                throw error
+            } catch (error: Exception) {
+                result.status = "failed"
+                result.error = error.message ?: error.toString()
+                appendLog(log, "\nLauncher: ${error.stackTraceToString()}\n")
+            } finally {
+                if (output.resolve("d8.log").exists()) {
+                    Files.copy(output.resolve("d8.log"), logs.resolve("$id-d8.log"))
+                }
+                result.elapsedSeconds = round((System.nanoTime() - started) / 1_000_000.0) / 1000
+                summary.save(directory)
+            }
+            println("  ${result.status}: ${result.error ?: result.report.orEmpty()}")
+        }
     }
 
     private fun build(
