@@ -2411,11 +2411,18 @@ final class androidx.compose.ui.platform/ClipEntry { // androidx.compose.ui.plat
     final val clipMetadata // androidx.compose.ui.platform/ClipEntry.clipMetadata|{}clipMetadata[0]
         final fun <get-clipMetadata>(): androidx.compose.ui.platform/ClipMetadata // androidx.compose.ui.platform/ClipEntry.clipMetadata.<get-clipMetadata>|<get-clipMetadata>(){}[0]
 
+<<<<<<< HEAD
     final suspend fun readHtml(): kotlin/String? // androidx.compose.ui.platform/ClipEntry.readHtml|readHtml(){}[0]
     final suspend fun readPlainText(): kotlin/String? // androidx.compose.ui.platform/ClipEntry.readPlainText|readPlainText(){}[0]
     final suspend fun readText(): kotlin/String? // androidx.compose.ui.platform/ClipEntry.readText|readText(){}[0]
     final suspend fun readUrl(): kotlin/String? // androidx.compose.ui.platform/ClipEntry.readUrl|readUrl(){}[0]
 
+=======
+    // Targets: [apple]
+    final object Companion // androidx.compose.ui.platform/ClipEntry.Companion|null[0]
+
+    // Targets: [js, wasmJs]
+>>>>>>> origin/jb-main
     final object Companion { // androidx.compose.ui.platform/ClipEntry.Companion|null[0]
         final fun withText(kotlin/String, kotlin/String? = ...): androidx.compose.ui.platform/ClipEntry // androidx.compose.ui.platform/ClipEntry.Companion.withText|withText(kotlin.String;kotlin.String?){}[0]
         final fun withUrl(kotlin/String, kotlin/String = ..., kotlin/String? = ...): androidx.compose.ui.platform/ClipEntry // androidx.compose.ui.platform/ClipEntry.Companion.withUrl|withUrl(kotlin.String;kotlin.String;kotlin.String?){}[0]

@@ -241,6 +241,10 @@ public final class androidx/compose/animation/core/ComposeAnimationCoreFlags {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/animation/core/ComposeAnimationCoreFlags;
 	public static field isNanosecondAnimationSpecEnabled Z
+<<<<<<< HEAD
+=======
+	public static field isSeekableTransitionStateStartAfterLayoutEnabled Z
+>>>>>>> origin/jb-main
 }
 
 public final class androidx/compose/animation/core/CubicBezierEasing : androidx/compose/animation/core/Easing {

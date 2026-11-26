@@ -19,7 +19,7 @@ package org.jetbrains.compose.benchmarks
 internal actual object Platform {
     actual fun getGraphicsContext(): GraphicsContext = JvmGraphicsContextConfiguration.getJvmGraphicsContext()
 
-    actual fun runGC() {
+    actual suspend fun runGC() {
         System.gc()
     }
 }

@@ -16,11 +16,17 @@
 
 package org.jetbrains.compose.benchmarks
 
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
+
 internal actual object Platform {
     actual fun getGraphicsContext(): GraphicsContext = EmptyGraphicsContext
 
-    actual fun runGC() {
+    actual suspend fun runGC() {
         webGC()
+        // Let the event loop run the FinalizationRegistry callbacks queued by the GC (on web),
+        // so they aren't measured.
+        delay(1.milliseconds)
     }
 }
 

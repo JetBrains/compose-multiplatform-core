@@ -92,7 +92,6 @@ internal fun List<SemanticsNode>.flattenA11YWrappers(
  * "Wrapper" here means a structural semantics node that contains children but exposes nothing
  * meaningful to accessibility itself
  */
-@OptIn(ExperimentalComposeUiHostApi::class)
 private fun SemanticsNode.isA11YWrapper(): Boolean =
     !isFake &&
         !unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false } &&

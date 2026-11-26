@@ -149,7 +149,6 @@ internal class A11YFocusRecovery(
         return null
     }
 
-    @OptIn(ExperimentalComposeUiHostApi::class)
     private fun focusSuitabilityOf(element: HTMLElement): FocusSuitability {
         // The elements which don't mirror a semantics node (a scroll sizer) are leaves.
         val node = a11yNodeToSemanticsNode[element] ?: return FocusSuitability.None

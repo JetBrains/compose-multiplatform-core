@@ -64,7 +64,6 @@ androidXMultiplatform {
             implementation("androidx.graphics:graphics-shapes:1.1.0")
         }
 
-        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
@@ -99,8 +98,8 @@ androidXMultiplatform {
             dependsOn(skikoTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))
-                implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
-                implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
+                implementation("androidx.navigationevent:navigationevent-testing:1.2.0")
+                implementation("androidx.navigationevent:navigationevent-compose:1.2.0")
                 implementation(libs.truth)
                 implementation(libs.junit)
                 implementation(libs.skikoAwtRuntime)
@@ -197,7 +196,10 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
             "paste": "Paste",
             "cut": "Cut",
             "selectAll": "SelectAll",
-            "autofill": "Autofill"
+            "autofill": "Autofill",
+// TODO(https://youtrack.jetbrains.com/issue/CMP-11188) it is missing in https://android.googlesource.com/platform/frameworks/base
+//  androidMain picks it from own string androidx_compose_foundation_look_up
+//            "lookUp": "LookUp"
     ]
     // This is all the locales translated by Compose on Android in the ui module:
     // https://github.com/androidx/androidx/tree/androidx-main/compose/ui/ui/src/androidMain/res

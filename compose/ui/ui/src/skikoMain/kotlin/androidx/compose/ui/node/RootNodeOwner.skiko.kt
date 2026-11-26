@@ -550,7 +550,8 @@ internal class RootNodeOwner(
         override val windowInfo get() = platformContext.windowInfo
         override val taskDispatchers: TaskDispatchers get() = platformContext.taskDispatchers
         @ExperimentalMediaQueryApi
-        override val uiMediaScope: UiMediaScope get() = platformContext.mediaScope
+        override val uiMediaScope: UiMediaScope? get() =
+            if (!ComposeUiFlags.isMediaQueryIntegrationEnabled) platformContext.mediaScope else null
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")

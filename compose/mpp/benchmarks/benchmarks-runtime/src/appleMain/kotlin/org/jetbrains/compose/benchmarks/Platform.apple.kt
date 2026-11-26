@@ -23,7 +23,7 @@ import kotlin.native.runtime.NativeRuntimeApi
 internal actual object Platform {
     actual fun getGraphicsContext(): GraphicsContext = AppleGraphicsContextConfiguration.getAppleGraphicsContext()
 
-    actual fun runGC() {
+    actual suspend fun runGC() {
         GC.collect()
     }
 }
