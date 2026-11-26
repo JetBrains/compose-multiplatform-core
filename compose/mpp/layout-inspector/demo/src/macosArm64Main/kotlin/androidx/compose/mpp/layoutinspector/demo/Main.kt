@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.mpp.layoutinspector.ComposeLayoutInspector
+import androidx.compose.mpp.layoutinspector.RuntimeScopeInspector
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +56,7 @@ import platform.posix.stdout
 
 fun main(args: Array<String>) {
     val inspector = ComposeLayoutInspector()
+    var runtimeInspector: RuntimeScopeInspector? = null
     val application = NSApplication.sharedApplication()
     val scope = CoroutineScope(Dispatchers.Main)
     application.setActivationPolicy(NSApplicationActivationPolicy.NSApplicationActivationPolicyRegular)
@@ -67,7 +71,16 @@ fun main(args: Array<String>) {
 
     try {
         val port = runBlocking { inspector.start() }
-        Window(title = "Layout Inspector Demo", size = DpSize(360.dp, 200.dp)) {
+        Window(title = "Layout Inspector Demo", size = DpSize(360.dp, 250.dp)) {
+            val composition = currentComposer.composition
+            DisposableEffect(composition) {
+                val collector = RuntimeScopeInspector(composition)
+                runtimeInspector = collector
+                onDispose {
+                    runtimeInspector = null
+                    collector.close()
+                }
+            }
             Column(
                 modifier = Modifier.fillMaxSize().padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -78,6 +91,12 @@ fun main(args: Array<String>) {
                 BasicText(
                     "Clicks: $count",
                     modifier = Modifier.clickable(role = Role.Button) { count++ }.padding(8.dp),
+                )
+                BasicText(
+                    "Print scope counts",
+                    modifier = Modifier.clickable(role = Role.Button) {
+                        runtimeInspector?.printScopeCounts()
+                    }.padding(8.dp),
                 )
             }
         }
@@ -97,6 +116,19 @@ fun main(args: Array<String>) {
             application.delegate = null
         }
         scope.cancel()
+        runtimeInspector?.close()
         runBlocking { inspector.stop() }
     }
+}
+
+private fun RuntimeScopeInspector.printScopeCounts() {
+    val scopes = snapshot()
+    println("Runtime scope counts (${scopes.size} scopes)")
+    for (scope in scopes) {
+        println(
+            "Scope ${scope.id}: states=${scope.observedStates ?: "unknown"}, " +
+                "invalidations=${scope.invalidations}, visits=${scope.visits}, skips=${scope.skips}"
+        )
+    }
+    fflush(stdout)
 }

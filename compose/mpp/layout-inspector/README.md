@@ -1,4 +1,4 @@
-# Layout inspector transport PoC
+# Layout inspector PoC
 
 Four fork-only Kotlin Multiplatform libraries provide transport for future layout inspector tools.
 
@@ -7,9 +7,26 @@ Four fork-only Kotlin Multiplatform libraries provide transport for future layou
 - `:compose:mpp:layout-inspector:agent`: the `ComposeLayoutInspector` convenience facade, which starts an in-process Ktor CIO server and delegates its accepted sessions to an agent.
 - `:compose:mpp:layout-inspector:client`: a client with discovery, connection state, ping, and heartbeat APIs.
 
-All four libraries target JVM, native macOS on Apple Silicon, and Apple Silicon iOS Simulator. The `demo` module provides a native macOS app and a JVM integration test.
+All four transport libraries and the `runtime-tooling` library target JVM, native macOS on Apple Silicon, and Apple Silicon iOS Simulator. The `demo` module provides a native macOS app and a JVM integration test.
 
-No layout data is collected. There is no CLI, IDE plugin, real-device transport, Intel simulator target, or JS/Wasm target yet. These libraries have no Compose runtime/UI dependencies and are not registered for publication.
+No layout data is collected. There is no CLI, IDE plugin, real-device transport, Intel simulator target, or JS/Wasm target yet. The transport libraries have no Compose Runtime or UI dependencies. The modules are for local development and are unregistered for publication.
+
+## Local Runtime metrics
+
+The `:compose:mpp:layout-inspector:runtime-tooling` library uses Compose Runtime's observer API independently of the transport. Create a `RuntimeScopeInspector(composition)` for the composition you want to observe. Call `snapshot()` to read per-scope counters and `close()` to detach. Runtime allows one observer per composition, and a subcomposition can install its own observer. Attaching before initial composition captures initial visits.
+
+| Metric | What it counts |
+|---|---|
+| Observed states | Distinct objects reported by the Runtime read callback in the latest observed read pass, deduplicated by identity. Skips preserve the previous count. The value is unknown until there is a read pass to count. |
+| Invalidations | Runtime invalidation callbacks for the scope, including direct invalidation. |
+| Scope visits | Completed scope-enter and scope-exit pairs. These include first executions, re-executions, skips, and derived-state read replays. |
+| Skips | Visits in which Runtime sets the internal skip flag. A flag left set by a previous visit is ignored. |
+
+Scope IDs are local to the collector. Disposed scopes disappear from later snapshots. The macOS demo's **Print scope counts** action writes the current snapshot to stdout.
+
+### Scope outcomes after attachment
+
+The Runtime tooling overload `onScopeExit(scope, outcome)` reports execution or skip for completed restart-group visits. Both GapComposer and LinkComposer use the original scope-enter and scope-exit callbacks when replaying tracked reads for an unchanged derived value. Once the inspector consumes a Runtime build with the overload, it can count executions and skips since attachment and update the observed-state count on execution. The execution count includes any initial executions observed after attachment.
 
 ## Agent
 
@@ -118,7 +135,7 @@ The demo's JVM integration task builds and launches the native app, waits for it
 
 ### Library tests
 
-Tests were written against unimplemented APIs and run to establish a failing baseline before implementing the transport. Shared agent tests and the client loopback test live in `commonTest`. JVM client tests live in `jvmTest`, and the simulator fixture lives in `iosTest`. `InspectorAgentSessionTest` exercises the core through an in-memory session with no server. `OutboundInspectorAgentTest` runs the same agent against a host-side WebSocket server on all three targets, verifying that connection direction does not change protocol roles.
+Tests were written against unimplemented APIs and run to establish a failing baseline before implementing the transport. Shared agent tests, the client loopback test, and the Runtime collector tests live in `commonTest`. JVM client tests live in `jvmTest`, and the simulator fixture lives in `iosTest`. `InspectorAgentSessionTest` exercises the core through an in-memory session with no server. `OutboundInspectorAgentTest` runs the same agent against a host-side WebSocket server on all three targets, verifying that connection direction does not change protocol roles.
 
 `LayoutInspectorLoopbackTest` starts a real client and agent in the same process, connects over loopback, and checks ping and disconnect. It runs on JVM, macOS ARM64, and iOS Simulator. Use the Gradle task for the target you want to test.
 
@@ -147,6 +164,9 @@ Compile before running:
   :compose:mpp:layout-inspector:client:jvmTestClasses \
   :compose:mpp:layout-inspector:client:compileTestKotlinMacosArm64 \
   :compose:mpp:layout-inspector:client:compileTestKotlinIosSimulatorArm64 \
+  :compose:mpp:layout-inspector:runtime-tooling:jvmTestClasses \
+  :compose:mpp:layout-inspector:runtime-tooling:compileTestKotlinMacosArm64 \
+  :compose:mpp:layout-inspector:runtime-tooling:compileTestKotlinIosSimulatorArm64 \
   --console=plain
 ```
 
@@ -157,15 +177,19 @@ Run the JVM, macOS, and iOS Simulator suites together.
   :compose:mpp:layout-inspector:agent-core:cleanAllTests \
   :compose:mpp:layout-inspector:agent:cleanAllTests \
   :compose:mpp:layout-inspector:client:cleanAllTests \
+  :compose:mpp:layout-inspector:runtime-tooling:cleanAllTests \
   :compose:mpp:layout-inspector:agent-core:jvmTest \
   :compose:mpp:layout-inspector:agent:jvmTest \
   :compose:mpp:layout-inspector:client:jvmTest \
+  :compose:mpp:layout-inspector:runtime-tooling:jvmTest \
   :compose:mpp:layout-inspector:agent-core:macosArm64Test \
   :compose:mpp:layout-inspector:agent:macosArm64Test \
   :compose:mpp:layout-inspector:client:macosArm64Test \
+  :compose:mpp:layout-inspector:runtime-tooling:macosArm64Test \
   :compose:mpp:layout-inspector:agent-core:iosSimulatorArm64Test \
   :compose:mpp:layout-inspector:agent:iosSimulatorArm64Test \
   :compose:mpp:layout-inspector:client:iosSimulatorArm64Test \
+  :compose:mpp:layout-inspector:runtime-tooling:iosSimulatorArm64Test \
   --no-build-cache --console=plain
 ```
 

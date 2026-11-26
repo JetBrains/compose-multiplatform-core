@@ -36,6 +36,7 @@ kotlin {
         }
         macosArm64Main.dependencies {
             implementation(project(":compose:mpp:layout-inspector:agent"))
+            implementation(project(":compose:mpp:layout-inspector:runtime-tooling"))
             implementation(project(":compose:foundation:foundation"))
             implementation(project(":compose:foundation:foundation-layout"))
             implementation(project(":compose:ui:ui"))
