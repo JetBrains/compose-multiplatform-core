@@ -16,8 +16,16 @@
 
 package androidx.compose.mpp.demo
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,9 +33,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
@@ -35,13 +46,17 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -56,6 +71,8 @@ import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.objcPtr
@@ -66,8 +83,10 @@ import platform.CoreGraphics.CGSizeMake
 import platform.Foundation.NSSelectorFromString
 import platform.MapKit.MKMapView
 import platform.UIKit.NSTextAlignmentCenter
+import platform.UIKit.UIGlassEffect
 import platform.UIKit.UIAction
 import platform.UIKit.UIButton
+import platform.UIKit.UIButtonConfiguration
 import platform.UIKit.UIButtonTypeSystem
 import platform.UIKit.UIColor
 import platform.UIKit.UIControlEventEditingChanged
@@ -77,7 +96,11 @@ import platform.UIKit.UILabel
 import platform.UIKit.UIMenu
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIScrollView
+import platform.UIKit.UISegmentedControl
+import platform.UIKit.UISlider
+import platform.UIKit.UISwitch
 import platform.UIKit.UITextField
+import platform.UIKit.UIVisualEffectView
 import platform.UIKit.UIViewController
 import platform.UIKit.addChildViewController
 import platform.UIKit.didMoveToParentViewController
@@ -93,6 +116,281 @@ val InteropExample = Screen.Example("Interop") {
         ComposeSwipeBackFullscreenSection()
         UIScrollViewSection()
         ComposeInsideScrollViewSection()
+    }
+}
+
+private data object SceneSetup
+private data object SceneCover
+
+/**
+ * A navigation setup with several overlay UIKit controls. Pushing an opaque Compose scene should
+ * move those controls with the outgoing scene instead of leaving them above the incoming scene.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+val InteropNavigationExample = Screen.Example("Interop navigation") {
+    val backStack = remember { mutableStateListOf<Any>(SceneSetup) }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        transitionSpec = {
+            ContentTransform(
+                slideInHorizontally(tween(700)) { it },
+                slideOutHorizontally(tween(700)) { -it / 3 },
+            )
+        },
+        popTransitionSpec = {
+            ContentTransform(
+                slideInHorizontally(tween(700)) { -it / 3 },
+                slideOutHorizontally(tween(700)) { it },
+                targetContentZIndex = -1f,
+            )
+        },
+        entryProvider = entryProvider {
+            entry<SceneSetup> {
+                InteropNavigationSetupPage(
+                    onPushScene = { backStack.add(SceneCover) }
+                )
+            }
+            entry<SceneCover> {
+                InteropNavigationCoverPage(
+                    onPopScene = { backStack.removeLastOrNull() }
+                )
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun InteropNavigationSetupPage(onPushScene: () -> Unit) {
+    val properties = UIKitInteropProperties(placedAsOverlay = true)
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF2F2F7))
+            .safeDrawingPadding()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Text("Interop navigation")
+        Text("Observe that the native controls move with the outgoing scene.")
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("UISwitch", Modifier.weight(1f))
+            UIKitView(
+                factory = { UISwitch().apply { setOn(true, animated = false) } },
+                modifier = Modifier.size(51.dp, 31.dp),
+                properties = properties,
+            )
+        }
+
+        UIKitView(
+            factory = {
+                UISegmentedControl(items = listOf("Words", "Sentences", "Kana")).apply {
+                    selectedSegmentIndex = 1
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(32.dp),
+            properties = properties,
+        )
+
+        UIKitView(
+            factory = { UISlider().apply { value = 0.6f } },
+            modifier = Modifier.fillMaxWidth().height(32.dp),
+            properties = properties,
+        )
+
+        UIKitView(
+            factory = {
+                UIButton.buttonWithConfiguration(
+                    UIButtonConfiguration.filledButtonConfiguration().apply {
+                        title = "Native UIButton"
+                    },
+                    primaryAction = null,
+                )
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            properties = properties,
+        )
+
+        InteropNavigationGlassShowcase(properties)
+
+        Button(
+            onClick = onPushScene,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Push opaque scene")
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun InteropNavigationGlassShowcase(properties: UIKitInteropProperties) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(120.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        Color(0xFFFF2D55),
+                        Color(0xFFFF9500),
+                        Color(0xFF34C759),
+                        Color(0xFF007AFF),
+                    )
+                ),
+            ),
+    ) {
+        Row(Modifier.fillMaxSize()) {
+            repeat(12) { index ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .background(
+                            if (index % 2 == 0) {
+                                Color.White.copy(alpha = 0.35f)
+                            } else {
+                                Color.Transparent
+                            }
+                        )
+                )
+            }
+        }
+
+        Row(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            UIKitView(
+                factory = {
+                    glassButton(UIButtonConfiguration.glassButtonConfiguration(), "Glass")
+                },
+                modifier = Modifier.weight(1f).height(48.dp),
+                properties = properties,
+            )
+            UIKitView(
+                factory = {
+                    glassButton(
+                        UIButtonConfiguration.prominentGlassButtonConfiguration(),
+                        "Prominent",
+                    )
+                },
+                modifier = Modifier.weight(1f).height(48.dp),
+                properties = properties,
+            )
+            UIKitView(
+                factory = {
+                    UIVisualEffectView(effect = UIGlassEffect()).apply {
+                        layer.cornerRadius = 36.0
+                        clipsToBounds = true
+                    }
+                },
+                modifier = Modifier.size(72.dp),
+                properties = properties,
+            )
+        }
+    }
+}
+
+private fun glassButton(configuration: UIButtonConfiguration, title: String): UIButton =
+    UIButton.buttonWithConfiguration(configuration.apply { this.title = title }, primaryAction = null)
+
+@Composable
+private fun InteropNavigationCoverPage(onPopScene: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFF1C2541))
+            .safeDrawingPadding()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Text("Opaque scene", color = Color.White)
+        Text(
+            "The previous scene's native controls should stay beneath this page.",
+            color = Color.White,
+        )
+        Button(
+            onClick = onPopScene,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Pop")
+        }
+    }
+}
+
+/**
+ * An animated overlay setup: native views and their shadows should stay clipped to their
+ * Compose rows while remaining visible where the row is not clipped.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+val OverlayInteropAnimationExample =
+    Screen.Example("Overlay interop animation") {
+    var expanded by remember { mutableStateOf(true) }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFFEFEFF4))
+            .safeDrawingPadding()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text("Overlay interop animation")
+        Text(
+            "Observe that the native views and their shadows are clipped correctly."
+        )
+        Button(
+            onClick = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (expanded) "Collapse rows" else "Expand rows")
+        }
+
+        repeat(4) { index ->
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(animationSpec = tween(650)),
+                exit = shrinkVertically(animationSpec = tween(650))
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .background(Color.White)
+                ) {
+                    Text(
+                        "Row ${index + 1}",
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 16.dp)
+                    )
+                    UIKitView(
+                        factory = {
+                            UISwitch().apply {
+                                layer.shadowColor = UIColor.blackColor.CGColor
+                                layer.shadowOpacity = 0.6f
+                                layer.shadowRadius = 6.0
+                                layer.shadowOffset = CGSizeMake(0.0, 3.0)
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 16.dp)
+                            .size(width = 51.dp, height = 31.dp),
+                        properties = UIKitInteropProperties(placedAsOverlay = true)
+                    )
+                }
+            }
+        }
     }
 }
 
