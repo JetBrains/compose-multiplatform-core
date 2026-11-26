@@ -43,6 +43,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.TriStateCheckbox
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +55,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.interop.runUIKitInstrumentedTestWithInterop
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitSecureTextField
+import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTabButton
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitToggle
 import androidx.compose.ui.platform.testTag
@@ -311,6 +315,66 @@ class ComponentsAccessibilitySemanticTest {
                     traits(UIAccessibilityTraitToggleButton)
                 }
                 value = "0"
+            }
+        }
+    }
+
+    @Test
+    fun testTabRowSemantic() = runUIKitInstrumentedTest(
+        params = listOf("PrimaryTabRow", "SecondaryTabRow")
+    ) { tabRowType ->
+        var selectedTabIndex by mutableStateOf(0)
+        setContent {
+            Column {
+                val tabs = @Composable {
+                    Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }) {
+                        Text("Left")
+                    }
+                    Tab(selected = selectedTabIndex == 1, onClick = { selectedTabIndex = 1 }) {
+                        Text("Right")
+                    }
+                }
+                when (tabRowType) {
+                    "PrimaryTabRow" -> PrimaryTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier.testTag("TabRow"),
+                        tabs = tabs
+                    )
+                    else -> SecondaryTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier.testTag("TabRow"),
+                        tabs = tabs
+                    )
+                }
+                Text("Content")
+            }
+        }
+
+        // Like the tab buttons of a native UITabBar, the tabs carry the tab button trait next to
+        // the button trait, and are kept together in the container of their tab row.
+        assertAccessibilityTree {
+            node {
+                identifier = "TabRow"
+                isAccessibilityElement = false
+                containerType = UIAccessibilityContainerTypeSemanticGroup
+                node {
+                    isAccessibilityElement = true
+                    label = "Left"
+                    traits(
+                        UIAccessibilityTraitButton,
+                        CMPAccessibilityTraitTabButton,
+                        UIAccessibilityTraitSelected
+                    )
+                }
+                node {
+                    isAccessibilityElement = true
+                    label = "Right"
+                    traits(UIAccessibilityTraitButton, CMPAccessibilityTraitTabButton)
+                }
+            }
+            node {
+                isAccessibilityElement = true
+                label = "Content"
             }
         }
     }
