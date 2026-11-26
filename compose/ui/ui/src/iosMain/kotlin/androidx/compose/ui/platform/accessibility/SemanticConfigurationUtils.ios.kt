@@ -150,6 +150,23 @@ internal fun SemanticsConfiguration.accessibilityTraits(): UIAccessibilityTraits
     return result
 }
 
+/**
+ * The hint VoiceOver reads after the label, the value and the traits of the focused element.
+ *
+ * It carries the [SemanticsProperties.Error] description, so that an error of the element, such
+ * as a validation error of a text field, is announced when the element receives accessibility
+ * focus, without replacing its label or its value. The [SemanticsActions.OnClick] label follows.
+ */
+internal fun SemanticsConfiguration.accessibilityHint(): String? {
+    val error = getOrNull(SemanticsProperties.Error)?.takeIf { it.isNotBlank() }
+    val onClickLabel = getOrNull(SemanticsActions.OnClick)?.label
+    return when {
+        error == null -> onClickLabel
+        onClickLabel.isNullOrBlank() -> error
+        else -> "$error, $onClickLabel"
+    }
+}
+
 internal fun SemanticsConfiguration.accessibilityAttributedValue(): NSAttributedString? {
     getOrNull(SemanticsProperties.StateDescription)?.takeIf { it.isNotBlank() }?.let {
         return it.toAccessibilityNSAttributedString()
