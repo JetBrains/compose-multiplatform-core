@@ -28,32 +28,6 @@ import androidx.compose.ui.text.platform.PlatformTextRegistry
 import androidx.compose.ui.unit.Density
 import kotlin.jvm.JvmName
 
-@Deprecated(
-    "Use an override with `defaultLocaleList`",
-    ReplaceWith(
-        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, placeholders, softWrap, LocaleList.current)"
-    ),
-)
-actual fun ParagraphIntrinsics(
-    text: String,
-    style: TextStyle,
-    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
-    density: Density,
-    fontFamilyResolver: FontFamily.Resolver,
-    placeholders: List<AnnotatedString.Range<Placeholder>>,
-    softWrap: Boolean,
-): ParagraphIntrinsics =
-    PlatformTextRegistry.requireCurrent()
-        .createParagraphIntrinsics(
-            text = text,
-            style = style,
-            annotations = annotations,
-            placeholders = placeholders,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver,
-            defaultLocaleList = LocaleList.current,
-        )
-
 @Suppress("DEPRECATION")
 @Deprecated(
     "Font.ResourceLoader is deprecated, instead use FontFamily.Resolver",
@@ -80,27 +54,6 @@ actual fun ParagraphIntrinsics(
             density = density,
             fontFamilyResolver = createFontFamilyResolver(resourceLoader),
             defaultLocaleList = LocaleList.current,
-        )
-
-actual fun ParagraphIntrinsics(
-    text: String,
-    style: TextStyle,
-    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
-    density: Density,
-    fontFamilyResolver: FontFamily.Resolver,
-    placeholders: List<AnnotatedString.Range<Placeholder>>,
-    softWrap: Boolean,
-    defaultLocaleList: LocaleList,
-): ParagraphIntrinsics =
-    PlatformTextRegistry.requireCurrent()
-        .createParagraphIntrinsics(
-            text = text,
-            style = style,
-            annotations = annotations,
-            placeholders = placeholders,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver,
-            defaultLocaleList = defaultLocaleList,
         )
 
 @Suppress("DEPRECATION")
@@ -152,4 +105,51 @@ actual fun ParagraphIntrinsics(
             density = density,
             fontFamilyResolver = fontFamilyResolver,
             defaultLocaleList = LocaleList.current,
+        )
+
+@Deprecated(
+    "Use an override with `defaultLocaleList`",
+    ReplaceWith(
+        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, placeholders, softWrap, LocaleList.current)"
+    ),
+)
+actual fun ParagraphIntrinsics(
+    text: String,
+    style: TextStyle,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    softWrap: Boolean,
+): ParagraphIntrinsics =
+    PlatformTextRegistry.requireCurrent()
+        .createParagraphIntrinsics(
+            text = text,
+            style = style,
+            annotations = annotations,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = LocaleList.current,
+        )
+
+actual fun ParagraphIntrinsics(
+    text: String,
+    style: TextStyle,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    softWrap: Boolean,
+    defaultLocaleList: LocaleList,
+): ParagraphIntrinsics =
+    PlatformTextRegistry.requireCurrent()
+        .createParagraphIntrinsics(
+            text = text,
+            style = style,
+            annotations = annotations,
+            placeholders = placeholders,
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            defaultLocaleList = defaultLocaleList,
         )
