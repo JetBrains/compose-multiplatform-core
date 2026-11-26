@@ -41,9 +41,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Acquires next drawable, blocking up to 1 second if pool is exhausted.
- * Returns nil on timeout or if last presented drawable is still in use by GPU.
+ * Returns nil on timeout, if acquisitions are cancelled, or if the last presented
+ * drawable is still in use by GPU.
  */
 - (nullable CMPDrawable *)nextDrawable;
+
+/**
+ * Cancels current and subsequent drawable acquisitions until resumeDrawableAcquisitions is called.
+ */
+- (void)cancelDrawableAcquisitions;
+
+/**
+ * Allows drawable acquisitions to wait for an available drawable again.
+ */
+- (void)resumeDrawableAcquisitions;
 
 /**
  * Sets up GPU completion tracking for the drawable.

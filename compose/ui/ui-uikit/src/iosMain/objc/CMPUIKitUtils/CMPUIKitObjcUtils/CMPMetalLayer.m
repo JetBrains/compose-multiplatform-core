@@ -21,30 +21,31 @@
 #import <UIKit/UIKit.h>
 
 static const NSUInteger kMaxDrawables = 3;
-static const NSTimeInterval kDrawablePollingInterval = 0.001;
 static const NSTimeInterval kDrawableAcquisitionTimeout = 1.0;
 static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
 
 @implementation CMPMetalLayer {
-    NSLock *_drawablesLock;
+    NSCondition *_drawablesCondition;
     NSMutableSet<CMPDrawable *> *_availableDrawables;
     NSUInteger _totalDrawables;
     CMPDrawable *_lastPresentedDrawable;
     CGSize _drawableSize;
     CFTimeInterval _lastDrawablePresentedTime;
+    BOOL _areDrawableAcquisitionsCancelled;
 }
 
 - (instancetype)init {
     self = [super init];
     if (self) {
         _device = MTLCreateSystemDefaultDevice();
-        _drawablesLock = [[NSLock alloc] init];
+        _drawablesCondition = [[NSCondition alloc] init];
         _availableDrawables = [NSMutableSet set];
         _totalDrawables = 0;
         _lastPresentedDrawable = nil;
         _drawableSize = CGSizeZero;
         _drawablesGeneration = 0;
         _lastDrawablePresentedTime = 0;
+        _areDrawableAcquisitionsCancelled = NO;
     }
     return self;
 }
@@ -52,10 +53,11 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
 - (void)setDrawableSize:(CGSize)size {
     NSAssert([NSThread isMainThread], @"setDrawableSize - must be called on main thread");
     if (!CGSizeEqualToSize(_drawableSize, size)) {
-        [_drawablesLock lock];
+        [_drawablesCondition lock];
         _drawableSize = size;
         [self drainDrawablesUnsafe];
-        [_drawablesLock unlock];
+        [_drawablesCondition broadcast];
+        [_drawablesCondition unlock];
     }
 }
 
@@ -87,11 +89,8 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
     return IOSurfaceCreate((__bridge CFDictionaryRef)properties);
 }
 
-- (nullable CMPDrawable *)findNextDrawable {
-    [_drawablesLock lock];
-
+- (nullable CMPDrawable *)findNextDrawableUnsafe {
     if (_lastPresentedDrawable != nil && _lastPresentedDrawable.isWaitingForCommandBufferCompletion) {
-        [_drawablesLock unlock];
         return nil;
     }
 
@@ -148,43 +147,81 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
         }
     }
 
-    [_drawablesLock unlock];
     return result;
 }
 
 - (nullable CMPDrawable *)nextDrawable {
     NSTimeInterval startTime = CACurrentMediaTime();
+    CMPDrawable *drawable = nil;
+
+    [_drawablesCondition lock];
 
     while (true) {
-        CMPDrawable *drawable = [self findNextDrawable];
+        drawable = [self findNextDrawableUnsafe];
         if (drawable != nil) {
-            return drawable;
+            break;
         }
 
-        if (CACurrentMediaTime() - startTime >= kDrawableAcquisitionTimeout) {
-            return nil;
+        if (_areDrawableAcquisitionsCancelled) {
+            break;
         }
 
-        [NSThread sleepForTimeInterval:kDrawablePollingInterval];
+        NSTimeInterval remainingTime = kDrawableAcquisitionTimeout - (CACurrentMediaTime() - startTime);
+        if (remainingTime <= 0) {
+            break;
+        }
+
+        [_drawablesCondition waitUntilDate:
+            [NSDate dateWithTimeIntervalSinceNow:remainingTime]];
     }
+
+    [_drawablesCondition unlock];
+    return drawable;
+}
+
+- (void)cancelDrawableAcquisitions {
+    [_drawablesCondition lock];
+    _areDrawableAcquisitionsCancelled = YES;
+    [_drawablesCondition broadcast];
+    [_drawablesCondition unlock];
+}
+
+- (void)resumeDrawableAcquisitions {
+    [_drawablesCondition lock];
+    _areDrawableAcquisitionsCancelled = NO;
+    [_drawablesCondition broadcast];
+    [_drawablesCondition unlock];
 }
 
 - (void)prepareDrawableForPresent:(CMPDrawable *)drawable
                     commandBuffer:(id<MTLCommandBuffer>)commandBuffer {
+    [_drawablesCondition lock];
     drawable.isWaitingForCommandBufferCompletion = YES;
+    [_drawablesCondition unlock];
 
+    __weak CMPMetalLayer *weakSelf = self;
     __weak CMPDrawable *weakDrawable = drawable;
     [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> _Nonnull buffer) {
         CMPDrawable *strongDrawable = weakDrawable;
-        if (strongDrawable != nil) {
-            strongDrawable.isWaitingForCommandBufferCompletion = NO;
+        CMPMetalLayer *strongSelf = weakSelf;
+        if (strongDrawable != nil && strongSelf != nil) {
+            [strongSelf drawableDidCompleteCommandBuffer:strongDrawable];
         }
     }];
 }
 
+- (void)drawableDidCompleteCommandBuffer:(CMPDrawable *)drawable {
+    [_drawablesCondition lock];
+    drawable.isWaitingForCommandBufferCompletion = NO;
+    [_drawablesCondition broadcast];
+    [_drawablesCondition unlock];
+}
+
 - (void)presentDrawable:(CMPDrawable *)drawable
               onDisplay:(void (^)(void))displayHandler {
+    [_drawablesCondition lock];
     drawable.presentedTime = CACurrentMediaTime();
+    [_drawablesCondition unlock];
 
     if ([NSThread isMainThread]) {
         [self presentOnMainThread:drawable onDisplay: displayHandler];
@@ -199,26 +236,32 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
                   onDisplay:(void (^)(void))displayHandler {
     NSAssert([NSThread isMainThread], @"presentOnMainThread - must be called on main thread");
 
+    [_drawablesCondition lock];
+
     if (!CGSizeEqualToSize(drawable.textureSize, _drawableSize)) {
         [drawable dispose];
         // Invalid drawable size. Disposing.
+        [_drawablesCondition unlock];
         return;
     }
 
     if (_lastDrawablePresentedTime > drawable.presentedTime) {
-        [self releaseDrawable:drawable];
+        [self releaseDrawableUnsafe:drawable];
         // Drop drawable that was scheduled before the already presented one
+        [_drawablesCondition broadcast];
+        [_drawablesCondition unlock];
         return;
     }
 
     _lastDrawablePresentedTime = drawable.presentedTime;
 
-    [_drawablesLock lock];
     if (_lastPresentedDrawable != nil) {
         [_availableDrawables addObject:_lastPresentedDrawable];
     }
     _lastPresentedDrawable = drawable;
-    [_drawablesLock unlock];
+    [_drawablesCondition broadcast];
+
+    [_drawablesCondition unlock];
 
     [self setNeedsDisplay]; // Prevents frame drops during touch events
 
@@ -231,10 +274,15 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
     [CATransaction commit];
 }
 
-- (void)releaseDrawable:(CMPDrawable *)drawable {
-    [_drawablesLock lock];
+- (void)releaseDrawableUnsafe:(CMPDrawable *)drawable {
     [_availableDrawables addObject:drawable];
-    [_drawablesLock unlock];
+}
+
+- (void)releaseDrawable:(CMPDrawable *)drawable {
+    [_drawablesCondition lock];
+    [self releaseDrawableUnsafe:drawable];
+    [_drawablesCondition broadcast];
+    [_drawablesCondition unlock];
 }
 
 - (void)drainDrawablesUnsafe {
@@ -249,9 +297,10 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
 }
 
 - (void)drainDrawables {
-    [_drawablesLock lock];
+    [_drawablesCondition lock];
     [self drainDrawablesUnsafe];
-    [_drawablesLock unlock];
+    [_drawablesCondition broadcast];
+    [_drawablesCondition unlock];
 }
 
 @end
