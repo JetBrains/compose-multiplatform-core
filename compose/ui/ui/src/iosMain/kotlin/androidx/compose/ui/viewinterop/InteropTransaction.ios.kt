@@ -20,9 +20,23 @@ import androidx.compose.ui.util.fastForEach
 import platform.QuartzCore.CATransaction
 
 /**
- * Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction]
+ * The transaction scope passed to an action while its transaction is performing.
+ *
+ * A regular action can use this scope to add work to the same transaction's final-frame phase.
  */
-internal typealias InteropSyncAction = () -> Unit
+internal class InteropTransactionScope(
+    private val transaction: InteropMutableTransaction
+) {
+    fun scheduleFinalFrameUpdate(action: () -> Unit) {
+        transaction.scheduleFinalFrameSynchronizedAction { _ -> action() }
+    }
+}
+
+/**
+ * Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction].
+ * The action receives the scope of the transaction that performs it.
+ */
+internal typealias InteropSyncAction = (InteropTransactionScope) -> Unit
 
 /**
  * A batch of changes to UIKit objects.
@@ -91,8 +105,18 @@ internal class InteropMutableTransaction(
         get() = hasPendingActions && requiresFrameSynchronization
 
     override fun performTransaction() {
-        actions.fastForEach { it.invoke() }
-        finalFrameActions.fastForEach { it.invoke() }
+        val transactionScope = InteropTransactionScope(this)
+        actions.fastForEach { it(transactionScope) }
+
+        // A regular action can discover a final-frame update, such as an interop mask after its
+        // wrapper frame is applied. Drain the list dynamically so such updates still run in
+        // this transaction rather than being deferred to the next frame.
+        var finalFrameActionIndex = 0
+        while (finalFrameActionIndex < finalFrameActions.size) {
+            val action = finalFrameActions[finalFrameActionIndex]
+            finalFrameActionIndex++
+            action(transactionScope)
+        }
     }
 
     /**

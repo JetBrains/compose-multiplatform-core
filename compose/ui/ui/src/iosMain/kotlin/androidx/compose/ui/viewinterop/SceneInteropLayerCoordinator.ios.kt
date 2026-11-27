@@ -92,7 +92,7 @@ internal class SceneInteropLayerCoordinator(
     }
 
     private fun scheduleUpdate() {
-        finalFrameUpdateScheduler.schedule(::applyMasks)
+        finalFrameUpdateScheduler.schedule { applyMasks() }
     }
 
     private fun applyMasks() {

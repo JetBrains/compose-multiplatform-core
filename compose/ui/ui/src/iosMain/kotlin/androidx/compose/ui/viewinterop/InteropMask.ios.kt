@@ -57,7 +57,12 @@ internal class InteropMask(
     // Distinguishes final-frame callbacks queued before a clear from those queued after it.
     private var updateGeneration = 0
 
-    fun update(rootSize: IntSize, unclippedRect: IntRect, clippedRect: IntRect) {
+    fun update(
+        rootSize: IntSize,
+        unclippedRect: IntRect,
+        clippedRect: IntRect,
+        transactionScope: InteropTransactionScope,
+    ) {
         this.rootSize = rootSize
         this.unclippedRect = unclippedRect
         this.clippedRect = clippedRect
@@ -66,7 +71,7 @@ internal class InteropMask(
         // geometry so a later switch to overlay can resolve the mask without another layout pass.
         if (!interopWrappingView.placedAsOverlay) return
 
-        scheduleUpdate()
+        scheduleUpdate(transactionScope)
     }
 
     fun updateSceneLayerMask(occluderRects: List<IntRect>) {
@@ -80,12 +85,18 @@ internal class InteropMask(
         applyCurrentLayout()
     }
 
-    fun scheduleUpdate() {
+    fun scheduleUpdate(transactionScope: InteropTransactionScope? = null) {
         val scheduledGeneration = updateGeneration
-        finalFrameUpdateScheduler.schedule {
+        val action: () -> Unit = {
             if (scheduledGeneration == updateGeneration) {
                 applyCurrentLayout()
             }
+        }
+
+        if (transactionScope == null) {
+            finalFrameUpdateScheduler.schedule(action)
+        } else {
+            finalFrameUpdateScheduler.schedule(transactionScope, action)
         }
     }
 

@@ -21,11 +21,8 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.uikit.utils.CMPInteropHostView
 import kotlinx.cinterop.CValue
@@ -45,8 +42,8 @@ import platform.UIKit.UIView
  *
  * **Hierarchy**:
  *  - [group] is the clipping viewport. It uses UIKit bounds clipping for background interop and
- *    a mask for overlay interop. It is positioned by setting its frame to the *clipped* rect from
- *    Compose. [group] is placed to hierarchy
+ *    can be masked for overlay interop. It is positioned by setting its frame to the *clipped*
+ *    rect from Compose. [group] is placed to hierarchy
  *    in [InteropViewHolder.insertInteropView].
  *  - [userComponentHostView] is the "unclipped content container". It is positioned by setting
  *    its frame to the *unclipped* rect relative to [group].
@@ -66,8 +63,6 @@ import platform.UIKit.UIView
 internal class InteropElementLayout(
     private val group: InteropWrappingView,
     private val userComponent: UIView,
-    density: () -> Density,
-    private val finalFrameUpdateScheduler: FinalFrameUpdateScheduler,
 ) {
     /**
      * Frame-driven container that defines the "unclipped content bounds".
@@ -79,11 +74,6 @@ internal class InteropElementLayout(
             it.backgroundColor = null
         }
     private var userComponentHostSafeAreaInsets: UserComponentHostSafeAreaInsets? = null
-    private val interopMask = InteropMask(
-        interopWrappingView = group,
-        density = density,
-        finalFrameUpdateScheduler = finalFrameUpdateScheduler,
-    )
 
     init {
         group.onDidMoveToWindow = { userComponentHostSafeAreaInsets?.update() }
@@ -147,31 +137,14 @@ internal class InteropElementLayout(
         )
     }
 
-    fun update(
+    fun updateFrames(
         groupFrame: CValue<CGRect>?,
         userComponentFrame: CValue<CGRect>?,
-        rootSize: IntSize,
-        unclippedRect: IntRect,
-        clippedRect: IntRect,
     ) {
         groupFrame?.let(group::setFrame)
         userComponentFrame?.let(userComponentHostView::setFrame)
         userComponentHostSafeAreaInsets?.update()
-        interopMask.update(rootSize, unclippedRect, clippedRect)
     }
-
-    /** Schedules one final-frame mask update for the current layout and occluders. */
-    fun scheduleMaskUpdate() = interopMask.scheduleUpdate()
-
-    /** Applies opaque regions owned by higher-z scene layers. */
-    fun updateSceneLayerMask(occluderRects: List<IntRect>) =
-        interopMask.updateSceneLayerMask(occluderRects)
-
-    /** Removes the mask and clears cached mask state when the interop is removed or reused. */
-    fun clearSceneLayerMask() = interopMask.clear()
-
-    val hasInstalledMask: Boolean
-        get() = interopMask.hasInstalledMask
 
     fun updateSafeAreaInsetsPolicy(policy: UIKitInteropSafeAreaInsetsPolicy) {
         val currentSafeAreaInsets = userComponentHostSafeAreaInsets

@@ -23,14 +23,27 @@ package androidx.compose.ui.viewinterop
  * independently from the global scene-layer update.
  */
 internal class FinalFrameUpdateScheduler(
-    private val scheduleFinalFrameUpdate: (() -> Unit) -> Unit
+    private val scheduleByDefault: (() -> Unit) -> Unit
 ) {
     private var isUpdateScheduled = false
 
     val isScheduled: Boolean
         get() = isUpdateScheduled
 
-    fun schedule(action: () -> Unit) {
+    fun schedule(action: () -> Unit) = enqueue(scheduleByDefault, action)
+
+    fun schedule(transactionScope: InteropTransactionScope, action: () -> Unit) =
+        enqueue(transactionScope::scheduleFinalFrameUpdate, action)
+
+    fun cancel() {
+        // A callback already submitted to the transaction can still run; owners ignore stale work.
+        isUpdateScheduled = false
+    }
+
+    private fun enqueue(
+        scheduleFinalFrameUpdate: (() -> Unit) -> Unit,
+        action: () -> Unit
+    ) {
         if (isUpdateScheduled) return
 
         isUpdateScheduled = true
@@ -38,11 +51,6 @@ internal class FinalFrameUpdateScheduler(
             isUpdateScheduled = false
             action()
         }
-    }
-
-    fun cancel() {
-        // A callback already submitted to the transaction can still run; owners ignore stale work.
-        isUpdateScheduled = false
     }
 }
 
@@ -54,5 +62,7 @@ internal class FinalFrameUpdateScheduler(
  */
 internal fun InteropContainer.createFinalFrameUpdateScheduler(): FinalFrameUpdateScheduler {
     val iosContainer = this as IosInteropContainer
-    return FinalFrameUpdateScheduler { action -> iosContainer.scheduleFinalFrameUpdate(action) }
+    return FinalFrameUpdateScheduler { action ->
+        iosContainer.scheduleFinalFrameUpdate { action() }
+    }
 }
