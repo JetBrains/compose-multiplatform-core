@@ -16,18 +16,8 @@
 
 package androidx.compose.material3.integration.a2ui.ui
 
-import androidx.a2ui.compose.ui.A2uiCatalog
-import androidx.a2ui.compose.ui.A2uiMessageProcessor
-import androidx.a2ui.model.catalog.functions.A2uiLocaleProvider
-import androidx.a2ui.model.processor.A2uiActionInterceptor
-import androidx.a2ui.model.processor.A2uiMessageProcessor
 import androidx.a2ui.model.processor.A2uiSurfaceModel
 import androidx.a2ui.model.protocol.A2uiComponentPayload
-import androidx.a2ui.model.protocol.A2uiCreateSurfaceMessage
-import androidx.a2ui.model.protocol.A2uiEventAction
-import androidx.a2ui.model.protocol.A2uiFunctionCallAction
-import androidx.a2ui.model.protocol.A2uiUpdateComponentsMessage
-import androidx.a2ui.model.protocol.A2uiUpdateDataModelMessage
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Grid
@@ -57,12 +47,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.a2ui.A2uiSurface
-import androidx.compose.material3.a2ui.catalog.MaterialA2uiBasicCatalogV1Defaults
-import androidx.compose.material3.a2ui.catalog.materialA2uiBasicCatalogV1
 import androidx.compose.material3.integration.a2ui.icons.ArrowBackIcon
 import androidx.compose.material3.integration.a2ui.icons.CodeIcon
 import androidx.compose.material3.integration.a2ui.model.UiComponent
-import androidx.compose.material3.integration.a2ui.ui.samples.AudioPlayerRenderer
 import androidx.compose.material3.integration.a2ui.ui.samples.AudioPlayerSample
 import androidx.compose.material3.integration.a2ui.ui.samples.ButtonSample
 import androidx.compose.material3.integration.a2ui.ui.samples.CardSample
@@ -72,7 +59,6 @@ import androidx.compose.material3.integration.a2ui.ui.samples.ColumnSample
 import androidx.compose.material3.integration.a2ui.ui.samples.DateTimeInputSample
 import androidx.compose.material3.integration.a2ui.ui.samples.DividerSample
 import androidx.compose.material3.integration.a2ui.ui.samples.IconSample
-import androidx.compose.material3.integration.a2ui.ui.samples.ImageRenderer
 import androidx.compose.material3.integration.a2ui.ui.samples.ImageSample
 import androidx.compose.material3.integration.a2ui.ui.samples.ListSample
 import androidx.compose.material3.integration.a2ui.ui.samples.ModalSample
@@ -81,16 +67,13 @@ import androidx.compose.material3.integration.a2ui.ui.samples.SliderSample
 import androidx.compose.material3.integration.a2ui.ui.samples.TabsSample
 import androidx.compose.material3.integration.a2ui.ui.samples.TextFieldSample
 import androidx.compose.material3.integration.a2ui.ui.samples.TextSample
-import androidx.compose.material3.integration.a2ui.ui.samples.VideoRenderer
 import androidx.compose.material3.integration.a2ui.ui.samples.VideoSample
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalMediaQueryApi
@@ -102,13 +85,15 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMediaQueryApi::class)
 @Composable
 fun ComponentDetailScreen(
     component: UiComponent,
+    surfaceModel: A2uiSurfaceModel?,
+    snackbarMessages: Flow<String>,
+    onUpdateSurface: (List<A2uiComponentPayload>, Map<String, Any?>) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -116,17 +101,16 @@ fun ComponentDetailScreen(
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     var showJsonSheet by remember { mutableStateOf(false) }
 
-    val surfaceId = remember(component) { "demo_${component.name.lowercase()}" }
-    val catalog = rememberDemoCatalog()
-    val processor =
-        rememberDemoMessageProcessor(catalog = catalog, snackbarHostState = snackbarHostState)
-
-    val surfaces by processor.activeSurfaces.collectAsState()
-    val surfaceModel = surfaces.firstOrNull { it.id == surfaceId }
+    LaunchedEffect(snackbarMessages, snackbarHostState) {
+        snackbarMessages.collect { message -> snackbarHostState.showSnackbar(message) }
+    }
 
     var currentComponents by remember { mutableStateOf<List<A2uiComponentPayload>>(emptyList()) }
     var currentDataModel by remember { mutableStateOf<Map<String, Any?>>(emptyMap()) }
 
+    // TODO: Migrate to computedMediaQuery after upgrading Foundation to a pinned dependency with
+    //  the new API.
+    @Suppress("Deprecation")
     val showSideBySide by derivedMediaQuery {
         windowWidth >= 600.dp || (windowWidth > windowHeight && windowWidth >= 480.dp)
     }
@@ -150,12 +134,7 @@ fun ComponentDetailScreen(
             onPayloadUpdated = { updatedComponentsPayload, updatedDataModel ->
                 currentComponents = updatedComponentsPayload
                 currentDataModel = updatedDataModel
-                processor.updateSurface(
-                    surfaceId = surfaceId,
-                    catalogId = catalog.id,
-                    components = updatedComponentsPayload,
-                    dataModel = updatedDataModel,
-                )
+                onUpdateSurface(updatedComponentsPayload, updatedDataModel)
             },
         )
     }
@@ -163,73 +142,10 @@ fun ComponentDetailScreen(
     if (showJsonSheet) {
         JsonBottomSheet(
             sheetState = sheetState,
-            surfaceId = surfaceId,
+            surfaceId = component.surfaceId,
             components = currentComponents,
             dataModel = currentDataModel,
             onDismissRequest = { showJsonSheet = false },
-        )
-    }
-}
-
-@Composable
-private fun rememberDemoMessageProcessor(
-    catalog: A2uiCatalog,
-    snackbarHostState: SnackbarHostState,
-): A2uiMessageProcessor {
-    val coroutineScope = rememberCoroutineScope()
-    val actionInterceptor =
-        remember(coroutineScope, snackbarHostState) {
-            A2uiActionInterceptor { action ->
-                coroutineScope.launch {
-                    val actionName =
-                        when (action) {
-                            is A2uiEventAction -> action.eventName
-                            is A2uiFunctionCallAction -> action.functionName
-                        }
-                    snackbarHostState.showSnackbar("Action dispatched: $actionName")
-                }
-                action
-            }
-        }
-
-    val processor =
-        remember(catalog, actionInterceptor) {
-            A2uiMessageProcessor(
-                catalogs = listOf(catalog),
-                interceptors = listOf(actionInterceptor),
-            )
-        }
-
-    LaunchedEffect(processor) { launch(Dispatchers.Default) { processor.collectMessages() } }
-
-    return processor
-}
-
-private fun A2uiMessageProcessor.updateSurface(
-    surfaceId: String,
-    catalogId: String,
-    components: List<A2uiComponentPayload>,
-    dataModel: Map<String, Any?>,
-) {
-    if (components.isNotEmpty()) {
-        processMessage(
-            A2uiCreateSurfaceMessage(
-                surfaceId = surfaceId,
-                catalogId = catalogId,
-            )
-        )
-        processMessage(
-            A2uiUpdateDataModelMessage(
-                surfaceId = surfaceId,
-                path = "/",
-                value = dataModel,
-            )
-        )
-        processMessage(
-            A2uiUpdateComponentsMessage(
-                surfaceId = surfaceId,
-                components = components,
-            )
         )
     }
 }
@@ -350,50 +266,6 @@ private fun ControlsPane(
     }
 }
 
-@Composable
-private fun rememberDemoCatalog() = remember {
-    materialA2uiBasicCatalogV1(
-        image =
-            MaterialA2uiBasicCatalogV1Defaults.image {
-                url,
-                contentDescription,
-                contentScale,
-                modifier,
-                _ ->
-                ImageRenderer(
-                    url = url,
-                    contentDescription = contentDescription,
-                    contentScale = contentScale,
-                    modifier = modifier,
-                )
-            },
-        video =
-            MaterialA2uiBasicCatalogV1Defaults.video { url, modifier, onError ->
-                VideoRenderer(
-                    url = url,
-                    modifier = modifier,
-                    onError = onError,
-                )
-            },
-        audioPlayer =
-            MaterialA2uiBasicCatalogV1Defaults.audioPlayer {
-                url,
-                contentDescription,
-                modifier,
-                onError ->
-                AudioPlayerRenderer(
-                    url = url,
-                    contentDescription = contentDescription,
-                    modifier = modifier,
-                    onError = onError,
-                )
-            },
-        urlOpener = {},
-        messageFormatter = { pattern, _, _ -> pattern },
-        localeProvider = A2uiLocaleProvider.Default,
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ComponentDetailTopBar(
@@ -443,8 +315,7 @@ private fun ComponentPreviewCard(
             if (surfaceModel != null) {
                 val surfaceModifier =
                     when (component) {
-                        UiComponent.ROW ->
-                            Modifier.fillMaxWidth().wrapContentHeight(Alignment.CenterVertically)
+                        UiComponent.ROW,
                         UiComponent.COLUMN,
                         UiComponent.LIST,
                         UiComponent.DIVIDER -> Modifier.fillMaxSize()

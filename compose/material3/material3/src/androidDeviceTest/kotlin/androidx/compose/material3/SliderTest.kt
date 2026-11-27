@@ -16,10 +16,12 @@
 
 package androidx.compose.material3
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.Interaction
@@ -29,11 +31,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.internal.HorizontalSemanticsBoundsPadding
 import androidx.compose.material3.tokens.SliderTokens
 import androidx.compose.runtime.Composable
@@ -50,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
@@ -59,6 +64,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsEqualTo
@@ -75,6 +84,7 @@ import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
@@ -833,6 +843,45 @@ class SliderTest {
         }
     }
 
+    // Regression test for b/415838608
+    @Test
+    fun rangeSlider_insideHorizontalScroll_dragMovesThumbNotScroll() {
+        val state = RangeSliderState(0f, 1f)
+        lateinit var scrollState: ScrollState
+        var slop = 0f
+
+        rule.setMaterialContent(lightColorScheme()) {
+            slop = LocalViewConfiguration.current.touchSlop
+            scrollState = rememberScrollState()
+            // A scrollable parent that competes for horizontal drags.
+            Row(Modifier.requiredWidth(200.dp).horizontalScroll(scrollState)) {
+                RangeSlider(
+                    state = state,
+                    onValueChange = {
+                        state.startValue = it.start
+                        state.endValue = it.endInclusive
+                    },
+                    modifier = Modifier.testTag(tag).requiredWidth(200.dp),
+                )
+                Spacer(Modifier.requiredWidth(400.dp))
+            }
+        }
+
+        rule.onNodeWithTag(tag).performTouchInput {
+            // Drag the end thumb to the left, crossing the slop in a single event like a fast
+            // swipe does. Without consuming that change, the parent horizontalScroll sees it,
+            // crosses its own slop and scrolls by the overshoot before the slider's drag starts.
+            down(Offset(right - 1f, centerY))
+            moveBy(Offset(-(slop + 100f), 0f))
+            up()
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(state.endValue).isLessThan(1f)
+            Truth.assertThat(scrollState.value).isEqualTo(0)
+        }
+    }
+
     @Test
     fun rangeSlider_drag_out_of_bounds() {
         val state = RangeSliderState(0f, 1f)
@@ -1137,6 +1186,48 @@ class SliderTest {
         rule.runOnIdle {
             Truth.assertThat(state.startValue).isWithin(SliderTolerance).of(expected)
             Truth.assertThat(state.endValue).isEqualTo(0.5f)
+        }
+    }
+
+    @Test
+    fun rangeSlider_overlappingThumbs_tapUpdatesValue() {
+        val state = RangeSliderState(0.5f, 0.8f)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            RangeSlider(
+                state = state,
+                onValueChange = {
+                    state.startValue = it.start
+                    state.endValue = it.endInclusive
+                },
+                modifier = Modifier.testTag(tag),
+            )
+        }
+
+        // Drag start thumb past end thumb so both thumbs overlap at 0.8f
+        rule.onNodeWithTag(tag).performTouchInput {
+            down(center)
+            moveTo(Offset(right, centerY))
+            up()
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(state.startValue).isWithin(SliderTolerance).of(0.8f)
+            Truth.assertThat(state.endValue).isWithin(SliderTolerance).of(0.8f)
+        }
+
+        // Tap to the right of the overlapping thumbs to move the end thumb
+        var expectedEnd = 0f
+        rule.onNodeWithTag(tag).performTouchInput {
+            val tapX = left + (right - left) * 0.9f
+            down(Offset(tapX, centerY))
+            up()
+            expectedEnd = calculateFraction(left, right, tapX)
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(state.startValue).isWithin(SliderTolerance).of(0.8f)
+            Truth.assertThat(state.endValue).isWithin(SliderTolerance).of(expectedEnd)
         }
     }
 
@@ -1893,6 +1984,167 @@ class SliderTest {
         rule.runOnIdle {
             Truth.assertThat(valueChanges.size).isGreaterThan(0)
             Truth.assertThat(valueChangeFinishedCount).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun slider_valueChange_doesNotRecomposeOrRemeasure() {
+        val state = SliderState(0f)
+        var sliderMeasureCount = 0
+        var thumbRecompositionCount = 0
+        var trackRecompositionCount = 0
+
+        rule.setMaterialContent(lightColorScheme()) {
+            Slider(
+                state = state,
+                onValueChange = { state.value = it },
+                modifier =
+                    Modifier.testTag(tag).layout { measurable, constraints ->
+                        sliderMeasureCount++
+                        val placeable = measurable.measure(constraints)
+                        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                    },
+                thumb = {
+                    SideEffect { thumbRecompositionCount++ }
+                    SliderDefaults.Thumb(
+                        interactionSource = remember { MutableInteractionSource() }
+                    )
+                },
+                track = { sliderState ->
+                    SideEffect { trackRecompositionCount++ }
+                    SliderDefaults.Track(sliderState = sliderState)
+                },
+            )
+        }
+
+        var initialMeasureCount = 0
+        rule.runOnIdle {
+            initialMeasureCount = sliderMeasureCount
+            Truth.assertThat(initialMeasureCount).isGreaterThan(0)
+            Truth.assertThat(thumbRecompositionCount).isEqualTo(1)
+            Truth.assertThat(trackRecompositionCount).isEqualTo(1)
+        }
+
+        // Simulate video playback updating slider value across multiple frames (b/472965313)
+        rule.runOnIdle { state.value = 0.25f }
+        rule.runOnIdle { state.value = 0.50f }
+        rule.runOnIdle { state.value = 0.75f }
+
+        rule.runOnIdle {
+            Truth.assertThat(sliderMeasureCount).isEqualTo(initialMeasureCount)
+            Truth.assertThat(thumbRecompositionCount).isEqualTo(1)
+            Truth.assertThat(trackRecompositionCount).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun slider_semantics_stateDescription_onlySetForCenteredSlider() {
+        val standardTag = "standard"
+        val customTag = "custom"
+        val centeredTag = "centered"
+
+        rule.setMaterialContent(lightColorScheme()) {
+            Column {
+                Slider(
+                    state = remember { SliderState(0.5f) },
+                    onValueChange = {},
+                    modifier = Modifier.testTag(standardTag),
+                )
+                Slider(
+                    state = remember { SliderState(0.5f) },
+                    onValueChange = {},
+                    modifier =
+                        Modifier.semantics { stateDescription = "0:13 of 0:18" }.testTag(customTag),
+                )
+                Slider(
+                    state = remember { SliderState(0f, trackRange = -50f..50f) },
+                    onValueChange = {},
+                    modifier = Modifier.testTag(centeredTag),
+                )
+            }
+        }
+
+        // Standard slider should not set StateDescription so ProgressBarRangeInfo provides
+        // percentage
+        rule
+            .onNodeWithTag(standardTag)
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
+            .assertRangeInfoEquals(ProgressBarRangeInfo(0.5f, 0f..1f, 0))
+
+        // Custom StateDescription passed via modifier must be preserved
+        rule
+            .onNodeWithTag(customTag)
+            .assert(
+                SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "0:13 of 0:18")
+            )
+            .assertRangeInfoEquals(ProgressBarRangeInfo(0.5f, 0f..1f, 0))
+
+        // Centered slider sets StateDescription to the formatted value
+        rule
+            .onNodeWithTag(centeredTag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "0.0"))
+            .assertRangeInfoEquals(ProgressBarRangeInfo(0f, -50f..50f, 0))
+    }
+
+    @Test
+    fun slider_discreteIntegerTicks_returnsExactIntegers() {
+        val state = SliderState(value = 2f, steps = 13, trackRange = 2f..16f)
+        val emittedValues = mutableListOf<Float>()
+
+        rule.setMaterialContent(lightColorScheme()) {
+            val widthDp = with(LocalDensity.current) { 1080.toDp() }
+            // Lowers the density on windows narrower than 1080px, where the ends of the slider
+            // would be outside of the window and the touches there would not be delivered.
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.ForcedSize(DpSize(widthDp, 100.dp))
+            ) {
+                Box {
+                    Slider(
+                        state = state,
+                        onValueChange = {
+                            emittedValues.add(it)
+                            state.value = it
+                        },
+                        modifier = Modifier.testTag(tag).fillMaxWidth(),
+                    )
+                }
+            }
+        }
+
+        rule.onNodeWithTag(tag).performTouchInput {
+            down(centerLeft)
+            val stepPx = width / 50f
+            for (i in 1..50) {
+                moveBy(Offset(stepPx, 0f))
+            }
+            up()
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(emittedValues)
+                .containsExactly(
+                    3f,
+                    4f,
+                    5f,
+                    6f,
+                    7f,
+                    8f,
+                    9f,
+                    10f,
+                    11f,
+                    12f,
+                    13f,
+                    14f,
+                    15f,
+                    16f,
+                )
+                .inOrder()
+        }
+
+        val stateDivisibleBy7 = SliderState(value = 0f, steps = 6, trackRange = 0f..21f)
+        for (expected in 0..21 step 3) {
+            stateDivisibleBy7.value = expected + 0.1f
+            Truth.assertThat(stateDivisibleBy7.value).isEqualTo(expected.toFloat())
         }
     }
 }

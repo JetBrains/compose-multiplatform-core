@@ -61,6 +61,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -72,6 +73,9 @@ import androidx.compose.ui.unit.width
 import androidx.core.graphics.Insets
 import androidx.core.view.WindowInsetsCompat
 import androidx.test.espresso.Espresso
+import androidx.test.espresso.action.ViewActions
+import androidx.test.espresso.matcher.RootMatchers
+import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -334,7 +338,8 @@ class ModalBottomSheetTest {
             val density = LocalDensity.current
             sheetState =
                 SheetState(
-                    enabledValues = setOf(SheetValue.Expanded, SheetValue.Hidden),
+                    enabledValues =
+                        setOf(SheetValue.Expanded, SheetValue.PartiallyExpanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -395,7 +400,13 @@ class ModalBottomSheetTest {
         rule.waitForIdle()
         assertThat(sheetState.isVisible).isTrue()
 
-        Espresso.pressBackUnconditionally()
+        // The sheet is hosted in its own dialog window, which gains window focus asynchronously.
+        // Target that window explicitly so Espresso waits for it to be focused before sending the
+        // back key. The default root matcher only matches a dialog once it has focus, so it would
+        // otherwise pick the unfocused activity window and time out waiting for it to gain focus.
+        Espresso.onView(ViewMatchers.isRoot())
+            .inRoot(RootMatchers.isDialog())
+            .perform(ViewActions.pressBackUnconditionally())
         rule.waitForIdle()
 
         assertThat(sheetState.isVisible).isTrue()
@@ -751,6 +762,155 @@ class ModalBottomSheetTest {
         restorationTester.emulateSavedInstanceStateRestore()
         rule.waitForIdle()
         assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+    }
+
+    @Test
+    fun modalBottomSheet_shortSheet_partiallyExpandedAtHalfContentHeight() {
+        lateinit var sheetState: SheetState
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+            ModalBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = {},
+                dragHandle = null,
+                contentWindowInsets = { WindowInsets(0) },
+            ) {
+                Box(Modifier.fillMaxWidth().fillMaxHeight(0.4f).testTag(sheetTag))
+            }
+        }
+
+        rule.waitForIdle()
+        val screenHeightPx =
+            with(rule.density) { rule.onNode(isDialog()).getUnclippedBoundsInRoot().height.toPx() }
+        val sheetHeightPx = screenHeightPx * 0.4f
+
+        // PartiallyExpanded should be at half the content height (fullHeight - sheetHeight / 2f)
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.requireOffset())
+            .isWithin(1f)
+            .of(screenHeightPx - (sheetHeightPx / 2f))
+
+        // Expanding moves to full content height (fullHeight - sheetHeight)
+        scope.launch { sheetState.expand() }
+        rule.waitForIdle()
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.requireOffset()).isWithin(1f).of(screenHeightPx - sheetHeightPx)
+    }
+
+    @Test
+    fun modalBottomSheet_tallSheet_partiallyExpandedAtHalfScreenHeight() {
+        lateinit var sheetState: SheetState
+
+        rule.setContent {
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+            ModalBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = {},
+                dragHandle = null,
+                contentWindowInsets = { WindowInsets(0) },
+            ) {
+                Box(Modifier.fillMaxWidth().fillMaxHeight(2f).testTag(sheetTag))
+            }
+        }
+
+        rule.waitForIdle()
+        val screenHeightPx =
+            with(rule.density) { rule.onNode(isDialog()).getUnclippedBoundsInRoot().height.toPx() }
+
+        // PartiallyExpanded should be pinned to half the screen height (fullHeight / 2f)
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.requireOffset()).isWithin(1f).of(screenHeightPx / 2f)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun modalBottomSheet_lookaheadScope_rapidAnchorRemoval_doesNotCrash() {
+        lateinit var sheetState: SheetState
+        lateinit var scope: CoroutineScope
+        var sheetFraction by mutableStateOf(0.7f)
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            sheetState = rememberModalBottomSheetState()
+            androidx.compose.ui.layout.LookaheadScope {
+                ModalBottomSheet(sheetState = sheetState, onDismissRequest = {}) {
+                    Box(Modifier.fillMaxWidth().fillMaxHeight(sheetFraction).testTag(sheetTag))
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+
+        // Shrink sheet below 50% threshold while targeting/animating to PartiallyExpanded
+        rule.runOnIdle {
+            scope.launch { sheetState.partialExpand() }
+            sheetFraction = 0.3f
+        }
+        rule.waitForIdle()
+
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.targetValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.hasPartiallyExpandedState).isFalse()
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun modalBottomSheet_imeOpen_openSheet_doesNotCrash() {
+        var openBottomSheet by mutableStateOf(false)
+        var simulatedImeBottomPadding by mutableStateOf(500.dp)
+        lateinit var bottomSheetState: SheetState
+
+        rule.setContent {
+            bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
+            if (openBottomSheet) {
+                androidx.compose.ui.layout.LookaheadScope {
+                    ModalBottomSheet(
+                        onDismissRequest = { openBottomSheet = false },
+                        modifier = Modifier.padding(bottom = simulatedImeBottomPadding),
+                        sheetState = bottomSheetState,
+                        contentWindowInsets = { WindowInsets(0) },
+                    ) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 32.dp)
+                        ) {
+                            var sheetText by remember { mutableStateOf("") }
+                            OutlinedTextField(
+                                value = sheetText,
+                                onValueChange = { sheetText = it },
+                                label = { Text("Sheet TextField") },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Box(Modifier.height(100.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.mainClock.autoAdvance = false
+        openBottomSheet = true
+
+        // Advance frames so ModalBottomSheet's LaunchedEffect(sheetState) { sheetState.show() }
+        // starts animating toward PartiallyExpanded while the simulated IME padding keeps
+        // fullHeight small enough for PartiallyExpanded to exist.
+        rule.mainClock.advanceTimeBy(32)
+
+        // Simulate the IME closing while the sheet's show() animation to PartiallyExpanded is in
+        // flight, increasing fullHeight so PartiallyExpanded is removed from the anchors.
+        simulatedImeBottomPadding = 0.dp
+        rule.mainClock.advanceTimeBy(32)
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+
+        rule.onNodeWithText("Sheet TextField").assertExists()
+        assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(bottomSheetState.targetValue).isEqualTo(SheetValue.Expanded)
     }
 
     private val Bundle.traversalBefore: Int

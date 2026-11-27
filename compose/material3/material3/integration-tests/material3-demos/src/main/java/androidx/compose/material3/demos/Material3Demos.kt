@@ -23,6 +23,13 @@ val Material3Demos =
     DemoCategory(
         "Material 3",
         listOf(
+            DemoCategory(
+                "Buttons",
+                listOf(
+                    ComposableDemo("Button variants") { ButtonVariantsDemo() },
+                    ComposableDemo("Button sizes") { ButtonSizesDemo() },
+                ),
+            ),
             ComposableDemo("Button Groups") { ButtonGroupDemos() },
             ComposableDemo("Card") { CardDemo() },
             DemoCategory(
@@ -48,6 +55,15 @@ val Material3Demos =
             ComposableDemo("Swipe To Dismiss") { SwipeToDismissDemo() },
             ComposableDemo("Tooltip") { TooltipDemo() },
             ComposableDemo("Toggle Buttons") { ToggleButtonDemos() },
+            DemoCategory(
+                "Transitions",
+                listOf(
+                    ComposableDemo("Horizontal Shared Axis") {
+                        HorizontalSharedAxisTransitionDemo()
+                    },
+                    ComposableDemo("Fade Through") { FadeThroughTransitionDemo() },
+                ),
+            ),
             DemoCategory(
                 "Sliders",
                 listOf(ComposableDemo("Volume Slider") { SysUiVolumeSliderDemo() }),

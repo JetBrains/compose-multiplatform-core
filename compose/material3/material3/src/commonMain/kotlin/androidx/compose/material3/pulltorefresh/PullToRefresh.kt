@@ -52,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -82,6 +83,7 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastCoerceIn
 import kotlin.js.JsName
 import kotlin.math.abs
 import kotlin.math.max
@@ -120,7 +122,9 @@ import kotlinx.coroutines.launch
  * @sample androidx.compose.material3.samples.PullToRefreshCustomIndicatorWithDefaultTransform
  * @param isRefreshing whether a refresh is occurring
  * @param onRefresh callback invoked when the user gesture crosses the threshold, thereby requesting
- *   a refresh.
+ *   a refresh. Set [isRefreshing] to `true` from this callback, before the next frame, to keep the
+ *   indicator at the threshold. Otherwise the indicator is hidden, and shown again once
+ *   [isRefreshing] becomes `true`.
  * @param modifier the [Modifier] to be applied to this container
  * @param state the state that keeps track of distance pulled
  * @param contentAlignment The default alignment inside the Box.
@@ -381,10 +385,8 @@ internal class PullToRefreshModifierNode(
     /** Helper method for nested scroll connection. Calls onRefresh callback when triggered */
     private suspend fun onRelease(velocity: Float): Float {
         if (isRefreshing) return 0f // Already refreshing, do nothing
-        // Trigger refresh
-        if (adjustedDistancePulled > thresholdPx) {
-            onRefresh()
-        }
+
+        val refreshTriggered = adjustedDistancePulled > thresholdPx
 
         val consumed =
             when {
@@ -398,7 +400,21 @@ internal class PullToRefreshModifierNode(
                 else -> velocity
             }
 
-        animateToHidden()
+        if (refreshTriggered) {
+            onRefresh()
+
+            // Wait a frame so an isRefreshing update made synchronously by onRefresh() is applied
+            // before deciding where the indicator goes. If it became true, update() animates to
+            // the threshold and animateToHidden() must not be started alongside it: whether
+            // animateToThreshold() interrupts an in-flight animateToHidden() is up to the
+            // PullToRefreshState implementation, and custom ones need not do so. If it stayed
+            // false, there is no refresh to show and the indicator is hidden below.
+            withFrameNanos {}
+        }
+
+        if (!isRefreshing) {
+            animateToHidden()
+        }
 
         distancePulled = 0f
 
@@ -465,8 +481,6 @@ public object PullToRefreshDefaults {
 
     /**
      * The default container color for the loading indicator that appears when pulling to refresh.
-     *
-     * @material3expressive
      */
     @ExperimentalMaterial3ExpressiveApi
     public val loadingIndicatorContainerColor: Color
@@ -479,8 +493,6 @@ public object PullToRefreshDefaults {
     /**
      * The default active indicator color for the loading indicator that appears when pulling to
      * refresh.
-     *
-     * @material3expressive
      */
     @ExperimentalMaterial3ExpressiveApi
     public val loadingIndicatorColor: Color
@@ -627,8 +639,6 @@ public object PullToRefreshDefaults {
      * @param elevation the elevation of this indicator
      * @param maxDistance the max distance the indicator can be pulled down before a refresh is
      *   triggered on release
-     *
-     * @material3expressive
      */
     @ExperimentalMaterial3ExpressiveApi
     @Composable
@@ -669,11 +679,24 @@ public object PullToRefreshDefaults {
                     // The LoadingIndicator will rotate and morph for a coerced progress value of 0
                     // to 1. When the state's distanceFraction is above one, we rotate the entire
                     // component we have a continuous rotation until the refreshing flag is true.
+                    // The distanceFraction is only read in the semantics and draw phases, so the
+                    // indicator follows the pull without depending on a recomposition, and is
+                    // hidden from accessibility services while at rest.
                     ContainedLoadingIndicator(
                         // TODO Set the LoadingIndicator colors
                         progress = { state.distanceFraction },
                         modifier =
-                            Modifier.requiredSize(
+                            Modifier.clearAndSetSemantics {
+                                    val progress = state.distanceFraction
+                                    if (progress > 0f) {
+                                        progressBarRangeInfo =
+                                            ProgressBarRangeInfo(
+                                                progress.fastCoerceIn(0f, 1f),
+                                                0f..1f,
+                                            )
+                                    }
+                                }
+                                .requiredSize(
                                     width = LoaderIndicatorWidth,
                                     height = LoaderIndicatorHeight,
                                 )
@@ -686,7 +709,7 @@ public object PullToRefreshDefaults {
                                         rotate(-(progress - 1) * 180) {
                                             this@drawWithContent.drawContent()
                                         }
-                                    } else {
+                                    } else if (progress > 0f) {
                                         drawContent()
                                     }
                                 },
@@ -704,6 +727,11 @@ public object PullToRefreshDefaults {
  * been pulled.
  *
  * Each instance of [PullToRefreshBox] should have its own [PullToRefreshState].
+ *
+ * [PullToRefreshBox] does not serialize its calls to [animateToThreshold], [animateToHidden] and
+ * [snapTo]: a new call can be made while a previous animation is still running. Implementations
+ * should let the latest call take over, as the default implementation does by animating with a
+ * single [androidx.compose.animation.core.Animatable].
  *
  * [PullToRefreshState] can be used with other progress indicators like so:
  *

@@ -19,12 +19,9 @@
 package androidx.compose.material3
 
 import androidx.annotation.FloatRange
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.BasicTextField
@@ -40,11 +37,9 @@ import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.internal.CommonDecorationBox
 import androidx.compose.material3.internal.SupportingTopPadding
 import androidx.compose.material3.internal.TextFieldPadding
-import androidx.compose.material3.internal.animateBorderStrokeAsState
-import androidx.compose.material3.internal.textFieldBackground
+import androidx.compose.material3.internal.textFieldContainer
 import androidx.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.compose.material3.tokens.FilledTextFieldTokens
-import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.tokens.OutlinedTextFieldTokens
 import androidx.compose.material3.tokens.ShapeKeyTokens
 import androidx.compose.runtime.Composable
@@ -239,16 +234,9 @@ public object TextFieldDefaults {
         focusedIndicatorLineThickness: Dp = FocusedIndicatorThickness,
         unfocusedIndicatorLineThickness: Dp = UnfocusedIndicatorThickness,
     ) {
-        val focused = interactionSource.collectIsFocusedAsState().value
-        // TODO Load the motionScheme tokens from the component tokens file
-        val containerColor =
-            animateColorAsState(
-                targetValue = colors.containerColor(enabled, isError, focused),
-                animationSpec = MotionSchemeKeyTokens.FastEffects.value(),
-            )
         Box(
             modifier
-                .textFieldBackground(containerColor::value, shape)
+                .textFieldContainer(enabled, isError, interactionSource, colors, shape)
                 .indicatorLine(
                     enabled = enabled,
                     isError = isError,
@@ -362,6 +350,15 @@ public object TextFieldDefaults {
      * @param container the container to be drawn behind the text field. By default, this uses
      *   [Container]. Default colors for the container come from the [colors].
      */
+    @Deprecated(
+        "Use TextFieldDefaults.decorator with the BasicTextField(state: TextFieldState, ...) " +
+            "overload instead. To migrate: pass TextFieldDefaults.decorator(...) to the " +
+            "decorator parameter of BasicTextField, and replace value with state, " +
+            "visualTransformation with outputTransformation (OutputTransformation), and " +
+            "singleLine with lineLimits (TextFieldLineLimits). See " +
+            "https://developer.android.com/develop/ui/compose/text/migrate-state-based for full " +
+            "migration guidance."
+    )
     @Composable
     public fun DecorationBox(
         value: String,
@@ -1155,26 +1152,16 @@ public object OutlinedTextFieldDefaults {
         focusedBorderThickness: Dp = FocusedBorderThickness,
         unfocusedBorderThickness: Dp = UnfocusedBorderThickness,
     ) {
-        val focused = interactionSource.collectIsFocusedAsState().value
-        val borderStroke =
-            animateBorderStrokeAsState(
-                enabled,
-                isError,
-                focused,
-                colors,
-                focusedBorderThickness,
-                unfocusedBorderThickness,
-            )
-        // TODO Load the motionScheme tokens from the component tokens file
-        val containerColor =
-            animateColorAsState(
-                targetValue = colors.containerColor(enabled, isError, focused),
-                animationSpec = MotionSchemeKeyTokens.FastEffects.value(),
-            )
         Box(
-            modifier
-                .border(borderStroke.value, shape)
-                .textFieldBackground(containerColor::value, shape)
+            modifier.textFieldContainer(
+                enabled = enabled,
+                isError = isError,
+                interactionSource = interactionSource,
+                colors = colors,
+                shape = shape,
+                focusedBorderThickness = focusedBorderThickness,
+                unfocusedBorderThickness = unfocusedBorderThickness,
+            )
         )
     }
 
@@ -1239,6 +1226,16 @@ public object OutlinedTextFieldDefaults {
      *   automatically added by the framework. Default colors for the container come from the
      *   [colors].
      */
+    @Deprecated(
+        "Use OutlinedTextFieldDefaults.decorator with the " +
+            "BasicTextField(state: TextFieldState, ...) overload instead. To migrate: pass " +
+            "OutlinedTextFieldDefaults.decorator(...) to the decorator parameter of " +
+            "BasicTextField, and replace value with state, visualTransformation with " +
+            "outputTransformation (OutputTransformation), and singleLine with lineLimits " +
+            "(TextFieldLineLimits). See " +
+            "https://developer.android.com/develop/ui/compose/text/migrate-state-based for full " +
+            "migration guidance."
+    )
     @Composable
     public fun DecorationBox(
         value: String,
@@ -1629,7 +1626,7 @@ public object OutlinedTextFieldDefaults {
         }
             ?: TextFieldColors(
                     // Unfocused
-                    unfocusedContainerColor = fromToken(ColorSchemeKeyTokens.OnPrimary),
+                    unfocusedContainerColor = Color.Transparent,
                     unfocusedIndicatorColor = fromToken(ColorSchemeKeyTokens.OutlineVariant),
                     unfocusedTextColor = fromToken(ColorSchemeKeyTokens.OnSurface),
                     unfocusedLabelColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
@@ -1641,7 +1638,7 @@ public object OutlinedTextFieldDefaults {
                     unfocusedSuffixColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
 
                     // Focused
-                    focusedContainerColor = fromToken(ColorSchemeKeyTokens.OnPrimary),
+                    focusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = fromToken(ColorSchemeKeyTokens.OutlineVariant),
                     focusedTextColor = fromToken(ColorSchemeKeyTokens.OnBackground),
                     focusedLabelColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
@@ -1653,9 +1650,7 @@ public object OutlinedTextFieldDefaults {
                     focusedSuffixColor = fromToken(ColorSchemeKeyTokens.OnBackground),
 
                     // Disabled
-                    disabledContainerColor =
-                        fromToken(ColorSchemeKeyTokens.OnPrimary)
-                            .copy(alpha = OutlinedTextFieldTokens.DisabledInputOpacity),
+                    disabledContainerColor = Color.Transparent,
                     disabledIndicatorColor = fromToken(ColorSchemeKeyTokens.OutlineVariant),
                     disabledTextColor =
                         fromToken(ColorSchemeKeyTokens.OnSurface)
@@ -1683,7 +1678,7 @@ public object OutlinedTextFieldDefaults {
                             .copy(alpha = OutlinedTextFieldTokens.DisabledInputOpacity),
 
                     // Error
-                    errorContainerColor = fromToken(ColorSchemeKeyTokens.ErrorContainer),
+                    errorContainerColor = Color.Transparent,
                     errorIndicatorColor = fromToken(ColorSchemeKeyTokens.Error),
                     errorTextColor = fromToken(ColorSchemeKeyTokens.OnBackground),
                     errorLabelColor = fromToken(ColorSchemeKeyTokens.Error),

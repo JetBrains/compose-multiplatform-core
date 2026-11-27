@@ -25,3 +25,6 @@ HSPLandroidx/compose/material3/FilledCardTokens;->**(**)**
 HSPLandroidx/compose/material3/PaletteTokens;->**(**)**
 HSPLandroidx/compose/material3/ShapeTokens;->**(**)**
 HSPLandroidx/compose/material3/TypographyTokens;->**(**)**
+HSPLandroidx/compose/material3/ColorResourceHelper;->**(**)**
+HSPLandroidx/compose/material3/DynamicTonalPaletteKt;->**(**)**
+HSPLandroidx/compose/material3/internal/colorUtil/**->**(**)**

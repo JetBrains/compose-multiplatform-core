@@ -119,6 +119,7 @@ import androidx.compose.material3.samples.ExtendedFloatingActionButtonSample
 import androidx.compose.material3.samples.ExtendedFloatingActionButtonTextSample
 import androidx.compose.material3.samples.ExtraLargeFilledSplitButtonSample
 import androidx.compose.material3.samples.ExtraSmallNarrowSquareIconButtonsSample
+import androidx.compose.material3.samples.FadeThroughTransitionSample
 import androidx.compose.material3.samples.FadingHorizontalMultiBrowseCarouselSample
 import androidx.compose.material3.samples.FancyIndicatorContainerTabs
 import androidx.compose.material3.samples.FancyIndicatorTabs
@@ -144,6 +145,7 @@ import androidx.compose.material3.samples.HorizontalCenteredHeroCarouselSample
 import androidx.compose.material3.samples.HorizontalFloatingToolbarAsScaffoldFabSample
 import androidx.compose.material3.samples.HorizontalFloatingToolbarWithFabSample
 import androidx.compose.material3.samples.HorizontalMultiBrowseCarouselSample
+import androidx.compose.material3.samples.HorizontalSharedAxisTransitionSample
 import androidx.compose.material3.samples.HorizontalUncontainedCarouselSample
 import androidx.compose.material3.samples.IconButtonSample
 import androidx.compose.material3.samples.IconToggleButtonSample
@@ -1221,6 +1223,28 @@ val TopAppBarExamples =
             isExpressive = true,
         ) {
             CustomTwoRowsTopAppBar()
+        },
+    )
+
+private const val TransitionsExampleDescription = "Transitions examples"
+private const val TransitionsExampleSourceUrl = "$SampleSourceUrl/TransitionSamples.kt"
+val TransitionExamples =
+    listOf(
+        Example(
+            name = "HorizontalSharedAxisTransitionSample",
+            description = TransitionsExampleDescription,
+            sourceUrl = TransitionsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            HorizontalSharedAxisTransitionSample()
+        },
+        Example(
+            name = "FadeThroughTransitionSample",
+            description = TransitionsExampleDescription,
+            sourceUrl = TransitionsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            FadeThroughTransitionSample()
         },
     )
 
