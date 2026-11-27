@@ -223,31 +223,82 @@ internal class FrameChoreographer private constructor(
         displayLinkFrameRate.voteFrameRate(frameRate, frameRateCategory)
     }
 
-    fun performOutsideRecomposerFrame(action: () -> Unit) {
-        if (isPerformingRecomposerFrame) {
-            pendingOutsideRecomposerFrameActions.add(action)
-        } else {
-            action()
-        }
-    }
+    private var reentrancyDepth = 0
 
-    private var pendingOutsideRecomposerFrameActions = mutableListOf<() -> Unit>()
+    private val dispatchedTasks = mutableListOf<() -> Unit>()
 
-    private var isPerformingRecomposerFrame = false
-    fun performRecomposerFrameIfNeeded() {
-        if (isPerformingRecomposerFrame) return
-        isPerformingRecomposerFrame = true
-        try {
-            frameRecomposer.performFrame(displayLink.targetTimestamp.toNanoSeconds())
-        } finally {
-            isPerformingRecomposerFrame = false
-            if (pendingOutsideRecomposerFrameActions.isNotEmpty()) {
-                val actions = pendingOutsideRecomposerFrameActions.toList()
-                pendingOutsideRecomposerFrameActions.clear()
-                actions.forEach { it() }
+    /**
+     * Runs [task] non-reentrantly; if a guarded call is already in progress, runs
+     * [dispatchedTask] instead once the outermost guarded call finishes.
+     * Pass `null` as [dispatchedTask] to drop the nested call.
+     *
+     * Use it for platform callbacks that may be re-entered by the platform itself while Compose
+     * is executing a guarded call.
+     */
+    fun runNonReentrantOrDispatch(task: () -> Unit) =
+        runNonReentrantOrDispatch(task, dispatchedTask = task)
+
+    /**
+     * Runs [task] non-reentrantly; if a guarded call is already in progress, runs
+     * [dispatchedTask] instead once the outermost guarded call finishes.
+     * Pass `null` as [dispatchedTask] to drop the nested call.
+     *
+     * Use it for platform callbacks that may be re-entered by the platform itself while Compose
+     * is executing a guarded call.
+     */
+    fun runNonReentrantOrDispatch(task: () -> Unit, dispatchedTask: (() -> Unit)?) {
+        if (reentrancyDepth == 0) {
+            reentrancyDepth++
+            try {
+                task()
+            } finally {
+                reentrancyDepth--
+            }
+            runDispatchedReentrantTasks()
+        } else if (dispatchedTask != null) {
+            dispatchedTasks.add {
+                reentrancyDepth++
+                try {
+                    dispatchedTask()
+                } finally {
+                    reentrancyDepth--
+                }
+                runDispatchedReentrantTasks()
             }
         }
     }
+
+    /**
+     * Marks a re-entrancy section unconditionally and runs [task], then runs the tasks
+     * dispatched by nested [runNonReentrantOrDispatch] calls.
+     *
+     * Use it only for platform entry points that are guaranteed to never be called from inside
+     * a guarded Compose call - such a call would be a bug, asserted by `reentrancyDepth == 0`.
+     */
+    fun <T> runWithReentrantGuard(task: () -> T): T {
+        var result: T
+        assert(reentrancyDepth == 0)
+        reentrancyDepth++
+        try {
+            result = task()
+        } finally {
+            reentrancyDepth--
+        }
+        runDispatchedReentrantTasks()
+        return result
+    }
+
+    private fun runDispatchedReentrantTasks() {
+        if (reentrancyDepth == 0 && dispatchedTasks.isNotEmpty()) {
+            val calls = dispatchedTasks.toList()
+            dispatchedTasks.clear()
+            calls.forEach { it() }
+        }
+    }
+
+    fun performRecomposerFrameIfNeeded() = runNonReentrantOrDispatch(task = {
+        frameRecomposer.performFrame(displayLink.targetTimestamp.toNanoSeconds())
+    }, dispatchedTask = null)
 
     @VisibleForTesting
     internal var ongoingActivitiesCount: Int = 0
