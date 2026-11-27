@@ -47,6 +47,7 @@ import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.sceneInteropLayer
 import androidx.compose.ui.viewinterop.sceneInteropLayerRoot
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -152,6 +153,80 @@ class InteropSceneLayerTest {
         properties.value = UIKitInteropProperties(placedAsOverlay = false)
         waitUntil("Switching back to background did not clear the overlay mask") {
             checkNotNull(interopContainer).groupForInteropView(interopView)?.layer?.mask == null
+        }
+    }
+
+    @Test
+    fun sceneLayerChangesUpdateOverlayMask() = runUIKitInstrumentedTest {
+        val interopView = UIView()
+        val showOccluder = mutableStateOf(true)
+        val occludesLowerLayers = mutableStateOf(true)
+        val zIndex = mutableStateOf(1f)
+        var interopContainer: IosInteropContainer? = null
+
+        setContent {
+            interopContainer = LocalInteropContainer.current as IosInteropContainer
+
+            Box(modifier = Modifier.fillMaxSize().sceneInteropLayerRoot()) {
+                Box(
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .sceneInteropLayer(occludesLowerLayers = false, zIndex = 0f)
+                ) {
+                    UIKitView(
+                        factory = { interopView },
+                        modifier = Modifier.fillMaxSize(),
+                        properties = UIKitInteropProperties(placedAsOverlay = true),
+                    )
+                }
+                if (showOccluder.value) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .background(Color.Black)
+                                .sceneInteropLayer(
+                                    occludesLowerLayers = occludesLowerLayers.value,
+                                    zIndex = zIndex.value,
+                                )
+                    )
+                }
+            }
+        }
+
+        fun currentMask() =
+            checkNotNull(interopContainer)
+                .groupForInteropView(interopView)
+                ?.layer
+                ?.mask
+
+        waitUntil("Overlay interop view was not attached") { interopView.window != null }
+        waitUntil("Occluding scene layer did not install an interop mask") {
+            currentMask() != null
+        }
+
+        occludesLowerLayers.value = false
+        waitUntil("Non-occluding scene layer did not clear the interop mask") {
+            currentMask() == null
+        }
+
+        occludesLowerLayers.value = true
+        waitUntil("Occluding scene layer did not restore the interop mask") {
+            currentMask() != null
+        }
+
+        zIndex.value = -1f
+        waitUntil("A lower scene layer did not clear the interop mask") {
+            currentMask() == null
+        }
+
+        zIndex.value = 1f
+        waitUntil("A higher scene layer did not restore the interop mask") {
+            currentMask() != null
+        }
+
+        showOccluder.value = false
+        waitUntil("A removed scene layer did not clear the interop mask") {
+            currentMask() == null
         }
     }
 
@@ -478,9 +553,23 @@ class InteropSceneLayerTest {
         val maskLayer = interopWrappingView.layer.mask as? CAShapeLayer
 
         assertNotNull(maskLayer, "A partially covered overlay interop must retain a mask")
+
+        fun maskContains(x: Double, y: Double) =
+            maskLayer.path?.let { path ->
+                CGPathContainsPoint(path, null, CGPointMake(x, y), false)
+            } == true
+
         assertTrue(
             maskLayer.path?.let { !CGPathIsEmpty(it) } == true,
             "A partially covered overlay interop mask must retain visible regions",
+        )
+        assertTrue(
+            maskContains(10.0, 200.0),
+            "The interop mask must retain a point below the occluding layer",
+        )
+        assertFalse(
+            maskContains(10.0, 50.0),
+            "The interop mask must exclude a point covered by the occluding layer",
         )
     }
 
