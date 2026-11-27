@@ -13,7 +13,7 @@ requires JDK 17 or newer. Apple targets require macOS with Xcode.
 - `benchmarks-runtime` — runs measurements and sends results.
 - `benchmarks-compose-init-1-12` / `benchmarks-compose-init-1-13` / `benchmarks-compose-init-current` — the app selects one and directly calls its `configureBenchmarkSkiko()`.
 - `benchmarks-data` — shared report models and benchmark case IDs.
-- `benchmarks-report` — a JVM library that generates a static HTML report from a session directory.
+- `benchmarks-report` — a JVM library that generates static HTML reports from one or more session directories.
 - `benchmarks-collector` — receives reports over HTTP and saves them as JSON files.
 - `benchmarks-launcher` — a console application that builds and runs benchmarks sequentially.
 - `benchmarks-ios-app` — an iOS host application for benchmarks; a separate Xcode project.
@@ -303,6 +303,28 @@ results by versions and target:
             logs/          # Build, collector, and per-test logs
             summary.json   # Versions, build metadata, environment reference, and benchmark runs
 ```
+
+### Comparing sessions
+
+Run benchmarks several times as usual, then compare the collected sessions without rebuilding or
+running benchmark applications:
+
+```bash
+./launcher/bin/benchmarks-launcher report \
+  ./results/2026-06-01-10-00-00-000 \
+  ./results/2026-06-02-10-00-00-000 \
+  --output ./results/comparison.html
+```
+
+Pass session directories as positional arguments, in comparison order. The first session is the
+baseline; the last is compared with it for regression/improvement highlighting. Names come from the
+directory names, with full paths shown when names collide. There is no label option. Quote paths
+containing spaces. The same directory cannot be supplied more than once, including through symlinks.
+
+`--output` is optional. By default, the report is saved in the **current working directory** as
+`report-yyyy-MM-dd-HH-mm-ss-SSS.html`, using local time. Relative input and output paths are resolved
+from the current working directory, not the benchmarks project. Missing output parent directories
+are created automatically. An existing output file is overwritten.
 
 ## How to add a new benchmark case
 

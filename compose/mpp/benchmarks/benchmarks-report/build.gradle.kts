@@ -20,4 +20,5 @@ java {
 dependencies {
     implementation(libs.kotlinSerializationJson)
     implementation(libs.kotlinx.html)
+    testImplementation(kotlin("test"))
 }

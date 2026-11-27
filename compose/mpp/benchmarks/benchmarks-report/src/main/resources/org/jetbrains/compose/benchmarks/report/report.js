@@ -18,6 +18,7 @@
 
     /**
      * @typedef {Object} Configuration  One built and launched combination of target and versions.
+     * @property {string} sessionId
      * @property {string} target
      * @property {string} kotlin
      * @property {string} compose
@@ -28,6 +29,7 @@
 
     /**
      * @typedef {Object} Run  One execution of a test.
+     * @property {string} sessionId
      * @property {string} target
      * @property {string} kotlin
      * @property {string} compose
@@ -41,12 +43,13 @@
      * @property {Object<string, number>} measurements  Values by metric id.
      * @property {Object<string, number[]>} distributions  Per-frame samples by metric id.
      * @property {Object} parameters
-     * @property {?string} reportPath  Raw JSON report, relative to this page.
+     * @property {?string} reportPath  Raw JSON report, relative to this page, or a file URI on another drive.
      */
 
     /**
      * @typedef {Object} Report
-     * @property {string[]} composeVersions  In display order; the first one is the baseline.
+     * @property {{id: string, name: string, directory: string}[]} sessions  In comparison order.
+     * @property {string[]} composeVersions  In display order; the first is the single-session baseline.
      * @property {string[]} kotlinVersions  In display order.
      * @property {Object<string, Metric>} metrics  In display order.
      * @property {Run[]} runs
@@ -59,7 +62,7 @@
     /** @type {Report} */
     const report = JSON.parse(byId('report-data').textContent);
     const { metrics, composeVersions, kotlinVersions } = report;
-    /** Everything that says which targets and browsers the session covers. */
+    /** Everything that says which targets and browsers the report covers. */
     const platformEntries = [...report.configurations, ...report.runs];
 
     /** Measurement modes, in the order of their tabs. */
@@ -87,9 +90,25 @@
 
     /** Stable, well-separated series colors: hues step by the golden angle. */
     const seriesColor = index => `hsl(${index * 137.508 % 360}, 68%, 42%)`;
-    const kotlinColors = new Map(kotlinVersions.map((kotlin, index) => [kotlin, seriesColor(index)]));
+    const comparison = report.sessions.length > 1;
+    const sessionLabel = id => {
+        const session = report.sessions.find(session => session.id === id);
+        return report.sessions.filter(other => other.name === session.name).length > 1
+            ? session.directory : session.name;
+    };
+    const seriesKey = entry => comparison ? JSON.stringify([entry.kotlin, entry.compose]) : entry.kotlin;
+    const chartSeries = kotlinVersions.flatMap(kotlin => comparison
+        ? composeVersions.filter(compose => platformEntries.some(entry => entry.kotlin === kotlin && entry.compose === compose))
+            .map(compose => ({ key: seriesKey({ kotlin, compose }), label: `Kotlin ${kotlin} / Compose ${compose}` }))
+        : [{ key: kotlin, label: `Kotlin ${kotlin}` }]);
+    const seriesColors = new Map(chartSeries.map(({ key }, index) => [key, seriesColor(index)]));
+    const pointKeys = comparison ? report.sessions.map(session => session.id) : composeVersions;
+    const pointKey = run => comparison ? run.sessionId : run.compose;
+    const pointLabel = key => comparison ? sessionLabel(key) : `Compose ${key}`;
+    const axisTitle = comparison ? 'Session' : 'Compose version';
+    const axisLabels = comparison ? pointKeys.map(sessionLabel) : composeVersions;
 
-    const runLabel = run => `Kotlin ${run.kotlin} / Compose ${run.compose} / run ${run.iteration}`;
+    const runLabel = run => `${comparison ? `${sessionLabel(run.sessionId)} / ` : ''}Kotlin ${run.kotlin} / Compose ${run.compose} / run ${run.iteration}`;
     const hasMeasurements = run => Object.keys(run.measurements).length > 0;
     const hasFailed = run => run.status !== 'passed' || !hasMeasurements(run);
 
@@ -244,7 +263,7 @@
 
     function refreshModes() {
         renderEnvironment();
-        const runs = report.runs.filter(run => onSelectedPlatform(run) && hasMeasurements(run));
+        const runs = report.runs.filter(onSelectedPlatform);
         mode.setOptions(MODES.filter(type => runs.some(run => run.type === type)));
         refreshTests();
     }
@@ -342,6 +361,7 @@
             scrollableTable('Environment comparison table', 'environment-table', [
                 el('th', { scope: 'col', textContent: 'Parameter' }),
                 ...configurations.map(configuration => el('th', { scope: 'col' }, [
+                    ...(comparison ? [el('span', { textContent: sessionLabel(configuration.sessionId) })] : []),
                     el('span', { textContent: `Kotlin ${configuration.kotlin}` }),
                     el('small', { textContent: `Compose ${configuration.compose}` }),
                 ])),
@@ -377,13 +397,21 @@
             ...PARAMETER_ORDER.filter(key => keys.includes(key)),
             ...keys.filter(key => !PARAMETER_ORDER.includes(key)),
         ];
+        const groupedRuns = new Map();
+        if (comparison) for (const run of runs) {
+            const key = JSON.stringify([run.sessionId, seriesKey(run)]);
+            if (!groupedRuns.has(key)) groupedRuns.set(key, []);
+            groupedRuns.get(key).push(run);
+        }
+        const groups = comparison ? [...groupedRuns.values()] : [runs];
         const panel = el('div', { className: 'test-parameters', id: 'test-parameters', hidden: true }, [
             scrollableTable(`${name} parameters`, 'environment-table test-parameters-table', [
                 el('th', { scope: 'col', textContent: 'Parameter' }),
-                el('th', { scope: 'col', textContent: 'Value' }),
+                ...groups.map(group => el('th', { scope: 'col', textContent: comparison
+                    ? `${sessionLabel(group[0].sessionId)} / Kotlin ${group[0].kotlin} / Compose ${group[0].compose}` : 'Value' })),
             ], el('tbody', {}, orderedKeys.map(key => el('tr', {}, [
                 el('th', { scope: 'row', textContent: key }),
-                el('td', { textContent: parameterText(parameters[key]) }),
+                ...groups.map(group => el('td', { textContent: unique(group.map(run => parameterText(run.parameters[key]))).join(' / ') })),
             ])))),
         ]);
         const button = el('button', {
@@ -505,7 +533,7 @@
         },
     };
 
-    /** Draws each series' baseline, its mean at the first Compose version, across the chart. */
+    /** Draws each series' baseline, its mean at the first X-axis point, across the chart. */
     const baselineLines = {
         id: 'baselineLines',
         beforeDatasetsDraw(chart) {
@@ -538,24 +566,27 @@
             : improvement ? `improvement of at least ${SIGNIFICANT_CHANGE}%`
             : `no change of at least ${SIGNIFICANT_CHANGE}% with a valid baseline`;
         card.setAttribute('aria-label',
-            `${metric.title}: ${status}, comparing the last Compose version with the first`);
+            `${metric.title}: ${status}, comparing the last ${axisTitle.toLowerCase()} with the first`);
     }
 
     // ---------- Charts ----------
 
-    const TREND_READING = 'X: Compose version. Y: metric value. Each line is a Kotlin version; points average the per-run values, '
-        + 'and whiskers show the minimum–maximum across repeated runs, not across individual frames. '
-        + 'Thin blue lines mark each Kotlin series’ baseline at the first Compose version. '
+    const TREND_READING = (comparison
+        ? 'X: session in the supplied order. Y: metric value. Each line is a Kotlin / Compose pair. '
+            + 'Repeated runs are averaged only within the same session and configuration; sessions are never pooled. '
+        : 'X: Compose version. Y: metric value. Each line is a Kotlin version. ')
+        + 'Points average the per-run values, and whiskers show the minimum–maximum across repeated runs, not individual frames. '
+        + `Thin blue lines mark each series’ baseline at the first ${axisTitle.toLowerCase()}. `
         + 'Tooltip changes compare point means with that baseline; green is better, red is worse. '
         + 'Percentage changes are unavailable when the baseline is missing or zero. '
-        + `A red border means at least one visible Kotlin series regressed by ${SIGNIFICANT_CHANGE}% or more at the last Compose version. `
+        + `A red border means at least one visible series regressed by ${SIGNIFICANT_CHANGE}% or more at the last ${axisTitle.toLowerCase()}. `
         + `Otherwise, a green border means at least one improved by ${SIGNIFICANT_CHANGE}% or more.`;
 
-    /** Kotlin versions unchecked in the filter. */
-    const hiddenKotlin = new Set();
+    /** Series unchecked in the filter. */
+    const hiddenSeries = new Set();
     /** Charts on the page. */
     let charts = [];
-    /** Cards of the distribution charts, each with the only Kotlin version it shows. */
+    /** Cards of the distribution charts, each with the only version series it shows. */
     let distributionCards = [];
 
     /** Paragraphs of a chart's info dialog: what the metric is, then how to read the chart. */
@@ -567,19 +598,21 @@
             ? 'Y starts at zero; its upper bound is automatically adjusted to include all samples.'
             : 'Non-positive percentile values are omitted.';
         return `X: percentile P0–P100 (minimum to maximum). Y: metric value on a ${metric.pacing ? 'linear' : 'logarithmic'} scale. `
-            + 'Frame samples from repeated runs are pooled per Compose version and Kotlin version. '
+            + (comparison ? 'Frame samples are pooled only within the same session and Kotlin / Compose pair. '
+                : 'Frame samples from repeated runs are pooled per Compose version and Kotlin version. ')
             + `Percentiles use linear interpolation. ${scale}`;
     }
 
     /** Content of the dialog that links to the raw JSON reports behind a chart. */
     function rawReports(chartTitle, runs) {
         const links = runs.filter(run => run.reportPath).map(run => {
+            const absoluteUri = run.reportPath.startsWith('file:');
             const segments = run.reportPath.split('/');
             return el('li', {}, [
                 el('small', { textContent: runLabel(run) }),
                 el('a', {
                     textContent: segments.at(-1),
-                    href: `./${segments.map(encodeURIComponent).join('/')}`,
+                    href: absoluteUri ? run.reportPath : `./${segments.map(encodeURIComponent).join('/')}`,
                     target: '_blank',
                     rel: 'noopener',
                 }),
@@ -614,29 +647,29 @@
         return { card, canvas };
     }
 
-    /** How one metric changes across Compose versions, with a line per Kotlin version. */
+    /** Trends across Compose versions (one session) or sessions (one line per Kotlin/Compose pair). */
     function trendChart(id, runs) {
         const metric = metrics[id];
         const { card, canvas } = chartCard({
             title: `${metric.title} (${metric.unit})`,
-            canvasLabel: `${test.value}: ${metric.title}, ${metric.unit}, by Compose version`,
+            canvasLabel: `${test.value}: ${metric.title}, ${metric.unit}, by ${axisTitle.toLowerCase()}`,
             explain: () => explanation(metric, TREND_READING),
             shownRuns: chart => {
-                const shown = new Set([...visibleDatasets(chart)].map(({ dataset }) => dataset.kotlin));
-                return runs.filter(run => shown.has(run.kotlin) && id in run.measurements);
+                const shown = new Set([...visibleDatasets(chart)].map(({ dataset }) => dataset.seriesKey));
+                return runs.filter(run => shown.has(seriesKey(run)) && id in run.measurements);
             },
         });
-        const datasets = kotlinVersions
-            .filter(kotlin => runs.some(run => run.kotlin === kotlin && id in run.measurements))
-            .map(kotlin => {
-                const ranges = composeVersions.map(compose => summarize(runs
-                    .filter(run => run.kotlin === kotlin && run.compose === compose)
+        const datasets = chartSeries
+            .filter(({ key }) => runs.some(run => seriesKey(run) === key && id in run.measurements))
+            .map(({ key, label }) => {
+                const ranges = pointKeys.map(point => summarize(runs
+                    .filter(run => seriesKey(run) === key && pointKey(run) === point)
                     .map(run => run.measurements[id])
                     .filter(Number.isFinite)));
-                const color = kotlinColors.get(kotlin);
+                const color = seriesColors.get(key);
                 return {
-                    kotlin,
-                    label: `Kotlin ${kotlin}`,
+                    seriesKey: key,
+                    label,
                     data: ranges.map(range => range?.mean ?? null),
                     ranges,
                     baseline: ranges[0]?.mean ?? null,
@@ -645,7 +678,7 @@
                     borderWidth: 2,
                     pointRadius: 4,
                     pointHoverRadius: 6,
-                    hidden: hiddenKotlin.has(kotlin),
+                    hidden: hiddenSeries.has(key),
                     spanGaps: false,
                 };
             });
@@ -654,7 +687,7 @@
             canvas,
             config: {
                 type: 'line',
-                data: { labels: composeVersions, datasets },
+                data: { labels: axisLabels, datasets },
                 plugins: [baselineLines, minMaxWhiskers, {
                     id: 'baselineHighlight',
                     afterUpdate: chart => highlightChange(card, chart, metric),
@@ -662,7 +695,7 @@
                 options: {
                     ...CHART_OPTIONS,
                     scales: {
-                        x: { offset: true, title: { display: true, text: 'Compose version' } },
+                        x: { offset: true, title: { display: true, text: axisTitle } },
                         y: { beginAtZero: true, title: { display: true, text: metric.unit } },
                     },
                     plugins: {
@@ -674,28 +707,29 @@
         };
     }
 
-    /** Percentile curves of one Kotlin version's per-frame samples, with a line per Compose version. */
-    function distributionChart(id, kotlin, runs) {
+    /** Percentile curves of one version series, with a line per Compose version or session. */
+    function distributionChart(id, versionSeries, runs) {
+        const { key, label } = versionSeries;
         const metric = metrics[id];
         const logarithmic = !metric.pacing;
-        const series = composeVersions.flatMap((compose, index) => {
-            const samples = runs.filter(run => run.compose === compose).flatMap(run => run.distributions[id] ?? []);
+        const series = pointKeys.flatMap((point, index) => {
+            const samples = runs.filter(run => pointKey(run) === point).flatMap(run => run.distributions[id] ?? []);
             if (samples.length === 0) return [];
-            return [{ compose, color: seriesColor(index), count: samples.length, curve: percentiles(samples) }];
+            return [{ point, color: seriesColor(index), count: samples.length, curve: percentiles(samples) }];
         });
         if (series.length === 0) return null;
 
         const { card, canvas } = chartCard({
-            title: `${metric.title} (${metric.unit}) — Kotlin ${kotlin}`,
-            canvasLabel: `${test.value}: ${metric.title} percentiles, Kotlin ${kotlin}, by Compose version`,
+            title: `${metric.title} (${metric.unit}) — ${label}`,
+            canvasLabel: `${test.value}: ${metric.title} percentiles, ${label}, by ${axisTitle.toLowerCase()}`,
             explain: () => explanation(metric, distributionReading(metric)),
             shownRuns: chart => {
-                // Compose versions can be switched off in the chart's legend.
-                const shown = new Set([...visibleDatasets(chart)].map(({ dataset }) => dataset.compose));
-                return runs.filter(run => shown.has(run.compose) && run.distributions[id]?.length > 0);
+                // Points (Compose versions or sessions) can be switched off in the chart's legend.
+                const shown = new Set([...visibleDatasets(chart)].map(({ dataset }) => dataset.point));
+                return runs.filter(run => shown.has(pointKey(run)) && run.distributions[id]?.length > 0);
             },
         });
-        card.hidden = hiddenKotlin.has(kotlin);
+        card.hidden = hiddenSeries.has(key);
         // Display-paced metrics get a linear scale from zero, automatically sized to fit the data.
         const yScale = logarithmic ? { type: 'logarithmic' } : {
             type: 'linear',
@@ -704,14 +738,14 @@
         return {
             card,
             canvas,
-            kotlin,
+            seriesKey: key,
             config: {
                 type: 'line',
                 data: {
-                    datasets: series.map(({ compose, color, count, curve }) => ({
-                        kotlin,
-                        compose,
-                        label: `Compose ${compose} (n=${count})`,
+                    datasets: series.map(({ point, color, count, curve }) => ({
+                        seriesKey: key,
+                        point,
+                        label: `${pointLabel(point)} (n=${count})`,
                         // A logarithmic scale cannot show non-positive values.
                         data: curve.map((value, percentile) =>
                             ({ x: percentile, y: logarithmic && value <= 0 ? null : value })),
@@ -721,7 +755,7 @@
                         pointRadius: 0,
                         pointHoverRadius: 4,
                         tension: 0,
-                        hidden: hiddenKotlin.has(kotlin),
+                        hidden: hiddenSeries.has(key),
                     })),
                 },
                 options: {
@@ -759,7 +793,7 @@
         byId('charts').replaceChildren();
         const message = byId('message');
         if (test.value === null) {
-            message.textContent = 'No measurements were collected in this session. See summary.json and logs for errors.';
+            message.textContent = 'No measurements were collected. See session summaries and logs for errors.';
             return;
         }
         if (!window.Chart) {
@@ -775,11 +809,11 @@
         const distributionIds = metricIdsIn(runs.map(run => run.distributions));
 
         const trends = trendIds.map(id => trendChart(id, runs));
-        // One grid of distribution charts per Kotlin version that has per-frame samples.
-        const distributions = kotlinVersions
-            .map(kotlin => {
-                const kotlinRuns = runs.filter(run => run.kotlin === kotlin);
-                return distributionIds.map(id => distributionChart(id, kotlin, kotlinRuns)).filter(chart => chart !== null);
+        // One grid per version series; comparison mode never pools different sessions.
+        const distributions = chartSeries
+            .map(series => {
+                const seriesRuns = runs.filter(run => seriesKey(run) === series.key);
+                return distributionIds.map(id => distributionChart(id, series, seriesRuns)).filter(chart => chart !== null);
             })
             .filter(grid => grid.length > 0);
         const chartGrid = cards => el('div', { className: 'chart-grid' }, cards.map(({ card }) => card));
@@ -797,39 +831,39 @@
         ]));
         // Charts take the size of their containers, so create them once the whole page is laid out.
         charts = [...trends, ...distributions.flat()].map(({ canvas, config }) => new Chart(canvas, config));
-        distributionCards = distributions.flat().map(({ card, kotlin }) => ({ card, kotlin }));
+        distributionCards = distributions.flat().map(({ card, seriesKey }) => ({ card, seriesKey }));
     }
 
-    // ---------- Kotlin filter ----------
+    // ---------- Version series filter ----------
 
-    function applyKotlinFilter() {
+    function applySeriesFilter() {
         hideValueTooltip();
-        for (const { card, kotlin } of distributionCards) card.hidden = hiddenKotlin.has(kotlin);
+        for (const { card, seriesKey } of distributionCards) card.hidden = hiddenSeries.has(seriesKey);
         for (const chart of charts) {
             chart.data.datasets.forEach((dataset, index) => {
-                chart.setDatasetVisibility(index, !hiddenKotlin.has(dataset.kotlin));
+                chart.setDatasetVisibility(index, !hiddenSeries.has(dataset.seriesKey));
             });
             chart.resize();
             chart.update();
         }
     }
 
-    byId('kotlin-versions').append(...kotlinVersions.map(kotlin => el('label', { className: 'kotlin-option' }, [
+    byId('kotlin-versions').append(...chartSeries.map(({ key, label }) => el('label', { className: 'kotlin-option' }, [
         el('input', {
             type: 'checkbox',
-            value: kotlin,
+            value: key,
             checked: true,
             onchange: ({ target: checkbox }) => {
-                if (checkbox.checked) hiddenKotlin.delete(kotlin); else hiddenKotlin.add(kotlin);
-                applyKotlinFilter();
+                if (checkbox.checked) hiddenSeries.delete(key); else hiddenSeries.add(key);
+                applySeriesFilter();
             },
         }),
         el('span', {
             className: 'color-swatch',
-            style: `background-color: ${kotlinColors.get(kotlin)}`,
+            style: `background-color: ${seriesColors.get(key)}`,
             attrs: { 'aria-hidden': 'true' },
         }),
-        el('span', { textContent: kotlin }),
+        el('span', { textContent: comparison ? label : key }),
     ])));
 
     // ---------- Start ----------
