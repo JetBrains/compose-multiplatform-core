@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuild
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItemWithComposableLeadingIcon
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.determineCursorDesiredOffset
+import androidx.compose.foundation.text.holder
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.internal.IndexTransformationType.Deletion
 import androidx.compose.foundation.text.input.internal.IndexTransformationType.Insertion
@@ -40,12 +41,15 @@ import androidx.compose.foundation.text.input.internal.selection.TextFieldSelect
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.Cursor
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.None
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState.Selection
+import androidx.compose.foundation.text.isNativeTextInput
 import androidx.compose.foundation.text.selection.MouseSelectionObserver
 import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
@@ -55,70 +59,81 @@ import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.text.TextRange
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /** Runs platform-specific text tap gestures logic. */
+@OptIn(InternalComposeUiApi::class)
 internal actual suspend fun TextFieldSelectionState.detectTextFieldTapGestures(
     pointerInputScope: PointerInputScope,
     interactionSource: MutableInteractionSource?,
     requestFocus: () -> Unit,
     showKeyboard: () -> Unit
 ) {
+
+    fun handleTap(offset: Offset, wasFocused: Boolean) {
+        if (enabled && isWindowAndTextFieldFocused) {
+            if (!readOnly) {
+                showKeyboard()
+                if (textFieldState.visualText.isNotEmpty()) {
+                    showCursorHandle = true
+                }
+            }
+
+            updateTextToolbarState(None)
+
+            val coercedOffset =
+                textLayoutState.coercedInVisibleBoundsOfInputText(offset)
+            val cursorMoved = placeCursorAtDesiredOffset(
+                textLayoutState.fromDecorationToTextLayout(coercedOffset)
+            )
+
+            if (!cursorMoved && wasFocused) {
+                updateTextToolbarState(Cursor)
+            }
+        }
+    }
+
     pointerInputScope.detectTapAndPress(
         onTap = { offset ->
             val wasFocused = isWindowAndTextFieldFocused
             requestFocus()
-
-            if (enabled && isWindowAndTextFieldFocused) {
-                if (!readOnly) {
-                    showKeyboard()
-                    if (textFieldState.visualText.isNotEmpty()) {
-                        showCursorHandle = true
-                    }
-                }
-
-                updateTextToolbarState(None)
-
-                val coercedOffset =
-                    textLayoutState.coercedInVisibleBoundsOfInputText(offset)
-                val cursorMoved = placeCursorAtDesiredOffset(
-                    textLayoutState.fromDecorationToTextLayout(coercedOffset)
-                )
-
-                // TODO: It should be toggleable
-                if (!cursorMoved && wasFocused) {
-                    updateTextToolbarState(Cursor)
-                }
+            if (!wasFocused || !textFieldState.holder.isNativeTextInput) {
+                handleTap(offset, wasFocused)
             }
         },
         onPress = { offset ->
-            interactionSource?.let { interactionSource ->
-                coroutineScope {
-                    launch {
-                        // Remove any old interactions if we didn't fire stop / cancel properly
-                        pressInteraction?.let { oldValue ->
-                            val interaction = PressInteraction.Cancel(oldValue)
-                            interactionSource.emit(interaction)
-                            pressInteraction = null
-                        }
-
-                        val press = PressInteraction.Press(offset)
-                        interactionSource.emit(press)
-                        pressInteraction = press
-                    }
-                    val success = tryAwaitRelease()
-                    pressInteraction?.let { pressInteraction ->
-                        val endInteraction =
-                            if (success) {
-                                PressInteraction.Release(pressInteraction)
-                            } else {
-                                PressInteraction.Cancel(pressInteraction)
+            if (!textFieldState.holder.isNativeTextInput) {
+                interactionSource?.let { interactionSource ->
+                    coroutineScope {
+                        launch {
+                            // Remove any old interactions if we didn't fire stop / cancel properly
+                            pressInteraction?.let { oldValue ->
+                                val interaction = PressInteraction.Cancel(oldValue)
+                                interactionSource.emit(interaction)
+                                pressInteraction = null
                             }
-                        interactionSource.emit(endInteraction)
+
+                            val press = PressInteraction.Press(offset)
+                            interactionSource.emit(press)
+                            pressInteraction = press
+                        }
+                        val success = tryAwaitRelease()
+                        pressInteraction?.let { pressInteraction ->
+                            val endInteraction =
+                                if (success) {
+                                    PressInteraction.Release(pressInteraction)
+                                } else {
+                                    PressInteraction.Cancel(pressInteraction)
+                                }
+                            interactionSource.emit(endInteraction)
+                        }
+                        pressInteraction = null
                     }
-                    pressInteraction = null
                 }
+            } else {
+                tryAwaitRelease()
             }
         }
     )
@@ -200,17 +215,32 @@ private fun TextFieldSelectionState.placeCursorAtDesiredOffset(offset: Offset): 
 }
 
 /** Runs platform-specific text selection gestures logic. */
+@OptIn(InternalComposeUiApi::class)
 internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
     pointerInputScope: PointerInputScope,
     mouseSelectionObserver: MouseSelectionObserver,
     textDragObserver: TextDragObserver
 ) {
     val selectionState = this
-    val textDragObserver = IosTextFieldTextDragObserver(selectionState)
-    pointerInputScope.awaitSelectionGestures(
-        mouseSelectionObserver = mouseSelectionObserver,
-        textDragObserver = textDragObserver,
-    )
+    val dragObserver = IosTextFieldTextDragObserver(selectionState)
+
+    coroutineScope {
+        var selectionGesturesJob: Job? = null
+        snapshotFlow { textFieldState.holder.isNativeTextInput }.collect { native ->
+            if (native) {
+                selectionGesturesJob?.cancel()
+                selectionGesturesJob = null
+            } else {
+                selectionGesturesJob =
+                    this@coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                        pointerInputScope.awaitSelectionGestures(
+                            mouseSelectionObserver = mouseSelectionObserver,
+                            textDragObserver = dragObserver,
+                        )
+                    }
+            }
+        }
+    }
 }
 
 private fun TextFieldSelectionState.moveCaretByLongPress(

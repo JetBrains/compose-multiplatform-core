@@ -19,10 +19,12 @@ package androidx.compose.foundation.text
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.OffsetMapping
 
+@OptIn(InternalComposeUiApi::class)
 @Composable
 internal actual fun Modifier.textFieldPointer(
     manager: TextFieldSelectionManager,
@@ -33,11 +35,12 @@ internal actual fun Modifier.textFieldPointer(
     readOnly: Boolean,
     offsetMapping: OffsetMapping
 ): Modifier = Modifier.cupertinoTextFieldPointer(
-    manager,
-    enabled,
-    interactionSource,
-    state,
-    focusRequester,
-    readOnly,
-    offsetMapping,
+    manager = manager,
+    enabled = enabled,
+    interactionSource = interactionSource,
+    state = state,
+    focusRequester = focusRequester,
+    readOnly = readOnly,
+    offsetMapping = offsetMapping,
+    textSelectionGesturesEnabled = !state.holder.isNativeTextInput,
 )
