@@ -497,6 +497,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
         )
     }
 
+    @Suppress("DEPRECATION") // Deprecated in Kotlin 2.5
     @JvmOverloads
     fun androidNativeX86(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
         potentiallyRedirecting("androidNativeX86") {
@@ -508,6 +509,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
             }
         }
 
+    @Suppress("DEPRECATION") // Deprecated in Kotlin 2.5
     @JvmOverloads
     fun androidNativeX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
         potentiallyRedirecting("androidNativeX64") {
@@ -519,6 +521,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
             }
         }
 
+    @Suppress("DEPRECATION") // Deprecated in Kotlin 2.5
     @JvmOverloads
     fun androidNativeArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
         potentiallyRedirecting("androidNativeArm64") {
@@ -530,6 +533,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
             }
         }
 
+    @Suppress("DEPRECATION") // Deprecated in Kotlin 2.5
     @JvmOverloads
     fun androidNativeArm32(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
         potentiallyRedirecting("androidNativeArm32") {
@@ -624,24 +628,12 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @JvmOverloads
     fun watchos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
         return listOfNotNull(
-            watchosArm32(block),
             watchosArm64(block),
             // TODO(https://youtrack.jetbrains.com/issue/CMP-9513) publish it
             // watchosDeviceArm64()
             watchosSimulatorArm64(block),
         )
     }
-
-    @JvmOverloads
-    fun watchosArm32(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =
-        potentiallyRedirecting("watchosArm32") {
-            supportedPlatforms.add(PlatformIdentifier.WATCHOS_ARM_32)
-            if (project.enableMac()) {
-                kotlinExtension.watchosArm32 { block?.execute(this) }
-            } else {
-                null
-            }
-        }
 
     @JvmOverloads
     fun watchosArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? =

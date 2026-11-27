@@ -793,6 +793,7 @@ public abstract interface class androidx/compose/ui/graphics/PathIterator : java
 	public abstract fun getTolerance ()F
 	public abstract fun hasNext ()Z
 	public abstract fun next ()Landroidx/compose/ui/graphics/PathSegment;
+	public synthetic fun next ()Ljava/lang/Object;
 	public abstract fun next ([FI)Landroidx/compose/ui/graphics/PathSegment$Type;
 	public static synthetic fun next$default (Landroidx/compose/ui/graphics/PathIterator;[FIILjava/lang/Object;)Landroidx/compose/ui/graphics/PathSegment$Type;
 }
