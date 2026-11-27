@@ -54,8 +54,12 @@ public final class androidx/navigation3/scene/SceneDecoratorStrategyScope : andr
 public final class androidx/navigation3/scene/SceneInfo : androidx/navigationevent/NavigationEventInfo {
 	public static final field $stable I
 	public fun <init> (Landroidx/navigation3/scene/Scene;)V
+	public fun <init> (Landroidx/navigation3/scene/Scene;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Landroidx/navigation3/scene/Scene;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getScene ()Landroidx/navigation3/scene/Scene;
+	public fun getTitle ()Ljava/lang/String;
+	public fun getUrl ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -91,6 +95,16 @@ public final class androidx/navigation3/scene/SinglePaneSceneStrategy : androidx
 	public static final field $stable I
 	public fun <init> ()V
 	public fun calculateScene (Landroidx/navigation3/scene/SceneStrategyScope;Ljava/util/List;)Landroidx/navigation3/scene/Scene;
+}
+
+public final class androidx/navigation3/scene/TitleMetadataKey : androidx/navigation3/runtime/NavMetadataKey {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/navigation3/scene/TitleMetadataKey;
+}
+
+public final class androidx/navigation3/scene/UrlMetadataKey : androidx/navigation3/runtime/NavMetadataKey {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/navigation3/scene/UrlMetadataKey;
 }
 
 public final class androidx/navigation3/ui/LocalNavAnimatedContentScopeKt {

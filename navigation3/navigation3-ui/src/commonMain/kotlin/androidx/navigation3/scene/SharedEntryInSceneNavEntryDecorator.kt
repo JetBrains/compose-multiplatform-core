@@ -17,6 +17,7 @@
 package androidx.navigation3.scene
 
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SharedTransitionScope.DeferredTransitionBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
@@ -50,7 +51,14 @@ internal class SharedEntryInSceneNavEntryDecorator<T : Any>(
                 with(sharedTransitionScope) {
                     Box(
                         Modifier.sharedElement(
-                            rememberSharedContentState(entry.contentKey),
+                            rememberSharedContentState(
+                                key = entry.contentKey,
+                                config =
+                                    SharedContentConfig(
+                                        deferredTransitionBehavior =
+                                            DeferredTransitionBehavior.SeekToTarget
+                                    ),
+                            ),
                             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                         )
                     ) {
