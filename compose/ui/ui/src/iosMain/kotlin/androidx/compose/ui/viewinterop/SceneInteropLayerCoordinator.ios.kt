@@ -45,13 +45,12 @@ internal class SceneInteropLayerCoordinator(
     }
 
     fun removeLayer(layer: SceneInteropLayerModifierNode) {
-        val hadHolders =
-            holdersByLayer.remove(layer)?.let { holders ->
-                holders.forEach { holder -> layerByHolder.remove(holder) }
-                true
-            } ?: false
+        val holders = holdersByLayer.remove(layer)
+        if (holders != null) {
+            holders.forEach { holder -> layerByHolder.remove(holder) }
+        }
         val hadBounds = layerBounds.remove(layer) != null
-        if (hadHolders || hadBounds) scheduleUpdate()
+        if (holders != null || hadBounds) scheduleUpdate()
     }
 
     fun updateHolder(holder: IosInteropElementHolder<*>, layer: SceneInteropLayerModifierNode) {

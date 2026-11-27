@@ -154,9 +154,6 @@ internal class IosInteropContainer(
         requestRedraw()
     }
 
-    /**
-     * Schedules a regular action that can add final-frame work to the transaction performing it.
-     */
     internal fun scheduleScopedUpdate(action: (InteropTransactionScope) -> Unit) {
         scheduledUpdatesCount++
         transaction.scheduleFrameSynchronizedAction { transactionScope ->
@@ -166,9 +163,6 @@ internal class IosInteropContainer(
         requestRedraw()
     }
 
-    /**
-     * Schedules an action after all regular frame-synchronized updates for the current frame.
-     */
     internal fun scheduleFinalFrameUpdate(action: (InteropTransactionScope) -> Unit) {
         transaction.scheduleFinalFrameSynchronizedAction { transactionScope ->
             action(transactionScope)
@@ -188,13 +182,4 @@ internal class IosInteropContainer(
 //    override fun onInteropViewLayoutChange(holder: InteropViewHolder) {
 //        // No-op
 //    }
-}
-
-/**
- * Schedules an iOS frame-synchronized action that receives the transaction scope it runs in.
- */
-internal fun InteropContainer.scheduleFrameSynchronizedUpdate(
-    action: (InteropTransactionScope) -> Unit
-) {
-    (this as IosInteropContainer).scheduleScopedUpdate(action)
 }

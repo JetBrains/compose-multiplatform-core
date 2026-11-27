@@ -74,6 +74,7 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
     private val screenDensity get() = container.root.density
+    private val iosInteropContainer = interopContainer as IosInteropContainer
     private val layout = InteropElementLayout(
         group = interopWrappingView,
         userComponent = userComponentView,
@@ -141,13 +142,14 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
             null
         }
 
-        if (
-            groupFrame != null ||
-            userComponentFrame != null ||
+        val framesChanged = groupFrame != null || userComponentFrame != null
+        val maskInputsChanged =
             rootSize != currentRootSize ||
-            unclippedRect != currentUnclippedRect
-        ) {
-            container.scheduleFrameSynchronizedUpdate { transactionScope ->
+                unclippedRect != currentUnclippedRect ||
+                clippedRect != currentClippedRect
+
+        if (framesChanged) {
+            iosInteropContainer.scheduleScopedUpdate { transactionScope ->
                 UIView.performWithoutAnimation {
                     layout.updateFrames(
                         groupFrame = groupFrame?.toCGRect(screenDensity),
@@ -165,6 +167,13 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
                     transactionScope = transactionScope,
                 )
             }
+        } else if (maskInputsChanged) {
+            interopMask.update(
+                rootSize = rootSize,
+                unclippedRect = unclippedRect,
+                clippedRect = clippedRect,
+                transactionScope = null,
+            )
         }
 
         currentUnclippedRect = unclippedRect
@@ -178,7 +187,6 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
         // [InteractionUIView] logic
     }
 
-    /** Applies the opaque regions owned by higher-z scene layers. */
     fun updateSceneLayerMask(occluderRects: List<IntRect>) {
         interopMask.updateSceneLayerMask(occluderRects)
     }
@@ -190,8 +198,7 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
 
     override fun onReuse() {
         super.onReuse()
-        // A reused overlay is hidden until its mask is rebuilt. Invalidate the cached layout so
-        // the next placement reapplies frames even when the holder returns to the same geometry.
+        // Invalidate cached frames so a reused holder reapplies them even for unchanged geometry.
         currentUnclippedRect = null
         currentRootSize = null
         currentClippedRect = null
@@ -232,9 +239,7 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
         interopWrappingView.updatePlacement(properties.placedAsOverlay)
         layout.updateSafeAreaInsetsPolicy(properties.safeAreaInsetsPolicy)
 
-        // A new overlay must resolve its first mask. A switch from overlay to background must
-        // remove an installed mask; unmasked overlays need no work because UIKit clipping is
-        // restored synchronously by updatePlacement.
+        // Resolve the first overlay mask or remove a mask when switching to background interop.
         if (properties.placedAsOverlay || interopMask.hasInstalledMask) {
             container.scheduleUpdate {
                 interopMask.scheduleUpdate()

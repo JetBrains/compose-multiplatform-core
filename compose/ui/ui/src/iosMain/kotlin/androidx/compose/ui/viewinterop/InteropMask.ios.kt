@@ -28,14 +28,7 @@ import platform.CoreGraphics.CGPathMoveToPoint
 import platform.QuartzCore.CAShapeLayer
 import platform.UIKit.UIColor
 
-/**
- * Maintains and applies the UIKit mask used by overlay interop to clip only at Compose clip
- * boundaries.
- *
- * Geometry and scene-occluder changes are coalesced into one final-frame update. This keeps mask
- * changes synchronized with the frame while avoiding multiple mask recalculations when both the
- * interop position and an occluding scene move during the same frame.
- */
+/** Maintains and applies the UIKit mask used by overlay interop. */
 internal class InteropMask(
     private val interopWrappingView: InteropWrappingView,
     private val isPlacedAsOverlay: () -> Boolean,
@@ -49,8 +42,6 @@ internal class InteropMask(
     private var currentMaskKey: MaskKey? = null
     private var isMaskInitialized = false
     private var interopMaskLayer: CAShapeLayer? = null
-    private var currentFrame: IntRect? = null
-    private var currentVisibleRects: List<IntRect>? = null
 
     val hasInstalledMask: Boolean
         get() = interopMaskLayer != null
@@ -62,14 +53,12 @@ internal class InteropMask(
         rootSize: IntSize,
         unclippedRect: IntRect,
         clippedRect: IntRect,
-        transactionScope: InteropTransactionScope,
+        transactionScope: InteropTransactionScope?,
     ) {
         this.rootSize = rootSize
         this.unclippedRect = unclippedRect
         this.clippedRect = clippedRect
 
-        // Background interop is clipped by the wrapping view and never needs a mask. Keep the
-        // geometry so a later switch to overlay can resolve the mask without another layout pass.
         if (!isPlacedAsOverlay()) return
 
         scheduleUpdate(transactionScope)
@@ -79,8 +68,6 @@ internal class InteropMask(
         if (this.occluderRects == occluderRects) return
 
         this.occluderRects = occluderRects
-        // A pending geometry update already has a final-frame callback. Let that callback apply the
-        // combined geometry and occluder state instead of updating the mask twice in one frame.
         if (finalFrameUpdateScheduler.isScheduled) return
 
         applyCurrentLayout()
@@ -101,7 +88,6 @@ internal class InteropMask(
         }
     }
 
-    /** Removes the installed mask and clears all cached mask state. */
     fun clear() {
         updateGeneration++
         finalFrameUpdateScheduler.cancel()
@@ -111,8 +97,6 @@ internal class InteropMask(
         occluderRects = emptyList()
         currentMaskKey = null
         isMaskInitialized = false
-        currentFrame = null
-        currentVisibleRects = null
         interopWrappingView.setInteropMaskLayer(null)
         interopMaskLayer = null
         interopWrappingView.setWaitingForInteropMask(isPlacedAsOverlay())
@@ -122,25 +106,33 @@ internal class InteropMask(
 
     private fun applyCurrentLayout() {
         val maskKey = calculateMask()
-        if (isMaskInitialized && maskKey == currentMaskKey) return
+        val frameChanged = currentMaskKey?.frame != maskKey?.frame
+        val visibleRectsChanged = currentMaskKey?.visibleRects != maskKey?.visibleRects
+        if (isMaskInitialized && !frameChanged && !visibleRectsChanged) return
 
         isMaskInitialized = true
         currentMaskKey = maskKey
-        updateMask(frame = maskKey?.frame, visibleRects = maskKey?.visibleRects.orEmpty())
+        updateMask(
+            frame = maskKey?.frame,
+            visibleRects = maskKey?.visibleRects.orEmpty(),
+            frameChanged = frameChanged,
+            visibleRectsChanged = visibleRectsChanged,
+        )
     }
 
     /**
-     * Updates the UIKit mask that clips overlay interop at Compose clipping boundaries.
-     *
-     * A null [frame] removes the mask, allowing UIKit effects such as shadows to overflow.
-     * [visibleRects] are root-space rectangles in the mask layer's local coordinate system.
+     * Updates the UIKit mask. A null [frame] removes it; [visibleRects] are root-space rectangles
+     * in the mask layer's local coordinate system.
      */
-    private fun updateMask(frame: IntRect?, visibleRects: List<IntRect>) {
+    private fun updateMask(
+        frame: IntRect?,
+        visibleRects: List<IntRect>,
+        frameChanged: Boolean,
+        visibleRectsChanged: Boolean,
+    ) {
         if (!isPlacedAsOverlay() || frame == null) {
             interopWrappingView.setInteropMaskLayer(null)
             interopMaskLayer = null
-            currentFrame = null
-            currentVisibleRects = null
             if (hasLayout()) {
                 interopWrappingView.setWaitingForInteropMask(false)
             }
@@ -154,16 +146,14 @@ internal class InteropMask(
                     interopMaskLayer = it
                 }
 
-        if (currentFrame != frame) {
-            currentFrame = frame
+        if (frameChanged) {
             maskLayer.frame = frame.toCGRect(density())
         }
-        if (currentVisibleRects != visibleRects) {
-            currentVisibleRects = visibleRects
+        if (visibleRectsChanged) {
             val path = createMaskPath(visibleRects)
             maskLayer.path = path
-            // CGPathCreateMutable follows the Core Foundation Create Rule. CAShapeLayer retains the
-            // path, so release this temporary creator reference after assigning it.
+            // CGPathCreateMutable follows the Core Foundation Create Rule. CAShapeLayer retains
+            // the path, so release this temporary creator reference after assigning it.
             CFRelease(path)
         }
         interopWrappingView.setInteropMaskLayer(maskLayer)
@@ -224,19 +214,22 @@ internal class InteropMask(
             return MaskKey(frame = frame, visibleRects = emptyList())
         }
 
+        val visibleRects = visibleRect.subtractOccluders(occluderRects)
         if (
             unclippedRect == clippedRect &&
-                visibleRect == rootBounds &&
-                occluderRects.none { it.overlaps(visibleRect) }
-        )
+                visibleRects.size == 1 &&
+                visibleRects[0] == rootBounds
+        ) {
             return null
+        }
 
-        return MaskKey(frame = frame, visibleRects = visibleRect.subtractOccluders(occluderRects))
+        return MaskKey(frame = frame, visibleRects = visibleRects)
     }
 
     private fun IntRect.subtractOccluders(occluderRects: List<IntRect>): List<IntRect> =
         // Fold, rather than subtract overlapping occluders from one path, to keep overlapping
-        // scene layers well defined.
+        // scene layers well defined. Many overlapping occluders can split the result into several
+        // rectangles, so this remains suitable for the small layer counts used by navigation.
         occluderRects.fold(listOf(this)) { visibleRects, occluder ->
             visibleRects.flatMap { it.subtractOccluder(occluder) }
         }

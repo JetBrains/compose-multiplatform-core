@@ -27,7 +27,7 @@ class IosInteropContainerTest {
         val container = container()
         var finalFrameUpdateRan = false
 
-        container.scheduleFrameSynchronizedUpdate { transactionScope ->
+        container.scheduleScopedUpdate { transactionScope ->
             transactionScope.scheduleFinalFrameUpdate { finalFrameUpdateRan = true }
         }
 

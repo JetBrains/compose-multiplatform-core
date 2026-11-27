@@ -19,11 +19,7 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.ui.util.fastForEach
 import platform.QuartzCore.CATransaction
 
-/**
- * The transaction scope passed to an action while its transaction is performing.
- *
- * A regular action can use this scope to add work to the same transaction's final-frame phase.
- */
+/** The transaction scope passed to an action while its transaction is performing. */
 internal class InteropTransactionScope(
     private val transaction: InteropMutableTransaction
 ) {
@@ -108,15 +104,17 @@ internal class InteropMutableTransaction(
         val transactionScope = InteropTransactionScope(this)
         actions.fastForEach { it(transactionScope) }
 
-        // A regular action can discover a final-frame update, such as an interop mask after its
-        // wrapper frame is applied. Drain the list dynamically so such updates still run in
-        // this transaction rather than being deferred to the next frame.
+        // Final-frame actions can be added while regular actions run; drain them in this transaction.
         var finalFrameActionIndex = 0
         while (finalFrameActionIndex < finalFrameActions.size) {
             val action = finalFrameActions[finalFrameActionIndex]
             finalFrameActionIndex++
             action(transactionScope)
         }
+
+        actions.clear()
+        finalFrameActions.clear()
+        holdersWithPendingViewUpdates.clear()
     }
 
     /**
@@ -127,12 +125,7 @@ internal class InteropMutableTransaction(
         requiresFrameSynchronization = true
     }
 
-    /**
-     * Schedules an action after all regular frame-synchronised updates for the current frame.
-     *
-     * Scene-level overlay masks depend on the current frames of every affected interop wrapper, so
-     * they must be applied after holder layout updates.
-     */
+    /** Schedules an action after all regular frame-synchronized updates for the current frame. */
     fun scheduleFinalFrameSynchronizedAction(action: InteropSyncAction) {
         finalFrameActions.add(action)
         requiresFrameSynchronization = true
