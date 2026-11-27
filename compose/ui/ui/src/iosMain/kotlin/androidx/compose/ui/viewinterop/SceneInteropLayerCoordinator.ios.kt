@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.roundToIntRect
 
 /** Coordinates scene interop layers with flat overlay UIKit interop. */
 internal class SceneInteropLayerCoordinator(
-    private val finalFrameUpdateScheduler: FinalFrameUpdateScheduler
+    private val transactionEndUpdateScheduler: TransactionEndUpdateScheduler
 ) {
     private val layerBounds = mutableMapOf<SceneInteropLayerModifierNode, IntRect>()
     private val holdersByLayer =
@@ -87,11 +87,11 @@ internal class SceneInteropLayerCoordinator(
         holdersByLayer.clear()
         layerByHolder.clear()
         layerBounds.clear()
-        finalFrameUpdateScheduler.cancel()
+        transactionEndUpdateScheduler.cancel()
     }
 
     private fun scheduleUpdate() {
-        finalFrameUpdateScheduler.schedule { applyMasks() }
+        transactionEndUpdateScheduler.schedule { applyMasks() }
     }
 
     private fun applyMasks() {

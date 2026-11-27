@@ -16,12 +16,12 @@
 
 package androidx.compose.ui.viewinterop
 
-/** Coalesces repeated final-frame callbacks into one pending action. */
-internal class FinalFrameUpdateScheduler(
+/** Coalesces repeated transaction-end update callbacks into one pending action. */
+internal class TransactionEndUpdateScheduler(
     private val scheduleByDefault: (() -> Unit) -> Unit
 ) {
-    // True while a final-frame callback is pending. Later schedule requests are coalesced into
-    // that callback, which must read the latest state when it runs.
+    // True while a transaction-end update callback is pending. Later schedule requests are coalesced
+    // into that callback, which must read the latest state when it runs.
     private var isUpdateScheduled = false
 
     val isScheduled: Boolean
@@ -30,7 +30,7 @@ internal class FinalFrameUpdateScheduler(
     fun schedule(action: () -> Unit) = enqueue(scheduleByDefault, action)
 
     fun schedule(transactionScope: InteropTransactionScope, action: () -> Unit) =
-        enqueue(transactionScope::scheduleFinalFrameUpdate, action)
+        enqueue(transactionScope::scheduleAtTransactionEnd, action)
 
     fun cancel() {
         // A callback already submitted to the transaction can still run; owners ignore stale work.
@@ -38,22 +38,22 @@ internal class FinalFrameUpdateScheduler(
     }
 
     private fun enqueue(
-        scheduleFinalFrameUpdate: (() -> Unit) -> Unit,
+        scheduleAtTransactionEnd: (() -> Unit) -> Unit,
         action: () -> Unit
     ) {
         if (isUpdateScheduled) return
 
         isUpdateScheduled = true
-        scheduleFinalFrameUpdate {
+        scheduleAtTransactionEnd {
             isUpdateScheduled = false
             action()
         }
     }
 }
 
-internal fun InteropContainer.createFinalFrameUpdateScheduler(): FinalFrameUpdateScheduler {
+internal fun InteropContainer.createTransactionEndUpdateScheduler(): TransactionEndUpdateScheduler {
     val iosContainer = this as IosInteropContainer
-    return FinalFrameUpdateScheduler { action ->
-        iosContainer.scheduleFinalFrameUpdate { action() }
+    return TransactionEndUpdateScheduler { action ->
+        iosContainer.scheduleAtTransactionEnd { action() }
     }
 }

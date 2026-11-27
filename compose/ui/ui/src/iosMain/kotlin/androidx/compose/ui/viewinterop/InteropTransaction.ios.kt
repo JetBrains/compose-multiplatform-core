@@ -23,8 +23,8 @@ import platform.QuartzCore.CATransaction
 internal class InteropTransactionScope(
     private val transaction: InteropMutableTransaction
 ) {
-    fun scheduleFinalFrameUpdate(action: () -> Unit) {
-        transaction.scheduleFinalFrameSynchronizedAction { _ -> action() }
+    fun scheduleAtTransactionEnd(action: () -> Unit) {
+        transaction.scheduleAtTransactionEnd { _ -> action() }
     }
 }
 
@@ -86,13 +86,13 @@ internal class InteropMutableTransaction(
     override var isInteropActive: Boolean
 ) : InteropSyncTransaction {
     private val actions = mutableListOf<InteropSyncAction>()
-    private val finalFrameActions = mutableListOf<InteropSyncAction>()
+    private val transactionEndUpdates = ArrayDeque<InteropSyncAction>()
     private val holdersWithPendingViewUpdates = mutableSetOf<InteropViewHolder>()
 
     private var requiresFrameSynchronization = false
 
     override val hasPendingActions: Boolean
-        get() = actions.isNotEmpty() || finalFrameActions.isNotEmpty()
+        get() = actions.isNotEmpty() || transactionEndUpdates.isNotEmpty()
 
     val hasPendingViewUpdatesOnly: Boolean
         get() = hasPendingActions && !requiresFrameSynchronization
@@ -104,16 +104,14 @@ internal class InteropMutableTransaction(
         val transactionScope = InteropTransactionScope(this)
         actions.fastForEach { it(transactionScope) }
 
-        // Final-frame actions can be added while regular actions run; drain them in this transaction.
-        var finalFrameActionIndex = 0
-        while (finalFrameActionIndex < finalFrameActions.size) {
-            val action = finalFrameActions[finalFrameActionIndex]
-            finalFrameActionIndex++
+        // Transaction-end updates can be added while regular actions run; drain them as a queue in
+        // this transaction.
+        while (transactionEndUpdates.isNotEmpty()) {
+            val action = transactionEndUpdates.removeFirst()
             action(transactionScope)
         }
 
         actions.clear()
-        finalFrameActions.clear()
         holdersWithPendingViewUpdates.clear()
     }
 
@@ -125,9 +123,9 @@ internal class InteropMutableTransaction(
         requiresFrameSynchronization = true
     }
 
-    /** Schedules an action after all regular frame-synchronized updates for the current frame. */
-    fun scheduleFinalFrameSynchronizedAction(action: InteropSyncAction) {
-        finalFrameActions.add(action)
+    /** Schedules an action after all regular frame-synchronized actions in this transaction. */
+    fun scheduleAtTransactionEnd(action: InteropSyncAction) {
+        transactionEndUpdates.addLast(action)
         requiresFrameSynchronization = true
     }
 

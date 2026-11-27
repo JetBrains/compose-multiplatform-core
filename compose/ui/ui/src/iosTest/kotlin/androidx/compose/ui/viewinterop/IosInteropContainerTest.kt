@@ -23,36 +23,36 @@ import platform.UIKit.UIView
 
 class IosInteropContainerTest {
     @Test
-    fun finalFrameUpdateFromRegularActionRunsInSameTransaction() {
+    fun transactionEndUpdateFromRegularActionRunsInSameTransaction() {
         val container = container()
-        var finalFrameUpdateRan = false
+        var transactionEndUpdateRan = false
 
         container.scheduleScopedUpdate { transactionScope ->
-            transactionScope.scheduleFinalFrameUpdate { finalFrameUpdateRan = true }
+            transactionScope.scheduleAtTransactionEnd { transactionEndUpdateRan = true }
         }
 
         val transaction = container.retrieveTransaction()
         transaction.performTransaction()
 
         assertTrue(
-            finalFrameUpdateRan,
-            "A final-frame update discovered by a regular action must not wait for the next frame",
+            transactionEndUpdateRan,
+            "A transaction-end update discovered by a regular action must not wait for the next frame",
         )
         assertFalse(
             container.hasPendingUpdates,
-            "The final-frame update must not remain scheduled in the next transaction",
+            "The transaction-end update must not remain scheduled in the next transaction",
         )
     }
 
     @Test
-    fun finalFrameUpdateFromFinalFrameActionRunsInSameTransaction() {
+    fun transactionEndUpdateFromTransactionEndUpdateRunsInSameTransaction() {
         val container = container()
         var firstUpdateRan = false
         var secondUpdateRan = false
 
-        container.scheduleFinalFrameUpdate { transactionScope ->
+        container.scheduleAtTransactionEnd { transactionScope ->
             firstUpdateRan = true
-            transactionScope.scheduleFinalFrameUpdate { secondUpdateRan = true }
+            transactionScope.scheduleAtTransactionEnd { secondUpdateRan = true }
         }
 
         val transaction = container.retrieveTransaction()
@@ -61,7 +61,7 @@ class IosInteropContainerTest {
         assertTrue(firstUpdateRan)
         assertTrue(
             secondUpdateRan,
-            "A final-frame update scheduled by another final-frame update must run in the same " +
+            "A transaction-end update scheduled by another transaction-end update must run in the same " +
                 "transaction",
         )
         assertFalse(container.hasPendingUpdates)

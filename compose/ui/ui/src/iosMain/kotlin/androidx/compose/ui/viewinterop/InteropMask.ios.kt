@@ -33,7 +33,7 @@ internal class InteropMask(
     private val interopWrappingView: InteropWrappingView,
     private val isPlacedAsOverlay: () -> Boolean,
     private val density: () -> Density,
-    private val finalFrameUpdateScheduler: FinalFrameUpdateScheduler,
+    private val transactionEndUpdateScheduler: TransactionEndUpdateScheduler,
 ) {
     private var rootSize: IntSize? = null
     private var unclippedRect: IntRect? = null
@@ -46,7 +46,7 @@ internal class InteropMask(
     val hasInstalledMask: Boolean
         get() = interopMaskLayer != null
 
-    // Distinguishes final-frame callbacks queued before a clear from those queued after it.
+    // Distinguishes transaction update callbacks queued before a clear from those queued after it.
     private var updateGeneration = 0
 
     fun update(
@@ -68,7 +68,7 @@ internal class InteropMask(
         if (this.occluderRects == occluderRects) return
 
         this.occluderRects = occluderRects
-        if (finalFrameUpdateScheduler.isScheduled) return
+        if (transactionEndUpdateScheduler.isScheduled) return
 
         applyCurrentLayout()
     }
@@ -82,15 +82,15 @@ internal class InteropMask(
         }
 
         if (transactionScope == null) {
-            finalFrameUpdateScheduler.schedule(action)
+            transactionEndUpdateScheduler.schedule(action)
         } else {
-            finalFrameUpdateScheduler.schedule(transactionScope, action)
+            transactionEndUpdateScheduler.schedule(transactionScope, action)
         }
     }
 
     fun clear() {
         updateGeneration++
-        finalFrameUpdateScheduler.cancel()
+        transactionEndUpdateScheduler.cancel()
         rootSize = null
         unclippedRect = null
         clippedRect = null

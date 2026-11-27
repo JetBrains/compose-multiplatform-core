@@ -83,7 +83,7 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
         interopWrappingView = interopWrappingView,
         isPlacedAsOverlay = { properties.placedAsOverlay },
         density = { screenDensity },
-        finalFrameUpdateScheduler = interopContainer.createFinalFrameUpdateScheduler(),
+        transactionEndUpdateScheduler = interopContainer.createTransactionEndUpdateScheduler(),
     )
     override val measurePolicy: MeasurePolicy get() = layout.measurePolicy
 

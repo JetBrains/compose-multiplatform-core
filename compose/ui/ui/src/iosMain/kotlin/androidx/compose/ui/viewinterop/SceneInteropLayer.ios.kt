@@ -70,7 +70,7 @@ internal class SceneInteropLayerCoordinatorModifierNode :
         val container = currentValueOf(LocalInteropContainer)
 
         return SceneInteropLayerCoordinator(
-                finalFrameUpdateScheduler = container.createFinalFrameUpdateScheduler()
+                transactionEndUpdateScheduler = container.createTransactionEndUpdateScheduler()
             )
             .also { sceneLayerCoordinator = it }
     }
