@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,7 @@ import kotlin.test.assertTrue
 import platform.CoreGraphics.CGPathContainsPoint
 import platform.CoreGraphics.CGPathIsEmpty
 import platform.CoreGraphics.CGPointMake
+import platform.Foundation.NSTimeInterval
 import platform.QuartzCore.CAShapeLayer
 import platform.UIKit.UIView
 
@@ -365,23 +367,43 @@ class InteropSceneLayerTest {
             }
         }
 
-        targetState.value = "controls"
-        var becameVisible = false
-        repeat(60) {
-            delay(5)
-            val wrappingView = checkNotNull(interopContainer).groupForInteropView(interopView)
-            if (wrappingView != null && interopView.window != null && !wrappingView.isHidden()) {
-                becameVisible = true
-                assertNotNull(
-                    wrappingView.layer.mask,
-                    "A visible popped-in overlay interop must already have its scene mask",
-                )
+        val choreographer = checkNotNull(frameChoreographer)
+        var observedVisibleInterop = false
+        var visibleInteropHasMask = false
+        val frameListener = object : FrameChoreographer.Listener {
+            override fun onDisplayLinkTick() {}
+
+            override fun onOutOfFrame(
+                lastFrameTimestamp: NSTimeInterval,
+                targetTimestamp: NSTimeInterval,
+            ) {
+                val wrappingView = interopContainer?.groupForInteropView(interopView)
+                if (wrappingView != null && interopView.window != null && !wrappingView.isHidden()) {
+                    observedVisibleInterop = true
+                    visibleInteropHasMask = wrappingView.layer.mask != null
+                }
             }
+        }
+        val activitiesHandler = choreographer.createActivitiesHandler()
+        choreographer.addListener(frameListener)
+        try {
+            activitiesHandler.onActivitiesStarted()
+            targetState.value = "controls"
+            waitUntil("The popped-in overlay interop should become visible during the transition") {
+                observedVisibleInterop
+            }
+        } finally {
+            activitiesHandler.dispose()
+            choreographer.removeListener(frameListener)
         }
 
         assertTrue(
-            becameVisible,
+            observedVisibleInterop,
             "The popped-in overlay interop should become visible during the transition",
+        )
+        assertTrue(
+            visibleInteropHasMask,
+            "A visible popped-in overlay interop must already have its scene mask",
         )
     }
 
