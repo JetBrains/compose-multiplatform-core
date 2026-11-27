@@ -59,8 +59,19 @@ inline fun <reified Class>setupXCTestSuite(vararg tests: KFunction1<Class, *>): 
  * with K/N tests.
  * This test suite can be run by either native launcher compiled to bundle or
  * by the other test suite (e.g. compiled as a framework).
+ *
+ * @param tests set of test classes to run; `null` to run all test classes accepted by [suiteFilter]
+ * @param testCases map of a test class qualified name to the test cases to run; `null` to run all
+ *   test cases of the included classes
+ * @param suiteFilter predicate on the generated test suites applied when [tests] and [testCases]
+ *   are `null`; it allows running all test classes except a subset (or only a subset of them).
+ *   May not be combined with [tests] or [testCases].
  */
-fun setupXCTestSuite(tests: Set<KClass<*>>? = null, testCases: Map<String?, Set<KFunction<*>>>? = null): XCTestSuite {
+fun setupXCTestSuite(
+    tests: Set<KClass<*>>? = null,
+    testCases: Map<String?, Set<KFunction<*>>>? = null,
+    suiteFilter: ((TestSuite) -> Boolean)? = null
+): XCTestSuite {
     val nativeTestSuite = XCTestSuite.testSuiteWithName(TOP_LEVEL_SUITE)
 
     // Initialize settings with the given args
@@ -80,10 +91,13 @@ fun setupXCTestSuite(tests: Set<KClass<*>>? = null, testCases: Map<String?, Set<
     )
 
     if (testSettings.runTests) {
-        val includeAllTests = tests == null && testCases == null
+        val includeAllTests = tests == null && testCases == null && suiteFilter == null
         val testSuiteNames = tests?.map { it.qualifiedName }.orEmpty() + testCases?.keys.orEmpty()
-        fun includeTestSuite(testSuite: TestSuite) =
-            includeAllTests || testSuiteNames.contains(testSuite.name)
+        fun includeTestSuite(testSuite: TestSuite) = when {
+            includeAllTests -> true
+            suiteFilter != null -> suiteFilter(testSuite)
+            else -> testSuiteNames.contains(testSuite.name)
+        }
 
         // Generate and add tests to the main suite
         testSettings.testSuites.generate(

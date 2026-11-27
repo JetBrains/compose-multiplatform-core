@@ -19,6 +19,13 @@ import InstrumentedTest
 
 class TestLauncher: XCTestCase {
     override class var defaultTestSuite: XCTestSuite {
-        ConfigurationKt.testSuite()
+        // Set the FULL_KEYBOARD_ACCESS_TESTS environment variable to "1" to run only the tests
+        // that require Full Keyboard Access on the simulator. With `xcodebuild test` it is
+        // passed through the TEST_RUNNER_ prefix:
+        //   TEST_RUNNER_FULL_KEYBOARD_ACCESS_TESTS=1 xcodebuild test ...
+        if ProcessInfo.processInfo.environment["FULL_KEYBOARD_ACCESS_TESTS"] == "1" {
+            return ConfigurationKt.fullKeyboardAccessTestSuite()
+        }
+        return ConfigurationKt.testSuite()
     }
 }

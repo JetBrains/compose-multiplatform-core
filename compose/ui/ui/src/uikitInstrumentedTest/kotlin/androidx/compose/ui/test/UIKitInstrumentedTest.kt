@@ -311,6 +311,24 @@ internal class UIKitInstrumentedTest(
             }
         }
 
+        /**
+         * Waits for [condition] like [waitUntil], but a timeout does not fail the test:
+         * returns whether the condition became true.
+         */
+        fun waitFor(
+            timeoutMillis: Long = 5_000,
+            condition: () -> Boolean
+        ): Boolean {
+            val runLoop = NSRunLoop.currentRunLoop()
+            val endTime = TimeSource.Monotonic.markNow() + timeoutMillis.milliseconds
+            runLoop.runUntilDate(NSDate())
+            while (!condition()) {
+                if (TimeSource.Monotonic.markNow() > endTime) return false
+                runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.005))
+            }
+            return true
+        }
+
         val iPadOrientationChangesNotSupported: Boolean get() =
             !(available(OS.Ios to OSVersion(16)) && isRunningOnIPad)
 
@@ -567,6 +585,11 @@ internal class UIKitInstrumentedTest(
         timeoutMillis: Long = 5_000,
         condition: () -> Boolean
     ) = UIKitInstrumentedTest.waitUntil(conditionDescription, timeoutMillis, condition)
+
+    fun waitFor(
+        timeoutMillis: Long = 5_000,
+        condition: () -> Boolean
+    ) = UIKitInstrumentedTest.waitFor(timeoutMillis, condition)
 
     fun setLayoutDirection(layoutDirection: UITraitEnvironmentLayoutDirection) =
         viewController.setLayoutDirection(layoutDirection)

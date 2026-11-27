@@ -135,6 +135,8 @@ internal class NativeTextInputView(
 
     override fun canBecomeFirstResponder() = input.isInteractive
 
+    override fun canBecomeFocused(): Boolean = false
+
     private val selectionInteraction =
         UITextInteraction.textInteractionForMode(UITextInteractionMode.UITextInteractionModeEditable)
             .also {

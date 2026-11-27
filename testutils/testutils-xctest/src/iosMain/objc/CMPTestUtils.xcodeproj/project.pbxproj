@@ -12,6 +12,7 @@
 		999869392D479FAB0096554D /* HIDEvent.m in Sources */ = {isa = PBXBuildFile; fileRef = 999869362D479FAB0096554D /* HIDEvent.m */; };
 		9998693A2D479FAB0096554D /* UITouch+Test.m in Sources */ = {isa = PBXBuildFile; fileRef = 999869382D479FAB0096554D /* UITouch+Test.m */; };
 		AB18693A2D479FAB0096554D /* UIPressesEvent+Test.m in Sources */ = {isa = PBXBuildFile; fileRef = AB1869382D479FAB0096554D /* UIPressesEvent+Test.m */; };
+		C10817022E00000000000001 /* UIFocusSystem+Test.m in Sources */ = {isa = PBXBuildFile; fileRef = C10817012E00000000000001 /* UIFocusSystem+Test.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -36,6 +37,8 @@
 		99D71B9C3045F7B50012EEB8 /* libCMPTestUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = libCMPTestUtils.a; path = "/Users/andrei.salavei/proj/compose-multiplatform-core/testutils/testutils-xctest/src/iosMain/objc/build/Debug-iphoneos/libCMPTestUtils.a"; sourceTree = "<absolute>"; };
 		AB1869372D479FAB0096554D /* UIPressesEvent+Test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIPressesEvent+Test.h"; sourceTree = "<group>"; };
 		AB1869382D479FAB0096554D /* UIPressesEvent+Test.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIPressesEvent+Test.m"; sourceTree = "<group>"; };
+		C10817002E00000000000001 /* UIFocusSystem+Test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIFocusSystem+Test.h"; sourceTree = "<group>"; };
+		C10817012E00000000000001 /* UIFocusSystem+Test.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIFocusSystem+Test.m"; sourceTree = "<group>"; };
 		D04C7EAD66F878FEC6CC0F11 /* UIEvent+Test.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "UIEvent+Test.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -70,6 +73,8 @@
 				33E3670D7DA407FD6DDDC97C /* UIEvent+Test.m */,
 				AB1869372D479FAB0096554D /* UIPressesEvent+Test.h */,
 				AB1869382D479FAB0096554D /* UIPressesEvent+Test.m */,
+				C10817002E00000000000001 /* UIFocusSystem+Test.h */,
+				C10817012E00000000000001 /* UIFocusSystem+Test.m */,
 			);
 			path = CMPTestUtils;
 			sourceTree = "<group>";
@@ -149,6 +154,7 @@
 				9998693A2D479FAB0096554D /* UITouch+Test.m in Sources */,
 				3053733953284D266BAD1BC5 /* UIEvent+Test.m in Sources */,
 				AB18693A2D479FAB0096554D /* UIPressesEvent+Test.m in Sources */,
+				C10817022E00000000000001 /* UIFocusSystem+Test.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

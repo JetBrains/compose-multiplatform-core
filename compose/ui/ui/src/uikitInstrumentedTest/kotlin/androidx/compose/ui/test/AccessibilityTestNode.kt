@@ -20,7 +20,10 @@ import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitIsEditing
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitSecureTextField
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitToggle
+import androidx.compose.test.utils.moveFocusInHeading
+import androidx.compose.test.utils.performInitialFocusMovement
 import androidx.compose.ui.test.utils.DpRectZero
+import androidx.compose.ui.test.utils.objcClassName
 import androidx.compose.ui.test.utils.intersect
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
@@ -67,6 +70,10 @@ import platform.UIKit.UIAccessibilityTraitTabBar
 import platform.UIKit.UIAccessibilityTraitToggleButton
 import platform.UIKit.UIAccessibilityTraitUpdatesFrequently
 import platform.UIKit.UIAccessibilityTraits
+import platform.UIKit.UIFocusHeading
+import platform.UIKit.UIFocusHeadingNext
+import platform.UIKit.UIFocusHeadingPrevious
+import platform.UIKit.UIFocusSystem
 import platform.UIKit.UITraitEnvironmentLayoutDirection
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 import platform.UIKit.UIView
@@ -518,4 +525,86 @@ internal fun postAccessibilityElementFocused(element: NSObject?) {
         `object` = null,
         userInfo = mapOf(UIAccessibilityFocusedElementKey to element)
     )
+}
+
+/**
+ * Returns the element that currently holds the keyboard focus of the focus system: an
+ * accessibility element ([UIAccessibilityElement]) of the Compose scene, or the UIKit element
+ * that took the focus. `null` when nothing is focused.
+ */
+internal fun UIFocusSystem.focusedElement(): NSObject? = focusedItem as? NSObject
+
+/**
+ * Returns the test tag of the [focusedElement]: the identifier of an accessibility element of
+ * the Compose scene, or the class name of any other UIKit element that took the focus.
+ */
+internal fun UIFocusSystem.focusedTag(): String {
+    val item = focusedElement() ?: return "nothing"
+    return (item as? UIAccessibilityElement)?.accessibilityIdentifier
+        ?: objcClassName(item)
+        ?: item.toString()
+}
+
+/**
+ * Returns the focus system of the window once its focus is on the element tagged [tag]. Fails
+ * when the simulator has no focus system, which means Full Keyboard Access is off: the test
+ * cannot verify anything without it, and a green run must mean a verified run.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun UIKitInstrumentedTest.startKeyboardFocusAt(tag: String): UIFocusSystem {
+    // Loads the accessibility elements, which are the focus items of the Compose scene.
+    getAccessibilityTree()
+    waitForIdle()
+
+    val focusSystem = UIFocusSystem.focusSystemForEnvironment(appDelegate.window!!)
+    assertNotNull(
+        focusSystem,
+        "No UIFocusSystem: enable Full Keyboard Access on the simulator " +
+            "(FullKeyboardAccessEnabled=1 in com.apple.Accessibility); the test cannot run without it"
+    )
+    // iOS versions like 18 activate Full Keyboard Access without moving the initial focus
+    // anywhere, unlike iOS 26 which puts it on the first focusable element itself. Wait for
+    // the focus to land; if it does not, perform the initial focus movement that Full Keyboard
+    // Access performs itself, and wait again. Timeouts do not fail here: the assertion below
+    // reports the actual focus instead of a bare timeout.
+    waitFor { focusSystem.focusedTag() == tag }
+    if (focusSystem.focusedTag() != tag) {
+        focusSystem.performInitialFocusMovement()
+        waitForIdle()
+        waitFor { focusSystem.focusedTag() == tag }
+    }
+    assertEquals(
+        expected = tag,
+        actual = focusSystem.focusedTag(),
+        message = "Full Keyboard Access did not put the initial keyboard focus on the first " +
+            "element; it focuses the element itself, and no automatic initial focus means " +
+            "the simulator runs an iOS version where Full Keyboard Access works differently"
+    )
+    return focusSystem
+}
+
+/**
+ * Moves the keyboard focus one step in [heading], as Tab or Shift-Tab do.
+ */
+@OptIn(ExperimentalForeignApi::class)
+private fun UIKitInstrumentedTest.moveKeyboardFocus(focusSystem: UIFocusSystem, heading: UIFocusHeading) {
+    assertTrue(
+        focusSystem.moveFocusInHeading(heading),
+        "UIKit focus movement API is unavailable"
+    )
+    waitForIdle()
+}
+
+/**
+ * Moves the keyboard focus one step forward, as Tab does.
+ */
+internal fun UIKitInstrumentedTest.moveKeyboardFocusForward(focusSystem: UIFocusSystem) {
+    moveKeyboardFocus(focusSystem, UIFocusHeadingNext)
+}
+
+/**
+ * Moves the keyboard focus one step backward, as Shift-Tab does.
+ */
+internal fun UIKitInstrumentedTest.moveKeyboardFocusBackward(focusSystem: UIFocusSystem) {
+    moveKeyboardFocus(focusSystem, UIFocusHeadingPrevious)
 }
