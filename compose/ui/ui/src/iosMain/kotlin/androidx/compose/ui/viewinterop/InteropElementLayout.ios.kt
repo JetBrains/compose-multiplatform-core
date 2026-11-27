@@ -41,8 +41,9 @@ import platform.UIKit.UIView
  * UIKit-side layout implementation for a Compose interop element.
  *
  * **Hierarchy**:
- *  - [group] is the clipping viewport (clipsToBounds = true on [InteropWrappingView]).
- *    It is positioned by setting its frame to the *clipped* rect from Compose. [group] is placed to hierarchy
+ *  - [group] is the clipping viewport. It uses UIKit bounds clipping for background interop and
+ *    can be masked for overlay interop. It is positioned by setting its frame to the *clipped*
+ *    rect from Compose. [group] is placed to hierarchy
  *    in [InteropViewHolder.insertInteropView].
  *  - [userComponentHostView] is the "unclipped content container". It is positioned by setting
  *    its frame to the *unclipped* rect relative to [group].

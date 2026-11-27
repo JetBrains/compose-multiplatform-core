@@ -29,6 +29,8 @@ val IosSpecificFeatures = Screen.Selection(
     AccessibilityLiveRegionExample,
     InteropViewAndSemanticsConfigMerge,
     InteropExample,
+    InteropNavigationExample,
+    OverlayInteropAnimationExample,
     ReusableMapsExample,
     UpdatableInteropPropertiesExample,
     IosImeOptionsExample,

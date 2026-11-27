@@ -143,15 +143,27 @@ internal class IosInteropContainer(
         }
     }
 
-    override fun scheduleUpdate(action: () -> Unit) {
+    internal fun scheduleScopedUpdate(action: InteropSyncAction) {
         scheduledUpdatesCount++
-        // Add lambda to a list of commands which will be executed later
-        // in the same [CATransaction], when the next rendered Compose frame is presented.
-        transaction.scheduleFrameSynchronizedAction {
-            action()
-            scheduledUpdatesCount--
+        transaction.scheduleFrameSynchronizedAction { transactionScope ->
+            try {
+                action(transactionScope)
+            } finally {
+                scheduledUpdatesCount--
+            }
         }
         requestRedraw()
+    }
+
+    internal fun scheduleAtTransactionEnd(action: (InteropTransactionScope) -> Unit) {
+        transaction.scheduleAtTransactionEnd { transactionScope ->
+            action(transactionScope)
+        }
+        requestRedraw()
+    }
+
+    override fun scheduleUpdate(action: () -> Unit) = scheduleScopedUpdate { _ ->
+        action()
     }
 
     override fun scheduleUpdate(holder: InteropViewHolder) {

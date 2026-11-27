@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.uikit.utils.CMPInteropWrappingView
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
+import platform.QuartzCore.CAShapeLayer
 import platform.UIKit.UIResponder
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -56,6 +57,9 @@ internal class InteropWrappingView(
     interactionMode: UIKitInteropInteractionMode?,
     compositionContext: CompositionContext,
 ) : CMPInteropWrappingView(frame = CGRectZero.readValue()) {
+    private var currentMaskLayer: CAShapeLayer? = null
+    private var isWaitingForInteropMask = false
+
     var actualAccessibilityContainer: Any? = null
     var isAccessibilityFocusable: () -> Boolean = { true }
     var onDidMoveToWindow: () -> Unit = {}
@@ -81,6 +85,25 @@ internal class InteropWrappingView(
     override fun safeAreaInsetsDidChange() {
         super.safeAreaInsetsDidChange()
         onSafeAreaInsetsChanged()
+    }
+
+    fun setInteropMaskLayer(maskLayer: CAShapeLayer?) {
+        if (currentMaskLayer == maskLayer) return
+
+        currentMaskLayer = maskLayer
+        layer.mask = maskLayer
+    }
+
+    fun updatePlacement(placedAsOverlay: Boolean) {
+        clipsToBounds = !placedAsOverlay
+        setWaitingForInteropMask(placedAsOverlay)
+    }
+
+    fun setWaitingForInteropMask(waiting: Boolean) {
+        if (isWaitingForInteropMask == waiting) return
+
+        isWaitingForInteropMask = waiting
+        setHidden(waiting)
     }
 
     private fun updateAccessibilityElements() {

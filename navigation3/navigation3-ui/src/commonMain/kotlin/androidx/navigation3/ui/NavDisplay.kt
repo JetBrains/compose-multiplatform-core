@@ -24,6 +24,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.SeekableTransitionState
@@ -810,10 +811,17 @@ public fun <T : Any> NavDisplay(
     // LocalNavAnimatedContentScope doesn't need to be nullable
     lateinit var animatedContentScope: AnimatedContentScope
 
+    @OptIn(ExperimentalAnimationApi::class)
     transition.AnimatedContent(
         contentKey = { scene -> AnimatedSceneKey(scene) },
         contentAlignment = contentAlignment,
-        modifier = modifier,
+        modifier = modifier.sceneInteropLayerRoot(),
+        contentModifier = { scene ->
+            Modifier.sceneInteropLayer(
+                occludesLowerLayers = scene !is OverlayScene<*>,
+                zIndex = zIndices[AnimatedSceneKey(scene)] ?: 0f,
+            )
+        },
         transitionSpec = {
             ContentTransform(
                 targetContentEnter = contentTransform(this).targetContentEnter,
@@ -938,6 +946,10 @@ public expect fun <T : Any> defaultPopTransitionSpec():
 /** Default [transitionSpec] for predictive pop navigation to be used by [NavDisplay]. */
 public expect fun <T : Any> defaultPredictivePopTransitionSpec():
     AnimatedContentTransitionScope<Scene<T>>.(@NavigationEvent.SwipeEdge Int) -> ContentTransform
+
+internal expect fun Modifier.sceneInteropLayerRoot(): Modifier
+
+internal expect fun Modifier.sceneInteropLayer(occludesLowerLayers: Boolean, zIndex: Float): Modifier
 
 internal data class AnimatedSceneKey(val clazz: KClass<*>, val key: Any) {
     constructor(scene: Scene<*>) : this(scene::class, scene.key)

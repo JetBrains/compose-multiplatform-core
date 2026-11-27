@@ -19,10 +19,20 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.ui.util.fastForEach
 import platform.QuartzCore.CATransaction
 
+/** The transaction scope passed to an action while its transaction is performing. */
+internal class InteropTransactionScope(
+    private val transaction: InteropMutableTransaction
+) {
+    fun scheduleAtTransactionEnd(action: () -> Unit) {
+        transaction.scheduleAtTransactionEnd { _ -> action() }
+    }
+}
+
 /**
- * Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction]
+ * Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction].
+ * The action receives the scope of the transaction that performs it.
  */
-internal typealias InteropSyncAction = () -> Unit
+internal typealias InteropSyncAction = (InteropTransactionScope) -> Unit
 
 /**
  * A batch of changes to UIKit objects.
@@ -76,12 +86,13 @@ internal class InteropMutableTransaction(
     override var isInteropActive: Boolean
 ) : InteropSyncTransaction {
     private val actions = mutableListOf<InteropSyncAction>()
+    private val transactionEndUpdates = ArrayDeque<InteropSyncAction>()
     private val holdersWithPendingViewUpdates = mutableSetOf<InteropViewHolder>()
 
     private var requiresFrameSynchronization = false
 
     override val hasPendingActions: Boolean
-        get() = actions.isNotEmpty()
+        get() = actions.isNotEmpty() || transactionEndUpdates.isNotEmpty()
 
     val hasPendingViewUpdatesOnly: Boolean
         get() = hasPendingActions && !requiresFrameSynchronization
@@ -90,7 +101,18 @@ internal class InteropMutableTransaction(
         get() = hasPendingActions && requiresFrameSynchronization
 
     override fun performTransaction() {
-        actions.fastForEach { it.invoke() }
+        val transactionScope = InteropTransactionScope(this)
+        actions.fastForEach { it(transactionScope) }
+
+        // Transaction-end updates can be added while regular actions run; drain them as a queue in
+        // this transaction.
+        while (transactionEndUpdates.isNotEmpty()) {
+            val action = transactionEndUpdates.removeFirst()
+            action(transactionScope)
+        }
+
+        actions.clear()
+        holdersWithPendingViewUpdates.clear()
     }
 
     /**
@@ -98,6 +120,12 @@ internal class InteropMutableTransaction(
      */
     fun scheduleFrameSynchronizedAction(action: InteropSyncAction) {
         actions.add(action)
+        requiresFrameSynchronization = true
+    }
+
+    /** Schedules an action after all regular frame-synchronized actions in this transaction. */
+    fun scheduleAtTransactionEnd(action: InteropSyncAction) {
+        transactionEndUpdates.addLast(action)
         requiresFrameSynchronization = true
     }
 

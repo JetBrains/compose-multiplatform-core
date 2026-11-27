@@ -797,6 +797,7 @@ internal fun <T> AnimatedEnterExitImpl(
     shouldDisposeBlock: (EnterExitState, EnterExitState) -> Boolean,
     onLookaheadMeasured: OnLookaheadMeasured? = null,
     mutableTransformData: MutableTransform? = null,
+    postEnterExitModifier: Modifier = Modifier,
     forceVisible: Boolean = false,
     content: @Composable() AnimatedVisibilityScope.() -> Unit,
 ) {
@@ -847,6 +848,7 @@ internal fun <T> AnimatedEnterExitImpl(
                                 provideTransformState = transition is DeferredTransition<*>,
                                 label = "Built-in",
                             )
+                            .then(postEnterExitModifier)
                             .then(
                                 if (onLookaheadMeasured != null) {
                                     Modifier.layout { measurable, constraints ->

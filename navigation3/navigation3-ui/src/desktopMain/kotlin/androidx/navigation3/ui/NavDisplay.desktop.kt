@@ -23,6 +23,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.ui.Modifier
 import androidx.navigation3.scene.Scene
 import androidx.navigationevent.NavigationEvent.SwipeEdge
 
@@ -49,3 +50,10 @@ public actual fun <T : Any> defaultPredictivePopTransitionSpec():
         ExitTransition.None,
     )
 }
+
+internal actual fun Modifier.sceneInteropLayerRoot(): Modifier = this
+
+internal actual fun Modifier.sceneInteropLayer(
+    occludesLowerLayers: Boolean,
+    zIndex: Float,
+): Modifier = this
