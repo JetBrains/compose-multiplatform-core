@@ -23,16 +23,13 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.js.Promise
 import kotlin.random.Random
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.promise
-import kotlinx.serialization.json.Json
-import org.jetbrains.compose.benchmarks.ContentMeasurement
+import org.jetbrains.compose.benchmarks.MeasureRenderAverageFrame
 import org.jetbrains.compose.benchmarks.app.benchmarkContent
-import org.jetbrains.compose.benchmarks.data.AverageFrameReport
 import org.jetbrains.compose.benchmarks.data.BenchmarkCase
 import org.jetbrains.compose.benchmarks.skiko.configureBenchmarkSkiko
 import org.jetbrains.skiko.InternalSkikoApi
@@ -44,7 +41,6 @@ private const val TargetFps = 120
 private const val WarmupCount = 100
 private const val FrameCount = 1000
 
-private val reportJson = Json { encodeDefaults = true }
 private val benchmarkScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
 // Importing the module must not start workloads: the host invokes an entry point explicitly.
@@ -52,8 +48,7 @@ fun main() = Unit
 
 @JsExport
 fun launch(benchmarkName: String): Promise<JsAny?> = benchmarkScope.promise {
-    val report = measureCase(benchmarkName, warmupCount = WarmupCount, frameCount = FrameCount)
-    println("BENCHMARK_REPORT:${reportJson.encodeToString(report)}")
+    measureCase(benchmarkName, warmupCount = WarmupCount, frameCount = FrameCount)
     1.toJsNumber()
 }
 
@@ -64,11 +59,7 @@ fun customLaunch(benchmarkName: String, frameCount: Int): Promise<JsAny?> = benc
     1.toJsNumber()
 }
 
-private suspend fun measureCase(
-    benchmarkName: String,
-    warmupCount: Int,
-    frameCount: Int,
-): AverageFrameReport {
+private suspend fun measureCase(benchmarkName: String, warmupCount: Int, frameCount: Int) {
     val case = requireNotNull(BenchmarkCase.entries.firstOrNull {
         it.id.equals(benchmarkName, ignoreCase = true)
     }) { "Unknown benchmark case: $benchmarkName" }
@@ -78,23 +69,18 @@ private suspend fun measureCase(
 
     configureBenchmarkSkiko()
     suspendAwaitSkiko()
-    val measurement = ContentMeasurement(
-        width = Width,
-        height = Height,
-        targetFps = TargetFps,
-        warmupCount = warmupCount,
-        content = benchmarkContent(case.id),
-    )
-    return AverageFrameReport(
+
+    MeasureRenderAverageFrame(
         // Uuid.random() requires Web Crypto, which D8 does not provide.
         id = Uuid.fromLongs(Random.nextLong(), Random.nextLong()).toString(),
         name = case.id,
+        collectorUrl = null,
         width = Width,
         height = Height,
         targetFps = TargetFps,
         warmupCount = warmupCount,
         frameCount = frameCount,
-        averageFrameInfo = measurement.measureAverageFrame(frameCount),
+        content = benchmarkContent(case.id),
     )
 }
 
