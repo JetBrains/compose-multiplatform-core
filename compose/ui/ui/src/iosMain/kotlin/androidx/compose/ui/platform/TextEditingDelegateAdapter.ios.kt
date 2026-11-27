@@ -29,7 +29,7 @@ internal class InactiveTextInputAdapter(
 ) : NativeTextEditingDelegate {
     override val isInteractive: Boolean = false
 
-    override val isEditable: Boolean = false
+    override val isEditable: Boolean = true
 
     private val text: String get() = delegate.text
 
