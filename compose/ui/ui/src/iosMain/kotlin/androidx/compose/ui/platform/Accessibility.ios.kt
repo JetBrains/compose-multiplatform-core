@@ -28,6 +28,7 @@ import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.platform.accessibility.AccessibilityScrollEventResult
 import androidx.compose.ui.platform.accessibility.accessibilityAttributedValue
 import androidx.compose.ui.platform.accessibility.accessibilityCustomActions
+import androidx.compose.ui.platform.accessibility.accessibilityHint
 import androidx.compose.ui.platform.accessibility.accessibilityTraits
 import androidx.compose.ui.platform.accessibility.allScrollableParentNodeIds
 import androidx.compose.ui.platform.accessibility.attributedContentDescription
@@ -251,7 +252,7 @@ private sealed interface AccessibilityNode {
                 ?: semanticsNode.linkTag()
 
         override val accessibilityHint: String?
-            get() = cachedConfig.getOrNull(SemanticsActions.OnClick)?.label
+            get() = cachedConfig.accessibilityHint()
 
         override val accessibilityCustomActions: List<UIAccessibilityCustomAction>
             get() = cachedConfig.accessibilityCustomActions()

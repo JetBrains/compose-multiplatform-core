@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicSecureTextField
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -57,6 +58,7 @@ import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitToggle
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.role
@@ -114,6 +116,7 @@ import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityActivate
 import platform.UIKit.accessibilityDecrement
+import platform.UIKit.accessibilityHint
 import platform.UIKit.accessibilityIncrement
 import platform.UIKit.setAccessibilityLabel
 import platform.UIKit.setIsAccessibilityElement
@@ -994,6 +997,57 @@ class ComponentsAccessibilitySemanticTest {
             isAccessibilityElement = true
             traits(CMPAccessibilityTraitTextView)
         }
+    }
+
+    @Test
+    fun testTextFieldErrorSemantics() = runUIKitInstrumentedTest {
+        setContent {
+            Column {
+                BasicTextField(
+                    value = "test",
+                    onValueChange = {},
+                    modifier = Modifier.semantics {
+                        testTag = "WithError"
+                        contentDescription = "Email address"
+                        error("Email address is required")
+                    }
+                )
+                BasicTextField(
+                    value = "test",
+                    onValueChange = {},
+                    modifier = Modifier.semantics {
+                        testTag = "WithoutError"
+                        contentDescription = "Name"
+                    }
+                )
+                Box(
+                    modifier = Modifier
+                        .testTag("WithErrorAndOnClickLabel")
+                        .size(40.dp)
+                        .clickable(onClickLabel = "Open the details") { }
+                        .semantics { error("Email address is required") }
+                )
+            }
+        }
+
+        // The error is exposed to VoiceOver on focus, keeping the label, the value and the role.
+        val withError = findNodeWithTag("WithError")
+        assertEquals("Email address", withError.label)
+        assertEquals("test", withError.value)
+        assertTrue(withError.traits.orEmpty().contains(CMPAccessibilityTraitTextView))
+        assertEquals("Email address is required", withError.element?.accessibilityHint)
+
+        val withoutError = findNodeWithTag("WithoutError")
+        assertEquals("Name", withoutError.label)
+        assertEquals("test", withoutError.value)
+        assertNull(withoutError.element?.accessibilityHint)
+
+        // When the element is also clickable, the OnClick label follows the error in the hint.
+        val withErrorAndOnClickLabel = findNodeWithTag("WithErrorAndOnClickLabel")
+        assertEquals(
+            "Email address is required, Open the details",
+            withErrorAndOnClickLabel.element?.accessibilityHint
+        )
     }
 
     @Test
