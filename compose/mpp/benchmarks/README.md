@@ -123,8 +123,10 @@ only an explicit ID can select a target of the other type; names require success
 
 Physical iOS devices require Xcode 15+, pairing, Developer Mode, and an unlocked screen. Pass
 `--apple-development-team TEAM_ID` for signing without saving the team in the Xcode project.
-The collector address is detected automatically; the iOS device must be able to reach the Mac over
-the local network. Allow local-network access on iOS device and incoming collector connections on Mac.
+Physical devices send benchmark and environment reports through stdout captured by
+`devicectl --console`. No HTTP collector or local-network access from the device to the Mac is needed.
+The launcher validates and saves these JSON reports in the usual session `reports` directory.
+iOS simulators continue to use the local HTTP collector.
 
 ### Example: JVM
 

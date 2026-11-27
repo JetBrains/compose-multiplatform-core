@@ -346,9 +346,8 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             val targetIosSimulator = selectedIosTarget as? IosSimulator
             if (targetIosDevice != null) println("iOS device: ${targetIosDevice.name} (${targetIosDevice.udid})")
             if (targetIosSimulator != null) println("Simulator: ${targetIosSimulator.name} (${targetIosSimulator.id})")
-            val reportHost = if (targetIosDevice != null) iosCollectorHost(processes) else "127.0.0.1"
-            val collectorUrl = "http://$reportHost:$port"
-            if (targetIosDevice != null) println("Collector: $collectorUrl (must be reachable from the iOS device)")
+            val collectorUrl = "http://127.0.0.1:$port"
+            if (targetIosDevice != null) println("Reports: stdout via devicectl")
             val browserPath = if (target in listOf("js", "wasmJs")) executable(
                 requireNotNull(browser),
                 processes
@@ -366,7 +365,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                 target, summary.composeCorePath?.let { Path.of(it) }, browserPath, selectedIosTarget, processes
             )
             summary.save(directory)
-            ensureFreePort(port)
+            if (targetIosDevice == null) ensureFreePort(port)
             build(
                 root, out, logs, selectedIosTarget, processes, summary.kotlinVersion,
                 summary.composeVersion,
@@ -391,20 +390,17 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                     logs.resolve("simulator.log")
                 )
             }
-            ensureFreePort(port)
+            if (targetIosDevice == null) ensureFreePort(port)
             val collectorScript = if (isWindows) "benchmarks-collector.bat" else "benchmarks-collector"
             val collectorCommand = listOf(
                 root.resolve("benchmarks-collector/build/install/benchmarks-collector/bin/$collectorScript").toString(),
                 port.toString(), reports.toString()
-            ) + if (targetIosDevice != null) {
-                // A physical iOS device reaches the collector over LAN, so bind to all interfaces;
-                // simulator and other local runs keep the default loopback-only binding.
-                listOf("0.0.0.0")
-            } else {
-                emptyList()
-            }
-            processes.start(collectorCommand, logs.resolve("collector.log")).use { collector ->
-                waitForCollector(collector.process, port)
+            )
+            val collector = if (targetIosDevice == null) {
+                processes.start(collectorCommand, logs.resolve("collector.log"))
+            } else null
+            collector.use {
+                collector?.let { waitForCollector(it.process, port) }
                 val server = if (browserPath != null) WebServer(
                     app,
                     webPort,
@@ -432,10 +428,17 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                     try {
                         val started = System.nanoTime()
                         run(
-                            listOf("environment", environment.id, "$collectorUrl/environment"),
+                            listOf("environment", environment.id, if (targetIosDevice != null) "stdout" else "$collectorUrl/environment"),
                             logs.resolve("environment.log"),
                         ) { isAlive ->
-                            val report = waitForEnvironment(reports, environment.id, started, timeout, isAlive, collector.process)
+                            val report = if (targetIosDevice != null) {
+                                waitForStdoutReport(
+                                    logs.resolve("environment.log"), reports, environment.id,
+                                    started, timeout, isAlive,
+                                )
+                            } else {
+                                waitForEnvironment(reports, environment.id, started, timeout, isAlive, requireNotNull(collector).process)
+                            }
                             environment.report = directory.relativize(report).toString()
                             environment.collectedAt = Instant.now().toString()
                         }
@@ -452,7 +455,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                         summary.tests, summary.modes, repeat, groupStartup = webApplications != null,
                     )) {
                         if (Thread.interrupted()) throw InterruptedException()
-                        check(collector.process.isAlive) { "collector exited; see logs/collector.log" }
+                        check(collector == null || collector.process.isAlive) { "collector exited; see logs/collector.log" }
                         val id = UUID.randomUUID().toString()
                         val log = logs.resolve("$id.log")
                         val result = RunResult(id, name, mode, iteration, log = "logs/$id.log")
@@ -462,19 +465,32 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
                         println("[${summary.runs.size}/$total] $name / $mode / $id")
                         try {
                             run(
-                                listOf(mode, id, "$collectorUrl/reports", name),
+                                listOf(mode, id, if (targetIosDevice != null) "stdout" else "$collectorUrl/reports", name),
                                 log,
                             ) { isAlive ->
-                                val report = waitForReport(
-                                    reports,
-                                    id,
-                                    name,
-                                    mode,
-                                    started,
-                                    timeout,
-                                    isAlive,
-                                    collector.process
-                                )
+                                val report = if (targetIosDevice != null) {
+                                    waitForStdoutReport(
+                                        log,
+                                        reports,
+                                        id,
+                                        started,
+                                        timeout,
+                                        isAlive,
+                                        name,
+                                        mode
+                                    )
+                                } else {
+                                    waitForReport(
+                                        reports,
+                                        id,
+                                        name,
+                                        mode,
+                                        started,
+                                        timeout,
+                                        isAlive,
+                                        requireNotNull(collector).process
+                                    )
+                                }
                                 result.status = "passed"
                                 result.report = directory.relativize(report).toString()
                             }
@@ -607,7 +623,7 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
             )
             add("--console=plain")
         }
-        processes.run(command, logs.resolve("gradle-build.log"))
+        if (iosTarget !is IosDevice) processes.run(command, logs.resolve("gradle-build.log"))
         if (target == "ios") {
             processes.run(
                 listOf(

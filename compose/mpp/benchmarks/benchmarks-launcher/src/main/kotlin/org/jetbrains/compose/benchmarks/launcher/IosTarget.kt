@@ -124,16 +124,6 @@ private fun JsonObject.properties(name: String, legacy: String): JsonObject =
 
 private fun JsonObject.string(key: String): String? = get(key)?.jsonPrimitive?.contentOrNull
 
-internal fun iosCollectorHost(processes: Processes): String {
-    val route = processes.capture(listOf("/sbin/route", "-n", "get", "default"))
-    val networkInterface = route.lineSequence().map { it.trim() }
-        .firstOrNull { it.startsWith("interface:") }?.substringAfter(":")?.trim()
-        ?: error("cannot detect the default network interface for the iOS device collector")
-    return processes.capture(listOf("/usr/sbin/ipconfig", "getifaddr", networkInterface)).trim().also {
-        check(it.isNotEmpty()) { "cannot detect the IPv4 address of network interface $networkInterface" }
-    }
-}
-
 internal fun selectIosTarget(selection: String?, processes: Processes): IosTarget {
     // Automatic selection never probes or selects physical devices.
     if (selection == null) return selectIosTarget(null, listIosSimulators(processes), emptyList())

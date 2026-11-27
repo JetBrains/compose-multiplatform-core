@@ -4,6 +4,9 @@ import BenchmarksApp
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     fileprivate var arguments: [String] = []
+    fileprivate var collectorUrl: String? {
+        arguments[2] == "stdout" ? nil : arguments[2]
+    }
 
     override init() {
         super.init()
@@ -16,12 +19,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         arguments = Array(ProcessInfo.processInfo.arguments.dropFirst())
         if arguments.first == "environment" {
-            Main_iosKt.collectEnvironment(collectorUrl: arguments[2], id: arguments[1])
+            Main_iosKt.collectEnvironment(collectorUrl: collectorUrl, id: arguments[1])
             return true
         }
         if Main_iosKt.isRenderBenchmark(benchmarkType: arguments[0]) {
             Main_iosKt.runRenderBenchmark(
-                benchmarkCollectorUrl: arguments[2],
+                benchmarkCollectorUrl: collectorUrl,
                 testName: arguments[3],
                 benchmarkType: arguments[0],
                 id: arguments[1]
@@ -50,7 +53,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = Main_iosKt.MainViewController(
-            benchmarkCollectorUrl: arguments[2],
+            benchmarkCollectorUrl: appDelegate.collectorUrl,
             testName: arguments[3],
             benchmarkType: arguments[0],
             id: arguments[1]
