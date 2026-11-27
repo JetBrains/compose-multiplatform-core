@@ -50,10 +50,10 @@ public fun Modifier.sceneInteropLayer(occludesLowerLayers: Boolean, zIndex: Floa
         SceneInteropLayerModifierElement(occludesLowerLayers = occludesLowerLayers, zIndex = zIndex)
 
 internal const val SceneInteropLayerCoordinatorNodeKey =
-    "androidx.compose.ui.node.INTEROP_SCENE_LAYER_COORDINATOR_TRAVERSAL_NODE_KEY"
+    "androidx.compose.ui.node.SceneInteropLayerCoordinatorNodeKey"
 
 internal const val SceneInteropLayerNodeKey =
-    "androidx.compose.ui.node.INTEROP_SCENE_LAYER_TRAVERSAL_NODE_KEY"
+    "androidx.compose.ui.node.SceneInteropLayerNodeKey"
 
 private data object SceneInteropLayerCoordinatorModifierElement :
     ModifierNodeElement<SceneInteropLayerCoordinatorModifierNode>() {
@@ -72,7 +72,7 @@ internal class SceneInteropLayerCoordinatorModifierNode :
 
     private var sceneLayerCoordinator: SceneInteropLayerCoordinator? = null
 
-    fun sceneLayerCoordinator(): SceneInteropLayerCoordinator? {
+    fun sceneLayerCoordinator(): SceneInteropLayerCoordinator {
         sceneLayerCoordinator?.let {
             return it
         }
