@@ -26,11 +26,6 @@ import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.findRootCoordinates
-import androidx.compose.ui.node.GlobalPositionAwareModifierNode
-import androidx.compose.ui.node.LayoutAwareModifierNode
-import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.UnplacedAwareModifierNode
-import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.scene.attachedCompositionContext
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.IntRect
@@ -260,63 +255,5 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
                 isEnabled = properties.placedAsOverlay,
                 this
             )
-    }
-}
-
-private fun Modifier.sceneInteropLayerAware(
-    isEnabled: Boolean,
-    holder: IosInteropElementHolder<*>
-): Modifier =
-    if (isEnabled) this then SceneInteropLayerAwareModifierElement(holder) else this
-
-private data class SceneInteropLayerAwareModifierElement(
-    val holder: IosInteropElementHolder<*>,
-) : ModifierNodeElement<SceneInteropLayerAwareModifierNode>() {
-    override fun create() = SceneInteropLayerAwareModifierNode(holder)
-
-    override fun update(node: SceneInteropLayerAwareModifierNode) {}
-}
-
-private class SceneInteropLayerAwareModifierNode(
-    private val holder: IosInteropElementHolder<*>,
-) : Modifier.Node(),
-    LayoutAwareModifierNode,
-    UnplacedAwareModifierNode,
-    GlobalPositionAwareModifierNode {
-    private var isPlaced = false
-    private var layerNode: SceneInteropLayerModifierNode? = null
-
-    override fun onPlaced(coordinates: LayoutCoordinates) {
-        val currentLayerNode =
-            findNearestAncestor(SceneInteropLayerNodeKey) as? SceneInteropLayerModifierNode
-        if (currentLayerNode != layerNode) {
-            layerNode?.unregisterHolder(holder)
-            layerNode = currentLayerNode
-        }
-        currentLayerNode?.registerHolder(holder)
-
-        isPlaced = true
-    }
-
-    override fun onUnplaced() {
-        layerNode?.unregisterHolder(holder)
-        layerNode = null
-        isPlaced = false
-    }
-
-    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-        // Global-position callbacks can arrive before the placement callback. Register the layer
-        // then so the first layout can already update the interop mask.
-        if (!isPlaced) {
-            onPlaced(coordinates)
-        }
-    }
-
-    override fun onDetach() {
-        if (isPlaced) {
-            onUnplaced()
-        }
-        layerNode = null
-        super.onDetach()
     }
 }
