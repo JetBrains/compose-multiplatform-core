@@ -20,6 +20,8 @@ package androidx.compose.ui.viewinterop
 internal class FinalFrameUpdateScheduler(
     private val scheduleByDefault: (() -> Unit) -> Unit
 ) {
+    // True while a final-frame callback is pending. Later schedule requests are coalesced into
+    // that callback, which must read the latest state when it runs.
     private var isUpdateScheduled = false
 
     val isScheduled: Boolean
