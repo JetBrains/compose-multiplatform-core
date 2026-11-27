@@ -1,0 +1,3 @@
+interface:
+  display_name: "Submit GitHub PR"
+  short_description: "Verify access and submit a YouTrack fix PR"
