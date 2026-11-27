@@ -1054,12 +1054,12 @@ internal class UIKitInstrumentedTest(
         duration = duration
     )
 
-    fun AccessibilityTestNode.swipeUp(duration: Duration = SwipeDuration): UITouch {
-        return swipe(fromPosition = { bottomCenter().offsetBy(dy = (-16).dp) }, toPosition = { topCenter().offsetBy(dy = 16.dp) }, duration = duration)
+    fun AccessibilityTestNode.swipeUp(duration: Duration = DefaultSwipeDuration) {
+        swipe(fromPosition = { bottomCenter().offsetBy(dy = (-16).dp) }, toPosition = { topCenter().offsetBy(dy = 16.dp) }, duration = duration)
     }
 
-    fun AccessibilityTestNode.swipeDown(duration: Duration = SwipeDuration): UITouch {
-        return swipe(fromPosition = { topCenter().offsetBy(dy = 16.dp) }, toPosition = { bottomCenter().offsetBy(dy = (-16).dp) }, duration = duration)
+    fun AccessibilityTestNode.swipeDown(duration: Duration = DefaultSwipeDuration) {
+        swipe(fromPosition = { topCenter().offsetBy(dy = 16.dp) }, toPosition = { bottomCenter().offsetBy(dy = (-16).dp) }, duration = duration)
     }
 }
 

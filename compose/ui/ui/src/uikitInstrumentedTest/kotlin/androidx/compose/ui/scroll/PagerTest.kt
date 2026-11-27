@@ -61,12 +61,6 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 
-/**
- * Gesture coverage for standalone [HorizontalPager] and [VerticalPager].
- *
- * The test content mirrors `PagerExample` from `mpp/demo` (components/Pager.kt): a [Column] with
- * a [HorizontalPager] in the top half and a [VerticalPager] in the bottom half, 10 pages each.
- */
 internal class PagerTest {
 
     // region HorizontalPager
@@ -77,7 +71,7 @@ internal class PagerTest {
         val verticalState = PagerState { PageCount }
         setContent { PagerExample(horizontalState, verticalState) }
 
-        findNodeWithTag(HorizontalPagerTag).swipeLeft().up()
+        findNodeWithTag(HorizontalPagerTag).swipeLeft()
         waitForSettle(horizontalState)
 
         assertSettledAt(1, horizontalState)
@@ -89,7 +83,7 @@ internal class PagerTest {
         val horizontalState = PagerState(currentPage = 3) { PageCount }
         setContent { PagerExample(horizontalState, PagerState { PageCount }) }
 
-        findNodeWithTag(HorizontalPagerTag).swipeRight().up()
+        findNodeWithTag(HorizontalPagerTag).swipeRight()
         waitForSettle(horizontalState)
 
         assertSettledAt(2, horizontalState)
@@ -101,12 +95,12 @@ internal class PagerTest {
         setContent { PagerExample(horizontalState, PagerState { PageCount }) }
 
         repeat(3) {
-            findNodeWithTag(HorizontalPagerTag).swipeLeft().up()
+            findNodeWithTag(HorizontalPagerTag).swipeLeft()
             waitForSettle(horizontalState)
         }
         assertSettledAt(3, horizontalState)
 
-        findNodeWithTag(HorizontalPagerTag).swipeRight().up()
+        findNodeWithTag(HorizontalPagerTag).swipeRight()
         waitForSettle(horizontalState)
         assertSettledAt(2, horizontalState)
     }
@@ -210,11 +204,11 @@ internal class PagerTest {
         val horizontalState = PagerState(currentPage = 2) { PageCount }
         setContent { PagerExample(horizontalState, PagerState { PageCount }) }
 
-        findNodeWithTag(HorizontalPagerTag).swipeLeft(duration = 50.milliseconds).up()
+        findNodeWithTag(HorizontalPagerTag).swipeLeft(duration = 50.milliseconds)
         waitForSettle(horizontalState)
         assertSettledAt(3, horizontalState)
 
-        findNodeWithTag(HorizontalPagerTag).swipeRight(duration = 50.milliseconds).up()
+        findNodeWithTag(HorizontalPagerTag).swipeRight(duration = 50.milliseconds)
         waitForSettle(horizontalState)
         assertSettledAt(2, horizontalState)
     }
@@ -254,7 +248,7 @@ internal class PagerTest {
         val horizontalState = PagerState(currentPage = PageCount - 1) { PageCount }
         setContent { PagerExample(horizontalState, PagerState { PageCount }) }
 
-        findNodeWithTag(HorizontalPagerTag).swipeLeft().up()
+        findNodeWithTag(HorizontalPagerTag).swipeLeft()
         waitForSettle(horizontalState)
 
         assertSettledAt(PageCount - 1, horizontalState)
@@ -283,11 +277,11 @@ internal class PagerTest {
         }
 
         // In RTL the next page is on the left side, so swiping right moves forward
-        findNodeWithTag(HorizontalPagerTag).swipeRight().up()
+        findNodeWithTag(HorizontalPagerTag).swipeRight()
         waitForSettle(horizontalState)
         assertSettledAt(2, horizontalState)
 
-        findNodeWithTag(HorizontalPagerTag).swipeLeft().up()
+        findNodeWithTag(HorizontalPagerTag).swipeLeft()
         waitForSettle(horizontalState)
         assertSettledAt(1, horizontalState)
     }
@@ -308,7 +302,7 @@ internal class PagerTest {
         waitForIdle()
         assertEquals(listOf(0), clickedPages)
 
-        findNodeWithTag(HorizontalPagerTag).swipeLeft().up()
+        findNodeWithTag(HorizontalPagerTag).swipeLeft()
         waitForSettle(horizontalState)
         assertSettledAt(1, horizontalState)
         assertEquals(listOf(0), clickedPages, "Swipe should not be recognized as a click")
@@ -349,7 +343,7 @@ internal class PagerTest {
         assertEquals(2, listStates[0].firstVisibleItemIndex)
 
         // Horizontal swipe changes the page and doesn't scroll the list
-        findNodeWithTag(HorizontalPagerTag).swipeLeft().up()
+        findNodeWithTag(HorizontalPagerTag).swipeLeft()
         waitForSettle(horizontalState)
 
         assertSettledAt(1, horizontalState)
@@ -368,7 +362,7 @@ internal class PagerTest {
         val verticalState = PagerState { PageCount }
         setContent { PagerExample(horizontalState, verticalState) }
 
-        findNodeWithTag(VerticalPagerTag).swipeUp().up()
+        findNodeWithTag(VerticalPagerTag).swipeUp()
         waitForSettle(verticalState)
 
         assertSettledAt(1, verticalState)
@@ -380,7 +374,7 @@ internal class PagerTest {
         val verticalState = PagerState(currentPage = 3) { PageCount }
         setContent { PagerExample(PagerState { PageCount }, verticalState) }
 
-        findNodeWithTag(VerticalPagerTag).swipeDown().up()
+        findNodeWithTag(VerticalPagerTag).swipeDown()
         waitForSettle(verticalState)
 
         assertSettledAt(2, verticalState)
@@ -392,12 +386,12 @@ internal class PagerTest {
         setContent { PagerExample(PagerState { PageCount }, verticalState) }
 
         repeat(3) {
-            findNodeWithTag(VerticalPagerTag).swipeUp().up()
+            findNodeWithTag(VerticalPagerTag).swipeUp()
             waitForSettle(verticalState)
         }
         assertSettledAt(3, verticalState)
 
-        findNodeWithTag(VerticalPagerTag).swipeDown().up()
+        findNodeWithTag(VerticalPagerTag).swipeDown()
         waitForSettle(verticalState)
         assertSettledAt(2, verticalState)
     }
@@ -503,11 +497,11 @@ internal class PagerTest {
         val verticalState = PagerState(currentPage = 2) { PageCount }
         setContent { PagerExample(PagerState { PageCount }, verticalState) }
 
-        findNodeWithTag(VerticalPagerTag).swipeUp(duration = 50.milliseconds).up()
+        findNodeWithTag(VerticalPagerTag).swipeUp(duration = 50.milliseconds)
         waitForSettle(verticalState)
         assertSettledAt(3, verticalState)
 
-        findNodeWithTag(VerticalPagerTag).swipeDown(duration = 50.milliseconds).up()
+        findNodeWithTag(VerticalPagerTag).swipeDown(duration = 50.milliseconds)
         waitForSettle(verticalState)
         assertSettledAt(2, verticalState)
     }
@@ -547,7 +541,7 @@ internal class PagerTest {
         val verticalState = PagerState(currentPage = PageCount - 1) { PageCount }
         setContent { PagerExample(PagerState { PageCount }, verticalState) }
 
-        findNodeWithTag(VerticalPagerTag).swipeUp().up()
+        findNodeWithTag(VerticalPagerTag).swipeUp()
         waitForSettle(verticalState)
 
         assertSettledAt(PageCount - 1, verticalState)
@@ -559,7 +553,7 @@ internal class PagerTest {
         val verticalState = PagerState(currentPage = 1) { PageCount }
         setContent { PagerExample(horizontalState, verticalState) }
 
-        findNodeWithTag(VerticalPagerTag).swipeLeft().up()
+        findNodeWithTag(VerticalPagerTag).swipeLeft()
         waitForSettle(verticalState)
 
         assertSettledAt(1, verticalState)
@@ -582,7 +576,7 @@ internal class PagerTest {
         waitForIdle()
         assertEquals(listOf(0), clickedPages)
 
-        findNodeWithTag(VerticalPagerTag).swipeUp().up()
+        findNodeWithTag(VerticalPagerTag).swipeUp()
         waitForSettle(verticalState)
         assertSettledAt(1, verticalState)
         assertEquals(listOf(0), clickedPages, "Swipe should not be recognized as a click")
@@ -615,20 +609,20 @@ internal class PagerTest {
         }
 
         // Vertical swipe changes only the inner pager
-        findNodeWithTag(HorizontalPagerTag).swipeUp().up()
+        findNodeWithTag(HorizontalPagerTag).swipeUp()
         waitForSettle(verticalStates[0])
         assertSettledAt(1, verticalStates[0])
         assertSettledAt(0, horizontalState)
 
         // Horizontal swipe changes only the outer pager
-        findNodeWithTag(HorizontalPagerTag).swipeLeft().up()
+        findNodeWithTag(HorizontalPagerTag).swipeLeft()
         waitForSettle(horizontalState)
         assertSettledAt(1, horizontalState)
         assertSettledAt(1, verticalStates[0])
         assertSettledAt(0, verticalStates[1])
 
         // Vertical swipe on the new page changes its own inner pager
-        findNodeWithTag(HorizontalPagerTag).swipeUp().up()
+        findNodeWithTag(HorizontalPagerTag).swipeUp()
         waitForSettle(verticalStates[1])
         assertSettledAt(1, verticalStates[1])
         assertSettledAt(1, horizontalState)
