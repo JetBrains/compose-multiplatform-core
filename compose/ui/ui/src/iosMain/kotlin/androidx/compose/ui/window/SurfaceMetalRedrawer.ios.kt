@@ -186,7 +186,9 @@ internal class SurfaceMetalRedrawer(
         // Remove the currently scheduled frame, if any
         submitNextFrameForRenderLoop(null)
 
+        metalLayer.disableDrawableAcquisitionRetries = true
         dispatch_sync(renderingQueue) {}
+        metalLayer.disableDrawableAcquisitionRetries = false
     }
 
     override fun awaitRenderingCompletion() {

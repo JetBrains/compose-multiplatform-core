@@ -45,6 +45,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
         _drawableSize = CGSizeZero;
         _drawablesGeneration = 0;
         _lastDrawablePresentedTime = 0;
+        _disableDrawableAcquisitionRetries = NO;
     }
     return self;
 }
@@ -166,6 +167,10 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
         }
 
         [NSThread sleepForTimeInterval:kDrawablePollingInterval];
+
+        if (_disableDrawableAcquisitionRetries) {
+            return nil;
+        }
     }
 }
 
