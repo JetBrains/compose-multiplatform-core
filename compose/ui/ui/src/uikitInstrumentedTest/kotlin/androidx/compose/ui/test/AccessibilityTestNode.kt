@@ -550,6 +550,7 @@ internal fun UIFocusSystem.focusedTag(): String {
  * when the simulator has no focus system, which means Full Keyboard Access is off: the test
  * cannot verify anything without it, and a green run must mean a verified run.
  */
+@OptIn(ExperimentalForeignApi::class)
 internal fun UIKitInstrumentedTest.startKeyboardFocusAt(tag: String): UIFocusSystem {
     // Loads the accessibility elements, which are the focus items of the Compose scene.
     getAccessibilityTree()
@@ -561,14 +562,16 @@ internal fun UIKitInstrumentedTest.startKeyboardFocusAt(tag: String): UIFocusSys
         "No UIFocusSystem: enable Full Keyboard Access on the simulator " +
             "(FullKeyboardAccessEnabled=1 in com.apple.Accessibility); the test cannot run without it"
     )
-    waitUntil { focusSystem.focusedTag() == tag }
+    // iOS versions like 18 activate Full Keyboard Access without moving the initial focus
+    // anywhere, unlike iOS 26 which puts it on the first focusable element itself. Wait for
+    // the focus to land; if it does not, perform the initial focus movement that Full Keyboard
+    // Access performs itself, and wait again. Timeouts do not fail here: the assertion below
+    // reports the actual focus instead of a bare timeout.
+    waitFor { focusSystem.focusedTag() == tag }
     if (focusSystem.focusedTag() != tag) {
-        // iOS versions like 18 activate Full Keyboard Access without moving the initial focus
-        // anywhere, unlike iOS 26 which puts it on the first focusable element itself. Perform
-        // the initial focus movement that Full Keyboard Access does, and wait for it to land.
         focusSystem.performInitialFocusMovement()
         waitForIdle()
-        waitUntil { focusSystem.focusedTag() == tag }
+        waitFor { focusSystem.focusedTag() == tag }
     }
     assertEquals(
         expected = tag,
