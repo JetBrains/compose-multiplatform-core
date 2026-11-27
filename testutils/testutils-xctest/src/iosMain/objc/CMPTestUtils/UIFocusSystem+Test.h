@@ -30,6 +30,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)moveFocusInHeading:(UIFocusHeading)heading;
 
+/**
+ * Performs the initial focus movement, which puts the focus on the first focusable item — the
+ * movement Full Keyboard Access performs itself when it activates. Needed on iOS versions (e.g.
+ * iOS 18) where Full Keyboard Access activates without moving the initial focus anywhere.
+ *
+ * @return `NO` when the private UIKit API this relies on is not available on the runtime.
+ */
+- (BOOL)performInitialFocusMovement;
+
 @end
 
 NS_ASSUME_NONNULL_END

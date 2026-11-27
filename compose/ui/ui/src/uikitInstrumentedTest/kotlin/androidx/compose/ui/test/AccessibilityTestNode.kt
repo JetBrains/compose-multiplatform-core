@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitSecureTex
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitToggle
 import androidx.compose.test.utils.moveFocusInHeading
+import androidx.compose.test.utils.performInitialFocusMovement
 import androidx.compose.ui.test.utils.DpRectZero
 import androidx.compose.ui.test.utils.objcClassName
 import androidx.compose.ui.test.utils.intersect
@@ -560,7 +561,22 @@ internal fun UIKitInstrumentedTest.startKeyboardFocusAt(tag: String): UIFocusSys
         "No UIFocusSystem: enable Full Keyboard Access on the simulator " +
             "(FullKeyboardAccessEnabled=1 in com.apple.Accessibility); the test cannot run without it"
     )
-    waitUntil("Initial keyboard focus on '$tag'") { focusSystem.focusedTag() == tag }
+    waitUntil { focusSystem.focusedTag() == tag }
+    if (focusSystem.focusedTag() != tag) {
+        // iOS versions like 18 activate Full Keyboard Access without moving the initial focus
+        // anywhere, unlike iOS 26 which puts it on the first focusable element itself. Perform
+        // the initial focus movement that Full Keyboard Access does, and wait for it to land.
+        focusSystem.performInitialFocusMovement()
+        waitForIdle()
+        waitUntil { focusSystem.focusedTag() == tag }
+    }
+    assertEquals(
+        expected = tag,
+        actual = focusSystem.focusedTag(),
+        message = "Full Keyboard Access did not put the initial keyboard focus on the first " +
+            "element; it focuses the element itself, and no automatic initial focus means " +
+            "the simulator runs an iOS version where Full Keyboard Access works differently"
+    )
     return focusSystem
 }
 

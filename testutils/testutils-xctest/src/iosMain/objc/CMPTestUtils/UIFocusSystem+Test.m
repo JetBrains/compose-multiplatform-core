@@ -20,6 +20,14 @@
 @implementation UIFocusSystem (CMPFocusMovement)
 
 - (BOOL)moveFocusInHeading:(UIFocusHeading)heading {
+    return [self moveFocusInHeading:heading isInitial:NO];
+}
+
+- (BOOL)performInitialFocusMovement {
+    return [self moveFocusInHeading:UIFocusHeadingNext isInitial:YES];
+}
+
+- (BOOL)moveFocusInHeading:(UIFocusHeading)heading isInitial:(BOOL)isInitial {
     // A `_UIFocusMovementRequest` carrying a `_UIFocusMovementInfo` is what UIKit hands to
     // `-[UIFocusSystem _performFocusMovement:]` for the keyboard focus commands.
     Class movementClass = NSClassFromString(@"_UIFocusMovementInfo");
@@ -37,7 +45,7 @@
     }
 
     id movement = ((id (*)(id, SEL, UIFocusHeading, BOOL, CGRect))objc_msgSend)(
-        movementClass, movementSelector, heading, NO, CGRectNull);
+        movementClass, movementSelector, heading, isInitial, CGRectNull);
     id request = ((id (*)(id, SEL, id))objc_msgSend)([requestClass alloc], initSelector, self);
     if (movement == nil || request == nil) {
         return NO;
