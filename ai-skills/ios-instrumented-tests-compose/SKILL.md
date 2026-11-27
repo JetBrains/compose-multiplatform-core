@@ -1,7 +1,7 @@
 ---
 name: ios-instrumented-tests
 description: This skill should be used when the user asks about "running iOS tests", "iOS instrumented tests", "how to run ios tests", "launch specific ios test", "add new ios instrumented test" and these tests are located in the "compose/ui/ui/src/uikitInstrumentedTest" directory.
-version: 1.0.1
+version: 1.1.0
 ---
 
 iOS Instrumented tests are designed to run XCTests written on Kotlin using the iOS Simulator as an environment.
@@ -17,8 +17,21 @@ iOS Instrumented tests are designed to run XCTests written on Kotlin using the i
 Perform steps exactly in the following order:
 
 ## Configure which tests should be started
-In the file compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/Configuration.kt write all tests that must be launched. Add corresponding imports in the header. Save the file. If it's needed to run all instrumented, pass nothing to the setupXCTestSuite. 
-Follow the examples in commented code in the file. Note: configuration can launch either entire test classes or multiple test cases from a single test class only.
+The file compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/Configuration.kt defines two test suites:
+
+- `testSuite()` runs all tests **except** the ones marked with `@FullKeyboardAccessTest`;
+- `fullKeyboardAccessTestSuite()` runs **only** the tests marked with `@FullKeyboardAccessTest`
+  (see "Simulator configuration" below — they need a simulator with Full Keyboard Access
+  activated and are run with the `FULL_KEYBOARD_ACCESS_TESTS` option, see below).
+
+Both suites are derived automatically from the test classes — no class list to maintain. Tests
+marked with `@FullKeyboardAccessTest` must live in the `androidx.compose.ui.accessibility.fullkeyboardaccess`
+package (`compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/accessibility/fullkeyboardaccess/`),
+which is how the suites tell them apart at runtime.
+
+To run only specific test classes or test cases instead of a whole suite, temporarily edit
+`testSuite()` in Configuration.kt to call `setupXCTestSuite` with them explicitly — see the
+examples in the KDoc of `testSuite()`.
 
 ## Running All iOS Tests
 
@@ -38,6 +51,18 @@ cd compose/ui/ui/src/uikitInstrumentedTest/launcher
 xcodebuild test -scheme Launcher -project Launcher.xcodeproj -destination 'platform=iOS Simulator,id=<Simulator ID>'
 ```
 
+## Running Full Keyboard Access tests
+The launcher runs the Full Keyboard Access suite instead of the general one when the
+`FULL_KEYBOARD_ACCESS_TESTS` environment variable is set to `1`; with `xcodebuild test` it is
+passed through the `TEST_RUNNER_` prefix:
+
+```
+TEST_RUNNER_FULL_KEYBOARD_ACCESS_TESTS=1 xcodebuild test -scheme Launcher -project Launcher.xcodeproj -destination 'platform=iOS Simulator,id=<Simulator ID>'
+```
+
+The simulator must have Full Keyboard Access activated first — see "Simulator configuration"
+below; otherwise these tests fail with `No UIFocusSystem`.
+
 # Creating iOS Instrumented Tests
 
 The main class that creates environment to run tests is `compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/test/UIKitInstrumentedTest.kt`
@@ -53,3 +78,28 @@ If there is no corresponding API wrapper in the `compose/ui/ui/src/uikitInstrume
 ## When a test is created or updated
 
 After the test is created or updated, run it using the steps from the "Running iOS Instrumented Tests".
+
+## Simulator configuration (tests may fail when it is not configured properly)
+
+iOS instrumented tests may fail because the simulator is not configured properly, not
+because of a product regression. The canonical configuration lives in CI:
+
+- the **`Configure Simulator`** step in `.github/actions/setup-ios-instrumented-test-environment/action.yml`
+  writes the general accessibility flags — follow it when setting a simulator up locally;
+- the **`Enable Full Keyboard Access`** step in `.github/workflows/tests.yml` (iOS Instrumented
+  job) activates Full Keyboard Access between the two test runs — follow it to run the
+  `@FullKeyboardAccessTest` tests locally.
+
+Most notably, tests using the UIKit focus system fail with
+`No UIFocusSystem: enable Full Keyboard Access on the simulator...` when Full Keyboard Access
+is not active on the simulator. FKA requires **both**:
+
+1. The preference: `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility FullKeyboardAccessEnabled -bool true`
+2. A hardware keyboard attached to the simulator — writing the preference alone is not enough
+   and the Settings toggle merely mirrors the preference. Simulator.app attaches its virtual
+   hardware keyboard when it opens a **booted** device, which activates FKA live (no reboot
+   needed).
+
+The activated state only lives until the simulator is shut down: after a cold boot FKA has to
+be activated again by opening the device in Simulator.app. If FKA tests suddenly start failing
+with `No UIFocusSystem` after a simulator reboot, this is the reason.

@@ -17,17 +17,57 @@
 package androidx.compose.ui
 
 import androidx.compose.xctest.setupXCTestSuite
+import kotlin.experimental.ExperimentalNativeApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.XCTest.XCTestSuite
 
-@Suppress("unused")
-@OptIn(ExperimentalForeignApi::class)
-fun testSuite(): XCTestSuite = setupXCTestSuite(
-    // Run all test cases from the tests
-    // BasicInteractionTest::class,
-    // LayersAccessibilityTest::class,
+/**
+ * Qualified name prefix of the test classes marked with
+ * [androidx.compose.ui.test.FullKeyboardAccessTest]. Such tests are placed in the
+ * `androidx.compose.ui.accessibility.fullkeyboardaccess` package and are run by
+ * [fullKeyboardAccessTestSuite] only — see the annotation for why the package is the runtime
+ * marker of the tests that require Full Keyboard Access.
+ */
+private const val FULL_KEYBOARD_ACCESS_TESTS_PACKAGE =
+    "androidx.compose.ui.accessibility.fullkeyboardaccess."
 
-    // Run test cases from a test
-    // BasicInteractionTest::testTextFieldCallout,
-    // LayersAccessibilityTest::testLayersAppearanceOrder
-)
+/**
+ * All instrumented tests except the ones that require Full Keyboard Access on the simulator.
+ *
+ * To run only specific test classes or test cases instead of everything, call [setupXCTestSuite]
+ * with them explicitly:
+ * ```
+ * setupXCTestSuite(tests = setOf(BasicInteractionTest::class))
+ * setupXCTestSuite(
+ *     testCases = mapOf(
+ *         BasicInteractionTest::class.qualifiedName to setOf(BasicInteractionTest::testTextFieldCallout)
+ *     )
+ * )
+ * ```
+ */
+@Suppress("unused")
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
+fun testSuite(): XCTestSuite = setupXCTestSuite(
+    suiteFilter = { !it.name.startsWith(FULL_KEYBOARD_ACCESS_TESTS_PACKAGE) }
+).also { suite ->
+    @Suppress("UNCHECKED_CAST")
+    check((suite.tests as List<*>).isNotEmpty()) {
+        "The general test suite is empty: all tests appear to require Full Keyboard Access"
+    }
+}
+
+/**
+ * Only the tests that require Full Keyboard Access on the simulator, marked with
+ * [androidx.compose.ui.test.FullKeyboardAccessTest].
+ */
+@Suppress("unused")
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
+fun fullKeyboardAccessTestSuite(): XCTestSuite = setupXCTestSuite(
+    suiteFilter = { it.name.startsWith(FULL_KEYBOARD_ACCESS_TESTS_PACKAGE) }
+).also { suite ->
+    @Suppress("UNCHECKED_CAST")
+    check((suite.tests as List<*>).isNotEmpty()) {
+        "The Full Keyboard Access test suite is empty: expected tests marked with " +
+            "@FullKeyboardAccessTest in the '$FULL_KEYBOARD_ACCESS_TESTS_PACKAGE' package"
+    }
+}

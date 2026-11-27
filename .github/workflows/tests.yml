@@ -216,6 +216,76 @@ jobs:
           name: TestResults-${{ github.run_number }}-${{ matrix.runtime }}-${{ matrix.device_type }}.xcresult
           path: compose/ui/ui/src/uikitInstrumentedTest/launcher/TestResults.xcresult
 
+      - name: Enable Full Keyboard Access
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SIMULATOR_ID="${{ steps.setup-ios-instrumented-test-environment.outputs.simulator-id }}"
+
+          # Tests marked with @FullKeyboardAccessTest need the UIKit focus system, which only
+          # exists while Full Keyboard Access is active on the simulator. The preference alone
+          # is not enough: the FullKeyboardAccess daemon only engages when a hardware keyboard
+          # is attached to the simulator, which Simulator.app does when it opens a booted device.
+          # The simulator is left booted so the activated state is kept for the next step.
+          xcrun simctl boot "$SIMULATOR_ID" 2>/dev/null || true
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          xcrun simctl spawn "$SIMULATOR_ID" defaults write com.apple.Accessibility FullKeyboardAccessEnabled -bool true
+          xcrun simctl spawn "$SIMULATOR_ID" defaults write com.apple.Accessibility FullKeyboardAccessFocusRingEnabled -bool false
+          xcrun simctl spawn "$SIMULATOR_ID" defaults write com.apple.Accessibility FullKeyboardAccessPassthroughModeEnabled -bool false
+
+          # Opening the device in Simulator.app attaches its virtual hardware keyboard, which
+          # activates Full Keyboard Access. The keyboard attach races with the FKA daemon
+          # restart, so retry until the daemon logs that it observed a connected keyboard.
+          # A stale Simulator.app instance would ignore the device argument, so quit any
+          # existing one before each attempt.
+          ACTIVATED="false"
+          for attempt in 1 2 3 4 5; do
+            osascript -e 'quit app "Simulator"' >/dev/null 2>&1 || true
+            sleep 2
+            killall Simulator >/dev/null 2>&1 || true
+            sleep 1
+            open -a Simulator --args -CurrentDeviceUDID "$SIMULATOR_ID"
+            sleep 15
+            if xcrun simctl spawn "$SIMULATOR_ID" log show --last 2m \
+              --predicate 'process == "FullKeyboardAccess" AND eventMessage CONTAINS "connected: ("' \
+              2>/dev/null | grep -q "connected: ("; then
+              echo "Full Keyboard Access activated (attempt $attempt)"
+              ACTIVATED="true"
+              break
+            fi
+            echo "Full Keyboard Access did not activate (attempt $attempt)"
+          done
+
+          if [ "$ACTIVATED" != "true" ]; then
+            echo "::warning::Full Keyboard Access did not activate; the Full Keyboard Access test run may fail with 'No UIFocusSystem'"
+          fi
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+
+      - name: Run iOS Instrumented Full Keyboard Access
+        timeout-minutes: 40
+        shell: bash
+        working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
+        env:
+          # Keep xcodebuild's stdout unbuffered so its log lines stay in order.
+          NSUnbufferedIO: "YES"
+          # Select the Full Keyboard Access test suite in the launcher (the TEST_RUNNER_ prefix
+          # makes xcodebuild pass the variable to the test runner).
+          TEST_RUNNER_FULL_KEYBOARD_ACCESS_TESTS: "1"
+        run: |
+          xcodebuild test \
+            -resultBundlePath TestResultsFullKeyboardAccess.xcresult \
+            -scheme Launcher \
+            -project Launcher.xcodeproj \
+            -destination 'platform=iOS Simulator,id=${{ steps.setup-ios-instrumented-test-environment.outputs.simulator-id }}'
+
+      - name: Upload Full Keyboard Access Test Results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: TestResultsFullKeyboardAccess-${{ github.run_number }}-${{ matrix.runtime }}-${{ matrix.device_type }}.xcresult
+          path: compose/ui/ui/src/uikitInstrumentedTest/launcher/TestResultsFullKeyboardAccess.xcresult
+
       - name: Test Summary
         uses: test-summary/action@v2
         with:
