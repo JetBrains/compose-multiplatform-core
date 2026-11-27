@@ -18,6 +18,7 @@ package androidx.compose.ui.test
 
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitIsEditing
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitSecureTextField
+import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTabButton
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitToggle
 import androidx.compose.ui.test.utils.DpRectZero
@@ -199,6 +200,7 @@ private val allAccessibilityTraits = mutableMapOf(
     CMPAccessibilityTraitIsEditing to "CMPAccessibilityTraitIsEditing",
     CMPAccessibilityTraitToggle to "CMPAccessibilityTraitToggle",
     CMPAccessibilityTraitSecureTextField to "CMPAccessibilityTraitSecureTextField",
+    CMPAccessibilityTraitTabButton to "CMPAccessibilityTraitTabButton",
 ).let {
     if (available(OS.Ios to OSVersion(major = 17))) {
         it[UIAccessibilityTraitToggleButton] = "UIAccessibilityTraitToggleButton"

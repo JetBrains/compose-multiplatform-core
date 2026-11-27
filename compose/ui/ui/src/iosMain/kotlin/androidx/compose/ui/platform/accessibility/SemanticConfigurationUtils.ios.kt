@@ -58,6 +58,7 @@ internal val CMPAccessibilityTraitTextView: UIAccessibilityTraits = (1UL shl 18)
 internal val CMPAccessibilityTraitIsEditing: UIAccessibilityTraits = 1UL shl 21
 internal val CMPAccessibilityTraitToggle: UIAccessibilityTraits = 1UL shl 53
 internal val CMPAccessibilityTraitSecureTextField: UIAccessibilityTraits = 1UL shl 24
+internal val CMPAccessibilityTraitTabButton: UIAccessibilityTraits = 1UL shl 28
 
 // The character used by the native secure UITextField to obfuscate its accessibility value
 private const val SecureTextObfuscationChar = '\u2022'
@@ -135,6 +136,10 @@ internal fun SemanticsConfiguration.accessibilityTraits(): UIAccessibilityTraits
                 if (available(OS.Ios to OSVersion(major = 17))) {
                     result = result or UIAccessibilityTraitToggleButton
                 }
+            }
+
+            Role.Tab -> {
+                result = result or UIAccessibilityTraitButton or CMPAccessibilityTraitTabButton
             }
         }
     }

@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.accessibility.scrollIfPossible
 import androidx.compose.ui.platform.accessibility.scrollToCenterRectIfNeeded
 import androidx.compose.ui.platform.accessibility.sortFlattenChildren
 import androidx.compose.ui.platform.accessibility.unclippedBoundsInWindow
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
@@ -1979,7 +1980,24 @@ private val SemanticsNode.isValid: Boolean
     get() = layoutNode.isPlaced && layoutNode.isAttached
 
 private val SemanticsNode.isTraversalGroup: Boolean
-    get() = unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false }
+    get() = unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false } || isSelectableTabGroup
+
+// A selectable group of tabs (TabRow, NavigationBar, ...) is announced as its own
+// container, like the container of the tab buttons of a native UITabBar. Tabs may sit
+// behind intermediate semantics nodes in custom layouts, so the whole subtree is matched.
+private val SemanticsNode.isSelectableTabGroup: Boolean
+    get() = unmergedConfig.contains(SemanticsProperties.SelectableGroup) && hasTabDescendant()
+
+private fun SemanticsNode.hasTabDescendant(): Boolean {
+    replacedChildren.fastForEach { child ->
+        if (child.unmergedConfig.getOrNull(SemanticsProperties.Role) == Role.Tab ||
+            child.hasTabDescendant()
+        ) {
+            return true
+        }
+    }
+    return false
+}
 
 /**
  * Divides semantics beyond bounds children to be located before and after the block of visible
