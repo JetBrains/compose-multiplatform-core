@@ -976,11 +976,8 @@ public fun <S> Transition<S>.AnimatedContent(
 }
 
 /**
- * [AnimatedContent] overload that applies [contentModifier] to the built-in layout of each
- * currently visible content state.
- *
- * The returned modifier is composed after the built-in enter/exit transition modifiers. This lets a
- * container observe the final animated bounds of each content state without adding an extra layout.
+ * [AnimatedContent] overload that applies [contentModifier] to each currently visible content state
+ * after the built-in enter/exit transition modifiers.
  *
  * @param contentModifier A function returning the modifier for a given content state.
  */

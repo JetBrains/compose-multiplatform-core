@@ -16,12 +16,7 @@
 
 package androidx.compose.ui.viewinterop
 
-/**
- * Coalesces repeated final-frame callbacks into one pending action.
- *
- * Each consumer owns its own scheduler so a mask for one interop view can be coalesced
- * independently from the global scene-layer update.
- */
+/** Coalesces repeated final-frame callbacks into one pending action. */
 internal class FinalFrameUpdateScheduler(
     private val scheduleByDefault: (() -> Unit) -> Unit
 ) {
@@ -54,12 +49,6 @@ internal class FinalFrameUpdateScheduler(
     }
 }
 
-/**
- * Creates a scheduler bound to this container's final-frame action queue.
- *
- * The returned scheduler has an independent pending-update guard. Create one scheduler for each
- * coalescing scope, such as one interop mask or one scene-layer coordinator.
- */
 internal fun InteropContainer.createFinalFrameUpdateScheduler(): FinalFrameUpdateScheduler {
     val iosContainer = this as IosInteropContainer
     return FinalFrameUpdateScheduler { action ->

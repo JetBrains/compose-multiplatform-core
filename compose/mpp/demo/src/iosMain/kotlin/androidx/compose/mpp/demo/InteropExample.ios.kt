@@ -122,10 +122,6 @@ val InteropExample = Screen.Example("Interop") {
 private data object SceneSetup
 private data object SceneCover
 
-/**
- * A navigation setup with several overlay UIKit controls. Pushing an opaque Compose scene should
- * move those controls with the outgoing scene instead of leaving them above the incoming scene.
- */
 @OptIn(ExperimentalComposeUiApi::class)
 val InteropNavigationExample = Screen.Example("Interop navigation") {
     val backStack = remember { mutableStateListOf<Any>(SceneSetup) }
@@ -327,10 +323,6 @@ private fun InteropNavigationCoverPage(onPopScene: () -> Unit) {
     }
 }
 
-/**
- * An animated overlay setup: native views and their shadows should stay clipped to their
- * Compose rows while remaining visible where the row is not clipped.
- */
 @OptIn(ExperimentalComposeUiApi::class)
 val OverlayInteropAnimationExample =
     Screen.Example("Overlay interop animation") {

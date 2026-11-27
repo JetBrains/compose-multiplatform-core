@@ -28,22 +28,12 @@ import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.platform.InspectorInfo
 
-/**
- * Creates a scope in which [sceneInteropLayer] instances share one z-index namespace.
- *
- * Containers such as Navigation 3 attach this modifier to their existing animated-content root. It
- * does not add a layout; it only owns the coordinator for the scene layers below it.
- */
+/** Creates a z-index namespace for [sceneInteropLayer] instances below this modifier. */
 @ExperimentalComposeUiApi
 public fun Modifier.sceneInteropLayerRoot(): Modifier =
     this then SceneInteropLayerCoordinatorModifierElement
 
-/**
- * Marks the modified layout as a scene layer for UIKit interop.
- *
- * The layer tracks its global bounds and z-order. Overlay UIKit interop in lower layers is masked
- * where a higher layer that occludes lower layers covers it.
- */
+/** Marks the modified layout as a scene layer for UIKit interop. */
 @ExperimentalComposeUiApi
 public fun Modifier.sceneInteropLayer(occludesLowerLayers: Boolean, zIndex: Float): Modifier =
     this then

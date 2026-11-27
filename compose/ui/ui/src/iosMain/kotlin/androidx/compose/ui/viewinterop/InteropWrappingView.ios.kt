@@ -57,14 +57,6 @@ internal class InteropWrappingView(
     interactionMode: UIKitInteropInteractionMode?,
     compositionContext: CompositionContext,
 ) : CMPInteropWrappingView(frame = CGRectZero.readValue()) {
-    /**
-     * Overlay interop uses a mask for Compose clipping; background interop uses UIKit's regular
-     * bounds clipping.
-     *
-     * A newly placed or reused overlay starts hidden. [InteropMask] makes it visible only after it
-     * has applied the first mask decision, preventing an unmasked native view from appearing for
-     * the frames between insertion and the final-frame mask update.
-     */
     private var currentMaskLayer: CAShapeLayer? = null
     private var isWaitingForInteropMask = false
 
@@ -95,7 +87,6 @@ internal class InteropWrappingView(
         onSafeAreaInsetsChanged()
     }
 
-    /** Installs the layer used to mask overlay interop. A null value removes the current mask. */
     fun setInteropMaskLayer(maskLayer: CAShapeLayer?) {
         if (currentMaskLayer == maskLayer) return
 
@@ -103,17 +94,11 @@ internal class InteropWrappingView(
         layer.mask = maskLayer
     }
 
-    /** Applies the UIKit clipping and initial visibility rules for the current interop placement. */
     fun updatePlacement(placedAsOverlay: Boolean) {
         clipsToBounds = !placedAsOverlay
         setWaitingForInteropMask(placedAsOverlay)
     }
 
-    /**
-     * Keeps overlay interop hidden until its mask has been resolved.
-     *
-     * Background interop remains visible because its visible area is controlled by UIKit clipping.
-     */
     fun setWaitingForInteropMask(waiting: Boolean) {
         if (isWaitingForInteropMask == waiting) return
 
