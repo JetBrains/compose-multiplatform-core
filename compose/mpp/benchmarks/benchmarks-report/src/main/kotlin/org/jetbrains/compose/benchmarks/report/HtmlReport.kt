@@ -178,6 +178,7 @@ private class MetricCatalog {
 
 @Serializable
 private data class ChartRun(
+    val sessionId: String,
     val target: String,
     val kotlin: String,
     val compose: String,
@@ -198,6 +199,7 @@ private data class ChartRun(
 
 @Serializable
 private data class ChartConfiguration(
+    val sessionId: String,
     val target: String,
     val kotlin: String,
     val compose: String,
@@ -207,7 +209,26 @@ private data class ChartConfiguration(
 )
 
 @Serializable
+private data class ChartSession(
+    val id: String,
+    val name: String,
+    val directory: String,
+    val launcherCommand: String?,
+    val totalTime: String?,
+)
+
+private data class LoadedSession(
+    val session: ChartSession,
+    val composeVersions: Set<String>,
+    val kotlinVersions: Set<String>,
+    val runs: List<ChartRun>,
+    val warnings: List<String>,
+    val configurations: List<ChartConfiguration>,
+)
+
+@Serializable
 private data class ChartReport(
+    val sessions: List<ChartSession>,
     val composeVersions: List<String>,
     val kotlinVersions: List<String>,
     val metrics: Map<String, ChartMetric>,
@@ -216,7 +237,7 @@ private data class ChartReport(
     val configurations: List<ChartConfiguration>,
 )
 
-fun generateHtmlReport(session: Path): Path {
+private fun loadSession(session: Path, sessionId: String, linkDirectory: Path, metrics: MetricCatalog): LoadedSession {
     val warnings = mutableListOf<String>()
     val sessionInfo = try {
         val file = session.resolve("session.json")
@@ -234,7 +255,6 @@ fun generateHtmlReport(session: Path): Path {
     }
     val runs = mutableListOf<ChartRun>()
     val configurations = mutableListOf<ChartConfiguration>()
-    val metrics = MetricCatalog()
     // Keep requested endpoints even when a configuration has no summary or measurements.
     val composeVersions = requestedVersions(launcherArguments, "--compose-version")
     val kotlinVersions = requestedVersions(launcherArguments, "--kotlin-version")
@@ -288,8 +308,9 @@ fun generateHtmlReport(session: Path): Path {
                         }
                         put("runtime", environment ?: JsonPrimitive("Not collected"))
                     }
-                    configurations.add(ChartConfiguration(target, kotlin, compose, browser, browserName, metadata))
-                    for (element in summary.getValue("runs").jsonArray) {
+                    val summaryRuns = summary.getValue("runs").jsonArray
+                    configurations.add(ChartConfiguration(sessionId, target, kotlin, compose, browser, browserName, metadata))
+                    for (element in summaryRuns) {
                         val run = element.jsonObject
                         var parameters = buildJsonObject {
                             put("type", run.getValue("type"))
@@ -309,7 +330,12 @@ fun generateHtmlReport(session: Path): Path {
                                 require(listOf("id", "name", "type").all { report[it] == run[it] }) {
                                     "report does not match run"
                                 }
-                                reportPath = session.relativize(file).toString()
+                                reportPath = try {
+                                    linkDirectory.relativize(file).joinToString("/") { it.toString() }
+                                } catch (_: IllegalArgumentException) {
+                                    // Different filesystem roots (for example, Windows drives).
+                                    file.toUri().toASCIIString()
+                                }
                                 // Keep input parameters, not ids, measurements, or per-frame samples.
                                 parameters = JsonObject(parameters + report.filterKeys {
                                     it !in setOf(
@@ -324,7 +350,7 @@ fun generateHtmlReport(session: Path): Path {
                             emptyMap<String, Double>() to emptyMap<String, List<Double>>()
                         }
                         runs.add(ChartRun(
-                            target, kotlin, compose, run.requiredText("name"), run.requiredText("type"),
+                            sessionId, target, kotlin, compose, run.requiredText("name"), run.requiredText("type"),
                             run.getValue("iteration").jsonPrimitive.int, run.requiredText("status"),
                             run["error"]?.jsonPrimitive?.contentOrNull, measurements, distributions,
                             browser, browserName, parameters, reportPath,
@@ -335,12 +361,54 @@ fun generateHtmlReport(session: Path): Path {
                 }
             }
     }
+    return LoadedSession(
+        ChartSession(sessionId, session.fileName?.toString() ?: session.toString(), session.toString(), launcherCommand, totalTime),
+        composeVersions, kotlinVersions, runs, warnings, configurations,
+    )
+}
+
+/** Regenerates the original single-session report, including empty or interrupted sessions. */
+fun generateHtmlReport(session: Path): Path =
+    generateReport(listOf(session), session.resolve("index.html"), requireSummaries = false)
+
+/** Compares sessions in the supplied order, using the first one as the baseline. */
+fun generateHtmlReport(sessions: List<Path>, output: Path): Path =
+    generateReport(sessions, output, requireSummaries = true)
+
+private fun generateReport(sessions: List<Path>, output: Path, requireSummaries: Boolean): Path {
+    require(sessions.isNotEmpty()) { "Specify at least one session directory" }
+    val directories = sessions.map { it.toRealPath() }
+    require(directories.distinct().size == directories.size) { "Session directories must be distinct" }
+    require(directories.all { Files.isDirectory(it) }) { "Each session must be a directory" }
+    val destination = output.toAbsolutePath().normalize()
+    require(!destination.fileName.toString().endsWith(".json", ignoreCase = true)) { "Output must not overwrite JSON source data" }
+    val metrics = MetricCatalog()
+    // Resolve existing symlinks even when the output directory has not been created yet.
+    var ancestor = destination.parent
+    while (!Files.exists(ancestor)) ancestor = ancestor.parent
+    val linkDirectory = ancestor.toRealPath().resolve(ancestor.relativize(destination.parent))
+    val loaded = directories.mapIndexed { index, directory ->
+        loadSession(directory, index.toString(), linkDirectory, metrics).also {
+            require(!requireSummaries || it.configurations.isNotEmpty()) {
+                "No readable summary.json in $directory. ${it.warnings.joinToString("; ")}"
+            }
+        }
+    }
+    val comparison = loaded.size > 1
+    val composeVersions = loaded.flatMap { it.composeVersions }.distinct()
+    val kotlinVersions = loaded.flatMap { it.kotlinVersions }.distinct()
+    val runs = loaded.flatMap { it.runs }.toMutableList()
+    val configurations = loaded.flatMap { it.configurations }.toMutableList()
+    val warnings = loaded.flatMap { source ->
+        source.warnings.map { "${source.session.name}: $it" }
+    }.toMutableList()
+    if (comparison) warnings.addAll(comparisonWarnings(runs, configurations))
     val kotlinOrder = kotlinVersions.withIndex().associate { it.value to it.index }
     val composeOrder = composeVersions.withIndex().associate { it.value to it.index }
     runs.sortWith(compareBy({ kotlinOrder.getValue(it.kotlin) }, { composeOrder.getValue(it.compose) }))
     configurations.sortWith(compareBy({ kotlinOrder.getValue(it.kotlin) }, { composeOrder.getValue(it.compose) }))
     val payload = reportJson.encodeToString(ChartReport(
-        composeVersions.toList(), kotlinVersions.toList(), metrics.toMap(), runs, warnings, configurations,
+        loaded.map { it.session }, composeVersions, kotlinVersions, metrics.toMap(), runs, warnings, configurations,
     ))
         // JSON lives in a script raw-text element, not in an HTML text node.
         .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
@@ -360,11 +428,27 @@ fun generateHtmlReport(session: Path): Path {
         body {
             header {
                 h1 { +"Compose benchmark reports" }
-                p { +"Session: ${session.fileName}" }
-                totalTime?.let { p { +"Total time: $it" } }
-                launcherCommand?.let { command ->
-                    p(classes = "launcher-command-label") { +"Launcher command" }
-                    pre(classes = "launcher-command") { code { +command } }
+                val sessionDetails: FlowContent.() -> Unit = {
+                    for (source in loaded) {
+                        val session = source.session
+                        p { +"Session: ${session.name}" }
+                        if (comparison) p { +session.directory }
+                        session.totalTime?.let { p { +"Total time: $it" } }
+                        session.launcherCommand?.let { command ->
+                            p(classes = "launcher-command-label") { +"Launcher command" }
+                            pre(classes = "launcher-command") { code { +command } }
+                        }
+                    }
+                }
+                if (comparison) {
+                    details {
+                        id = "sessions"
+                        summary { +"Sessions" }
+                        sessionDetails()
+                        p { +"Baseline: ${loaded.first().session.name}. Sessions are compared in the supplied order." }
+                    }
+                } else {
+                    sessionDetails()
                 }
                 div(classes = "control-row") {
                     span { id = "target-label"; +"Target" }
@@ -422,7 +506,7 @@ fun generateHtmlReport(session: Path): Path {
                     }
                 }
                 fieldSet(classes = "kotlin-filter") {
-                    legend { +"Kotlin versions" }
+                    legend { +(if (comparison) "Kotlin / Compose series" else "Kotlin versions") }
                     div { id = "kotlin-versions" }
                 }
                 p {
@@ -455,7 +539,32 @@ fun generateHtmlReport(session: Path): Path {
             script { unsafe { +reportResource("report.js") } }
         }
     }
-    return session.resolve("index.html").also { it.writeText("<!DOCTYPE html>\n$html\n") }
+    Files.createDirectories(destination.parent)
+    return destination.also { it.writeText("<!DOCTYPE html>\n$html\n") }
+}
+
+/** Differences do not prevent inspection, but must not silently look like equivalent workloads. */
+private fun comparisonWarnings(runs: List<ChartRun>, configurations: List<ChartConfiguration>): List<String> = buildList {
+    configurations.groupBy { listOf(it.target, it.browser, it.kotlin, it.compose) }.forEach { (key, values) ->
+        val environments = values.map { configuration ->
+            JsonObject(configuration.metadata.mapValues { (group, value) ->
+                if (value is JsonObject) JsonObject(value.filterKeys { key ->
+                    key != "id" && !(group == "launcher" && key == "capturedAt")
+                }) else value
+            })
+        }
+        if (values.map { it.sessionId }.distinct().size > 1 && environments.distinct().size > 1) {
+            add("${key.filterNotNull().joinToString(" / ")}: build or target environment differs between sessions; inspect environment metadata before comparing.")
+        }
+    }
+    runs.filter { it.measurements.isNotEmpty() }.groupBy {
+        listOf(it.target, it.browser, it.kotlin, it.compose, it.name, it.type)
+    }.forEach { (key, values) ->
+        val parameters = values.map { run -> run.parameters.filterKeys { it !in setOf("repeat", "timeoutSeconds") } }
+        if (values.map { it.sessionId }.distinct().size > 1 && parameters.distinct().size > 1) {
+            add("${key.filterNotNull().joinToString(" / ")}: measurement parameters differ between sessions; results may not be comparable.")
+        }
+    }
 }
 
 private fun requestedVersions(arguments: List<String>, option: String): MutableSet<String> {

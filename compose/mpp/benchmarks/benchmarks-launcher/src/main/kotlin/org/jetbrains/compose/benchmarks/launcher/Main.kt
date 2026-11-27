@@ -58,7 +58,13 @@ private val availableTargets = defaultTargets + "wasmD8"
 private val modes = listOf("averageFrame", "fps", "realFrames", "startup")
 private val json = Json { prettyPrint = true; encodeDefaults = true; explicitNulls = false }
 
-fun main(args: Array<String>) = Launcher(args.toList()).main(browserArguments(args))
+fun main(args: Array<String>) {
+    if (args.firstOrNull() == "report") {
+        Report().main(args.drop(1).ifEmpty { listOf("--help") })
+    } else {
+        Launcher(args.toList()).main(browserArguments(args))
+    }
+}
 
 // Clikt's varargValues stops at punctuation, including '/' in absolute browser paths.
 // Feed each browser as an attached option value instead, preserving spaces inside paths.
@@ -103,6 +109,9 @@ private class Launcher(private val invocationArguments: List<String>) : CliktCom
         and target. Each selected browser runs on every web target; non-web targets ignore browsers.
         Each configuration runs the selected cases and modes with the requested repetitions.
         Results, logs, and an HTML report are saved in a timestamped directory.
+        
+        > Regenerate reports or compare existing sessions with report; run benchmarks-launcher report --help for details.
+        
         Runs on macOS, Linux, and Windows; Apple targets require macOS.
     """.trimIndent()
 
