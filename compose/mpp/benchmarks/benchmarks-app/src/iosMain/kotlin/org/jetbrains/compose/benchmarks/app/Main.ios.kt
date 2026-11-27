@@ -34,7 +34,7 @@ fun initializeStartupTiming() {
 }
 
 fun MainViewController(
-    benchmarkCollectorUrl: String,
+    benchmarkCollectorUrl: String?,
     testName: String,
     benchmarkType: String,
     id: String,
@@ -49,7 +49,7 @@ fun MainViewController(
     }
 }
 
-fun collectEnvironment(collectorUrl: String, id: String) {
+fun collectEnvironment(collectorUrl: String?, id: String) {
     MainScope().launch { reportTargetEnvironment(collectorUrl, id) }
 }
 
@@ -57,7 +57,7 @@ fun isRenderBenchmark(benchmarkType: String): Boolean =
     parseBenchmarkType(benchmarkType).isRenderBenchmark()
 
 fun runRenderBenchmark(
-    benchmarkCollectorUrl: String,
+    benchmarkCollectorUrl: String?,
     testName: String,
     benchmarkType: String,
     id: String,

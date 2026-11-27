@@ -17,27 +17,13 @@
 
 package org.jetbrains.compose.benchmarks
 
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.http.isSuccess
 import org.jetbrains.compose.benchmarks.data.TargetEnvironment
 
 internal expect fun collectTargetEnvironment(id: String): TargetEnvironment
 
-suspend fun reportTargetEnvironment(collectorUrl: String, id: String) {
-    val environment = collectTargetEnvironment(id)
-    val client = createHttpClient()
-    try {
-        val response = client.post(collectorUrl) {
-            contentType(ContentType.Application.Json)
-            setBody(environment)
-        }
-        check(response.status.isSuccess()) { "Environment collector returned ${response.status}" }
-    } finally {
-        client.close()
-    }
+suspend fun reportTargetEnvironment(collectorUrl: String?, id: String) {
+    val reporter = Reporter.create(collectorUrl)
+    reporter.sendEnvironment(collectTargetEnvironment(id))
 }
 
 internal class EnvironmentProbe {

@@ -24,7 +24,7 @@ internal fun BenchmarkReportType.isRenderBenchmark(): Boolean =
     this == BenchmarkReportType.AVERAGE_FRAME || this == BenchmarkReportType.FPS
 
 internal suspend fun runRenderBenchmark(
-    benchmarkCollectorUrl: String,
+    benchmarkCollectorUrl: String?,
     testName: String,
     benchmarkType: BenchmarkReportType,
     id: String,
@@ -34,7 +34,7 @@ internal suspend fun runRenderBenchmark(
         BenchmarkReportType.AVERAGE_FRAME -> MeasureRenderAverageFrame(
             id = id,
             name = testName,
-            reportApiUrl = benchmarkCollectorUrl,
+            collectorUrl = benchmarkCollectorUrl,
             width = 1920,
             height = 1080,
             targetFps = 120,
@@ -45,7 +45,7 @@ internal suspend fun runRenderBenchmark(
         BenchmarkReportType.FPS -> MeasureRenderFps(
             id = id,
             name = testName,
-            reportApiUrl = benchmarkCollectorUrl,
+            collectorUrl = benchmarkCollectorUrl,
             width = 1920,
             height = 1080,
             targetFps = 120,

@@ -23,7 +23,7 @@ import org.jetbrains.compose.benchmarks.data.BenchmarkReportType
 
 @Composable
 internal fun App(
-    benchmarkCollectorUrl: String,
+    benchmarkCollectorUrl: String?,
     testName: String,
     benchmarkType: BenchmarkReportType,
     startupTiming: StartupTiming,
@@ -33,7 +33,7 @@ internal fun App(
         BenchmarkReportType.REAL_FRAMES -> MeasureApplicationRealFrames(
             id = id,
             name = testName,
-            reportApiUrl = benchmarkCollectorUrl,
+            collectorUrl = benchmarkCollectorUrl,
             warmupCount = 30,
             frameCount = 300,
             content = benchmarkContent(testName),
@@ -43,7 +43,7 @@ internal fun App(
             name = testName,
             mainMark = startupTiming.mainMark,
             timeToMain = startupTiming.timeToMain,
-            reportApiUrl = benchmarkCollectorUrl,
+            collectorUrl = benchmarkCollectorUrl,
             frameCount = 30,
             content = benchmarkContent(testName),
         )

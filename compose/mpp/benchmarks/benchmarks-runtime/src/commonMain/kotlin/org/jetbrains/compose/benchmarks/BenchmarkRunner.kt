@@ -17,10 +17,6 @@
 package org.jetbrains.compose.benchmarks
 
 import androidx.compose.runtime.Composable
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 import kotlin.time.Duration
 import kotlin.time.TimeSource.Monotonic
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +25,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.benchmarks.data.AverageFrameReport
 import org.jetbrains.compose.benchmarks.data.FpsReport
-import org.jetbrains.compose.benchmarks.data.FrameInfo
 import org.jetbrains.compose.benchmarks.data.RealFramesReport
 import org.jetbrains.compose.benchmarks.data.StartupReport
 
@@ -41,12 +36,13 @@ fun MeasureApplicationStartup(
     name: String,
     mainMark: Monotonic.ValueTimeMark,
     timeToMain: Duration?,
-    reportApiUrl: String,
+    collectorUrl: String?,
     frameCount: Int,
     content: @Composable () -> Unit,
 ) {
     val onComplete: (StartupResult) -> Unit = { result ->
         ReportingScope.launch {
+            val reporter = Reporter.create(collectorUrl)
             val report = StartupReport(
                 id = id,
                 name = name,
@@ -55,15 +51,7 @@ fun MeasureApplicationStartup(
                 timeToFirstFrame = result.timeOfFirstFrame - mainMark,
                 timeToNthFrame = result.timeOfNthFrame - mainMark,
             )
-            val client = createHttpClient()
-            try {
-                client.post(reportApiUrl) {
-                    contentType(ContentType.Application.Json)
-                    setBody(report)
-                }
-            } finally {
-                client.close()
-            }
+            reporter.sendReport(report)
         }
     }
 
@@ -74,13 +62,14 @@ fun MeasureApplicationStartup(
 fun MeasureApplicationRealFrames(
     id: String,
     name: String,
-    reportApiUrl: String,
+    collectorUrl: String?,
     warmupCount: Int,
     frameCount: Int,
     content: @Composable () -> Unit,
 ) {
     val onComplete: (RealFramesResult) -> Unit = { result ->
         ReportingScope.launch {
+            val reporter = Reporter.create(collectorUrl)
             val report = RealFramesReport(
                 id = id,
                 name = name,
@@ -89,15 +78,7 @@ fun MeasureApplicationRealFrames(
                 frameTimes = result.frameTimes,
                 totalDuration = result.totalDuration,
             )
-            val client = createHttpClient()
-            try {
-                client.post(reportApiUrl) {
-                    contentType(ContentType.Application.Json)
-                    setBody(report)
-                }
-            } finally {
-                client.close()
-            }
+            reporter.sendReport(report)
         }
     }
 
@@ -112,7 +93,7 @@ fun MeasureApplicationRealFrames(
 suspend fun MeasureRenderAverageFrame(
     id: String,
     name: String,
-    reportApiUrl: String,
+    collectorUrl: String?,
     width: Int,
     height: Int,
     targetFps: Int,
@@ -120,6 +101,7 @@ suspend fun MeasureRenderAverageFrame(
     frameCount: Int,
     content: @Composable () -> Unit
 ) {
+    val reporter = Reporter.create(collectorUrl)
     val measurement = ContentMeasurement(width, height, targetFps, warmupCount, content)
     val result = measurement.measureAverageFrame(frameCount)
     val report = AverageFrameReport(
@@ -132,21 +114,13 @@ suspend fun MeasureRenderAverageFrame(
         frameCount = frameCount,
         averageFrameInfo = result,
     )
-    val client = createHttpClient()
-    try {
-        client.post(reportApiUrl) {
-            contentType(ContentType.Application.Json)
-            setBody(report)
-        }
-    } finally {
-        client.close()
-    }
+    reporter.sendReport(report)
 }
 
 suspend fun MeasureRenderFps(
     id: String,
     name: String,
-    reportApiUrl: String,
+    collectorUrl: String?,
     width: Int,
     height: Int,
     targetFps: Int,
@@ -154,6 +128,7 @@ suspend fun MeasureRenderFps(
     frameCount: Int,
     content: @Composable () -> Unit
 ) {
+    val reporter = Reporter.create(collectorUrl)
     val measurement = ContentMeasurement(width, height, targetFps, warmupCount, content)
     val result = measurement.measureRenderFps(frameCount)
     val report = FpsReport(
@@ -166,13 +141,5 @@ suspend fun MeasureRenderFps(
         frameCount = frameCount,
         frames = result,
     )
-    val client = createHttpClient()
-    try {
-        client.post(reportApiUrl) {
-            contentType(ContentType.Application.Json)
-            setBody(report)
-        }
-    } finally {
-        client.close()
-    }
+    reporter.sendReport(report)
 }

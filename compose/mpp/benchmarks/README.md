@@ -260,9 +260,8 @@ await runIteration();
 
 Run the harness with `d8 --expose-gc --module <harness.mjs>`. Importing the application does not start
 benchmark workloads. `customLaunch(benchmarkName, frameCount)` returns a Promise, uses no warmup,
-and completes after the requested positive number of frames. It does not print a benchmark report;
-the external harness owns timing and result collection. Await every call and propagate Promise
-rejections as test failures. Offscreen rendering uses a 1920 × 1080 null surface and a virtual
+and prints `BENCHMARK_REPORT:<json>` to stdout after the requested positive number of frames.
+Await every call and propagate Promise rejections as test failures. Offscreen rendering uses a 1920 × 1080 null surface and a virtual
 120 FPS animation clock; this clock does not limit execution speed.
 
 ## Compose and Skiko compatibility
