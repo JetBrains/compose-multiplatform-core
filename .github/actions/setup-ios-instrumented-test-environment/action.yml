@@ -6,6 +6,9 @@ inputs:
   xcode-cache-key-suffix:
     description: 'Suffix appended to the DerivedData cache key.'
     required: true
+  xcode-version:
+    description: 'Version of the selected Xcode distribution.'
+    required: true
   simulator-device:
     description: 'Display name of the simulator device to boot.'
     required: true
@@ -70,6 +73,19 @@ runs:
         set -euo pipefail
 
         SIMULATOR_ID="${{ steps.resolve-simulator.outputs.simulator-id }}"
+        XCODE_MAJOR="${{ inputs.xcode-version }}"
+        XCODE_MAJOR="${XCODE_MAJOR%%.*}"
+
+        # Xcode 27 replaced Simulator.app with Device Hub, which simulates a hardware
+        # keyboard for newly connected devices by default. That hides the software keyboard
+        # and makes keyboard-inset tests observe an empty keyboard frame. Device Hub caches
+        # this global preference, so write it before the first boot.
+        if (( XCODE_MAJOR >= 27 )); then
+          DEVICE_HUB_PREFS="$HOME/Library/Containers/com.apple.dt.Devices/Data/Library/Preferences/com.apple.dt.Devices.plist"
+          mkdir -p "$(dirname "$DEVICE_HUB_PREFS")"
+          defaults write "$DEVICE_HUB_PREFS" \
+            alwaysSimulateHardwareKeyboard -bool false
+        fi
 
         xcrun simctl boot "$SIMULATOR_ID"
         xcrun simctl bootstatus "$SIMULATOR_ID" -b
