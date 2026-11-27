@@ -38,6 +38,7 @@ import platform.UIKit.UIColor
  */
 internal class InteropMask(
     private val interopWrappingView: InteropWrappingView,
+    private val isPlacedAsOverlay: () -> Boolean,
     private val density: () -> Density,
     private val finalFrameUpdateScheduler: FinalFrameUpdateScheduler,
 ) {
@@ -69,7 +70,7 @@ internal class InteropMask(
 
         // Background interop is clipped by the wrapping view and never needs a mask. Keep the
         // geometry so a later switch to overlay can resolve the mask without another layout pass.
-        if (!interopWrappingView.placedAsOverlay) return
+        if (!isPlacedAsOverlay()) return
 
         scheduleUpdate(transactionScope)
     }
@@ -114,7 +115,7 @@ internal class InteropMask(
         currentVisibleRects = null
         interopWrappingView.setInteropMaskLayer(null)
         interopMaskLayer = null
-        interopWrappingView.setOverlayVisibilityResolved(false)
+        interopWrappingView.setWaitingForInteropMask(isPlacedAsOverlay())
     }
 
     private fun hasLayout() = rootSize != null && unclippedRect != null && clippedRect != null
@@ -135,13 +136,13 @@ internal class InteropMask(
      * [visibleRects] are root-space rectangles in the mask layer's local coordinate system.
      */
     private fun updateMask(frame: IntRect?, visibleRects: List<IntRect>) {
-        if (!interopWrappingView.placedAsOverlay || frame == null) {
+        if (!isPlacedAsOverlay() || frame == null) {
             interopWrappingView.setInteropMaskLayer(null)
             interopMaskLayer = null
             currentFrame = null
             currentVisibleRects = null
             if (hasLayout()) {
-                interopWrappingView.setOverlayVisibilityResolved(true)
+                interopWrappingView.setWaitingForInteropMask(false)
             }
             return
         }
@@ -166,7 +167,7 @@ internal class InteropMask(
             CFRelease(path)
         }
         interopWrappingView.setInteropMaskLayer(maskLayer)
-        interopWrappingView.setOverlayVisibilityResolved(true)
+        interopWrappingView.setWaitingForInteropMask(false)
     }
 
     private fun createMaskPath(visibleRects: List<IntRect>) =
@@ -194,7 +195,7 @@ internal class InteropMask(
         val rootSize = rootSize ?: return null
         val unclippedRect = unclippedRect ?: return null
         val clippedRect = clippedRect ?: return null
-        if (!interopWrappingView.placedAsOverlay || rootSize.width <= 0 || rootSize.height <= 0) {
+        if (!isPlacedAsOverlay() || rootSize.width <= 0 || rootSize.height <= 0) {
             return null
         }
 

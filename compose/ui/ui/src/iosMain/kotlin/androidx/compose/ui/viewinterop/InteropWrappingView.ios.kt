@@ -65,15 +65,8 @@ internal class InteropWrappingView(
      * has applied the first mask decision, preventing an unmasked native view from appearing for
      * the frames between insertion and the final-frame mask update.
      */
-    var placedAsOverlay: Boolean = false
-        set(value) {
-            field = value
-            clipsToBounds = !value
-            setOverlayVisibilityResolved(false)
-        }
-
     private var currentMaskLayer: CAShapeLayer? = null
-    private var isOverlayHidden = false
+    private var isWaitingForInteropMask = false
 
     var actualAccessibilityContainer: Any? = null
     var isAccessibilityFocusable: () -> Boolean = { true }
@@ -110,17 +103,22 @@ internal class InteropWrappingView(
         layer.mask = maskLayer
     }
 
+    /** Applies the UIKit clipping and initial visibility rules for the current interop placement. */
+    fun updatePlacement(placedAsOverlay: Boolean) {
+        clipsToBounds = !placedAsOverlay
+        setWaitingForInteropMask(placedAsOverlay)
+    }
+
     /**
-     * Keeps overlay interop hidden until its visible area has been resolved.
+     * Keeps overlay interop hidden until its mask has been resolved.
      *
      * Background interop remains visible because its visible area is controlled by UIKit clipping.
      */
-    fun setOverlayVisibilityResolved(resolved: Boolean) {
-        val hidden = !resolved && placedAsOverlay
-        if (isOverlayHidden == hidden) return
+    fun setWaitingForInteropMask(waiting: Boolean) {
+        if (isWaitingForInteropMask == waiting) return
 
-        isOverlayHidden = hidden
-        setHidden(hidden)
+        isWaitingForInteropMask = waiting
+        setHidden(waiting)
     }
 
     private fun updateAccessibilityElements() {

@@ -85,6 +85,7 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
     )
     private val interopMask = InteropMask(
         interopWrappingView = interopWrappingView,
+        isPlacedAsOverlay = { properties.placedAsOverlay },
         density = { screenDensity },
         finalFrameUpdateScheduler = interopContainer.createFinalFrameUpdateScheduler(),
     )
@@ -233,12 +234,12 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
 
     private fun onPropertiesChanged() {
         interopWrappingView.interactionMode = properties.interactionMode
-        interopWrappingView.placedAsOverlay = properties.placedAsOverlay
+        interopWrappingView.updatePlacement(properties.placedAsOverlay)
         layout.updateSafeAreaInsetsPolicy(properties.safeAreaInsetsPolicy)
 
         // A new overlay must resolve its first mask. A switch from overlay to background must
         // remove an installed mask; unmasked overlays need no work because UIKit clipping is
-        // restored synchronously by the placedAsOverlay setter.
+        // restored synchronously by updatePlacement.
         if (properties.placedAsOverlay || interopMask.hasInstalledMask) {
             container.scheduleUpdate {
                 interopMask.scheduleUpdate()
