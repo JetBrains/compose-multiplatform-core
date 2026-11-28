@@ -33,6 +33,8 @@ A session may not automatically load instructions in descendant directories.
 Read these files when working in the corresponding project parts:
 - `./compose/AGENTS.md`
 - `./compose/material3/material3/AGENTS.md`
+- `./ai-skills/ios-instrumented-tests-compose/SKILL.md` for running iOS instrumented tests
+- `./ai-skills/update-kotlin-version/SKILL.md` for updating the Kotlin version
 
 When delegating, refer the subagent to those files too.
 Note: Since this a fork, new instruction files might get merged from the upstream. Ignore AOSP-specific instructions / gradle tasks / checks / verifications (majority of them are about Android)
@@ -51,13 +53,31 @@ Note: Since this a fork, new instruction files might get merged from the upstrea
 ### Introducing new changes
 - In this fork we avoid introducing code changes in the common code (see above). Before changing any code in them, notify and request an approval when such a change is necessary.
 - API: Unless a feature is intended for GA, avoid introduction of public API changes.
+  - Depending on the module's published targets, fork-mode API dumps live in `api/desktop/<name>.api`,
+    `api/android/<name>.api`, and `api/<name>.klib.api`. Run `./gradlew jbApiDump` to regenerate them.
+    The `API` workflow runs `./gradlew jbApiCheck` on every pull request.
+  - The `updateApi` task mentioned in `navigation/AGENTS.md` and `navigation3/AGENTS.md` and the Metalava files
+    `current.txt` and `restricted_current.txt` belong to AOSP mode.
 - Refactoring, syntactic sugar and code re-formatting: avoid "sugaring" the existing code unless explicitly asked; avoid renaming or moving code unless it's necessary for the task implementation or unless it's explicitly requested; same for code formatting.
 
 ### Changes Verification
 - Running the tests every time might take too long. Compile the tests before running. Choose the relevant task: `compileTestKotlinIosArm64`, `compileTestDevelopmentExecutableKotlinJs`, `compileTestDevelopmentExecutableKotlinWasmJs`, `desktopTestClasses`
+  - Run iOS and macOS compile checks on macOS. On other hosts, Gradle skips disabled Apple targets, and
+    `kotlin.native.ignoreDisabledTargets=true` in `gradle.properties` suppresses the warning.
 - When to run the tests: when working on the tests, or fixing the implementation, or when asked explicitly.
 - Which tests to run: for platform-specific changes run only platform tests. Otherwise, run the tests for all affected platforms.
 
 ### Testing
-- We do not add tests in the `commonTest` folder. When it's possible, we add multiplatform tests to `skikoTest`.  Platform-specific tests should be added in the corresponding folder: `webTest`, `desktopTest`, `jvmTest`, `iosTest`, `iosInstrumentedTest`.
-- When applicable, use platform-specific gradle tasks to run the tests: `desktopTest`,  `iosSimulatorArm64Test`, `wasmJsBrowserTest`, `jsBrowserTest`. Also clean the tests results before running. Example: `./gradlew :compose:ui:ui:cleanAllTests :compose:ui:ui:desktopTest --no-build-cache | tail -n 10`. Allow a reasonable timeout (at least 5 minutes).
+- We do not add tests in the `commonTest` folder. When possible, add multiplatform tests to `skikoTest`. Add
+  platform-specific tests to the corresponding source set, such as `webTest`, `desktopTest`, `jvmTest`, or `iosTest`.
+  The `iosInstrumentedTest` source set uses `src/uikitInstrumentedTest/kotlin`.
+- Use the applicable platform-specific Gradle task (`desktopTest`, `iosSimulatorArm64Test`, `wasmJsBrowserTest`,
+  or `jsBrowserTest`) and clean the test results before running. For example, run
+  `./gradlew :compose:ui:ui:cleanAllTests :compose:ui:ui:desktopTest --no-build-cache --console=plain`.
+  Allow a reasonable timeout (at least 5 minutes).
+- While iterating, put `--tests "<fully qualified class>"` immediately after `desktopTest`. Run the whole module's
+  suite at the end. `desktopTest` includes `skikoTest` in `ui` and `foundation`, and `nonAndroidTest` in `ui-text`
+  and `ui-skiko`.
+- Results go to `out/compose-multiplatform-core/<module dir>/build/test-results/<task>/TEST-*.xml`. `$OUT_DIR`
+  replaces `out` when set. Gradle logs each test's outcome (`PASSED`, `FAILED`, or `SKIPPED`) and standard output.
+  Use the XML or search the full log for `FAILED` to identify failures above the build summary.
