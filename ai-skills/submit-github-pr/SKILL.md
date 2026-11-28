@@ -1,6 +1,6 @@
 ---
 name: submit-github-pr
-description: Prepare and submit an AI Bugathon pull request for a completed YouTrack issue branch in JetBrains/compose-multiplatform-core. Verifies the gh CLI, GitHub access, jb-main target, clean committed state, human Git authorship, reviewers, PR metadata, and the ios-bugathon label, then fills the repository PR template. Use only when the user explicitly asks to submit a PR.
+description: Prepare and submit a pull request for a completed YouTrack issue branch in JetBrains/compose-multiplatform-core. Verifies the gh CLI, GitHub access, jb-main target, clean committed state, human Git authorship, reviewers, and PR metadata, then fills the repository PR template. Use only when the user explicitly asks to submit a PR.
 argument-hint: "YouTrack issue URL; reviewer usernames are optional overrides"
 ---
 
@@ -18,6 +18,7 @@ Do not include the YouTrack issue ID in the commit subject, commit body, or PR t
 - **Human author identity:** Required before committing. The Git author and committer must use the same human author name and email. Do not require or ask for CLA confirmation; GitHub’s PR checks will report CLA status.
 - **Reviewer GitHub usernames:** Optional overrides for the default reviewer list below. Do not guess additional usernames or substitute a team name unless the user supplies it.
 - **Verification evidence:** Use the issue title/description and the final report from the debugging skill. Do not invent test results.
+- **Event:** Optional. If the user says this pull request is part of the AI Bugathon, additionally apply `$ai-bugathon`; it requires the `ios-bugathon` label and enforces the event production-code cap.
 
 Default reviewers, used unless the user explicitly asks for a different list:
 
@@ -30,7 +31,6 @@ The target repository and base branch are fixed for this skill:
 - Repository: `JetBrains/compose-multiplatform-core`
 - Base branch: `jb-main`
 - Source branch: the exact issue ID, for example `CMP-1234`
-- PR label: `ios-bugathon`
 
 ## Pre-flight checks
 
@@ -80,14 +80,6 @@ git diff --check origin/jb-main...HEAD
 ```
 
 If there is no task-related diff, stop instead of creating an empty PR. If `git diff --check` reports whitespace or conflict-marker problems, fix them before submitting.
-
-Enforce the AI Bugathon production-code cap. Count additions and deletions from:
-
-```bash
-git diff --numstat origin/jb-main...HEAD
-```
-
-Count only production source in the cap; test files and test source sets do not count. If the production total exceeds 500 changed lines, stop and ask the user instead of submitting an oversized PR.
 
 Review the public API impact from public declarations in the changed production source. API baseline files such as `*.api`, `*.klib.api`, and `api/current.txt` are generated, never hand-edited: fork-mode baselines come from `./gradlew jbApiDump` (per-module `apiDump` tasks), and AOSP-mode `api/current.txt` files from `updateApi`. If a baseline file appears in the diff, treat it as a regenerated dump: additions are usually binary-compatible, while removals usually indicate a binary-incompatible change that must be fixed. When the source diff leaves the API impact unclear, verify with `./gradlew jbApiCheck` (or the AOSP-mode `checkApi`) rather than guessing, and regenerate baselines only with the matching dump task. A major public API change is not allowed. If no public API changed, omit API wording from the PR body. If a small public API change exists, require explicit user approval and describe only that specific change in the PR. If a major public API change exists, stop and ask the user instead of submitting it.
 
@@ -184,9 +176,9 @@ gh pr list --repo JetBrains/compose-multiplatform-core \
 
 If an open PR already exists, report its URL. Do not create a duplicate.
 
-### 6. Verify the AI Bugathon label
+### 6. Verify the event label
 
-Check that the required label exists:
+This check applies only when `$ai-bugathon` says the PR is part of the AI Bugathon; a regular non-event PR needs no event label. Check that the required label exists:
 
 ```bash
 gh label list --repo JetBrains/compose-multiplatform-core \
@@ -202,7 +194,7 @@ gh label create ios-bugathon \
   --description "AI Bugathon"
 ```
 
-Do not submit a PR without the `ios-bugathon` label.
+Do not submit an AI Bugathon PR without the `ios-bugathon` label.
 
 ## Commit quality, authorship, and push
 
@@ -301,11 +293,12 @@ gh pr create \
   --head CMP-1234 \
   --title "Short fix summary" \
   --body-file /tmp/CMP-1234-pr-description.md \
-  --label ios-bugathon \
   --reviewer svastven \
   --reviewer ASalavei \
   --reviewer mazunin-v-jb
 ```
+
+For an AI Bugathon PR, also pass `--label ios-bugathon` as required by `$ai-bugathon`. For a regular PR, omit the event label.
 
 If a reviewer name is rejected, report the exact GitHub CLI message and ask the user for a valid username; do not silently omit any reviewer.
 
@@ -323,7 +316,7 @@ Confirm that:
 - the base branch is `jb-main`;
 - the head branch is the issue ID;
 - the title is concise and does not contain the YouTrack issue ID;
-- the `ios-bugathon` label is present;
+- for an AI Bugathon PR, the `ios-bugathon` label is present;
 - all requested reviewers are present.
 
 If a field is wrong and can be corrected non-destructively, use the corresponding `gh pr edit` command and tell the user what was corrected. If it cannot be corrected safely, report the PR URL and the mismatch.

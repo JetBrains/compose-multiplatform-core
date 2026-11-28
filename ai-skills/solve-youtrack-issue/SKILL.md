@@ -1,6 +1,6 @@
 ---
 name: solve-youtrack-issue
-description: End-to-end AI Bugathon workflow for JetBrains/compose-multiplatform-core. Coordinates the evidence-first debugger and GitHub PR submission skills, from issue-named jb-main branch setup through verification, human-authored commits, PR labeling, and PR creation. Use when the user explicitly asks to solve a YouTrack issue and create the PR.
+description: End-to-end YouTrack issue workflow for JetBrains/compose-multiplatform-core. Coordinates the evidence-first debugger and GitHub PR submission skills, from issue-named jb-main branch setup through verification, human-authored commits, and PR creation. Use when the user explicitly asks to solve a YouTrack issue and create the PR.
 argument-hint: "YouTrack issue URL; optional local reproducer path and reviewer overrides"
 ---
 
@@ -17,6 +17,7 @@ This is a coordination skill. Do not duplicate or weaken the specialized instruc
 - **Local reproducer project path:** Optional. Pass it to the debugging skill when supplied.
 - **Reviewer overrides:** Optional. `$submit-github-pr` has the team's default reviewers; use an override only when the user explicitly supplies one.
 - **Scope:** Default to the complete workflow: solve the issue and create the PR. Deliver investigation-only results without a PR only when the user explicitly asks for that.
+- **Event:** Optional. If the user says the work is part of the AI Bugathon, additionally apply `$ai-bugathon`; it layers event rules such as the production-code cap and the required `ios-bugathon` PR label on top of this workflow.
 
 ## Prerequisites
 
@@ -135,7 +136,7 @@ Treat this as an early gate only. `$submit-github-pr` still owns the full GitHub
    - human author and committer verification, without requiring CLA confirmation;
    - focused, well-formed commits and push, without the YouTrack issue ID in the commit message;
    - filling `.github/PULL_REQUEST_TEMPLATE.md` concisely, without the YouTrack issue ID in the PR title;
-   - adding the `ios-bugathon` label;
+   - adding an event label when `$ai-bugathon` applies;
    - requesting the default reviewers;
    - creating and verifying the pull request.
 8. After the PR is created and verified, use the YouTrack CLI to move the issue to the exact `Code review` state value used by the issue's project and post a comment. For the multi-line summary, write it to a temporary file first:
