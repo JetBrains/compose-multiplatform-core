@@ -16,7 +16,7 @@ This is a coordination skill. Do not duplicate or weaken the specialized instruc
 - **YouTrack CLI:** Required before starting. Verify it in the Prerequisites section, then use it to assign the issue to the current user when unassigned, move the issue to `In progress`, download any reproducer attachment, and later move the issue to `Code review` and post the final comment.
 - **Local reproducer project path:** Optional. Pass it to the debugging skill when supplied.
 - **Reviewer overrides:** Optional. `$submit-github-pr` has the team's default reviewers; use an override only when the user explicitly supplies one.
-- **Scope:** Determine whether the user asked only to investigate or asked to solve the issue and create the PR. If the scope is unclear and PR creation would be an external action, ask before submitting.
+- **Scope:** Default to the complete workflow: solve the issue and create the PR. Deliver investigation-only results without a PR only when the user explicitly asks for that.
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ youtrack auth status
 
 ### GitHub CLI
 
-Required only when the requested scope includes PR creation. Check installation and authentication:
+Required by default, like the YouTrack CLI: the default workflow ends with a pull request. Skip this check only for an explicit investigation-only request, which never reaches PR work; if that user later asks for the PR, run this check then. Check installation and authentication:
 
 ```bash
 command -v gh
@@ -60,14 +60,29 @@ Treat this as an early gate only. `$submit-github-pr` still owns the full GitHub
 3. Only if the user explicitly declines to install or configure the missing tool, continue with the work that does not require it:
    - without the YouTrack CLI, ask the user to paste the issue content and provide the reproducer manually; do not assign the issue, change its state, or post comments;
    - without the GitHub CLI, do not create the PR;
-   - at the end, list the manual steps the user must do themselves: assign the issue to themselves and move it to `In progress` before the work, and after the fix create the PR, move the issue to `Code review`, and post a comment with the fix summary and PR URL.
+   - at the end, list the manual steps the user must do themselves: assign the issue to themselves and move it to `In progress` before the work, and after the fix submit the PR themselves — commit the verified work, push the `CMP-1234` branch, and open the PR against `jb-main` following `$submit-github-pr` — then move the issue to `Code review` and post a comment with the fix summary and PR URL. Also tell them they can come back and ask for the PR submission once GitHub CLI is installed.
 
 ## Workflow
 
 1. Validate that a YouTrack issue URL or issue ID is available. If it is missing, ask for it. Do not invent a branch or issue name.
 2. Use the configured YouTrack CLI to:
-   - determine the current user;
-   - assign the issue to that user if it is unassigned. If assigning by login fails, apply the YouTrack command `Assignee me` instead;
+   - determine the current user, for example:
+
+     ```bash
+     youtrack auth status
+     ```
+
+   - assign the issue to that user if it is unassigned:
+
+     ```bash
+     youtrack issue assign CMP-1234 <login>
+     ```
+
+     If assigning by login fails, apply the YouTrack command `Assignee me` instead:
+
+     ```bash
+     youtrack issue command CMP-1234 "Assignee me"
+     ```
    - move the issue to the exact `In progress` state value used by the issue's project, for example:
 
      ```bash
@@ -94,8 +109,8 @@ Treat this as an early gate only. `$submit-github-pr` still owns the full GitHub
    - the implementation change;
    - whether a public API changed, while omitting API wording from the PR when none did;
    - the successful verification after the fix.
-6. If the user asked only to investigate, deliver the final report and stop.
-7. If the user asked to solve the issue and create the PR, invoke `$submit-github-pr` with the issue URL and any explicit reviewer override. Let that skill own:
+6. If the user explicitly asked only to investigate, deliver the final report and stop.
+7. By default, invoke `$submit-github-pr` with the issue URL and any explicit reviewer override. Let that skill own:
    - GitHub CLI, login, scope, and repository-access checks;
    - branch, target, and clean committed-state validation;
    - human author and committer verification, without requiring CLA confirmation;
