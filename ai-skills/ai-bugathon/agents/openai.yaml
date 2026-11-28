@@ -1,0 +1,3 @@
+interface:
+  display_name: "AI Bugathon"
+  short_description: "Event rules layered on the issue workflow"

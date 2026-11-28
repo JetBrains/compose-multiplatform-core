@@ -1,0 +1,3 @@
+interface:
+  display_name: "Evidence-First Bug Debugger"
+  short_description: "Instrument, reproduce, and trace bugs efficiently"

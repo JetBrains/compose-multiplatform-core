@@ -1,0 +1,3 @@
+interface:
+  display_name: "Solve YouTrack Issue"
+  short_description: "Run issue debugging through PR submission"
