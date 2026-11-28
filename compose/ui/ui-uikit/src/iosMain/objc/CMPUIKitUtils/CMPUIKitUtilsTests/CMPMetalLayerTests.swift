@@ -436,6 +436,83 @@ final class CMPMetalLayerTests: XCTestCase {
         XCTAssertFalse(drawable1CompletionCalled, "Frame scheduled before a newer presented frame must be dropped")
     }
 
+    // MARK: - Drawable Acquisition Cancellation
+
+    func testPendingDrawableAcquisitionCanBeCancelled() {
+        layer.drawableSize = CGSize(width: 100, height: 100)
+
+        let drawables = (0..<3).map { _ in layer.nextDrawable()! }
+
+        let acquired = DispatchSemaphore(value: 0)
+        var backgroundDrawable: CMPDrawable? = nil
+        DispatchQueue.global().async {
+            backgroundDrawable = self.layer.nextDrawable()
+            acquired.signal()
+        }
+
+        // Let the background thread start waiting for a drawable.
+        Thread.sleep(forTimeInterval: 0.05)
+        layer.cancelDrawableAcquisitions()
+
+        XCTAssertEqual(acquired.wait(timeout: .now() + 0.5), .success, "Cancellation should stop the pending acquisition")
+        XCTAssertNil(backgroundDrawable, "The pending acquisition should return nil")
+
+        layer.resumeDrawableAcquisitions()
+        drawables.forEach { layer.release($0) }
+    }
+
+    func testAcquisitionsResumeAfterCancellation() {
+        layer.drawableSize = CGSize(width: 100, height: 100)
+
+        let drawables = (0..<3).map { _ in layer.nextDrawable()! }
+        layer.cancelDrawableAcquisitions()
+        layer.resumeDrawableAcquisitions()
+
+        let acquired = DispatchSemaphore(value: 0)
+        var backgroundDrawable: CMPDrawable? = nil
+        DispatchQueue.global().async {
+            backgroundDrawable = self.layer.nextDrawable()
+            acquired.signal()
+        }
+
+        // Return a drawable while the new acquisition is waiting for one.
+        Thread.sleep(forTimeInterval: 0.05)
+        layer.release(drawables[0])
+
+        XCTAssertEqual(acquired.wait(timeout: .now() + 0.5), .success, "The next acquisition should still wait for a drawable")
+        XCTAssertTrue(backgroundDrawable === drawables[0], "The next acquisition should reuse the returned drawable")
+
+        drawables.dropFirst().forEach { layer.release($0) }
+    }
+
+    func testCancellingAcquisitionUnblocksRenderingQueueWait() {
+        layer.drawableSize = CGSize(width: 100, height: 100)
+
+        let drawables = (0..<3).map { _ in layer.nextDrawable()! }
+        let renderingQueue = DispatchQueue(label: "test.renderingQueue")
+
+        let acquired = DispatchSemaphore(value: 0)
+        var backgroundDrawable: CMPDrawable? = nil
+        renderingQueue.async {
+            backgroundDrawable = self.layer.nextDrawable()
+            acquired.signal()
+        }
+
+        // Let the rendering queue start waiting for a drawable.
+        Thread.sleep(forTimeInterval: 0.05)
+
+        let start = Date()
+        layer.cancelDrawableAcquisitions()
+        renderingQueue.sync {}
+        layer.resumeDrawableAcquisitions()
+        let elapsed = Date().timeIntervalSince(start)
+
+        XCTAssertNil(backgroundDrawable, "The rendering queue task should stop waiting for a drawable")
+        XCTAssertLessThan(elapsed, 0.1, "Waiting for the rendering queue should not block for the drawable timeout")
+
+        drawables.forEach { layer.release($0) }
+    }
+
     // MARK: - Stress Test
 
     func testConcurrentAcquireReturnAcquirePattern() {

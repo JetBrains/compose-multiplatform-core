@@ -186,7 +186,15 @@ internal class SurfaceMetalRedrawer(
         // Remove the currently scheduled frame, if any
         submitNextFrameForRenderLoop(null)
 
-        dispatch_sync(renderingQueue) {}
+        // A rendering task can be waiting for a drawable while this main-thread dispatch_sync is
+        // pending. Cancel that wait before joining the queue so it cannot keep the main thread
+        // blocked until the drawable acquisition timeout.
+        metalLayer.cancelDrawableAcquisitions()
+        try {
+            dispatch_sync(renderingQueue) {}
+        } finally {
+            metalLayer.resumeDrawableAcquisitions()
+        }
     }
 
     override fun awaitRenderingCompletion() {
