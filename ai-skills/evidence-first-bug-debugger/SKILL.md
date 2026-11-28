@@ -72,6 +72,7 @@ After the focused regression test passes, run the narrowest related existing tes
 
 ## Diff and API constraints
 
+- Keep the change within the AI Bugathon production-code cap: no more than 500 changed production lines. Test files and test source sets do not count toward the cap. If the smallest supported fix would exceed it, stop and report the evidence instead of delivering an oversized fix.
 - Make no major public API changes. Prefer a private or internal implementation fix and keep test-only changes separate from production behavior.
 - If a public API change appears necessary, stop before changing it and ask the user. If they approve a minor API change, keep it as small as possible and call it out explicitly in the final report.
 - Do not leave debug logging, temporary diagnostics, unnecessary comments, broad formatting, or unrelated cleanup in the final diff.

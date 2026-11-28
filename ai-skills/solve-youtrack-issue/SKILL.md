@@ -72,6 +72,7 @@ Treat this as an early gate only. `$submit-github-pr` still owns the full GitHub
      youtrack auth status
      ```
 
+   - record the issue's current assignee and State before changing them, so an unresolved stop can restore both;
    - assign the issue to that user if it is unassigned:
 
      ```bash
@@ -100,7 +101,25 @@ Treat this as an early gate only. `$submit-github-pr` still owns the full GitHub
    - collecting causal diagnostic evidence;
    - making the smallest supported fix with no major public API changes;
    - rerunning and cleaning up temporary diagnostics and unnecessary comments.
-4. Stop if the debugging skill reports an access blocker, unavailable reproduction environment, non-reproducing test, or unresolved root cause. Do not proceed to PR submission without verified evidence.
+4. Stop if the debugging skill reports an access blocker, unavailable reproduction environment, non-reproducing test, or unresolved root cause, or if the user ends the run without a fix. Do not proceed to PR submission without verified evidence. When the run stops without a fix, return the issue to others by restoring the assignee and State recorded in step 2:
+
+   - if the issue was previously unassigned, remove yourself:
+
+     ```bash
+     youtrack issue unassign CMP-1234
+     ```
+
+   - if it had a previous assignee, give it back to them:
+
+     ```bash
+     youtrack issue command CMP-1234 "Assignee <previous-login>"
+     ```
+
+   - move the issue back to its previous State value, typically:
+
+     ```bash
+     youtrack issue command CMP-1234 "State Open"
+     ```
 5. Review the debugger’s final report. Require:
    - the environment actually used;
    - the focused regression test;

@@ -81,6 +81,14 @@ git diff --check origin/jb-main...HEAD
 
 If there is no task-related diff, stop instead of creating an empty PR. If `git diff --check` reports whitespace or conflict-marker problems, fix them before submitting.
 
+Enforce the AI Bugathon production-code cap. Count additions and deletions from:
+
+```bash
+git diff --numstat origin/jb-main...HEAD
+```
+
+Count only production source in the cap; test files and test source sets do not count. If the production total exceeds 500 changed lines, stop and ask the user instead of submitting an oversized PR.
+
 Review the public API impact from public declarations in the changed production source. API baseline files such as `*.api`, `*.klib.api`, and `api/current.txt` are generated, never hand-edited: fork-mode baselines come from `./gradlew jbApiDump` (per-module `apiDump` tasks), and AOSP-mode `api/current.txt` files from `updateApi`. If a baseline file appears in the diff, treat it as a regenerated dump: additions are usually binary-compatible, while removals usually indicate a binary-incompatible change that must be fixed. When the source diff leaves the API impact unclear, verify with `./gradlew jbApiCheck` (or the AOSP-mode `checkApi`) rather than guessing, and regenerate baselines only with the matching dump task. A major public API change is not allowed. If no public API changed, omit API wording from the PR body. If a small public API change exists, require explicit user approval and describe only that specific change in the PR. If a major public API change exists, stop and ask the user instead of submitting it.
 
 Reject debugging-only instrumented test configuration changes. If `compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/Configuration.kt` appears in the working tree or branch diff, restore it before committing. If it appears in an existing commit, stop and ask the user to approve the required history correction; do not submit a PR containing that file.
@@ -319,6 +327,29 @@ Confirm that:
 - all requested reviewers are present.
 
 If a field is wrong and can be corrected non-destructively, use the corresponding `gh pr edit` command and tell the user what was corrected. If it cannot be corrected safely, report the PR URL and the mismatch.
+
+## Fix failing PR checks
+
+When the user asks to fix failed GitHub Actions jobs or PR checks, or a check fails after the PR is created, this skill can read the job results directly with the GitHub CLI:
+
+1. Read the PR's check results:
+
+   ```bash
+   gh pr checks 1234 --repo JetBrains/compose-multiplatform-core
+   ```
+
+   If checks are still running, wait for them with `--watch`.
+
+2. Find the failed run and read the logs of its failed steps:
+
+   ```bash
+   gh run list --repo JetBrains/compose-multiplatform-core --branch CMP-1234 --limit 10
+   gh run view <run-id> --repo JetBrains/compose-multiplatform-core --log-failed
+   ```
+
+3. Read the referenced code or test, fix only the cause of the failure, and rerun the focused regression test or the narrowest related suite that covers the change.
+4. Commit with a clear subject that does not contain the YouTrack issue ID, then push the issue branch.
+5. Rerun `gh pr checks` and confirm the failure is gone. Do not claim a check was fixed without a passing result or an explicit report of what still fails.
 
 ## Address reviewer comments
 
