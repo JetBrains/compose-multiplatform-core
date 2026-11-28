@@ -42,7 +42,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.isUnspecified
-import kotlin.math.floor
 import org.jetbrains.skia.FontMetrics
 import org.jetbrains.skia.IRange
 import org.jetbrains.skia.PathBuilder
@@ -79,6 +78,7 @@ internal class SkikoParagraph(
         set(value) {
             field = value
             _lineMetrics = null
+            _lineBounds = null
         }
 
     init {
@@ -229,14 +229,10 @@ internal class SkikoParagraph(
         lineMetrics.getOrNull(lineIndex)?.right?.toFloat() ?: 0f
 
     override fun getLineTop(lineIndex: Int) =
-        lineMetrics.getOrNull(lineIndex)?.let { line ->
-            floor((line.baseline - line.ascent).toFloat())
-        } ?: 0f
+        if (lineIndex in lineMetrics.indices) lineBounds[lineIndex] else 0f
 
     override fun getLineBottom(lineIndex: Int) =
-        lineMetrics.getOrNull(lineIndex)?.let { line ->
-            floor((line.baseline + line.descent).toFloat())
-        } ?: 0f
+        if (lineIndex in lineMetrics.indices) lineBounds[lineIndex + 1] else 0f
 
     override fun getLineAscent(lineIndex: Int): Float =
         -(lineMetrics.getOrNull(lineIndex)?.ascent?.toFloat() ?: 0f)
@@ -299,7 +295,22 @@ internal class SkikoParagraph(
     }
 
     private fun getLineMetricsForVerticalPosition(vertical: Float): LineMetrics? {
-        return lineMetrics.binarySearchFirstMatchingOrLast { vertical < it.baseline + it.descent }
+        val lineMetrics = lineMetrics
+        if (lineMetrics.isEmpty()) return null
+        val lineBounds = lineBounds
+
+        // The first line whose bottom is below the position, or the last line
+        var low = 0
+        var high = lineMetrics.lastIndex
+        while (low < high) {
+            val middle = (low + high) ushr 1
+            if (vertical < lineBounds[middle + 1]) {
+                high = middle
+            } else {
+                low = middle + 1
+            }
+        }
+        return lineMetrics[low]
     }
 
     override fun getHorizontalPosition(offset: Int, usePrimaryDirection: Boolean): Float {
@@ -339,6 +350,32 @@ internal class SkikoParagraph(
             }
             return lineMetrics
         }
+
+    private var _lineBounds: FloatArray? = null
+
+    /**
+     * The top of every line, followed by the bottom of the last one.
+     *
+     * Skia stacks the lines by their height, which it rounds to whole pixels, so these tile the
+     * paragraph. A line's ascent and descent can't be used for this: they are those of its text,
+     * and Skia may give the line more room than that, or less on a first or last line that is
+     * trimmed.
+     */
+    private val lineBounds: FloatArray
+        get() = _lineBounds ?: computeLineBounds().also {
+            _lineBounds = it
+        }
+
+    private fun computeLineBounds(): FloatArray {
+        val lineMetrics = lineMetrics
+        val bounds = FloatArray(lineMetrics.size + 1)
+        var bottom = 0.0
+        for (index in lineMetrics.indices) {
+            bottom += lineMetrics[index].height
+            bounds[index + 1] = bottom.toFloat()
+        }
+        return bounds
+    }
 
     private fun receiveLineMetrics(): Array<LineMetrics> {
         val lineMetrics = if (text.isEmpty()) {

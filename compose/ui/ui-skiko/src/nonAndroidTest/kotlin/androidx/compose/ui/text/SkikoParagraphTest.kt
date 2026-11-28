@@ -601,6 +601,240 @@ class SkikoParagraphTest {
         assertEquals(emptyCursor.height, nonEmptyCursor.height)
     }
 
+    @Test
+    fun lineTopsAndBottoms_tileTheParagraph() {
+        for ((styleName, style) in lineHeightStyles) {
+            for (text in listOf("", "Hg", "Hg\nHg\nHg", "Hg\n")) {
+                val paragraph = simpleParagraph(text = text, textStyle = style)
+                assertLinesTileTheParagraph(
+                    paragraph,
+                    "$styleName, text \"${text.replace("\n", "\\n")}\"",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun lineTopsAndBottoms_tileTheParagraph_whenLinesDiffer() {
+        val text = "Hg Hg Hg Hg Hg Hg Hg Hg Hg Hg Hg Hg"
+        val largeSpan = AnnotatedString.Range(SpanStyle(fontSize = 40.sp), start = 9, end = 14)
+        val placeholders = listOf(
+            PlaceholderVerticalAlign.AboveBaseline,
+            PlaceholderVerticalAlign.Bottom,
+            PlaceholderVerticalAlign.Center,
+            PlaceholderVerticalAlign.TextCenter,
+        ).mapIndexed { index, verticalAlign ->
+            AnnotatedString.Range(
+                Placeholder(width = 20.sp, height = 50.sp, placeholderVerticalAlign = verticalAlign),
+                start = index * 9,
+                end = index * 9 + 1,
+            )
+        }
+        for ((styleName, style) in lineHeightStyles) {
+            fun paragraph(
+                spanStyles: List<AnnotatedString.Range<SpanStyle>> = emptyList(),
+                placeholders: List<AnnotatedString.Range<Placeholder>> = emptyList(),
+                maxLines: Int = Int.MAX_VALUE,
+            ) = Paragraph(
+                text = text,
+                style = style,
+                // Narrow enough to wrap the text onto several lines
+                constraints = Constraints(maxWidth = 150),
+                density = defaultDensity,
+                fontFamilyResolver = fontFamilyResolver,
+                spanStyles = spanStyles,
+                placeholders = placeholders,
+                maxLines = maxLines,
+            )
+
+            assertLinesTileTheParagraph(paragraph(), "$styleName, wrapped")
+            assertLinesTileTheParagraph(paragraph(maxLines = 2), "$styleName, two lines at most")
+            assertLinesTileTheParagraph(
+                paragraph(spanStyles = listOf(largeSpan)),
+                "$styleName, a larger span",
+            )
+            assertLinesTileTheParagraph(
+                paragraph(placeholders = placeholders),
+                "$styleName, placeholders",
+            )
+            assertLinesTileTheParagraph(
+                paragraph(spanStyles = listOf(largeSpan), placeholders = placeholders),
+                "$styleName, a larger span and placeholders",
+            )
+        }
+    }
+
+    // Skia gives no line metrics for such a paragraph, so its line is made up.
+    @Test
+    fun lineTopsAndBottoms_tileTheParagraph_ofOnePlaceholder() {
+        for ((styleName, style) in lineHeightStyles) {
+            val paragraph = Paragraph(
+                text = "\uFFFD",
+                style = style,
+                constraints = Constraints(maxWidth = maxWidthConstraint),
+                density = defaultDensity,
+                fontFamilyResolver = fontFamilyResolver,
+                placeholders = listOf(
+                    AnnotatedString.Range(
+                        Placeholder(20.sp, 50.sp, PlaceholderVerticalAlign.AboveBaseline),
+                        start = 0,
+                        end = 1,
+                    )
+                ),
+            )
+
+            assertEquals(1, paragraph.lineCount, styleName)
+            assertLinesTileTheParagraph(paragraph, styleName)
+        }
+    }
+
+    private fun assertLinesTileTheParagraph(paragraph: Paragraph, message: String) {
+        assertEquals(0f, paragraph.getLineTop(0), message)
+        for (line in 0 until paragraph.lineCount) {
+            assertEquals(
+                paragraph.getLineTop(line) + paragraph.getLineHeight(line),
+                paragraph.getLineBottom(line),
+                absoluteTolerance = 0.01f,
+                "$message, line $line",
+            )
+            if (line > 0) {
+                assertEquals(
+                    paragraph.getLineBottom(line - 1),
+                    paragraph.getLineTop(line),
+                    "$message, line $line",
+                )
+            }
+        }
+        assertEquals(
+            paragraph.height,
+            paragraph.getLineBottom(paragraph.lineCount - 1),
+            absoluteTolerance = 0.01f,
+            message,
+        )
+    }
+
+    @Test
+    fun getLineForVerticalPosition_agreesWithLineTopsAndBottoms() {
+        for ((styleName, style) in lineHeightStyles) {
+            for (text in listOf("", "Hg", "Hg\nHg\nHg", "Hg\n")) {
+                val paragraph = simpleParagraph(text = text, textStyle = style)
+                val message = "$styleName, text \"${text.replace("\n", "\\n")}\""
+
+                for (line in 0 until paragraph.lineCount) {
+                    val top = paragraph.getLineTop(line)
+                    val bottom = paragraph.getLineBottom(line)
+                    for (vertical in listOf(top, (top + bottom) / 2, bottom - 0.25f)) {
+                        assertEquals(
+                            line,
+                            paragraph.getLineForVerticalPosition(vertical),
+                            "$message, position $vertical",
+                        )
+                    }
+                }
+                assertEquals(0, paragraph.getLineForVerticalPosition(-1f), message)
+                assertEquals(
+                    paragraph.lineCount - 1,
+                    paragraph.getLineForVerticalPosition(paragraph.height + 1f),
+                    message,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun ellipsisByHeight_keepsTheLinesThatFit() {
+        for ((styleName, style) in lineHeightStyles) {
+            val text = "Hg\nHg\nHg"
+            val unconstrained = simpleParagraph(text, style)
+            val twoLinesHeight =
+                ceil(unconstrained.getLineHeight(0) + unconstrained.getLineHeight(1)).toInt()
+
+            for ((maxHeight, expectedLineCount) in listOf(
+                twoLinesHeight to 2,
+                twoLinesHeight - 1 to 1,
+            )) {
+                val paragraph = Paragraph(
+                    text = text,
+                    style = style,
+                    constraints = Constraints(maxWidth = maxWidthConstraint, maxHeight = maxHeight),
+                    density = defaultDensity,
+                    fontFamilyResolver = fontFamilyResolver,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                val message = "$styleName, max height $maxHeight"
+
+                assertEquals(expectedLineCount, paragraph.lineCount, message)
+            }
+        }
+    }
+
+    // A single-line text field takes its height from the bottom of its first line, so a
+    // difference here makes the field change its height when its first character is typed.
+    @Test
+    fun getLineBottom_isTheSameForEmptyAndNonEmptyText() {
+        var comparedStyles = 0
+        for ((styleName, style) in lineHeightStyles) {
+            val emptyParagraph = simpleParagraph(text = "", textStyle = style)
+            val nonEmptyParagraph = simpleParagraph(text = "Hg", textStyle = style)
+
+            // Skia sizes an empty paragraph from the font's rounded height and a line of text
+            // from its exact height, so for some styles the two paragraphs are a pixel apart.
+            // Which styles depends on the font, and there the bottoms can't be the same.
+            if (emptyParagraph.height != nonEmptyParagraph.height) continue
+            comparedStyles++
+
+            assertEquals(
+                nonEmptyParagraph.getLineTop(0),
+                emptyParagraph.getLineTop(0),
+                styleName,
+            )
+            assertEquals(
+                nonEmptyParagraph.getLineBottom(0),
+                emptyParagraph.getLineBottom(0),
+                styleName,
+            )
+        }
+        assertTrue(comparedStyles > 0, "No style to compare")
+    }
+
+    // Many font sizes, so that the font's height rounds both up and down whatever the platform's
+    // default font is, with and without a line height, with every alignment and trim skia treats
+    // differently, with whole and fractional line heights, and a line height below the font size.
+    private val lineHeightStyles: List<Pair<String, TextStyle>> = buildList {
+        val fontSizes = (20..48).map { (it / 2f).sp }
+        for (fontSize in fontSizes) {
+            add("$fontSize" to TextStyle(fontSize = fontSize))
+        }
+        add("64sp, line height 24sp" to TextStyle(fontSize = 64.sp, lineHeight = 24.sp))
+
+        val fontSizesAndLineHeights =
+            // Material 3's bodyLarge, bodyMedium and titleLarge
+            listOf(16.sp to 24.sp, 14.sp to 20.sp, 22.sp to 28.sp) +
+                fontSizes.map { it to (it.value.toInt() + 6).sp } +
+                fontSizes.map { it to it * 1.5f }
+        for ((fontSize, lineHeight) in fontSizesAndLineHeights) {
+            for (alignment in listOf(
+                LineHeightStyle.Alignment.Center,
+                LineHeightStyle.Alignment.Proportional,
+            )) {
+                for (trim in listOf(
+                    LineHeightStyle.Trim.None,
+                    LineHeightStyle.Trim.Both,
+                    LineHeightStyle.Trim.FirstLineTop,
+                    LineHeightStyle.Trim.LastLineBottom,
+                )) {
+                    add(
+                        "$fontSize, line height $lineHeight, $alignment, $trim" to TextStyle(
+                            fontSize = fontSize,
+                            lineHeight = lineHeight,
+                            lineHeightStyle = LineHeightStyle(alignment, trim),
+                        )
+                    )
+                }
+            }
+        }
+    }
+
     // https://youtrack.jetbrains.com/issue/CMP-11086
     @Test
     fun setDrawStyle_fillOrNull_doesNotRequireRelayout() {
