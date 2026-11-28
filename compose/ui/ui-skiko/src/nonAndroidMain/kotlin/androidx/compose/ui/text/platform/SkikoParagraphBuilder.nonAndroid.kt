@@ -721,7 +721,15 @@ internal class ParagraphBuilder(
                 descent *= multiplier
             }
         }
-        val height = descent - ascent
+        val height = if (paragraph.lineNumber <= 1) {
+            // Not the sum of the ascent and the descent: skia rounds the height of this line as
+            // it does that of any other, and trims it as the first and the last line of the
+            // paragraph.
+            paragraph.height.toDouble()
+        } else {
+            // Placeholders only, on several lines of which this stands for the first
+            descent - ascent
+        }
         return arrayOf(
             LineMetrics(
                 startIndex = 0,

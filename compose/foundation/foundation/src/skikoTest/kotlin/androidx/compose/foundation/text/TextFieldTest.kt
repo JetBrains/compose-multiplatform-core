@@ -16,6 +16,9 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,11 +34,15 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.sp
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @OptIn(ExperimentalTestApi::class)
 class TextFieldTest {
@@ -79,6 +86,52 @@ class TextFieldTest {
             for (j in i .. rawText.length) {
                 selection = TextRange(i, j)
                 waitForIdle()
+            }
+        }
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-10222
+    @Suppress("DEPRECATION")
+    @Test
+    fun singleLine_hasTheSameHeightEmptyAndWithText() = runComposeUiTest {
+        val centered = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
+        val styles = listOf(
+            "16sp" to TextStyle(fontSize = 16.sp),
+            // Material 3's bodyLarge and bodyMedium
+            "16sp, line height 24sp" to
+                TextStyle(fontSize = 16.sp, lineHeight = 24.sp, lineHeightStyle = centered),
+            "14sp, line height 20sp" to
+                TextStyle(fontSize = 14.sp, lineHeight = 20.sp, lineHeightStyle = centered),
+        )
+        setContent {
+            Column {
+                for ((styleName, style) in styles) {
+                    for (text in listOf("", "Hg")) {
+                        BasicTextField(
+                            value = text,
+                            onValueChange = {},
+                            modifier = Modifier.testTag("value, $styleName, '$text'"),
+                            textStyle = style,
+                            singleLine = true,
+                        )
+                        BasicTextField(
+                            state = rememberTextFieldState(text),
+                            modifier = Modifier.testTag("state, $styleName, '$text'"),
+                            textStyle = style,
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                        )
+                    }
+                }
+            }
+        }
+        waitForIdle()
+
+        for ((styleName, _) in styles) {
+            for (overload in listOf("value", "state")) {
+                fun height(text: String) =
+                    onNodeWithTag("$overload, $styleName, '$text'").fetchSemanticsNode().size.height
+
+                assertEquals(height("Hg"), height(""), "$overload overload, $styleName")
             }
         }
     }
