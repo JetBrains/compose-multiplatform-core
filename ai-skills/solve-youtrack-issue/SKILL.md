@@ -49,12 +49,18 @@ This is a coordination skill. Do not duplicate or weaken the specialized instruc
    - GitHub CLI, login, scope, and repository-access checks;
    - branch, target, and clean committed-state validation;
    - human author and committer verification, without requiring CLA confirmation;
-   - focused, well-formed commits and push;
-   - filling `.github/PULL_REQUEST_TEMPLATE.md` concisely;
+   - focused, well-formed commits and push, without the YouTrack issue ID in the commit message;
+   - filling `.github/PULL_REQUEST_TEMPLATE.md` concisely, without the YouTrack issue ID in the PR title;
    - adding the `ios-bugathon` label;
    - requesting the default reviewers;
    - creating and verifying the pull request.
-8. After the PR is created and verified, use the YouTrack CLI to move the issue to Code Review.
+8. After the PR is created and verified, use the YouTrack CLI to move the issue to Code Review and add a comment that includes:
+   - the original reported behavior;
+   - the confirmed root cause;
+   - the implementation change and why it is the right boundary;
+   - the focused regression test and the related suites that were run;
+   - the actual verification result and any meaningful environment difference;
+   - the pull request URL.
 9. Return a compact end-to-end summary containing the issue, confirmed root cause, focused test and result, implementation summary, verification result, and PR URL. Clearly distinguish confirmed findings from hypotheses or environment-limited results.
 
 Do not skip evidence because a likely fix is obvious. Do not submit a PR for an unverified fix or uncommitted work. Do not submit a major public API change. Do not ask the user to repeatedly run tests or paste logs that the skills can obtain directly.

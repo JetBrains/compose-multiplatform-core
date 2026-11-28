@@ -10,6 +10,8 @@ Turn a completed, verified YouTrack issue branch into a pull request in `JetBrai
 
 This skill performs external actions: creating a Git commit when needed, pushing a branch, creating a pull request, and requesting reviewers. Treat an explicit request to submit the PR as authorization for those actions, but first show the user the branch, target, changed files, commit plan, and reviewers. If the user asks only to prepare or check the PR, stop before the first mutation.
 
+Do not include the YouTrack issue ID in the commit subject, commit body, or PR title. Use a clear, human-readable summary such as `Share iOS font family resolver across scenes`.
+
 ## Required values
 
 - **YouTrack issue URL or issue ID:** Use the exact uppercase ID, such as `CMP-1234`.
@@ -202,10 +204,10 @@ Only perform these steps when the user has explicitly asked to submit the PR. Al
 
    ```bash
    git add <changed-files>
-   git commit -m "CMP-1234: Short fix summary"
+   git commit -m "Short fix summary"
    ```
 
-   Use a clear, concise subject for every commit. Add a short body only when the motivation is not obvious from the subject. Do not create debug, cleanup-only, or mixed-purpose commits.
+   Use a clear, concise subject for every commit. Add a short body only when the motivation is not obvious from the subject. Do not create debug, cleanup-only, or mixed-purpose commits. Do not include the YouTrack issue ID in the commit subject or body.
 
 2. Verify every commit between the target branch and the issue branch:
 
@@ -240,10 +242,11 @@ Only perform these steps when the user has explicitly asked to submit the PR. Al
 
 Use the issue title and actual verification evidence to write a clear, non-speculative PR.
 
-- Title: `CMP-1234: Short fix summary`
+- Title: `Short fix summary`
 - Base: `jb-main`
 - Head: `CMP-1234`
 - Reviewers: use `svastven`, `ASalavei`, and `mazunin-v-jb` by default. Use the user-supplied list only when they explicitly request different reviewers. Use `--reviewer` once per username. Do not use `--assignee` unless the user explicitly wants a PR assignee rather than a reviewer.
+- Do not include the YouTrack issue ID in the PR title.
 
 Read the repository PR template and use it as the exact body structure:
 
@@ -288,7 +291,7 @@ gh pr create \
   --repo JetBrains/compose-multiplatform-core \
   --base jb-main \
   --head CMP-1234 \
-  --title "CMP-1234: Short fix summary" \
+  --title "Short fix summary" \
   --body-file /tmp/CMP-1234-pr-description.md \
   --label ios-bugathon \
   --reviewer svastven \
@@ -311,11 +314,37 @@ Confirm that:
 
 - the base branch is `jb-main`;
 - the head branch is the issue ID;
-- the title contains the issue ID;
+- the title is concise and does not contain the YouTrack issue ID;
 - the `ios-bugathon` label is present;
 - all requested reviewers are present.
 
 If a field is wrong and can be corrected non-destructively, use the corresponding `gh pr edit` command and tell the user what was corrected. If it cannot be corrected safely, report the PR URL and the mismatch.
+
+## Address reviewer comments
+
+When the user asks to address new or existing reviewer comments on a PR:
+
+1. Read the PR’s general comments and review comments directly with the GitHub CLI. Do not use plugins.
+2. For PR-level comments, use:
+
+   ```bash
+   gh pr view 1234 --repo JetBrains/compose-multiplatform-core --comments
+   ```
+
+3. For inline review comments, use:
+
+   ```bash
+   gh api repos/JetBrains/compose-multiplatform-core/pulls/1234/comments
+   ```
+
+4. Read the referenced code and nearby implementation. Make only the changes requested by the reviewer or required by the review evidence.
+5. Rerun the focused regression test and the narrowest related suites that cover the changed code.
+6. Remove any unnecessary comments and temporary diagnostics.
+7. Commit with a clear subject that does not contain the YouTrack issue ID.
+8. Push the issue branch.
+9. If useful, add a short PR comment summarizing what was addressed. Do not claim a comment was resolved unless the change actually resolves it.
+
+Follow all other rules in this skill: no plugins, human author/committer identity, no major public API changes, no changes to the temporary iOS instrumented test configuration file, and no unrelated cleanup.
 
 ## Invocation
 
