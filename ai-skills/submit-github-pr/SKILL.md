@@ -6,7 +6,7 @@ argument-hint: "YouTrack issue URL; reviewer usernames are optional overrides"
 
 # Submit GitHub PR
 
-Turn a completed, verified YouTrack issue branch into a pull request in `JetBrains/compose-multiplatform-core`. Use this after `$evidence-first-bug-debugger` has delivered its final report, or after the user explicitly says that the fix is ready to submit.
+Turn a completed, verified YouTrack issue branch into a pull request in `JetBrains/compose-multiplatform-core`. Use this after `$evidence-first-bug-debugger` has delivered its final report, or after the user explicitly says that the fix is ready to submit. Do not use plugins; use the GitHub CLI directly.
 
 This skill performs external actions: creating a Git commit when needed, pushing a branch, creating a pull request, and requesting reviewers. Treat an explicit request to submit the PR as authorization for those actions, but first show the user the branch, target, changed files, commit plan, and reviewers. If the user asks only to prepare or check the PR, stop before the first mutation.
 
@@ -113,7 +113,7 @@ Never use `--show-token`, print a token, or store credentials in the PR or a tem
 
 Handle the results as follows:
 
-- **Not logged in:** Ask the user to run `gh auth login`, select `GitHub.com`, complete the browser authentication, then retry. Do not perform the interactive login yourself.
+- **Not logged in:** Ask the user to run `gh auth login`, select `GitHub.com`, complete the browser authentication, and confirm to you when they are logged in. Do not start the login flow yourself and do not handle or display the one-time code. Wait for the user’s confirmation before retrying.
 - **Wrong account:** Ask the user to switch to the account that has repository access, usually with `gh auth switch`, or to log in with the intended account.
 - **Missing or insufficient `repo` scope:** Ask the user to run:
 
