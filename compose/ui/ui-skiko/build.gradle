@@ -124,6 +124,12 @@ androidXMultiplatform {
         nativeTest {
             dependsOn(nonJvmTest)
         }
+
+        iosMain {
+            dependencies {
+                implementation(project(":compose:ui:ui-uikit"))
+            }
+        }
     }
 }
 

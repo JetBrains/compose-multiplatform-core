@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.IosComposeUiTextFlags
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.uikit.utils.CMPTextInputStringTokenizer
@@ -25,10 +27,11 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.toCGRect
 import kotlin.math.absoluteValue
 import kotlinx.cinterop.CValue
+import kotlinx.cinterop.useContents
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectMake
-import platform.Foundation.NSCharacterSet
+import platform.Foundation.NSNotFound
 import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionLeftToRight
 import platform.UIKit.NSWritingDirectionNatural
@@ -46,6 +49,7 @@ import platform.UIKit.UITextRange
 import platform.UIKit.UITextSelectionRect
 import platform.UIKit.UITextStorageDirectionForward
 import platform.UIKit.UITextWritingDirection
+import platform.darwin.NSInteger
 import platform.darwin.NSUInteger
 
 internal interface TextEditingDelegate {
@@ -260,7 +264,7 @@ internal class DetachedTextEditingDelegate(
     override fun selectAll() = Unit
 
     override fun textInRange(range: TextRange): String? =
-        text.takeIf { range.isValidIn(it.length) }?.substring(range.start, range.end)
+        text.takeIf { range.isValidIn(it.length) }?.substringOrSelf(range)
 
     override fun replaceRange(range: TextRange, text: String) = Unit
 
@@ -303,6 +307,9 @@ internal fun NativeTextEditingDelegate.detachedCopy() = DetachedTextEditingDeleg
 internal fun TextRange.isValidIn(length: Int): Boolean =
     start >= 0 && start <= end && end <= length
 
+internal fun String.substringOrSelf(range: TextRange): String =
+    if (range.start == 0 && range.end == length) this else substring(range.start, range.end)
+
 internal fun String.movePositionByGraphemes(position: Int, offset: Int): Int? {
     val newPosition = position + offset
     if (newPosition == length || newPosition == 0) {
@@ -332,11 +339,18 @@ internal fun String.movePositionByGraphemes(position: Int, offset: Int): Int? {
     return resultPosition
 }
 
+/**
+ * Selects what the "Select" edit menu action of `UITextView` selects for the caret: the word at the
+ * caret, or the text between the caret and an adjacent word.
+ */
 internal fun TextEditingDelegate.selectTextNearCursor() {
     val selection = getSelectedTextRange() ?: return
     val text = textInRange(TextRange(0, endOfDocument())) ?: return
 
-    val range = wordSelectionRangeForCursor(text, selection.start) ?: return
+    val range = CMPTextInputStringTokenizer.selectActionRangeForCaretAtOffset(
+        offset = selection.start.toLong(),
+        inText = text
+    ).useContents { TextRange(location.toInt(), (location + length).toInt()) }
     if (range == selection) return
 
     setSelectedTextRange(range)
@@ -348,64 +362,6 @@ internal fun TextEditingDelegate.caretRectForPosition(position: UITextPosition):
     val caretDpRect = caretDpRectForPosition(position)
     return caretDpRect?.toCGRect() ?: fallbackRect
 }
-
-/**
- * Computes the range that the "Select" edit action should select for a collapsed caret at
- * [cursor]: The behavior must mimic iOS Select text field action:
- *
- * 1. If a visible (non-whitespace) character immediately follows the caret, the word that
- *    character belongs to is selected.
- * 2. Otherwise, if a word precedes the caret, that word is selected together with any space
- *    characters between the word's end and the caret (newlines excluded).
- * 3. Otherwise (no word precedes the caret), the run of space characters following the caret,
- *    up to the first visible character, is selected (newlines excluded).
- *
- * Returns `null` if there is nothing to select.
- */
-private fun wordSelectionRangeForCursor(text: String, cursor: Int): TextRange? {
-    // Condition 1
-    if (cursor < text.length && text[cursor].isVisibleForSelection()) {
-        return wordRangeContaining(text, cursor)
-    }
-
-    // Condition 2
-    var wordEnd = cursor
-    while (wordEnd > 0 && text[wordEnd - 1].isSelectableSpace()) {
-        wordEnd--
-    }
-    if (wordEnd > 0 && text[wordEnd - 1].isVisibleForSelection()) {
-        val wordStart = wordStartPreceding(text, wordEnd)
-        return TextRange(wordStart, cursor)
-    }
-
-    // Condition 3
-    var spacesEnd = cursor
-    while (spacesEnd < text.length && text[spacesEnd].isSelectableSpace()) {
-        spacesEnd++
-    }
-    return if (spacesEnd > cursor) TextRange(cursor, spacesEnd) else null
-}
-
-/** Returns the boundaries of the word containing the visible character at [offset]. */
-private fun wordRangeContaining(text: String, offset: Int): TextRange {
-    val iterator = BreakIterator.makeWordInstance()
-    iterator.setText(text)
-    val end = iterator.following(offset).takeIf { it != BreakIterator.DONE } ?: text.length
-    val start = iterator.preceding(end).takeIf { it != BreakIterator.DONE } ?: 0
-    return TextRange(start, end)
-}
-
-/** Returns the start boundary of the word that ends at [wordEnd]. */
-private fun wordStartPreceding(text: String, wordEnd: Int): Int {
-    val iterator = BreakIterator.makeWordInstance()
-    iterator.setText(text)
-    return iterator.preceding(wordEnd).takeIf { it != BreakIterator.DONE } ?: 0
-}
-
-private fun Char.isNewlineForSelection(): Boolean =
-    NSCharacterSet.newlineCharacterSet.characterIsMember(code.toUShort())
-private fun Char.isSelectableSpace(): Boolean = isWhitespace() && !isNewlineForSelection()
-private fun Char.isVisibleForSelection(): Boolean = !isWhitespace()
 
 internal class TextInputPosition(val position: Int = 0) : UITextPosition() {
     override fun isEqual(`object`: Any?): Boolean =
@@ -495,19 +451,34 @@ private fun TextDirection.toUITextWritingDirection(): UITextWritingDirection = w
     else -> NSWritingDirectionNatural
 }
 
-private fun Char.isNewLineCharacter(): Boolean =
-    NSCharacterSet.newlineCharacterSet.characterIsMember(code.toUShort())
-
+/**
+ * The tokenizer of the text inputs. Boundaries are found by [CMPTextInputStringTokenizer] with the
+ * iOS text tokenizer, or with the ICU bundled with Skia if
+ * [IosComposeUiTextFlags.isNativeTextTokenizerEnabled] is `false`.
+ */
 internal class TextInputStringTokenizer(
     textInput: UIResponder,
     val getString: () -> String?
 ): CMPTextInputStringTokenizer(textInput) {
 
+    override fun tokenizedText(): String = getString() ?: ""
+
+    override fun offsetOfTextPosition(position: UITextPosition): NSInteger =
+        (position as? TextInputPosition)?.position?.toLong() ?: NSNotFound
+
+    override fun textPositionAtOffset(offset: NSInteger): UITextPosition =
+        TextInputPosition(offset.toInt())
+
+    @OptIn(ExperimentalTextApi::class)
     override fun positionFromPosition(
         position: UITextPosition,
         toBoundary: UITextGranularity,
         inDirection: UITextDirection
     ): UITextPosition? {
+        if (IosComposeUiTextFlags.isNativeTextTokenizerEnabled) {
+            return super.positionFromPosition(position, toBoundary, inDirection)
+        }
+
         val textPosition = position as? TextInputPosition ?: return null
         val isForward = inDirection == UITextStorageDirectionForward ||
             inDirection == UITextLayoutDirectionRight ||
@@ -518,9 +489,7 @@ internal class TextInputStringTokenizer(
             UITextGranularity.UITextGranularityWord -> BreakIterator.makeWordInstance()
             UITextGranularity.UITextGranularitySentence -> BreakIterator.makeSentenceInstance()
             UITextGranularity.UITextGranularityLine -> BreakIterator.makeLineInstance()
-            UITextGranularity.UITextGranularityParagraph ->
-                return positionFromPositionToParagraphBoundary(position, isForward)
-
+            // Including paragraphs, which don't depend on ICU.
             else -> return super.positionFromPosition(position, toBoundary, inDirection)
         }
 
@@ -544,11 +513,16 @@ internal class TextInputStringTokenizer(
         return TextInputPosition(iteratorResult)
     }
 
+    @OptIn(ExperimentalTextApi::class)
     override fun isPositionAtBoundary(
         position: UITextPosition,
         atBoundary: UITextGranularity,
         inDirection: UITextDirection
     ): Boolean {
+        if (IosComposeUiTextFlags.isNativeTextTokenizerEnabled) {
+            return super.isPositionAtBoundary(position, atBoundary, inDirection)
+        }
+
         val textPosition = position as? TextInputPosition ?: return false
 
         val iterator = when (atBoundary) {
@@ -556,45 +530,12 @@ internal class TextInputStringTokenizer(
             UITextGranularity.UITextGranularityWord -> BreakIterator.makeWordInstance()
             UITextGranularity.UITextGranularitySentence -> BreakIterator.makeSentenceInstance()
             UITextGranularity.UITextGranularityLine -> BreakIterator.makeLineInstance()
-            UITextGranularity.UITextGranularityParagraph -> {
-                return isAtParagraphBoundary(getString() ?: "", textPosition.position)
-            }
+            // Including paragraphs, which don't depend on ICU.
             else -> return super.isPositionAtBoundary(position, atBoundary, inDirection)
         }
 
         iterator.setText(getString() ?: "")
         return iterator.isBoundary(textPosition.position)
-    }
-
-    private fun positionFromPositionToParagraphBoundary(
-        position: UITextPosition,
-        isForward: Boolean
-    ): UITextPosition? {
-        val textPosition = position as? TextInputPosition ?: return null
-
-        val string = getString() ?: ""
-        var location = textPosition.position
-        if (isForward) {
-            while (location < string.length) {
-                if (string[location].isNewLineCharacter()) {
-                    break
-                }
-                location++
-            }
-        } else {
-            while (location > 0) {
-                if (string[location - 1].isNewLineCharacter()) {
-                    break
-                }
-                location--
-            }
-        }
-        return TextInputPosition(location)
-    }
-
-    private fun isAtParagraphBoundary(text: String, position: Int): Boolean {
-        if (position == 0 || position == text.length) return true
-        return text[position].isNewLineCharacter() || text[position - 1].isNewLineCharacter()
     }
 }
 

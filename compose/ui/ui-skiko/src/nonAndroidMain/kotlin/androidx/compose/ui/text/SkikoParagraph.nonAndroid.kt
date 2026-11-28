@@ -541,14 +541,27 @@ internal class SkikoParagraph(
         if (offset < text.length && text[offset].isWhitespace() || offset == text.length) {
             // If it's whitespace, we're sure that it's not surrogate.
             return if (offset > 0 && !text[offset - 1].isWhitespace()) {
-                paragraph.getWordBoundary(offset - 1).toTextRange()
+                wordSegmentAt(offset - 1)
             } else TextRange(offset, offset)
         }
 
         // Skia paragraph should handle unicode correctly, but it doesn't match Android behavior.
         // It uses ICU's BreakIterator under the hood, so we can use
         // `BreakIterator.makeWordInstance()` without calling skia's `getWordBoundary` at all.
-        return paragraph.getWordBoundary(offset).toTextRange()
+        return wordSegmentAt(offset)
+    }
+
+    /**
+     * Returns the word segment containing the character at [offset], computed by the platform if
+     * it provides word segmentation, or by Skia otherwise.
+     */
+    private fun wordSegmentAt(offset: Int): TextRange {
+        val segmenter = platformWordSegmenter()
+        return if (segmenter != null) {
+            segmenter.segmentAt(text, offset)
+        } else {
+            paragraph.getWordBoundary(offset).toTextRange()
+        }
     }
 
     override fun paint(

@@ -42,6 +42,7 @@ FOUNDATION_EXPORT const unsigned char CMPUIKitObjcUtilsVersionString[];
 #import "CMPScrollView.h"
 #import "CMPTextInputStringTokenizer.h"
 #import "CMPTextLoupeSession.h"
+#import "CMPTextSegmenter.h"
 #import "CMPView.h"
 #import "CMPUIWindowSceneExtensions.h"
 #import "CMPViewController.h"
