@@ -257,6 +257,8 @@ interface PlatformContext {
     val soundEffect: SoundEffect
         get() = NoSoundEffect
 
+    val sharedOwnerContext: SharedOwnerContext
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)
@@ -318,6 +320,7 @@ interface PlatformContext {
         override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
             createFontFamilyResolver()
         }
+        override val sharedOwnerContext: SharedOwnerContext = SharedOwnerContext()
     }
 
     // This object must be immutable because it is used as a delegate in other ViewConfiguration
