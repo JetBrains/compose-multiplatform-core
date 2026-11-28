@@ -134,6 +134,10 @@ import platform.UIKit.UITouchTypeIndirectPointer
 import platform.UIKit.UITouchTypePencil
 import platform.UIKit.UIView
 
+private val sharedIosFontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
+    createFontFamilyResolver()
+}
+
 /**
  * iOS specific-implementation of [PlatformContext.SemanticsOwnerListener] used to track changes in [SemanticsOwner].
  *
@@ -1008,9 +1012,8 @@ internal class ComposeSceneMediator(
             createPlatformUriHandler()
         }
 
-        override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
-            createFontFamilyResolver()
-        }
+        override val fontFamilyResolver: FontFamily.Resolver
+            get() = sharedIosFontFamilyResolver
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
             windowContext.convertLocalToWindowPosition(_overlayView, localPosition)

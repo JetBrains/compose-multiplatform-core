@@ -17,11 +17,13 @@
 package androidx.compose.ui.integrations
 
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
+import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.IosUiMediaScope
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
+import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertSame
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -77,6 +80,43 @@ class ComposeSceneMediatorUnitTest {
     }
 
     @Test
+    fun testFontFamilyResolverIsSharedBetweenMediators() {
+        val context = Dispatchers.Main + Job()
+        val platformContexts = mutableListOf<PlatformContext>()
+
+        repeat(2) {
+            val frameChoreographer = makeFrameChoreographer()
+            val mediator = makeMediator(
+                coroutineContext = context,
+                frameChoreographer = frameChoreographer,
+                composeSceneFactory = { platformContext ->
+                    platformContexts += platformContext
+
+                    registerSkikoComposeImplementation()
+                    PlatformLayersComposeScene(
+                        frameRecomposer = frameChoreographer.frameRecomposer,
+                        density = Density(1f),
+                        composeSceneContext = object : ComposeSceneContext {
+                            override val platformContext = platformContext
+                        },
+                        invalidateLayout = {},
+                        invalidateDraw = {},
+                    )
+                },
+            )
+
+            // Accessing scene density creates the lazy scene and invokes composeSceneFactory.
+            mediator.composeSceneDensity
+        }
+
+        assertSame(
+            platformContexts[0].fontFamilyResolver,
+            platformContexts[1].fontFamilyResolver,
+        )
+        context.cancel()
+    }
+
+    @Test
     fun testComposeSceneDensityPreservesDensityWhenFontScaleChanges() {
         val context = Dispatchers.Main + Job()
         val mediator = makeMediator(coroutineContext = context)
@@ -93,6 +133,18 @@ class ComposeSceneMediatorUnitTest {
         coroutineContext: CoroutineContext,
         frameChoreographer: FrameChoreographer = makeFrameChoreographer(),
         windowContext: WindowContext = WindowContext(),
+        composeSceneFactory: (PlatformContext) -> ComposeScene = { platformContext ->
+            registerSkikoComposeImplementation()
+            PlatformLayersComposeScene(
+                frameRecomposer = frameChoreographer.frameRecomposer,
+                density = Density(1f),
+                composeSceneContext = object : ComposeSceneContext {
+                    override val platformContext = platformContext
+                },
+                invalidateLayout = {},
+                invalidateDraw = {},
+            )
+        },
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = OnFocusBehavior.DoNothing,
@@ -109,18 +161,7 @@ class ComposeSceneMediatorUnitTest {
             endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
         ),
         mediaScope = IosUiMediaScope(windowContext.windowInfo),
-        composeSceneFactory = { platformContext ->
-            registerSkikoComposeImplementation()
-            PlatformLayersComposeScene(
-                frameRecomposer = frameChoreographer.frameRecomposer,
-                density = Density(1f),
-                composeSceneContext = object : ComposeSceneContext {
-                    override val platformContext = platformContext
-                },
-                invalidateLayout = {},
-                invalidateDraw = {},
-            )
-        },
+        composeSceneFactory = composeSceneFactory,
     )
 
     private companion object {
