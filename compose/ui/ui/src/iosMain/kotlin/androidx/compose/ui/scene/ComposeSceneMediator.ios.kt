@@ -1008,9 +1008,8 @@ internal class ComposeSceneMediator(
             createPlatformUriHandler()
         }
 
-        override val fontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
-            createFontFamilyResolver()
-        }
+        override val fontFamilyResolver: FontFamily.Resolver
+            get() = sharedIosFontFamilyResolver
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
             windowContext.convertLocalToWindowPosition(_overlayView, localPosition)
@@ -1129,4 +1128,9 @@ private val UITouch.isPressed
 private fun UITouch.offsetInView(view: UIView, density: Float): Offset =
     locationInView(view).useContents {
         Offset(x.toFloat() * density, y.toFloat() * density)
+    }
+
+private val sharedIosFontFamilyResolver: FontFamily.Resolver
+    by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        createFontFamilyResolver()
     }
