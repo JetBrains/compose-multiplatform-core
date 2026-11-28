@@ -13,21 +13,71 @@ This is a coordination skill. Do not duplicate or weaken the specialized instruc
 ## Inputs
 
 - **YouTrack issue URL or issue ID:** Required. Use the exact issue ID, such as `CMP-1234`.
-- **YouTrack CLI:** Required before starting. Use it to assign the issue to the current user when unassigned, move the issue to In Progress, download any reproducer attachment, and later move the issue to Code Review.
+- **YouTrack CLI:** Required before starting. Verify it in the Prerequisites section, then use it to assign the issue to the current user when unassigned, move the issue to `In progress`, download any reproducer attachment, and later move the issue to `Code review` and post the final comment.
 - **Local reproducer project path:** Optional. Pass it to the debugging skill when supplied.
 - **Reviewer overrides:** Optional. `$submit-github-pr` has the team's default reviewers; use an override only when the user explicitly supplies one.
 - **Scope:** Determine whether the user asked only to investigate or asked to solve the issue and create the PR. If the scope is unclear and PR creation would be an external action, ask before submitting.
+
+## Prerequisites
+
+Check the required CLIs before starting any work. Do not install tools, start browser login flows, or handle credentials on the user's behalf.
+
+### YouTrack CLI
+
+Always required: this skill uses it to read the issue, assign it, change its state, download the reproducer, and post the final comment. Check installation and authentication:
+
+```bash
+command -v youtrack
+youtrack auth status
+```
+
+- **Not installed:** Ask the user to install it from the installation section at <https://github.com/JetBrains/youtrack-cli#install> (on macOS, for example `brew install jetbrains/utils/youtrack`), and then sign in with:
+
+  ```bash
+  youtrack auth login
+  ```
+
+- **Installed but not authenticated, expired, or revoked:** Ask the user to run `youtrack auth login`, complete the sign-in, and confirm when done.
+
+### GitHub CLI
+
+Required only when the requested scope includes PR creation. Check installation and authentication:
+
+```bash
+command -v gh
+gh auth status --hostname github.com
+```
+
+- **Not installed:** Ask the user to install it (on macOS, for example `brew install gh`) and then sign in with `gh auth login`.
+- **Installed but not logged in:** Ask the user to run `gh auth login`, complete the browser sign-in, and confirm when done.
+
+Treat this as an early gate only. `$submit-github-pr` still owns the full GitHub pre-flight, including scopes, repository access, and every later check; do not duplicate or weaken those checks here.
+
+### When a prerequisite is missing
+
+1. Tell the user exactly which check failed and give the exact fix from the sections above.
+2. Stop the workflow and ask them to come back once the missing tool is installed and authenticated. Do not proceed with issue changes, reproducer downloads, or PR work.
+3. Only if the user explicitly declines to install or configure the missing tool, continue with the work that does not require it:
+   - without the YouTrack CLI, ask the user to paste the issue content and provide the reproducer manually; do not assign the issue, change its state, or post comments;
+   - without the GitHub CLI, do not create the PR;
+   - at the end, list the manual steps the user must do themselves: assign the issue to themselves and move it to `In progress` before the work, and after the fix create the PR, move the issue to `Code review`, and post a comment with the fix summary and PR URL.
 
 ## Workflow
 
 1. Validate that a YouTrack issue URL or issue ID is available. If it is missing, ask for it. Do not invent a branch or issue name.
 2. Use the configured YouTrack CLI to:
    - determine the current user;
-   - assign the issue to that user if it is unassigned;
-   - move the issue to In Progress;
+   - assign the issue to that user if it is unassigned. If assigning by login fails, apply the YouTrack command `Assignee me` instead;
+   - move the issue to the exact `In progress` state value used by the issue's project, for example:
+
+     ```bash
+     youtrack issue command CMP-1234 "State In progress"
+     ```
+
    - download any reproducer attachment to a temporary directory outside the repository, such as `/tmp/CMP-1234-reproducer`;
    - unzip or open the reproducer and inspect it for useful reproduction details before invoking the debugging skill.
-   If the YouTrack CLI is unavailable or not authenticated, tell the user exactly what to install or configure and stop. Do not use plugins or browser automation as a substitute.
+
+   If the YouTrack CLI is unavailable or not authenticated, follow the Prerequisites section: give the exact fix and stop, or continue without external actions only when the user explicitly declines the prerequisite. Do not use plugins or browser automation as a substitute.
 3. Invoke `$evidence-first-bug-debugger` with the issue URL, optional reproducer path, and any user-specified reproduction environment. Let that skill own:
    - opening and interpreting the issue;
    - creating the `CMP-1234` branch from current `origin/jb-main`;
@@ -54,7 +104,14 @@ This is a coordination skill. Do not duplicate or weaken the specialized instruc
    - adding the `ios-bugathon` label;
    - requesting the default reviewers;
    - creating and verifying the pull request.
-8. After the PR is created and verified, use the YouTrack CLI to move the issue to Code Review and add a comment that includes:
+8. After the PR is created and verified, use the YouTrack CLI to move the issue to the exact `Code review` state value used by the issue's project and post a comment. For the multi-line summary, write it to a temporary file first:
+
+   ```bash
+   youtrack issue command CMP-1234 "State Code review"
+   youtrack issue comment create CMP-1234 --text-file /tmp/CMP-1234-youtrack-comment.md
+   ```
+
+   The comment must include:
    - the original reported behavior;
    - the confirmed root cause;
    - the implementation change and why it is the right boundary;
