@@ -134,10 +134,6 @@ import platform.UIKit.UITouchTypeIndirectPointer
 import platform.UIKit.UITouchTypePencil
 import platform.UIKit.UIView
 
-private val sharedIosFontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
-    createFontFamilyResolver()
-}
-
 /**
  * iOS specific-implementation of [PlatformContext.SemanticsOwnerListener] used to track changes in [SemanticsOwner].
  *
@@ -1133,3 +1129,7 @@ private fun UITouch.offsetInView(view: UIView, density: Float): Offset =
     locationInView(view).useContents {
         Offset(x.toFloat() * density, y.toFloat() * density)
     }
+
+private val sharedIosFontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
+    createFontFamilyResolver()
+}
