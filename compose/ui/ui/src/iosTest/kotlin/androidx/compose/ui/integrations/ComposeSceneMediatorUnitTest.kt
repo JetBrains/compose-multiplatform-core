@@ -37,8 +37,11 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import platform.UIKit.UIWindow
@@ -80,39 +83,42 @@ class ComposeSceneMediatorUnitTest {
     }
 
     @Test
-    fun testFontFamilyResolverIsSharedBetweenMediators() {
+    fun testFontFamilyResolverConcurrentFirstAccessIsSharedBetweenMediators() {
         val context = Dispatchers.Main + Job()
         val platformContexts = mutableListOf<PlatformContext>()
 
-        repeat(2) {
+        repeat(2) { index ->
             val frameChoreographer = makeFrameChoreographer()
             val mediator = makeMediator(
                 coroutineContext = context,
                 frameChoreographer = frameChoreographer,
                 composeSceneFactory = { platformContext ->
                     platformContexts += platformContext
-
-                    registerSkikoComposeImplementation()
-                    PlatformLayersComposeScene(
-                        frameRecomposer = frameChoreographer.frameRecomposer,
-                        density = Density(1f),
-                        composeSceneContext = object : ComposeSceneContext {
-                            override val platformContext = platformContext
-                        },
-                        invalidateLayout = {},
-                        invalidateDraw = {},
-                    )
+                    createComposeScene(frameChoreographer, platformContext)
                 },
             )
 
             // Accessing scene density creates the lazy scene and invokes composeSceneFactory.
             mediator.composeSceneDensity
+            check(platformContexts.size == index + 1)
         }
 
-        assertSame(
-            platformContexts[0].fontFamilyResolver,
-            platformContexts[1].fontFamilyResolver,
-        )
+        runBlocking {
+            // Both coroutines are started undispatched and suspend on the same deferred value.
+            // Completing it releases them together, so the first resolver access happens
+            // concurrently from two worker threads.
+            val start = CompletableDeferred<Unit>()
+            val resolvers = platformContexts.map { platformContext ->
+                async(Dispatchers.Default, CoroutineStart.UNDISPATCHED) {
+                    start.await()
+                    platformContext.fontFamilyResolver
+                }
+            }
+
+            start.complete(Unit)
+
+            assertSame(resolvers[0].await(), resolvers[1].await())
+        }
         context.cancel()
     }
 
@@ -134,16 +140,7 @@ class ComposeSceneMediatorUnitTest {
         frameChoreographer: FrameChoreographer = makeFrameChoreographer(),
         windowContext: WindowContext = WindowContext(),
         composeSceneFactory: (PlatformContext) -> ComposeScene = { platformContext ->
-            registerSkikoComposeImplementation()
-            PlatformLayersComposeScene(
-                frameRecomposer = frameChoreographer.frameRecomposer,
-                density = Density(1f),
-                composeSceneContext = object : ComposeSceneContext {
-                    override val platformContext = platformContext
-                },
-                invalidateLayout = {},
-                invalidateDraw = {},
-            )
+            createComposeScene(frameChoreographer, platformContext)
         },
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
@@ -163,6 +160,22 @@ class ComposeSceneMediatorUnitTest {
         mediaScope = IosUiMediaScope(windowContext.windowInfo),
         composeSceneFactory = composeSceneFactory,
     )
+
+    private fun createComposeScene(
+        frameChoreographer: FrameChoreographer,
+        platformContext: PlatformContext,
+    ): ComposeScene {
+        registerSkikoComposeImplementation()
+        return PlatformLayersComposeScene(
+            frameRecomposer = frameChoreographer.frameRecomposer,
+            density = Density(1f),
+            composeSceneContext = object : ComposeSceneContext {
+                override val platformContext = platformContext
+            },
+            invalidateLayout = {},
+            invalidateDraw = {},
+        )
+    }
 
     private companion object {
         /**

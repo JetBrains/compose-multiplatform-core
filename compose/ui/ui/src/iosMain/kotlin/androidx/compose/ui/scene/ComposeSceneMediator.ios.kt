@@ -1130,6 +1130,7 @@ private fun UITouch.offsetInView(view: UIView, density: Float): Offset =
         Offset(x.toFloat() * density, y.toFloat() * density)
     }
 
-private val sharedIosFontFamilyResolver: FontFamily.Resolver by lazy(LazyThreadSafetyMode.NONE) {
-    createFontFamilyResolver()
-}
+private val sharedIosFontFamilyResolver: FontFamily.Resolver
+    by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        createFontFamilyResolver()
+    }
